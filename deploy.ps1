@@ -2,7 +2,7 @@ param(
     [string]$Saida = "deploy",
     [bool]$Publicar = $true,
     [string]$ServidorRemoto = "192.168.2.130",
-    [string]$UsuarioRemoto = "",
+    [string]$UsuarioRemoto = "JCASRV-SUP",
     [securestring]$SenhaRemota = $null,
 
     [string]$DestinoBackendRel = "inetpub\wwwroot\Suporte_Back",
@@ -112,13 +112,14 @@ Write-Host "  PUBLICACAO NO IIS" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Sempre pedir credenciais se nao fornecidas
-if (-not $UsuarioRemoto) {
-    Write-Host "Servidor: $ServidorRemoto" -ForegroundColor Gray
-    $UsuarioRemoto = Read-Host "Usuario"
-}
+# Credenciais: usuario com padrao, senha obrigatoria
+Write-Host "Servidor:  $ServidorRemoto" -ForegroundColor Gray
+Write-Host "Usuario:   $UsuarioRemoto (padrao)" -ForegroundColor Gray
+$inputUsuario = Read-Host "Usuario [$UsuarioRemoto]"
+if ($inputUsuario.Trim()) { $UsuarioRemoto = $inputUsuario.Trim() }
+
 if (-not $SenhaRemota) {
-    $SenhaRemota = Read-Host "Senha de $UsuarioRemoto" -AsSecureString
+    $SenhaRemota = Read-Host "Senha" -AsSecureString
 }
 $pwAutenticacao = [System.Net.NetworkCredential]::new('', $SenhaRemota).Password
 
@@ -149,11 +150,13 @@ Set-Content -LiteralPath $offline -Value "Deploy em andamento..." -Encoding asci
 Start-Sleep -Seconds $EsperaOffline
 
 try {
-    # Nunca copia nem apaga os appsettings do servidor (o do repo tem placeholders).
+    Write-Host "  Excluindo do deploy: appsettings*.json (preservados no servidor)" -ForegroundColor Yellow
     Invoke-Robocopy $saidaBackend $destBackend "Novo backend" -Excluir "appsettings*.json"
     Invoke-Robocopy $saidaBackend $destBackend "Purge backend (mirror)" -Excluir "appsettings*.json" -Mirror
     if (Test-Path -LiteralPath $appCfg) {
-        Write-Host "  appsettings do servidor preservados (nao tocados)." -ForegroundColor Yellow
+        Write-Host "  OK appsettings.json do servidor mantido intacto." -ForegroundColor Green
+    } else {
+        Write-Host "  AVISO: appsettings.json nao encontrado no servidor (sera necessario criar)." -ForegroundColor Yellow
     }
 }
 finally {
