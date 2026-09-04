@@ -41,11 +41,8 @@ deploy/
 # Publish profiles
 **/Properties/PublishProfiles/
 
-# Submodules/embedded repos
-CENTRALOPERACAO_BACKEND/
-CENTRALOPERACAO_FRONTEND/
-CCBAckend/
-Central-Conhecimento-developer/
+# Submodules (frontend/ e backend/ sao git submodules - NAO ignorar)
+# Conteudo dos submodules vive em .git/modules/
 
 # Local deploy overrides (contain server credentials, never commit)
 deploy.local.bat

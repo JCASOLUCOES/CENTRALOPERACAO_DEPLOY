@@ -10,13 +10,15 @@ publicação direta no IIS do servidor `192.168.2.130`.
 
 | Subprojeto | Stack | Repositório | Branch padrão | Branch de dev |
 |---|---|---|---|---|
-| `CENTRALOPERACAO_FRONTEND/` | Angular 18 (standalone + SSR/prerender) + Bootstrap 5 + ng-bootstrap 17 | [`JCASOLUCOES/Central-Conhecimento`](https://github.com/JCASOLUCOES/Central-Conhecimento) | `main` | `developer` |
-| `CENTRALOPERACAO_BACKEND/Central_BackEnd/` | ASP.NET Core 8 (Web API) + EF Core (InMemory/SqlServer) + Google Sheets + JWT (4h) | [`JCASOLUCOES/CCBAckend`](https://github.com/JCASOLUCOES/CCBAckend) | `main` | `developer` |
+| Subprojeto | Stack | Repositório | Branch padrão | Branch de dev |
+|---|---|---|---|---|
+| `frontend/CENTRALOPERACAO_FRONTEND/` | Angular 18 (standalone + SSR/prerender) + Bootstrap 5 + ng-bootstrap 17 | [`JCASOLUCOES/Central-Conhecimento`](https://github.com/JCASOLUCOES/Central-Conhecimento) | `main` | `developer` |
+| `backend/CENTRALOPERACAO_BACKEND/Central_BackEnd/` | ASP.NET Core 8 (Web API) + EF Core (InMemory/SqlServer) + Google Sheets + JWT (4h) | [`JCASOLUCOES/CCBAckend`](https://github.com/JCASOLUCOES/CCBAckend) | `main` | `developer` |
 
-> Os dois subprojetos são **repositórios git independentes** (cada um com seu
-> próprio `.git/`). O `.gitignore` da raiz **não versiona** o conteúdo deles
-> (`CENTRALOPERACAO_FRONTEND/` e `CENTRALOPERACAO_BACKEND/` estão listados lá).
-> Este repositório guarda apenas a **orquestração de deploy**.
+> Os dois subprojetos são **submódulos git** deste monorepo (cada um com seu
+> próprio `.git/` em `frontend/` e `backend/`). O `.gitmodules` na raiz
+> registra os ponteiros para os repos remotos. Este repositório guarda
+> apenas a **orquestração de deploy** + as refs dos submódulos.
 
 ## Estratégia de branches e versionamento
 
@@ -49,28 +51,28 @@ Como cada repo tem sua própria `developer`/`sara`/etc., criar uma branch nova
 exige o mesmo comando nos 3 repos. Por exemplo, para criar `sara`:
 
 ```bash
-# frontend
-cd CENTRALOPERACAO_FRONTEND
+# frontend (submódulo)
+cd frontend
 git checkout developer
 git checkout -b sara
 git push -u origin sara
-
-# backend
-cd ../CENTRALOPERACAO_BACKEND
-git checkout developer
-git checkout -b sara
-git push -u origin sara
-
-# deploy (raiz)
 cd ..
+
+# backend (submódulo)
+cd backend
+git checkout developer
+git checkout -b sara
+git push -u origin sara
+cd ..
+
+# monorepo (raiz)
 git checkout master
 git checkout -b sara
 git push -u origin sara
 ```
 
-> 📌 **Nota futura:** quando a Etapa 4 (reorganizar como monorepo com
-> submódulos) for executada, este fluxo será automatizado por
-> `branch-todos.ps1` (1 comando cria branch em todos).
+> 💡 Ou simplesmente: `powershell -ExecutionPolicy Bypass -File .\branch-todos.ps1 -Branch sara`
+> (cria a branch em todos os repos de uma vez).
 
 ### Como versionar uma release
 
@@ -93,22 +95,26 @@ CENTRALOPERACAO_DEPLOY/                  <- este repositório
 ├─ deploy.ps1                           <- script de build + publish + IIS
 ├─ deploy.bat                           <- atalho Windows (sem credenciais)
 ├─ deploy.local.bat                     <- atalho local COM senha (gitignored)
+├─ branch-todos.ps1                     <- cria branch em todos os repos
 ├─ AGENTS.md                            <- regras dos assistentes opencode
 ├─ .opencode/                           <- skills (deploy-limpo, subir-interno)
 ├─ .agents/                             <- skills globais (frontend-design)
-├─ CENTRALOPERACAO_FRONTEND/            <- repo frontend (git embedded)
-└─ CENTRALOPERACAO_BACKEND/             <- repo backend (git embedded)
-   └─ Central_BackEnd/
-      └─ wwwroot/
-         └─ web.config                  <- ativa Swagger em prod via env var
+├─ .gitmodules                          <- registro dos submódulos
+├─ frontend/                            <- submódulo git (JCASOLUCOES/Central-Conhecimento)
+│  └─ CENTRALOPERACAO_FRONTEND/         <- código Angular 18
+└─ backend/                             <- submódulo git (JCASOLUCOES/CCBAckend)
+   └─ CENTRALOPERACAO_BACKEND/
+      └─ Central_BackEnd/
+         └─ wwwroot/
+            └─ web.config               <- ativa Swagger em prod via env var
 ```
 
 ## Como funciona o deploy
 
 O `deploy.ps1` faz, em ordem:
 
-1. `npm run build` em `CENTRALOPERACAO_FRONTEND/` (Angular SSR/prerender).
-2. `dotnet publish -c Release` em `CENTRALOPERACAO_BACKEND/Central_BackEnd/`.
+1. `npm run build` em `frontend/CENTRALOPERACAO_FRONTEND/` (Angular SSR/prerender).
+2. `dotnet publish -c Release` em `backend/CENTRALOPERACAO_BACKEND/Central_BackEnd/`.
 3. Empacota em `deploy/backend/` e `deploy/frontend/`.
 4. Conecta em `\\192.168.2.130\c$` com usuário `JCASRV-SUP` (senha via prompt).
 5. Faz **backup** do IIS atual em
@@ -160,7 +166,7 @@ Google Sheets real. Detalhes na skill `subir-interno`.
 O Swagger fica em **`http://192.168.2.130:1009/swagger`** e é controlado por:
 
 1. `web.config` versionado em
-   `CENTRALOPERACAO_BACKEND/Central_BackEnd/wwwroot/web.config` (env var
+   `backend/CENTRALOPERACAO_BACKEND/Central_BackEnd/wwwroot/web.config` (env var
    `ASPNETCORE_SWAGGER_ENABLED=true`).
 2. `SwaggerEnabled` no `appsettings.json` do servidor (true/false).
 

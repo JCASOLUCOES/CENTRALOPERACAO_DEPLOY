@@ -33,7 +33,7 @@ produção nem publica no IIS — apenas inicia backend e frontend via localhost
    ```
    ⚠️ Cuidado: não mate processos `dotnet`/`node` de outras aplicações abertas.
 
-2. **Subir o backend** (diretório `CENTRALOPERACAO_BACKEND/Central_BackEnd`):
+2. **Subir o backend** (diretório `backend/CENTRALOPERACAO_BACKEND/Central_BackEnd`):
    ```powershell
    dotnet run
    ```
@@ -42,7 +42,7 @@ produção nem publica no IIS — apenas inicia backend e frontend via localhost
    Aguarde no log aparecer `Now listening on: http://0.0.0.0:1009` e o
    swagger responder em `http://localhost:1009/swagger`.
 
-3. **Subir o frontend** (diretório `CENTRALOPERACAO_FRONTEND`):
+3. **Subir o frontend** (diretório `frontend/CENTRALOPERACAO_FRONTEND`):
    ```powershell
    npm start
    # ou, para abrir o navegador automaticamente:
