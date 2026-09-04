@@ -10,10 +10,17 @@ publicação direta no IIS do servidor `192.168.2.130`.
 
 | Subprojeto | Stack | Repositório | Branch padrão | Branch de dev |
 |---|---|---|---|---|
-| Subprojeto | Stack | Repositório | Branch padrão | Branch de dev |
-|---|---|---|---|---|
 | `frontend/` | Angular 18 (standalone + SSR/prerender) + Bootstrap 5 + ng-bootstrap 17 | [`JCASOLUCOES/Central-Conhecimento`](https://github.com/JCASOLUCOES/Central-Conhecimento) | `main` | `developer` |
 | `backend/Central_BackEnd/` | ASP.NET Core 8 (Web API) + EF Core (InMemory/SqlServer) + Google Sheets + JWT (4h) | [`JCASOLUCOES/CCBAckend`](https://github.com/JCASOLUCOES/CCBAckend) | `main` | `developer` |
+
+> **Versão atual em produção**: **v0.7.0** (a próxima release após o módulo
+> IMPLANTAÇÃO/PROJETOS será **v1.1.0**, em desenvolvimento na branch
+> `projeto-implantacao`).
+>
+> **Módulo novo em v1.1.0** (branch `projeto-implantacao`): gerenciador de
+> **Projetos / Tarefas / Clientes** compartilhado pelas equipes **IMPLANTAÇÃO**
+> e **CIAA** (Centro de Inovação, Automação e IA). Códigos automáticos
+> (`IMP-0001`, `CIAA-0001`). Ver `frontend/docs/DOCUMENTACAO-COMPLETA.md` § 6.5.
 
 > Os dois subprojetos são **submódulos git** deste monorepo (cada um com seu
 > próprio `.git/` em `frontend/` e `backend/`). O `.gitmodules` na raiz
@@ -31,8 +38,8 @@ Os **3 repositórios** (`CENTRALOPERACAO_DEPLOY`, `Central-Conhecimento` e
 | `developer` | **Desenvolvimento** — onde o JCASOLUCOES mexe no dia-a-dia. | front, back, deploy |
 | `sara` | Branch pessoal da Sara (criada a partir de `developer`). | front, back, deploy |
 | `samuel` | Branch pessoal do Samuel (criada a partir de `developer`). | front, back, deploy |
-| `projeto-implantacao` | Branch futura que segue o projeto original + novo projeto acoplado (criar quando necessário). | front, back, deploy |
-| `v0.7.0`, `v0.7.1`, ... | **Tags** que marcam versões estáveis já em produção. Não há branch `backup` — usamos tags de versão. | front, back, deploy |
+| `projeto-implantacao` | Branch **ativa** com o módulo IMPLANTAÇÃO/PROJETOS (v1.1.0). | front, back, deploy |
+| `v0.7.0`, `v1.1.0`, ... | **Tags** que marcam versões estáveis já em produção. Não há branch `backup` — usamos tags de versão. | front, back, deploy |
 
 ### Regras de proteção de `main`
 - `main` é a **branch padrão** nos 3 repositórios (configurado no GitHub).
@@ -177,6 +184,21 @@ Precedência do ASP.NET Core Configuration: env var > `appsettings.{Env}.json` >
 - `deploy-limpo` — build + publish + IIS em um comando
 - `subir-interno` — sobe backend+frontend local para dev
 - `frontend-design` (em `.agents/skills/`) — guia de design visual
+
+## Módulo IMPLANTAÇÃO / PROJETOS (v1.1.0 — em desenvolvimento)
+
+Branch: **`projeto-implantacao`** nos 3 repos. Backend com 9 entidades
+(`Cliente`, `Equipe`, `MembroEquipe`, `TipoProjeto`, `Etapa`,
+`ColunaKanban`, `Projeto`, `Tarefa`, `ComentarioTarefa`) e 8 controllers
+REST em `/api/v1/implantacao/*`. Frontend com 5 páginas
+(`/implantacao/dashboard`, `/projetos`, `/tarefas`, `/clientes`,
+`/cadastros`) e seção "Implantação" na sidebar.
+
+**Atenção homologação**: o `deploy.ps1` **não aplica migrations**. Para
+subir a v1.1.0 no ambiente de homolog (192.168.2.154 / dbBUSINESS_HML),
+criar manualmente as 9 tabelas `IMPL_*` antes de subir o backend. Ver
+`frontend/docs/DOCUMENTACAO-COMPLETA.md` § 6.5.2 para a lista completa
+e o script de criação em `backend/Central_BackEnd/Migrations/20260904194350_ImplantacaoInit.cs`.
 
 ## Segurança
 
