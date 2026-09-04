@@ -3,7 +3,7 @@ param(
     [bool]$Publicar = $true,
     [string]$ServidorRemoto = "192.168.2.130",
     [string]$UsuarioRemoto = "JCASRV-SUP",
-    [securestring]$SenhaRemota = $null,
+    [string]$SenhaRemota = "",
 
     [string]$DestinoBackendRel = "inetpub\wwwroot\Suporte_Back",
     [string]$DestinoFrontRel   = "inetpub\wwwroot\Suporte_Front",
@@ -34,8 +34,8 @@ function Invoke-Robocopy {
 }
 
 $raiz = Split-Path -Parent $MyInvocation.MyCommand.Path
-$frontDir = Join-Path $raiz "Central-Conhecimento-developer"
-$backDir  = Join-Path $raiz "CCBAckend\Central_BackEnd"
+$frontDir = Join-Path $raiz "CENTRALOPERACAO_FRONTEND"
+$backDir  = Join-Path $raiz "CENTRALOPERACAO_BACKEND\Central_BackEnd"
 
 $saidaRoot    = Join-Path $raiz $Saida
 $saidaBackend = Join-Path $saidaRoot "backend"
@@ -115,20 +115,25 @@ Write-Host ""
 # Credenciais: usuario com padrao, senha obrigatoria
 Write-Host "Servidor:  $ServidorRemoto" -ForegroundColor Gray
 Write-Host "Usuario:   $UsuarioRemoto (padrao)" -ForegroundColor Gray
-$inputUsuario = Read-Host "Usuario [$UsuarioRemoto]"
-if ($inputUsuario.Trim()) { $UsuarioRemoto = $inputUsuario.Trim() }
 
-if (-not $SenhaRemota) {
-    $SenhaRemota = Read-Host "Senha" -AsSecureString
+if ($SenhaRemota -is [string] -and $SenhaRemota.Length -gt 0) {
+    $pwAutenticacao = $SenhaRemota
+} elseif ($SenhaRemota -is [System.Security.SecureString]) {
+    $pwAutenticacao = [System.Net.NetworkCredential]::new('', $SenhaRemota).Password
+} else {
+    $inputUsuario = Read-Host "Usuario [$UsuarioRemoto]"
+    if ($inputUsuario -and $inputUsuario.Trim()) { $UsuarioRemoto = $inputUsuario.Trim() }
+    $secSenha = Read-Host "Senha" -AsSecureString
+    $pwAutenticacao = [System.Net.NetworkCredential]::new('', $secSenha).Password
 }
-$pwAutenticacao = [System.Net.NetworkCredential]::new('', $SenhaRemota).Password
 
 Write-Host ""
 Write-Host "Conectando em $ServidorRemoto..." -ForegroundColor Yellow
 
-net use $auth /user:$UsuarioRemoto $pwAutenticacao /persistent:no 2>&1 | Out-Null
+$netUseArgs = @('use', $auth, "/user:$UsuarioRemoto", "`"$pwAutenticacao`"", '/persistent:no')
+$netUseResult = & cmd /c "net use `"$auth`" /user:$UsuarioRemoto `"$pwAutenticacao`" /persistent:no" 2>&1
 if ($LASTEXITCODE -ne 0) { throw "Falha ao autenticar em $ServidorRemoto. Verifique usuario e senha." }
-net use $uncC /user:$UsuarioRemoto $pwAutenticacao /persistent:no 2>&1 | Out-Null
+& cmd /c "net use `"$uncC`" /user:$UsuarioRemoto `"$pwAutenticacao`" /persistent:no" 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "Falha ao conectar ao compartilhamento administrativo $uncC." }
 
 Write-Host "Conexao estabelecida!" -ForegroundColor Green

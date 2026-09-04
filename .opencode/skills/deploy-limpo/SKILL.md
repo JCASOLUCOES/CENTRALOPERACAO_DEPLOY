@@ -13,9 +13,9 @@ de acesso é Administrador e o `LocalAccountTokenFilterPolicy` está liberado).
 
 ## Localização
 
-- Script: `deploy.ps1` (raiz do repositório, ao lado das pastas `Central-Conhecimento-developer/` e `CCBAckend/`).
-- Frontend: `Central-Conhecimento-developer/` (Angular 18 SSR).
-- Backend: `CCBAckend/Central_BackEnd/` (ASP.NET Core 8, .NET 8).
+- Script: `deploy.ps1` (raiz do repositório, ao lado das pastas `CENTRALOPERACAO_FRONTEND/` e `CENTRALOPERACAO_BACKEND/`).
+- Frontend: `CENTRALOPERACAO_FRONTEND/` (Angular 18 SSR).
+- Backend: `CENTRALOPERACAO_BACKEND/Central_BackEnd/` (ASP.NET Core 8, .NET 8).
 - Saída local: `deploy/backend/` e `deploy/frontend/`.
 - Publica direto em:
   - Backend → `C:\inetpub\wwwroot\Suporte_Back`
@@ -31,8 +31,8 @@ de acesso é Administrador e o `LocalAccountTokenFilterPolicy` está liberado).
    powershell -ExecutionPolicy Bypass -File .\deploy.ps1
    ```
    O script:
-   - roda `npm run build` em `Central-Conhecimento-developer/`;
-   - roda `dotnet publish -c Release` em `CCBAckend/Central_BackEnd/`;
+   - roda `npm run build` em `CENTRALOPERACAO_FRONTEND/`;
+   - roda `dotnet publish -c Release` em `CENTRALOPERACAO_BACKEND/Central_BackEnd/`;
    - regenera `deploy/backend` e `deploy/frontend`;
    - **pede a senha** do usuário `JCASRV-SUP` (padrão pré-preenchido);
    - autentica no servidor e conecta em `\\192.168.2.130\c$`;

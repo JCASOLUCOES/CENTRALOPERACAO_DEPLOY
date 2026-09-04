@@ -16,10 +16,10 @@
 ## § Documentação (prioridade 3 — atualização AUTOMÁTICA)
 Ao **concluir** alterações relevantes, atualize a documentação **automaticamente, sem aguardar pedido do usuário**:
 
-- **Alterações de código** (Angular em `Central-Conhecimento-developer/src`, backend em `CCBAckend`, skills, agentes, scripts de deploy):
+- **Alterações de código** (Angular em `CENTRALOPERACAO_FRONTEND/src`, backend em `CENTRALOPERACAO_BACKEND`, skills, agentes, scripts de deploy):
   delegue **automaticamente** ao agente `docs-writer` (tool `task`) para revisar e atualizar:
-  - `Central-Conhecimento-developer/README.md`
-  - `Central-Conhecimento-developer/docs/*.md` (`DOCUMENTACAO-COMPLETA.md`, `deploy-*`, etc.)
+  - `CENTRALOPERACAO_FRONTEND/README.md`
+  - `CENTRALOPERACAO_FRONTEND/docs/*.md` (`DOCUMENTACAO-COMPLETA.md`, `deploy-*`, etc.)
 - **Alterações de conteúdo do wiki** (`*.data.ts`):
   delegue **automaticamente** ao agente `content-editor` (tool `task`).
 - **Regras da delegação automática:**

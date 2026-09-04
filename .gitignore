@@ -42,5 +42,11 @@ deploy/
 **/Properties/PublishProfiles/
 
 # Submodules/embedded repos
+CENTRALOPERACAO_BACKEND/
+CENTRALOPERACAO_FRONTEND/
 CCBAckend/
 Central-Conhecimento-developer/
+
+# Local deploy overrides (contain server credentials, never commit)
+deploy.local.bat
+deploy.local.ps1
