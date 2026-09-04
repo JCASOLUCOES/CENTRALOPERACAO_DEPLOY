@@ -8,15 +8,83 @@ publicação direta no IIS do servidor `192.168.2.130`.
 
 ## Visão geral
 
-| Subprojeto | Stack | Repositório | Branch |
-|---|---|---|---|
-| `CENTRALOPERACAO_FRONTEND/` | Angular 18 (standalone + SSR/prerender) + Bootstrap 5 + ng-bootstrap 17 | [`JCASOLUCOES/Central-Conhecimento`](https://github.com/JCASOLUCOES/Central-Conhecimento) | `developer` |
-| `CENTRALOPERACAO_BACKEND/Central_BackEnd/` | ASP.NET Core 8 (Web API) + EF Core (InMemory/SqlServer) + Google Sheets + JWT (4h) | [`JCASOLUCOES/CCBAckend`](https://github.com/JCASOLUCOES/CCBAckend) | `developer` |
+| Subprojeto | Stack | Repositório | Branch padrão | Branch de dev |
+|---|---|---|---|---|
+| `CENTRALOPERACAO_FRONTEND/` | Angular 18 (standalone + SSR/prerender) + Bootstrap 5 + ng-bootstrap 17 | [`JCASOLUCOES/Central-Conhecimento`](https://github.com/JCASOLUCOES/Central-Conhecimento) | `main` | `developer` |
+| `CENTRALOPERACAO_BACKEND/Central_BackEnd/` | ASP.NET Core 8 (Web API) + EF Core (InMemory/SqlServer) + Google Sheets + JWT (4h) | [`JCASOLUCOES/CCBAckend`](https://github.com/JCASOLUCOES/CCBAckend) | `main` | `developer` |
 
 > Os dois subprojetos são **repositórios git independentes** (cada um com seu
 > próprio `.git/`). O `.gitignore` da raiz **não versiona** o conteúdo deles
 > (`CENTRALOPERACAO_FRONTEND/` e `CENTRALOPERACAO_BACKEND/` estão listados lá).
 > Este repositório guarda apenas a **orquestração de deploy**.
+
+## Estratégia de branches e versionamento
+
+Os **3 repositórios** (`CENTRALOPERACAO_DEPLOY`, `Central-Conhecimento` e
+`CCBAckend`) compartilham a mesma convenção:
+
+| Branch / Tag | Propósito | Onde |
+|---|---|---|
+| `main` | **Produção** — espelho do que está rodando no IIS 192.168.2.130. Recebe merges via PR de `developer` (com aprovação). | front, back, deploy |
+| `developer` | **Desenvolvimento** — onde o JCASOLUCOES mexe no dia-a-dia. | front, back, deploy |
+| `sara` | Branch pessoal da Sara (criada a partir de `developer`). | front, back, deploy |
+| `samuel` | Branch pessoal do Samuel (criada a partir de `developer`). | front, back, deploy |
+| `projeto-implantacao` | Branch futura que segue o projeto original + novo projeto acoplado (criar quando necessário). | front, back, deploy |
+| `v0.7.0`, `v0.7.1`, ... | **Tags** que marcam versões estáveis já em produção. Não há branch `backup` — usamos tags de versão. | front, back, deploy |
+
+### Regras de proteção de `main`
+- `main` é a **branch padrão** nos 3 repositórios (configurado no GitHub).
+- Branch protection recomendada em `main` (configurar via
+  `https://github.com/JCASOLUCOES/<repo>/settings/branches`):
+  - ☑ Require a pull request before merging (1 aprovação)
+  - ☑ Require conversation resolution before merging
+  - ☑ Require linear history
+  - ☐ Allow force pushes (deixe **desmarcado**)
+- `developer` e branches pessoais (`sara`, `samuel`) **não têm proteção** —
+  push direto é permitido.
+
+### Como criar uma branch que englobe o projeto todo
+
+Como cada repo tem sua própria `developer`/`sara`/etc., criar uma branch nova
+exige o mesmo comando nos 3 repos. Por exemplo, para criar `sara`:
+
+```bash
+# frontend
+cd CENTRALOPERACAO_FRONTEND
+git checkout developer
+git checkout -b sara
+git push -u origin sara
+
+# backend
+cd ../CENTRALOPERACAO_BACKEND
+git checkout developer
+git checkout -b sara
+git push -u origin sara
+
+# deploy (raiz)
+cd ..
+git checkout master
+git checkout -b sara
+git push -u origin sara
+```
+
+> 📌 **Nota futura:** quando a Etapa 4 (reorganizar como monorepo com
+> submódulos) for executada, este fluxo será automatizado por
+> `branch-todos.ps1` (1 comando cria branch em todos).
+
+### Como versionar uma release
+
+Quando o sistema vai para produção no IIS 192.168.2.130:
+
+```bash
+# Nos 3 repos (depois de merge em main):
+git checkout main
+git tag -a v0.X.Y -m "v0.X.Y - descricao"
+git push origin v0.X.Y
+```
+
+A tag marca o ponto exato que está em produção. Para reverter, basta
+`git checkout v0.7.0` e fazer deploy dessa tag.
 
 ## Estrutura
 
