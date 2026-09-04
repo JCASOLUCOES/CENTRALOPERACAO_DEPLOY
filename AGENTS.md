@@ -22,7 +22,7 @@ O projeto vive em **3 repositórios git** que compartilham a mesma convenção:
 **Branch futura**: `projeto-implantacao`.
 **Tags** substituem "branch backup" — cada release vira `vX.Y.Z` imutável.
 
-Detalhes em `README.md` (raiz) e `frontend/CENTRALOPERACAO_FRONTEND/docs/DEPLOY.md` § 7.
+Detalhes em `README.md` (raiz) e `frontend/docs/DEPLOY.md` § 7.
 
 ## Regras de comunidade
 - Não pergunte o que já foi definido/respondido; verifique e siga.
@@ -33,17 +33,17 @@ Detalhes em `README.md` (raiz) e `frontend/CENTRALOPERACAO_FRONTEND/docs/DEPLOY.
 ## § Documentação (prioridade 3 — atualização AUTOMÁTICA)
 Ao **concluir** alterações relevantes, atualize a documentação **automaticamente, sem aguardar pedido do usuário**:
 
-- **Alterações de código** (Angular em `frontend/CENTRALOPERACAO_FRONTEND/src`, backend em `backend/CENTRALOPERACAO_BACKEND`, skills, agentes, scripts de deploy):
+- **Alterações de código** (Angular em `frontend/src`, backend em `backend/Central_BackEnd`, skills, agentes, scripts de deploy):
   delegue **automaticamente** ao agente `docs-writer` (tool `task`) para revisar e atualizar:
-  - `frontend/CENTRALOPERACAO_FRONTEND/README.md`
-  - `frontend/CENTRALOPERACAO_FRONTEND/docs/*.md` (`DOCUMENTACAO-COMPLETA.md`, `deploy-*`, etc.)
-  - `backend/CENTRALOPERACAO_BACKEND/README.md`
+  - `frontend/README.md`
+  - `frontend/docs/*.md` (`DOCUMENTACAO-COMPLETA.md`, `deploy-*`, etc.)
+  - `backend/README.md`
   - `README.md` da raiz do monorepo
 - **Alterações de conteúdo do wiki** (`*.data.ts`):
   delegue **automaticamente** ao agente `content-editor` (tool `task`).
 - **Alterações no fluxo de branches / deploy / versionamento**:
-  atualizar `README.md` da raiz, `frontend/CENTRALOPERACAO_FRONTEND/README.md`,
-  `backend/CENTRALOPERACAO_BACKEND/README.md`, `DEPLOY.md` § 7, `DOCUMENTACAO-COMPLETA.md`
+  atualizar `README.md` da raiz, `frontend/README.md`,
+  `backend/README.md`, `DEPLOY.md` § 7, `DOCUMENTACAO-COMPLETA.md`
   § Política de branches e tags.
 - **Regras da delegação automática:**
   - Não pergunte se deve atualizar a documentação — faça.

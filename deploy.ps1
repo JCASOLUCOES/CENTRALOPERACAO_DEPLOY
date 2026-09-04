@@ -34,8 +34,8 @@ function Invoke-Robocopy {
 }
 
 $raiz = Split-Path -Parent $MyInvocation.MyCommand.Path
-$frontDir = Join-Path $raiz "frontend\CENTRALOPERACAO_FRONTEND"
-$backDir  = Join-Path $raiz "backend\CENTRALOPERACAO_BACKEND\Central_BackEnd"
+$frontDir = Join-Path $raiz "frontend"
+$backDir  = Join-Path $raiz "backend\Central_BackEnd"
 
 $saidaRoot    = Join-Path $raiz $Saida
 $saidaBackend = Join-Path $saidaRoot "backend"
@@ -67,7 +67,7 @@ finally {
 }
 
 $publishDir = Join-Path $backDir "bin\Release\net8.0\publish"
-$distDir    = Join-Path $raiz "frontend\CENTRALOPERACAO_FRONTEND\dist\central-conhecimento-actyon"
+$distDir    = Join-Path $raiz "frontend\dist\central-conhecimento-actyon"
 
 if (-not (Test-Path -LiteralPath $publishDir)) { throw "Pasta de publish nao encontrada: $publishDir" }
 if (-not (Test-Path -LiteralPath $distDir))    { throw "Pasta de dist nao encontrada: $distDir" }
