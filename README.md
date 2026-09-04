@@ -12,8 +12,8 @@ publicação direta no IIS do servidor `192.168.2.130`.
 |---|---|---|---|---|
 | Subprojeto | Stack | Repositório | Branch padrão | Branch de dev |
 |---|---|---|---|---|
-| `frontend/CENTRALOPERACAO_FRONTEND/` | Angular 18 (standalone + SSR/prerender) + Bootstrap 5 + ng-bootstrap 17 | [`JCASOLUCOES/Central-Conhecimento`](https://github.com/JCASOLUCOES/Central-Conhecimento) | `main` | `developer` |
-| `backend/CENTRALOPERACAO_BACKEND/Central_BackEnd/` | ASP.NET Core 8 (Web API) + EF Core (InMemory/SqlServer) + Google Sheets + JWT (4h) | [`JCASOLUCOES/CCBAckend`](https://github.com/JCASOLUCOES/CCBAckend) | `main` | `developer` |
+| `frontend/` | Angular 18 (standalone + SSR/prerender) + Bootstrap 5 + ng-bootstrap 17 | [`JCASOLUCOES/Central-Conhecimento`](https://github.com/JCASOLUCOES/Central-Conhecimento) | `main` | `developer` |
+| `backend/Central_BackEnd/` | ASP.NET Core 8 (Web API) + EF Core (InMemory/SqlServer) + Google Sheets + JWT (4h) | [`JCASOLUCOES/CCBAckend`](https://github.com/JCASOLUCOES/CCBAckend) | `main` | `developer` |
 
 > Os dois subprojetos são **submódulos git** deste monorepo (cada um com seu
 > próprio `.git/` em `frontend/` e `backend/`). O `.gitmodules` na raiz
@@ -101,20 +101,19 @@ CENTRALOPERACAO_DEPLOY/                  <- este repositório
 ├─ .agents/                             <- skills globais (frontend-design)
 ├─ .gitmodules                          <- registro dos submódulos
 ├─ frontend/                            <- submódulo git (JCASOLUCOES/Central-Conhecimento)
-│  └─ CENTRALOPERACAO_FRONTEND/         <- código Angular 18
+│                                       <- código Angular 18 direto na raiz do repo front
 └─ backend/                             <- submódulo git (JCASOLUCOES/CCBAckend)
-   └─ CENTRALOPERACAO_BACKEND/
-      └─ Central_BackEnd/
-         └─ wwwroot/
-            └─ web.config               <- ativa Swagger em prod via env var
+   └─ Central_BackEnd/
+      └─ wwwroot/
+         └─ web.config                  <- ativa Swagger em prod via env var
 ```
 
 ## Como funciona o deploy
 
 O `deploy.ps1` faz, em ordem:
 
-1. `npm run build` em `frontend/CENTRALOPERACAO_FRONTEND/` (Angular SSR/prerender).
-2. `dotnet publish -c Release` em `backend/CENTRALOPERACAO_BACKEND/Central_BackEnd/`.
+1. `npm run build` em `frontend/` (Angular SSR/prerender).
+2. `dotnet publish -c Release` em `backend/Central_BackEnd/`.
 3. Empacota em `deploy/backend/` e `deploy/frontend/`.
 4. Conecta em `\\192.168.2.130\c$` com usuário `JCASRV-SUP` (senha via prompt).
 5. Faz **backup** do IIS atual em
@@ -166,7 +165,7 @@ Google Sheets real. Detalhes na skill `subir-interno`.
 O Swagger fica em **`http://192.168.2.130:1009/swagger`** e é controlado por:
 
 1. `web.config` versionado em
-   `backend/CENTRALOPERACAO_BACKEND/Central_BackEnd/wwwroot/web.config` (env var
+   `backend/Central_BackEnd/wwwroot/web.config` (env var
    `ASPNETCORE_SWAGGER_ENABLED=true`).
 2. `SwaggerEnabled` no `appsettings.json` do servidor (true/false).
 
