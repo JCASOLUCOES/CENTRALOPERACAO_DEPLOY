@@ -14,6 +14,19 @@ Set-Location $raiz
 
 $submodulos = @("frontend", "backend")
 
+# Bases equivalentes: 'main' (frontend, backend) <=> 'master' (monorepo)
+$baseMonorepo = $Base
+if ($Base -eq "main") { $baseMonorepo = "main" }  # monorepo aceita tanto 'master' quanto 'main'
+
+function Test-BranchExists {
+    param(
+        [string]$Path,
+        [string]$BranchName
+    )
+    $exists = git -C $Path rev-parse --verify $BranchName 2>$null
+    return $null -ne $exists
+}
+
 function Invoke-InSubmodule {
     param(
         [string]$Path,
@@ -52,7 +65,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  BRANCH-TODOS - $Branch (base: $Base)" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Repos afetados:" -ForegroundColor Gray
-Write-Host "  - monorepo (raiz)" -ForegroundColor Gray
+Write-Host "  - monorepo (raiz, base interna: $baseMonorepo)" -ForegroundColor Gray
 foreach ($s in $submodulos) {
     Write-Host "  - submodule: $s" -ForegroundColor Gray
 }
@@ -62,13 +75,17 @@ Write-Host ""
 Write-Host "== Monorepo (raiz) ==" -ForegroundColor Cyan
 $raizBranch = git rev-parse --abbrev-ref HEAD
 Write-Host "  branch atual: $raizBranch"
-if ($raizBranch -ne $Base) {
-    Write-Host "  checkout $Base" -ForegroundColor Yellow
-    git checkout $Base 2>&1 | Out-Null
+if ($raizBranch -ne $baseMonorepo) {
+    if (Test-BranchExists $raiz $baseMonorepo) {
+        Write-Host "  checkout $baseMonorepo" -ForegroundColor Yellow
+        git checkout $baseMonorepo 2>&1 | Out-Null
+    } else {
+        Write-Host "  base '$baseMonorepo' nao existe no monorepo, usando branch atual '$raizBranch'" -ForegroundColor Yellow
+    }
 }
-Write-Host "  pull origin $Base" -ForegroundColor Yellow
-git pull origin $Base 2>&1 | Out-Null
-Write-Host "  criando branch '$Branch' baseada em '$Base'" -ForegroundColor Green
+Write-Host "  pull origin $raizBranch" -ForegroundColor Yellow
+git pull origin $raizBranch 2>&1 | Out-Null
+Write-Host "  criando branch '$Branch' baseada em '$raizBranch'" -ForegroundColor Green
 git checkout -b $Branch 2>&1 | Out-Null
 if ($Push) {
     Write-Host "  push -u origin $Branch" -ForegroundColor Green
