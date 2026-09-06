@@ -70,7 +70,7 @@ efêmera (escopo de request), com `using` garantindo fechamento.
 cd backend/Central_BackEnd
 dotnet user-secrets set "DatabaseExplorer:Servidor" "192.168.2.154"
 dotnet user-secrets set "DatabaseExplorer:Porta" "1433"
-dotnet user-secrets set "DatabaseExplorer:Banco" "dbBUSINESS_HML"
+dotnet user-secrets set "DatabaseExplorer:Banco" "dbActyon_JCA"
 dotnet user-secrets set "DatabaseExplorer:Usuario" "bussiness"
 dotnet user-secrets set "DatabaseExplorer:Senha" "bsn@2018"
 
@@ -96,10 +96,19 @@ dotnet run
 | GET | `/database/column-usage?coluna=X` | Onde a coluna X é usada |
 | GET | `/database/graph?tabela=X&profundidade=N&incluirPossiveis=` | Grafo BFS (1-5 níveis) |
 | GET | `/database/search?termo=X` | Busca global (tabela/coluna/view/proc/func/trigger) |
+| GET | `/database/procedures?schema=&busca=&take=` | Lista procedures (com preview 200 chars do corpo) |
+| GET | `/database/procedures/{schema}/{nome}` | Detalhe: corpo completo + parâmetros (input/output) |
+| GET | `/database/procedures/search?termo=&take=` | Busca textual no nome e preview de procedures |
 | POST | `/database/query` | Executa SELECT (somente leitura) |
 | POST | `/database/test-connection` | Testa conexão sem persistir |
 | GET | `/database/config` | Lê config (senha mascarada) |
 | PUT | `/database/config` | Atualiza config em memória da sessão |
+
+## 4.1. Banco fixo: `dbActyon_JCA`
+
+A partir da v1.3.2, o Database Explorer **sempre** conecta em `192.168.2.154 / dbActyon_JCA` (banco principal do Actyon, alvo da investigação de tabelas, relacionamentos e procedures). O user default é `bussiness` e a senha **NUNCA** tem hardcode — vem de env var ou user-secrets.
+
+A UI (`/database/configuracao`) agora é **read-only** — mostra servidor/banco/usuário (mascarado) e o botão "Testar conexão". Não faz sentido editar IP/banco porque a config é fixa por convenção da empresa.
 
 ---
 
@@ -217,7 +226,7 @@ npm start
 
 **Homolog (referência)**:
 - Servidor: `192.168.2.154`
-- Banco: `dbBUSINESS_HML` (já configurado em `projeto_BD.md`)
+- Banco: `dbActyon_JCA` (banco principal do Actyon, fixo no `DatabaseConnectionService`)
 - Usuário: `bussiness`
 - Senha: `bsn@2018` (via env var, **NUNCA** em appsettings.json)
 
