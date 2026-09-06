@@ -47,3 +47,4 @@ deploy/
 # Local deploy overrides (contain server credentials, never commit)
 deploy.local.bat
 deploy.local.ps1
+deploy.run.ps1
