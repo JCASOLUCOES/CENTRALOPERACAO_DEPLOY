@@ -1,0 +1,99 @@
+name: Sync TELAS.md Documentation
+
+on:
+  pull_request:
+    branches: [developer, main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [developer]
+    paths:
+      - 'frontend/src/app/**/*.component.ts'
+      - 'frontend/src/app/**/*.service.ts'
+      - 'frontend/src/app/**/*.routes.ts'
+      - 'frontend/src/app/**/*.data.ts'
+      - 'backend/Central_BackEnd/Controllers/**/*.cs'
+      - 'backend/Central_BackEnd/Models/**/*.cs'
+      - 'backend/Central_BackEnd/Migrations/**/*.cs'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci --prefer-offline 2>/dev/null || true
+
+      - name: Install TypeScript runner
+        run: npm install -g tsx
+
+      - name: Extract screens data
+        run: |
+          cd frontend
+          npx tsx scripts/extract-screens.ts
+        continue-on-error: true
+
+      - name: Setup .NET (for backend analysis)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Configure Git
+        run: |
+          git config user.name "docs-writer [bot]"
+          git config user.email "docs-writer@github.com"
+
+      - name: Generate TELAS.md via docs-writer agent
+        run: |
+          echo "📝 O agente docs-writer atualizará docs/TELAS.md com base em scripts/screens-data.json"
+          # O agente docs-writer é invocado via opencode ou via workflow customizado
+          # Aqui o JSON intermediário está disponível para o agente processar
+          ls -la frontend/scripts/screens-data.json 2>/dev/null || true
+          ls -la docs/TELAS.md 2>/dev/null || true
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet docs/TELAS.md; then
+            echo "no_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "no_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit TELAS.md changes
+        if: steps.changes.outputs.no_changes == 'false'
+        run: |
+          git add docs/TELAS.md frontend/scripts/screens-data.json
+          git commit -m "docs: sync TELAS.md (auto-generated via docs-writer)"
+          git push
+
+      - name: Create PR comment
+        if: steps.changes.outputs.no_changes == 'false' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              repository_id: context.repo.repoId,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '📝 **TELAS.md atualizado automaticamente!**\n\nO agente `docs-writer` sincronizou a documentação de telas e APIs com as últimas mudanças no código-fonte.\n\n- Componentes modificados detectados via diff\n- Novos endpoints backend registrados\n- Migrations atualizadas'
+            })

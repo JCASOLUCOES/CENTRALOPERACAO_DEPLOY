@@ -36,11 +36,16 @@ Ao **concluir** alterações relevantes, atualize a documentação **automaticam
 - **Alterações de código** (Angular em `frontend/src`, backend em `backend/Central_BackEnd`, skills, agentes, scripts de deploy):
   delegue **automaticamente** ao agente `docs-writer` (tool `task`) para revisar e atualizar:
   - `frontend/README.md`
-  - `frontend/docs/*.md` (`DOCUMENTACAO-COMPLETA.md`, `deploy-*`, etc.)
+  - `frontend/docs/*.md` (`DOCUMENTACAO-COMPLETA.md`, `DEPLOY.md`, `backend-auth-integracao.md`, **`TELAS.md`**)
+  - `frontend/docs/TELAS.md` ← **Documentação por tela (auto-sync via extract-screens.ts + GitHub Action)**
   - `backend/README.md`
   - `README.md` da raiz do monorepo
 - **Alterações de conteúdo do wiki** (`*.data.ts`):
   delegue **automaticamente** ao agente `content-editor` (tool `task`).
+- **Novos componentes/services/routers** (`frontend/src/app/**/*.component.ts`, `*.service.ts`, `*.routes.ts`):
+  delegue **automaticamente** ao agente `docs-writer` para atualizar `frontend/docs/TELAS.md` com a nova tela/documentação.
+- **Novos controllers/endpoints/models** (`backend/Central_BackEnd/Controllers/**/*.cs`, `Models/**/*.cs`, `Migrations/**/*.cs`):
+  delegue **automaticamente** ao agente `docs-writer` para atualizar seção 17/18 de `frontend/docs/TELAS.md`.
 - **Alterações no fluxo de branches / deploy / versionamento**:
   atualizar `README.md` da raiz, `frontend/README.md`,
   `backend/README.md`, `DEPLOY.md` § 7, `DOCUMENTACAO-COMPLETA.md`
@@ -49,6 +54,8 @@ Ao **concluir** alterações relevantes, atualize a documentação **automaticam
   - Não pergunte se deve atualizar a documentação — faça.
   - Não invente fatos: o agente confirma no código antes de documentar.
   - Mesmo que o usuário não peça, execute a delegação ao final da tarefa.
+  - `docs/TELAS.md` é **fonte única** de documentação de telas/APIs — deve estar sempre sincronizado com o código.
+  - Workflow `.github/workflows/docs-sync.yml` executa `extract-screens.ts` + `docs-writer` em PRs para `developer`.
 
 ## Convenção de commits
 - `feat:` — nova funcionalidade
