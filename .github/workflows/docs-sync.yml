@@ -7,13 +7,13 @@ on:
   push:
     branches: [developer]
     paths:
-      - 'frontend/src/app/**/*.component.ts'
-      - 'frontend/src/app/**/*.service.ts'
-      - 'frontend/src/app/**/*.routes.ts'
-      - 'frontend/src/app/**/*.data.ts'
-      - 'backend/Central_BackEnd/Controllers/**/*.cs'
-      - 'backend/Central_BackEnd/Models/**/*.cs'
-      - 'backend/Central_BackEnd/Migrations/**/*.cs'
+      - 'src/app/features/**/*.component.ts'
+      - 'src/app/features/**/*.service.ts'
+      - 'src/app/features/**/*.routes.ts'
+      - 'src/app/features/**/*.data.ts'
+      - 'backend/src/Central_BackEnd/Controllers/**/*.cs'
+      - 'backend/src/Central_BackEnd/Models/**/*.cs'
+      - 'backend/src/Central_BackEnd/Migrations/**/*.cs'
 
 permissions:
   contents: write
@@ -29,7 +29,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -47,7 +46,6 @@ jobs:
 
       - name: Extract screens data
         run: |
-          cd frontend
           npx tsx scripts/extract-screens.ts
         continue-on-error: true
 
@@ -64,9 +62,7 @@ jobs:
       - name: Generate TELAS.md via docs-writer agent
         run: |
           echo "📝 O agente docs-writer atualizará docs/TELAS.md com base em scripts/screens-data.json"
-          # O agente docs-writer é invocado via opencode ou via workflow customizado
-          # Aqui o JSON intermediário está disponível para o agente processar
-          ls -la frontend/scripts/screens-data.json 2>/dev/null || true
+          ls -la scripts/screens-data.json 2>/dev/null || true
           ls -la docs/TELAS.md 2>/dev/null || true
 
       - name: Check for changes
@@ -81,7 +77,7 @@ jobs:
       - name: Commit TELAS.md changes
         if: steps.changes.outputs.no_changes == 'false'
         run: |
-          git add docs/TELAS.md frontend/scripts/screens-data.json
+          git add docs/TELAS.md scripts/screens-data.json
           git commit -m "docs: sync TELAS.md (auto-generated via docs-writer)"
           git push
 

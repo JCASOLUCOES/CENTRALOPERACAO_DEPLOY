@@ -9,46 +9,47 @@
 3. **Atualize a documentação automaticamente** (§ Documentação).
 4. Mantenha o contexto leve.
 
-## Repositórios e branches
-O projeto vive em **3 repositórios git** que compartilham a mesma convenção:
+## Repositório Único
+Este é um **monorepo** com código frontend e backend na mesma repo (sem submódulos).
 
-| Repo | URL | Branch padrão | Branch de dev | Tags |
+| Subprojeto | Stack | Pasta | Branch padrão | Branch de dev |
 |---|---|---|---|---|
-| Monorepo (raiz) | `JCASOLUCOES/CENTRALOPERACAO_DEPLOY` | `main` (= `master`) | `developer` | `v0.7.0`, ... |
-| Frontend | `JCASOLUCOES/Central-Conhecimento` | `main` | `developer` | `v0.7.0`, ... |
-| Backend | `JCASOLUCOES/CCBAckend` | `main` | `developer` | `v0.7.0`, ... |
+| Frontend | Angular 18 (standalone + SSR) | `frontend/` | `main` | `developer` |
+| Backend | ASP.NET Core 8 (Web API) | `backend/` | `main` | `developer` |
+| Docs | Documentação unificada | `docs/` | `main` | `developer` |
+| Scripts | Deploy, extração, utilitários | `scripts/` | `main` | `developer` |
 
 **Branches pessoais** (criadas a partir de `developer`): `sara`, `samuel`.
 **Branch futura**: `projeto-implantacao`.
 **Tags** substituem "branch backup" — cada release vira `vX.Y.Z` imutável.
 
-Detalhes em `README.md` (raiz) e `frontend/docs/DEPLOY.md` § 7.
+Detalhes em `README.md` (raiz) e `docs/DEPLOY.md` § 7.
 
 ## Regras de comunidade
 - Não pergunte o que já foi definido/respondido; verifique e siga.
 - Não pergunte se a mudança gera conflito com o código; verifique sozinho.
 - **Antes de criar uma branch nova**, confirme se já existe no GitHub (não duplique).
-- **Antes de taggear**, confirme que a versão está mergeada em `main` nos 3 repos.
+- **Antes de taggear**, confirme que a versão está mergeada em `main` nos repositórios.
 
 ## § Documentação (prioridade 3 — atualização AUTOMÁTICA)
 Ao **concluir** alterações relevantes, atualize a documentação **automaticamente, sem aguardar pedido do usuário**:
 
-- **Alterações de código** (Angular em `frontend/src`, backend em `backend/Central_BackEnd`, skills, agentes, scripts de deploy):
+- **Alterações de código** (Angular em `frontend/src/app/features`, backend em `backend/src/Central_BackEnd`, skills, agentes, scripts de deploy):
   delegue **automaticamente** ao agente `docs-writer` (tool `task`) para revisar e atualizar:
   - `frontend/README.md`
-  - `frontend/docs/*.md` (`DOCUMENTACAO-COMPLETA.md`, `DEPLOY.md`, `backend-auth-integracao.md`, **`TELAS.md`**)
-  - `frontend/docs/TELAS.md` ← **Documentação por tela (auto-sync via extract-screens.ts + GitHub Action)**
+  - `docs/*.md` (`DOCUMENTACAO-COMPLETA.md`, `DEPLOY.md`, `backend-auth-integracao.md`, **`TELAS.md`**)
+  - `docs/TELAS.md` ← **Documentação por tela (auto-sync via extract-screens.ts + GitHub Action)**
   - `backend/README.md`
   - `README.md` da raiz do monorepo
 - **Alterações de conteúdo do wiki** (`*.data.ts`):
   delegue **automaticamente** ao agente `content-editor` (tool `task`).
-- **Novos componentes/services/routers** (`frontend/src/app/**/*.component.ts`, `*.service.ts`, `*.routes.ts`):
-  delegue **automaticamente** ao agente `docs-writer` para atualizar `frontend/docs/TELAS.md` com a nova tela/documentação.
-- **Novos controllers/endpoints/models** (`backend/Central_BackEnd/Controllers/**/*.cs`, `Models/**/*.cs`, `Migrations/**/*.cs`):
-  delegue **automaticamente** ao agente `docs-writer` para atualizar seção 17/18 de `frontend/docs/TELAS.md`.
+- **Novos componentes/services/routers** (`frontend/src/app/features/**/*.component.ts`, `*.service.ts`, `*.routes.ts`):
+  delegue **automaticamente** ao agente `docs-writer` para atualizar `docs/TELAS.md` com a nova tela/documentação.
+- **Novos controllers/endpoints/models** (`backend/src/Central_BackEnd/Controllers/**/*.cs`, `Models/**/*.cs`, `Migrations/**/*.cs`):
+  delegue **automaticamente** ao agente `docs-writer` para atualizar seção 17/18 de `docs/TELAS.md`.
 - **Alterações no fluxo de branches / deploy / versionamento**:
   atualizar `README.md` da raiz, `frontend/README.md`,
-  `backend/README.md`, `DEPLOY.md` § 7, `DOCUMENTACAO-COMPLETA.md`
+  `backend/README.md`, `docs/DEPLOY.md` § 7, `docs/DOCUMENTACAO-COMPLETA.md`
   § Política de branches e tags.
 - **Regras da delegação automática:**
   - Não pergunte se deve atualizar a documentação — faça.
