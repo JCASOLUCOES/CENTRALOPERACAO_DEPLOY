@@ -183,41 +183,27 @@ function extractBackendEndpoints(): EndpointInfo[] {
         scanDir(fullPath);
       } else if (file.name.endsWith('Controller.cs')) {
         const content = fs.readFileSync(fullPath, 'utf-8');
-        const controllerName = file.replace('Controller.cs', '');
-        const httpMethods = content.matchAll(
-          /\[Http(?:Get|Post|Put|Delete|Patch)\(['"`]([^'"`]+)['"`]\]\s*\n\s*public\s+async\s+Task<ActionResult<[^>]+>>\s+(\w+)/g
-        );
-        for (const hm of httpMethods) {
-          const routeMatch = content.match(
-            new RegExp(`\\[Route\\(['"`]([^'"`]+)['"`]\\)\\]`)
-          );
+        const controllerName = file.name.replace('Controller.cs', '');
+        // Robust endpoint extraction
+        const endpointRegex = /\[Http(Get|Post|Put|Delete|Patch)(?:\(["'`](.*?)["'`]\))?\][\s\S]*?public\s+(?:async\s+)?Task<(?:ActionResult<)?(.*?)(?:>)?\s+(\w+)/g;
+        
+        let match;
+        const baseRouteMatch = content.match(/\[Route\(["'`](.*?)["'`]\)\]/);
+        const baseRoute = baseRouteMatch ? baseRouteMatch[1] : '';
+
+        while ((match = endpointRegex.exec(content)) !== null) {
+          const httpMethod = match[1];
+          const subRoute = match[2] || '';
+          const returnType = match[3];
+          const methodName = match[4];
+
           endpoints.push({
-            method: hm[1],
-            route: routeMatch?.[1] || '',
+            method: httpMethod.toUpperCase(),
+            route: (baseRoute + (subRoute ? '/' + subRoute : '')).replace(/\/+/g, '/'),
             controller: controllerName,
             service: '',
-            description: ''
+            description: `${methodName} returning ${returnType}`
           });
-        }
-
-        // Extract route base
-        const baseRouteMatch = content.match(
-          /\[Route\(['"`]([^'"`]+)['"`]\)\]/
-        );
-        if (baseRouteMatch) {
-          const baseRoute = baseRouteMatch[1];
-          const httpRoutes = content.matchAll(
-            /\[Http(?:Get|Post|Put|Delete|Patch)\(['"`]([^'"`]+)['"`]\]\s*\n\s*public\s+async\s+Task<ActionResult<[^>]+>>\s+(\w+)/g
-          );
-          for (const hr of httpRoutes) {
-            endpoints.push({
-              method: hr[1],
-              route: baseRoute + hr[2],
-              controller: controllerName,
-              service: '',
-              description: ''
-            });
-          }
         }
       }
     }

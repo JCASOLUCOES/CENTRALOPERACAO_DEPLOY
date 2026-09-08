@@ -1,209 +1,105 @@
-# Central de Operação — Monorepo de Deploy
+# Central de Operação (Monorepo) — JCA Soluções
 
-Este repositório (`JCASOLUCOES/CENTRALOPERACAO_DEPLOY`) é o **monorepo de
-deploy** do sistema **Central de Operação** (anteriormente "Central de
-Conhecimento") da **JCA Soluções**. Ele agrega os dois subprojetos (frontend
-Angular e backend ASP.NET Core) e contém os scripts que fazem o build +
-publicação direta no IIS do servidor `192.168.2.130`.
+Portal interno unificado que reúne ferramentas, trilhas de conhecimento, cursos, gestão de acessos e o módulo de controle de projetos/implantação para a equipe de suporte.
 
-## Visão geral
+---
 
-| Subprojeto | Stack | Repositório | Branch padrão | Branch de dev |
-|---|---|---|---|---|
-| `frontend/` | Angular 18 (standalone + SSR/prerender) + Bootstrap 5 + ng-bootstrap 17 | [`JCASOLUCOES/Central-Conhecimento`](https://github.com/JCASOLUCOES/Central-Conhecimento) | `main` | `developer` |
-| `backend/Central_BackEnd/` | ASP.NET Core 8 (Web API) + EF Core (InMemory/SqlServer) + Google Sheets + JWT (4h) | [`JCASOLUCOES/CCBAckend`](https://github.com/JCASOLUCOES/CCBAckend) | `main` | `developer` |
+## 📂 Estrutura do Monorepo
 
-> **Versão atual em produção**: **v0.7.0** (a próxima release após o módulo
-> IMPLANTAÇÃO/PROJETOS será **v1.1.0**, em desenvolvimento na branch
-> `projeto-implantacao`).
->
-> **Módulo novo em v1.1.0** (branch `projeto-implantacao`): gerenciador de
-> **Projetos / Tarefas / Clientes** compartilhado pelas equipes **IMPLANTAÇÃO**
-> e **CIAA** (Centro de Inovação, Automação e IA). Códigos automáticos
-> (`IMP-0001`, `CIAA-0001`). Ver `frontend/docs/DOCUMENTACAO-COMPLETA.md` § 6.5.
+Este repositório (`JCASOLUCOES/CENTRALOPERACAO_DEPLOY`) é a fonte única do sistema, integrando frontend e backend.
 
-> Os dois subprojetos são **submódulos git** deste monorepo (cada um com seu
-> próprio `.git/` em `frontend/` e `backend/`). O `.gitmodules` na raiz
-> registra os ponteiros para os repos remotos. Este repositório guarda
-> apenas a **orquestração de deploy** + as refs dos submódulos.
+```text
+Central-Conhecimento-developer/
+├── docs/                 # Documentação unificada (Telas, Deploy, Arquitetura)
+├── scripts/              # Scripts de utilidade (Deploy, Extração de metadados)
+├── frontend/             # Angular 18 (standalone + SSR)
+│   └── src/app/features/ # 16 módulos de funcionalidades
+└── backend/              # ASP.NET Core 8 (Web API)
+    └── Central_BackEnd/  # Controllers, Services e EF Core
+```
 
-## Estratégia de branches e versionamento
+---
 
-Os **3 repositórios** (`CENTRALOPERACAO_DEPLOY`, `Central-Conhecimento` e
-`CCBAckend`) compartilham a mesma convenção:
+## 🛠️ Stack Tecnológica
 
-| Branch / Tag | Propósito | Onde |
-|---|---|---|
-| `main` | **Produção** — espelho do que está rodando no IIS 192.168.2.130. Recebe merges via PR de `developer` (com aprovação). | front, back, deploy |
-| `developer` | **Desenvolvimento** — onde o JCASOLUCOES mexe no dia-a-dia. | front, back, deploy |
-| `sara` | Branch pessoal da Sara (criada a partir de `developer`). | front, back, deploy |
-| `samuel` | Branch pessoal do Samuel (criada a partir de `developer`). | front, back, deploy |
-| `projeto-implantacao` | Branch **ativa** com o módulo IMPLANTAÇÃO/PROJETOS (v1.1.0). | front, back, deploy |
-| `v0.7.0`, `v1.1.0`, ... | **Tags** que marcam versões estáveis já em produção. Não há branch `backup` — usamos tags de versão. | front, back, deploy |
+### Frontend
+- **Angular 18** (Componentes standalone, SSR/Prerender)
+- **Bootstrap 5 + ng-bootstrap 17**
+- **Lazy Loading** em todas as rotas de features
+- **JWT Auth** (Tokens de 4h em memória, Refresh em cookie HttpOnly)
 
-### Regras de proteção de `main`
-- `main` é a **branch padrão** nos 3 repositórios (configurado no GitHub).
-- Branch protection recomendada em `main` (configurar via
-  `https://github.com/JCASOLUCOES/<repo>/settings/branches`):
-  - ☑ Require a pull request before merging (1 aprovação)
-  - ☑ Require conversation resolution before merging
-  - ☑ Require linear history
-  - ☐ Allow force pushes (deixe **desmarcado**)
-- `developer` e branches pessoais (`sara`, `samuel`) **não têm proteção** —
-  push direto é permitido.
+### Backend
+- **ASP.NET Core 8** (Web API RESTful)
+- **EF Core 8** (InMemory para desenvolvimento, SQL Server para produção)
+- **Google Sheets API** para acervo de empresas
+- **Rate Limiting** e **Brute Force Guard** integrados
 
-### Como criar uma branch que englobe o projeto todo
+---
 
-Como cada repo tem sua própria `developer`/`sara`/etc., criar uma branch nova
-exige o mesmo comando nos 3 repos. Por exemplo, para criar `sara`:
+## 🚀 Desenvolvimento Local
 
+### 1. Requisitos
+- Node.js 20+
+- .NET SDK 8.0+
+- Acesso à rede interna (para Google Sheets API)
+
+### 2. Rodando o sistema
+Para subir ambos simultaneamente via CLI:
+No diretório raiz, utilize o comando opencode **"subir interno"** ou execute manualmente:
+
+**Backend:**
+```powershell
+cd backend/Central_BackEnd
+dotnet run
+```
+Porta padrão: `http://localhost:1009` (Swagger disponível)
+
+**Frontend:**
 ```bash
-# frontend (submódulo)
 cd frontend
-git checkout developer
-git checkout -b sara
-git push -u origin sara
-cd ..
-
-# backend (submódulo)
-cd backend
-git checkout developer
-git checkout -b sara
-git push -u origin sara
-cd ..
-
-# monorepo (raiz)
-git checkout master
-git checkout -b sara
-git push -u origin sara
+npm install
+ng serve
 ```
+Porta padrão: `http://localhost:4200`
 
-> 💡 Ou simplesmente: `powershell -ExecutionPolicy Bypass -File .\branch-todos.ps1 -Branch sara`
-> (cria a branch em todos os repos de uma vez).
+**Login Padrão (Dev):** `admin` / `admin123`
 
-### Como versionar uma release
+---
 
-Quando o sistema vai para produção no IIS 192.168.2.130:
+## 🚢 Deploy (Produção)
 
-```bash
-# Nos 3 repos (depois de merge em main):
-git checkout main
-git tag -a v0.X.Y -m "v0.X.Y - descricao"
-git push origin v0.X.Y
-```
-
-A tag marca o ponto exato que está em produção. Para reverter, basta
-`git checkout v0.7.0` e fazer deploy dessa tag.
-
-## Estrutura
-
-```
-CENTRALOPERACAO_DEPLOY/                  <- este repositório
-├─ deploy.ps1                           <- script de build + publish + IIS
-├─ deploy.bat                           <- atalho Windows (sem credenciais)
-├─ deploy.local.bat                     <- atalho local COM senha (gitignored)
-├─ branch-todos.ps1                     <- cria branch em todos os repos
-├─ AGENTS.md                            <- regras dos assistentes opencode
-├─ .opencode/                           <- skills (deploy-limpo, subir-interno)
-├─ .agents/                             <- skills globais (frontend-design)
-├─ .gitmodules                          <- registro dos submódulos
-├─ frontend/                            <- submódulo git (JCASOLUCOES/Central-Conhecimento)
-│                                       <- código Angular 18 direto na raiz do repo front
-└─ backend/                             <- submódulo git (JCASOLUCOES/CCBAckend)
-   └─ Central_BackEnd/
-      └─ wwwroot/
-         └─ web.config                  <- ativa Swagger em prod via env var
-```
-
-## Como funciona o deploy
-
-O `deploy.ps1` faz, em ordem:
-
-1. `npm run build` em `frontend/` (Angular SSR/prerender).
-2. `dotnet publish -c Release` em `backend/Central_BackEnd/`.
-3. Empacota em `deploy/backend/` e `deploy/frontend/`.
-4. Conecta em `\\192.168.2.130\c$` com usuário `JCASRV-SUP` (senha via prompt).
-5. Faz **backup** do IIS atual em
-   `\\192.168.2.130\c$\Users\JCASRV-SUP\Documents\Backup_IIS\<timestamp>`.
-6. **Backend**: cria `app_offline.htm` no IIS, copia `deploy/backend/*`
-   (excluindo `appsettings*.json` para preservar a config real do servidor),
-   remove `app_offline.htm` (IIS recarrega sozinho).
-7. **Frontend**: copia `deploy/frontend/browser/*` para o IIS.
-8. Encerra a conexão de rede e exibe o status.
-
-### Portas e pastas no IIS
-
-| Camada | Porta | Pasta IIS |
-|---|---|---|
-| Frontend | 1010 | `C:\inetpub\wwwroot\Suporte_Front` |
-| Backend | 1009 | `C:\inetpub\wwwroot\Suporte_Back` |
-
-## Como rodar o deploy
-
-**Local com prompt de senha** (recomendado):
+O deploy é automatizado via script PowerShell que realiza o build, backup e publicação direta no IIS do servidor `192.168.2.130`.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy.ps1
+# Na raiz do repositório:
+.\scripts\deploy.ps1
 ```
 
-**Local com senha já gravada** (use o `deploy.local.bat`, ignorado pelo git):
+**Detalhes do Servidor:**
+- **Servidor Web:** 192.168.2.130 (IIS)
+- **Banco de Dados:** 192.168.2.154 (SQL Server)
+- **Portas:** Frontend (1010), Backend (1009)
 
-```powershell
-.\deploy.local.bat
-```
+---
 
-**Apenas empacotar** (não publica):
+## 📝 Documentação Centralizada
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -Publicar:$false
-```
+Toda a documentação técnica reside na pasta `/docs`:
 
-No opencode, digite **"deploy limpo"** para invocar a skill `deploy-limpo` que
-orquestra o mesmo fluxo.
+1. [**TELAS.md**](./docs/TELAS.md) — Mapa completo de telas, rotas, componentes e APIs (auto-gerado).
+2. [**DOCUMENTACAO-COMPLETA.md**](./docs/DOCUMENTACAO-COMPLETA.md) — Guia detalhado de arquitetura e regras de negócio.
+3. [**DEPLOY.md**](./docs/DEPLOY.md) — Manual de publicação e manutenção do servidor.
+4. [**backend-auth-integracao.md**](./docs/backend-auth-integracao.md) — Detalhes técnicos do fluxo JWT.
 
-## Como desenvolver local
+---
 
-No opencode, digite **"subir interno"** para subir backend (porta 1009, com
-EF InMemory) + frontend (porta 4200) com login `admin/admin123` contra o
-Google Sheets real. Detalhes na skill `subir-interno`.
+## 🤖 Assistência Opencode (Agents & Skills)
 
-## Swagger em produção
+O projeto é otimizado para uso com assistentes de IA (opencode):
+- **Skills:** `deploy-limpo`, `subir-interno`, `frontend-design`.
+- **Regras:** Definidas no arquivo `AGENTS.md`.
+- **Sync Automático:** O workflow `.github/workflows/docs-sync.yml` mantém o arquivo `TELAS.md` sempre sincronizado com o código-fonte em cada Pull Request.
 
-O Swagger fica em **`http://192.168.2.130:1009/swagger`** e é controlado por:
+---
 
-1. `web.config` versionado em
-   `backend/Central_BackEnd/wwwroot/web.config` (env var
-   `ASPNETCORE_SWAGGER_ENABLED=true`).
-2. `SwaggerEnabled` no `appsettings.json` do servidor (true/false).
-
-Precedência do ASP.NET Core Configuration: env var > `appsettings.{Env}.json` >
-`appsettings.json`. Se ambos discordam, env var vence.
-
-## Assistência opencode (skills)
-
-- `deploy-limpo` — build + publish + IIS em um comando
-- `subir-interno` — sobe backend+frontend local para dev
-- `frontend-design` (em `.agents/skills/`) — guia de design visual
-
-## Módulo IMPLANTAÇÃO / PROJETOS (v1.1.0 — em desenvolvimento)
-
-Branch: **`projeto-implantacao`** nos 3 repos. Backend com 9 entidades
-(`Cliente`, `Equipe`, `MembroEquipe`, `TipoProjeto`, `Etapa`,
-`ColunaKanban`, `Projeto`, `Tarefa`, `ComentarioTarefa`) e 8 controllers
-REST em `/api/v1/implantacao/*`. Frontend com 5 páginas
-(`/implantacao/dashboard`, `/projetos`, `/tarefas`, `/clientes`,
-`/cadastros`) e seção "Implantação" na sidebar.
-
-**Atenção homologação**: o `deploy.ps1` **não aplica migrations**. Para
-subir a v1.1.0 no ambiente de homolog (192.168.2.154 / dbBUSINESS_HML),
-criar manualmente as 9 tabelas `IMPL_*` antes de subir o backend. Ver
-`frontend/docs/DOCUMENTACAO-COMPLETA.md` § 6.5.2 para a lista completa
-e o script de criação em `backend/Central_BackEnd/Migrations/20260904194350_ImplantacaoInit.cs`.
-
-## Segurança
-
-- O `deploy.local.bat` (com credencial do servidor) está **ignorado pelo git**.
-  Não commite credenciais em texto plano.
-- Os `appsettings*.json` reais do servidor **nunca** são sobrescritos pelo
-  deploy. O template em `appsettings.sample.json` traz apenas placeholders.
-- Mantenha uma cópia dos `appsettings*.json` reais fora do repositório.
+© 2026 JCA Soluções

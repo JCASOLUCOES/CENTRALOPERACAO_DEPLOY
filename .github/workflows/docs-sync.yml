@@ -7,13 +7,13 @@ on:
   push:
     branches: [developer]
     paths:
-      - 'src/app/features/**/*.component.ts'
-      - 'src/app/features/**/*.service.ts'
-      - 'src/app/features/**/*.routes.ts'
-      - 'src/app/features/**/*.data.ts'
-      - 'backend/src/Central_BackEnd/Controllers/**/*.cs'
-      - 'backend/src/Central_BackEnd/Models/**/*.cs'
-      - 'backend/src/Central_BackEnd/Migrations/**/*.cs'
+      - 'frontend/src/app/features/**/*.component.ts'
+      - 'frontend/src/app/features/**/*.service.ts'
+      - 'frontend/src/app/features/**/*.routes.ts'
+      - 'frontend/src/app/features/**/*.data.ts'
+      - 'backend/Central_BackEnd/Controllers/**/*.cs'
+      - 'backend/Central_BackEnd/Models/**/*.cs'
+      - 'backend/Central_BackEnd/Migrations/**/*.cs'
 
 permissions:
   contents: write
