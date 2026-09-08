@@ -1,0 +1,608 @@
+<section class="tdh">
+
+  <header class="tdh__hero">
+    <div class="tdh__blob tdh__blob--um"></div>
+    <div class="tdh__blob tdh__blob--dois"></div>
+    <div class="tdh__hero-inner">
+      <div class="tdh__topo">
+        <span class="tdh__icone"><i class="bi bi-database-fill"></i></span>
+        <div>
+          <h1 class="tdh__titulo">Dicas de SQL</h1>
+          <p class="tdh__subtitulo">Boas práticas de suporte e acesso ao SQL Server de clientes</p>
+        </div>
+      </div>
+
+      <div class="tdh__meta">
+        <span class="tdh__chip"><i class="bi bi-tag-fill"></i> Versão <strong>1.0</strong></span>
+        <span class="tdh__chip"><i class="bi bi-people-fill"></i> Suporte / DBA / Desenvolvimento</span>
+      </div>
+
+      <p class="tdh__objetivo">
+        Boas práticas, padrões de conduta e orientações técnicas para acessar, analisar e intervir em bancos
+        SQL Server de clientes com segurança, conformidade, rastreabilidade e estabilidade dos ambientes.
+      </p>
+    </div>
+  </header>
+
+  <nav class="tdh__indice" aria-label="Índice do guia">
+    <h2 class="tdh__indice-titulo">
+      <i class="bi bi-list-ul"></i> Índice <small>clique para abrir a seção</small>
+    </h2>
+    <div class="tdh__indice-grid">
+      <button type="button" class="tdh__link" *ngFor="let secao of secoes; trackBy: trackById" (click)="toggleSecao(secao.id)">
+        <span class="tdh__link-num">{{ secao.titulo.split('.')[0] }}</span> {{ secao.titulo }}
+      </button>
+    </div>
+  </nav>
+
+  <div class="tdh__conteudo">
+
+    <!-- 1. Escopo -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'escopo'">
+      <header class="tdh__secao-header" (click)="toggleSecao('escopo')">
+        <span class="tdh__secao-num">1</span>
+        <h2 class="tdh__secao-titulo">Escopo e Objetivos</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'escopo'">
+        <p class="tdh__descricao">
+          Este manual vale para todos os colaboradores que acessam o SQL Server de clientes — para suporte,
+          análise, diagnóstico, correção ou acompanhamento — nos ambientes da aplicação Actyon (produção,
+          homologação e teste).
+        </p>
+        <p class="tdh__descricao">Aqui você encontra orientações sobre:</p>
+        <ul class="tdh__lista">
+          <li>Acesso e credenciais.</li>
+          <li>Comportamento frente ao cliente.</li>
+          <li>Boas práticas no SSMS.</li>
+          <li>Diagnóstico com <em>sp_WhoIsActive</em>.</li>
+          <li>Cuidado com scripts, cursores e transações.</li>
+          <li>Critérios para escalonamento ao DBA.</li>
+          <li>Testes em ambiente protegido.</li>
+          <li>Exemplos de consultas e checklist de conduta.</li>
+        </ul>
+      </div>
+    </article>
+
+    <!-- 2. Princípios -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'principios'">
+      <header class="tdh__secao-header" (click)="toggleSecao('principios')">
+        <span class="tdh__secao-num">2</span>
+        <h2 class="tdh__secao-titulo">Princípios Gerais</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'principios'">
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-shield-check"></i> Toda ação em banco de cliente deve ser</h3>
+          <ul class="tdh__lista">
+            <li><strong>Necessária:</strong> demanda clara, registrada e justificada.</li>
+            <li><strong>Segura:</strong> não expõe dados, credenciais ou propriedade intelectual à toa.</li>
+            <li><strong>Rastreável:</strong> associada a um chamado, tarefa ou evidência formal.</li>
+            <li><strong>Reversível quando possível:</strong> preferencialmente validada antes em ambiente protegido.</li>
+          </ul>
+          <p class="tdh__sub-texto">Em caso de dúvida técnica ou de impacto, escale para o DBA ou setor responsável — nada de ações isoladas em produção.</p>
+        </section>
+      </div>
+    </article>
+
+    <!-- 3. Acesso -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'acesso'">
+      <header class="tdh__secao-header" (click)="toggleSecao('acesso')">
+        <span class="tdh__secao-num">3</span>
+        <h2 class="tdh__secao-titulo">Acesso ao SQL Server do Cliente</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'acesso'">
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-key"></i> Conexão segura</h3>
+          <ul class="tdh__lista">
+            <li>Proibido marcar "Lembrar senha" ao conectar via SSMS — evita acesso indevido e dificulta o controle de credenciais.</li>
+            <li>Usar sempre credenciais oficiais fornecidas pelo DBA/Infra/Segurança, nunca contas pessoais ou não autorizadas.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-incognito"></i> Sigilo de credenciais</h3>
+          <ul class="tdh__lista">
+            <li>Proibido repassar ao cliente qualquer credencial de acesso ao banco (logins, senhas, usuários técnicos, contas administrativas).</li>
+            <li>Cliente pediu usuário e senha? Registre em chamado, encaminhe ao DBA/Infra e aguarde orientação formal.</li>
+            <li>Credenciais nunca devem trafegar por canais inseguros (mensageiros ou e-mails pessoais).</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+    <!-- 4. Comportamento -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'comportamento'">
+      <header class="tdh__secao-header" (click)="toggleSecao('comportamento')">
+        <span class="tdh__secao-num">4</span>
+        <h2 class="tdh__secao-titulo">Comportamento Frente ao Cliente</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'comportamento'">
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-eye-slash"></i> Exposição de código SQL</h3>
+          <ul class="tdh__lista">
+            <li>Vedado evidenciar, exibir ou compartilhar código SQL com o cliente — por compartilhamento de tela, e-mail, mensagens, prints do SSMS ou arquivos de texto.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-chat-left-quote"></i> Comunicação funcional em vez de técnica</h3>
+          <p class="tdh__sub-texto">Ao apresentar diagnóstico ou resultado, priorize explicações funcionais, não scripts.</p>
+          <pre class="tdh__codigo"><code>-- Em vez de:
+"Rodei um UPDATE na tabela tbacordo";
+
+-- Prefira:
+"Ajustamos os dados dos acordos para refletir corretamente o valor
+original conforme as regras de negócio."</code></pre>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-lock"></i> Propriedade intelectual e segurança</h3>
+          <ul class="tdh__lista">
+            <li>Código SQL, procedures, funções, estruturas de tabelas e demais objetos são propriedade intelectual da empresa.</li>
+            <li>Compartilhar scripts complexos pode levar a uso inadequado em produção, riscos de integridade/performance e exposição de regras internas de negócio.</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+    <!-- 5. Encerramento -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'encerramento'">
+      <header class="tdh__secao-header" (click)="toggleSecao('encerramento')">
+        <span class="tdh__secao-num">5</span>
+        <h2 class="tdh__secao-titulo">Encerramento Correto das Conexões</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'encerramento'">
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-window"></i> No SSMS</h3>
+          <ul class="tdh__lista">
+            <li>Encerrar todas as abas de query abertas.</li>
+            <li>Finalizar execuções em andamento — sem scripts em loop ou aguardando interação.</li>
+            <li>Desconectar explicitamente no Object Explorer ("Disconnect").</li>
+            <li>Não é recomendado encerrar sessões (SPIDs) manualmente sem orientação técnica.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-app-indicator"></i> Na aplicação (Actyon)</h3>
+          <ul class="tdh__lista">
+            <li>No fim do atendimento, fazer logout adequado e fechar a aplicação, evitando conexões persistentes desnecessárias.</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+    <!-- 6. Consultas genéricas -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'consultas-genericas'">
+      <header class="tdh__secao-header" (click)="toggleSecao('consultas-genericas')">
+        <span class="tdh__secao-num">6</span>
+        <h2 class="tdh__secao-titulo">Consultas Genéricas e Demandas de Relatório</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'consultas-genericas'">
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-file-earmark-bar-graph"></i> Criação de consultas genéricas</h3>
+          <ul class="tdh__lista">
+            <li>O suporte não deve criar e entregar scripts ad hoc para o cliente executar livremente em produção.</li>
+            <li>Registre a necessidade em chamado e encaminhe ao setor responsável (Desenvolvimento/Produto/DBA).</li>
+            <li>O setor avaliará a recorrência da extração, se vale virar recurso/tela/relatório padrão e os riscos de performance e integridade.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-chat-left"></i> Linguagem com o cliente</h3>
+          <p class="tdh__sub-texto">Em vez de prometer "queries mágicas" ou acesso irrestrito, oriente o cliente adequadamente.</p>
+          <pre class="tdh__codigo"><code>"Vamos registrar a sua necessidade de extração de dados para que o time
+técnico avalie a melhor forma de disponibilizar isso de forma segura
+e integrada ao sistema."</code></pre>
+        </section>
+      </div>
+    </article>
+
+    <!-- 7. Alterações -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'alteracoes-objetos'">
+      <header class="tdh__secao-header" (click)="toggleSecao('alteracoes-objetos')">
+        <span class="tdh__secao-num">7</span>
+        <h2 class="tdh__secao-titulo">Alterações em Objetos de Banco de Dados</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'alteracoes-objetos'">
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-ban"></i> Regra geral</h3>
+          <p class="tdh__sub-texto">Proibida a alteração direta em produção, sem chamado formal e sem autorização do setor responsável, de:</p>
+          <ul class="tdh__lista">
+            <li>Procedures, funções, triggers e views (CREATE/ALTER/DROP).</li>
+            <li>Índices.</li>
+            <li>Estrutura de tabelas (colunas, constraints, tipos).</li>
+            <li>Qualquer objeto que faça parte da estrutura oficial da aplicação.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-exclamation-triangle"></i> Riscos de alterações diretas</h3>
+          <ul class="tdh__lista">
+            <li>Quebrar funcionalidades da aplicação Actyon.</li>
+            <li>Introduzir inconsistências de dados.</li>
+            <li>Gerar divergências entre versões oficiais e ambiente do cliente.</li>
+            <li>Prejudicar a performance (índices ineficientes, triggers pesadas).</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+    <!-- 8. WhoIsActive -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'whoisactive'">
+      <header class="tdh__secao-header" (click)="toggleSecao('whoisactive')">
+        <span class="tdh__secao-num">8</span>
+        <h2 class="tdh__secao-titulo">Análise do que o Banco Está Rodando</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'whoisactive'">
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-activity"></i> Uso do sp_WhoIsActive</h3>
+          <ul class="tdh__lista">
+            <li>Procedures de terceiros muito usada para diagnóstico de performance e análise de sessões em execução.</li>
+            <li>Se instalado pelo DBA no servidor do cliente, o suporte pode usá-lo apenas para observação — nunca para ações destrutivas.</li>
+          </ul>
+          <pre class="tdh__codigo"><code>EXEC sp_WhoIsActive;</code></pre>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-eye"></i> Colunas importantes</h3>
+          <ul class="tdh__lista">
+            <li><strong>login_name:</strong> usuário conectado.</li>
+            <li><strong>host_name:</strong> máquina de origem.</li>
+            <li><strong>program_name:</strong> aplicação de origem (Actyon, SSMS etc.).</li>
+            <li><strong>blocked_by / blocking_session_id:</strong> sessões bloqueadas e bloqueadoras.</li>
+            <li><strong>sql_text e wait_info:</strong> qual comando está em execução e em que está esperando.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-stopwatch"></i> Bloqueios e sessões suspeitas</h3>
+          <ul class="tdh__lista">
+            <li>Salve evidências (prints, export, horário exato).</li>
+            <li>Abra chamado para o DBA anexando essas informações.</li>
+            <li>Evite matar sessões sem orientação específica.</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+    <!-- 9. Scripts, cursores e transações -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'scripts-transacoes'">
+      <header class="tdh__secao-header" (click)="toggleSecao('scripts-transacoes')">
+        <span class="tdh__secao-num">9</span>
+        <h2 class="tdh__secao-titulo">Cuidado com Scripts, Cursores e Transações</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'scripts-transacoes'">
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-sort-down"></i> Cursores</h3>
+          <ul class="tdh__lista">
+            <li>Devem ser evitados sempre que possível; quando estritamente necessários, garanta a correta abertura e fechamento.</li>
+            <li><strong>Riscos de não fechar/desalocar:</strong> consumo desnecessário de memória, locks prolongados e piora geral da performance.</li>
+          </ul>
+          <pre class="tdh__codigo"><code>DECLARE MeuCursor CURSOR FOR
+    SELECT ... ;
+OPEN MeuCursor;
+
+FETCH NEXT FROM MeuCursor INTO &#64;Variavel;
+
+WHILE &#64;&#64;FETCH_STATUS = 0
+BEGIN
+    -- Processamento aqui
+    FETCH NEXT FROM MeuCursor INTO &#64;Variavel;
+END
+
+CLOSE MeuCursor;
+DEALLOCATE MeuCursor;</code></pre>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-arrow-repeat"></i> Transações explícitas</h3>
+          <p class="tdh__sub-texto">Sempre que usar BEGIN TRAN, todos os caminhos de execução devem levar a um COMMIT ou ROLLBACK.</p>
+          <pre class="tdh__codigo"><code>BEGIN TRAN;
+
+BEGIN TRY
+    -- Script de alteração aqui
+
+    COMMIT;
+END TRY
+BEGIN CATCH
+    ROLLBACK;
+
+    SELECT
+        ERROR_NUMBER()  AS ErrorNumber,
+        ERROR_MESSAGE() AS ErrorMessage;
+END CATCH;</code></pre>
+          <ul class="tdh__lista">
+            <li><strong>Boas práticas:</strong> evitar transações longas e grandes volumes em horário de pico; não testar scripts complexos direto em produção; em dúvida, submeter ao DBA/Desenvolvimento.</li>
+            <li><strong>Riscos de transações mal geridas:</strong> grandes rollbacks que travam o ambiente, bloqueios em cadeia e impacto severo na aplicação e nos usuários.</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+    <!-- 10. Escalonamento -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'escalonamento'">
+      <header class="tdh__secao-header" (click)="toggleSecao('escalonamento')">
+        <span class="tdh__secao-num">10</span>
+        <h2 class="tdh__secao-titulo">Escalonamento de Problemas para o DBA</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'escalonamento'">
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-arrow-up-circle"></i> Situações que devem ser encaminhadas ao DBA</h3>
+          <ul class="tdh__lista">
+            <li>Lentidão generalizada no banco, principalmente afetando vários módulos.</li>
+            <li>Deadlocks frequentes.</li>
+            <li>CPU/memória/disco constantemente elevados no SQL Server.</li>
+            <li>Criação, remoção ou ajuste de índices em tabelas críticas.</li>
+            <li>Mudanças de modelagem (novas colunas, tipos, constraints).</li>
+            <li>Alterações em procedures, triggers, views ou funções.</li>
+            <li>Bloqueios recorrentes constatados em sp_WhoIsActive ou ferramentas similares.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-clipboard-data"></i> Informações ao escalar</h3>
+          <ul class="tdh__lista">
+            <li>Descrição clara do problema e do impacto (usuários, módulos, desde quando).</li>
+            <li>Horários aproximados de ocorrência.</li>
+            <li>Evidências (prints, resultados de diagnóstico, logs).</li>
+            <li>Ações já realizadas.</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+    <!-- 11. Testes -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'testes'">
+      <header class="tdh__secao-header" (click)="toggleSecao('testes')">
+        <span class="tdh__secao-num">11</span>
+        <h2 class="tdh__secao-titulo">Testes em Ambiente Protegido</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'testes'">
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-flask"></i> Importância do ambiente protegido</h3>
+          <p class="tdh__sub-texto">Toda alteração significativa deve ser testada, sempre que possível, em ambiente protegido antes de ir para produção: homologação/teste, restauração de backup recente em servidor isolado ou ambiente de desenvolvimento controlado.</p>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-exclamation-circle"></i> Alterações que exigem teste prévio</h3>
+          <ul class="tdh__lista">
+            <li>ALTER TABLE com inclusão/remoção/alteração de colunas.</li>
+            <li>Criação ou remoção de índices de grande porte.</li>
+            <li>Atualizações massivas (grandes UPDATE ou DELETE).</li>
+            <li>Alterações em procedures, functions, triggers ou views.</li>
+            <li>Scripts de correção que afetem múltiplas tabelas.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-list-check"></i> Fluxo recomendado</h3>
+          <ul class="tdh__lista">
+            <li>Aplicar a alteração no ambiente de teste/homologação.</li>
+            <li>Validar funcionalmente (dados, relatórios, telas).</li>
+            <li>Medir performance aproximada, quando aplicável.</li>
+            <li>Planejar a execução em produção (janela, responsável, plano de rollback).</li>
+            <li>Executar em produção somente com autorização formal e registro em chamado.</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+    <!-- 12. Exemplos práticos -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'exemplos-praticos'">
+      <header class="tdh__secao-header" (click)="toggleSecao('exemplos-praticos')">
+        <span class="tdh__secao-num">12</span>
+        <h2 class="tdh__secao-titulo">Exemplos Práticos de Consultas</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'exemplos-praticos'">
+        <p class="tdh__descricao">
+          Exemplos ilustrativos com tabelas típicas (tbtitulo, tbtitulo_pago). Adapte conforme a modelagem real do banco do cliente.
+        </p>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-search"></i> Consultar títulos de um devedor</h3>
+          <pre class="tdh__codigo"><code>-- Consulta simples:
+SELECT *
+FROM tbtitulo
+WHERE devedor_id = 1; -- Substituir 1 pelo ID real do devedor
+
+-- Versão recomendada:
+SELECT
+    titulo_id,
+    devedor_id,
+    valor,
+    data_vencimento,
+    situacao
+FROM tbtitulo
+WHERE devedor_id = 1; -- ID do devedor</code></pre>
+          <p class="tdh__sub-texto"><strong>Boas práticas:</strong> conferir o devedor_id, evitar filtros genéricos demais e exibir apenas dados necessários ao atendimento.</p>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-cash-coin"></i> Consultar títulos pagos de um devedor</h3>
+          <pre class="tdh__codigo"><code>-- Com subconsulta:
+SELECT *
+FROM tbtitulo_pago
+WHERE titulo_id IN (
+    SELECT titulo_id
+    FROM tbtitulo
+    WHERE devedor_id = 1
+);
+
+-- Versão recomendada com JOIN:
+SELECT tp.*
+FROM tbtitulo_pago tp
+JOIN tbtitulo t
+    ON t.titulo_id = tp.titulo_id
+WHERE t.devedor_id = 1; -- ID do devedor</code></pre>
+          <p class="tdh__sub-texto"><strong>Cuidados:</strong> garantir o devedor_id correto, evitar consultas sem filtro com grande volume em produção e não expor dados fora do escopo do atendimento.</p>
+        </section>
+      </div>
+    </article>
+
+    <!-- 13. Checklist -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'checklist'">
+      <header class="tdh__secao-header" (click)="toggleSecao('checklist')">
+        <span class="tdh__secao-num">13</span>
+        <h2 class="tdh__secao-titulo">Checklist Resumido</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'checklist'">
+        <div class="tdh__dica">
+          <i class="bi bi-check2-square"></i>
+          <div>Use este checklist antes, durante e depois das intervenções em banco de dados de clientes.</div>
+        </div>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-key"></i> Acesso e segurança</h3>
+          <ul class="tdh__lista">
+            <li>Não marcar "Lembrar senha" ao conectar.</li>
+            <li>Não compartilhar credenciais com o cliente; pedidos de acesso via chamado para o setor responsável.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-person"></i> Comportamento com o cliente</h3>
+          <ul class="tdh__lista">
+            <li>Não exibir nem enviar código SQL ao cliente; comunicar em linguagem funcional.</li>
+            <li>Não prometer queries ad hoc para uso recorrente.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-door-closed"></i> Encerramento de atividades</h3>
+          <ul class="tdh__lista">
+            <li>Fechar abas e desconectar do SSMS ao finalizar.</li>
+            <li>Encerrar corretamente a aplicação Actyon, quando em uso.</li>
+            <li>Confirmar que não ficaram scripts rodando ou transações abertas.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-file-earmark-code"></i> Scripts, cursores e transações</h3>
+          <ul class="tdh__lista">
+            <li>Evitar cursores; quando usados, sempre fechar e desalocar.</li>
+            <li>BEGIN TRAN sempre com COMMIT ou ROLLBACK correspondente.</li>
+            <li>Não executar grandes alterações em produção sem teste prévio e autorização.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-diagram-2"></i> Escalonamento e testes</h3>
+          <ul class="tdh__lista">
+            <li>Performance, deadlocks e modelagem → escalar ao DBA.</li>
+            <li>Testar em ambiente protegido sempre que possível.</li>
+            <li>Registrar todas as ações relevantes em chamado para rastreabilidade.</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+    <!-- 14. Biblioteca -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'biblioteca'">
+      <header class="tdh__secao-header" (click)="toggleSecao('biblioteca')">
+        <span class="tdh__secao-num">14</span>
+        <h2 class="tdh__secao-titulo">Biblioteca Prática de Consultas SQL</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'biblioteca'">
+        <p class="tdh__descricao">
+          Consultas prontas para o dia a dia: fundamentos, joins, consultas avançadas, cenários de devedores/títulos,
+          acordos, importações, filas, logs, diagnóstico de ambiente, performance e DML/transações.
+          Os nomes de tabelas e colunas são ilustrativos e devem ser adaptados à modelagem real de cada cliente.
+        </p>
+
+        <div class="tdh__biblio">
+          <div class="biblio__ferramentas">
+            <div class="biblio__busca">
+              <i class="bi bi-search"></i>
+              <input
+                type="text"
+                [(ngModel)]="buscaSql"
+                placeholder="Buscar consulta por nome, descrição ou SQL..."
+                aria-label="Buscar consulta SQL"
+              />
+            </div>
+
+            <div class="biblio__categorias">
+              <button
+                type="button"
+                class="biblio__categoria"
+                [class.biblio__categoria--ativa]="categoriaAtiva === null"
+                (click)="alternarCategoria('todas')"
+              >
+                Todas
+              </button>
+              <button
+                type="button"
+                *ngFor="let categoria of categoriasBiblioteca; trackBy: trackById"
+                class="biblio__categoria"
+                [class.biblio__categoria--ativa]="categoriaAtiva === categoria.id"
+                (click)="alternarCategoria(categoria.id)"
+              >
+                <i class="bi {{ categoria.icone }}"></i>
+                {{ categoria.nome }}
+              </button>
+            </div>
+          </div>
+
+          <p class="biblio__vazio" *ngIf="categoriasVisiveis.length === 0">
+            Nenhuma consulta encontrada para a busca "{{ buscaSql }}".
+          </p>
+
+          <div class="biblio__grupos" *ngFor="let categoria of categoriasVisiveis; trackBy: trackById">
+            <h3 class="biblio__grupo-titulo">
+              <i class="bi {{ categoria.icone }}"></i>
+              {{ categoria.nome }}
+              <span class="biblio__contagem">{{ categoria.consultas.length }}</span>
+            </h3>
+
+            <div class="biblio__card" *ngFor="let consulta of categoria.consultas; trackBy: trackById">
+              <header class="biblio__card-header">
+                <h4>{{ consulta.titulo }}</h4>
+                <button
+                  type="button"
+                  class="biblio__copiar"
+                  [class.biblio__copiar--ok]="copiadoId === consulta.id"
+                  (click)="copiarCodigo(consulta.id, consulta.sql)"
+                >
+                  <i class="bi" [ngClass]="copiadoId === consulta.id ? 'bi-check2' : 'bi-clipboard'"></i>
+                  {{ copiadoId === consulta.id ? 'Copiado' : 'Copiar' }}
+                </button>
+              </header>
+
+              <p class="biblio__card-descricao">{{ consulta.descricao }}</p>
+
+              <pre class="tdh__codigo biblio__codigo"><code>{{ consulta.sql }}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>

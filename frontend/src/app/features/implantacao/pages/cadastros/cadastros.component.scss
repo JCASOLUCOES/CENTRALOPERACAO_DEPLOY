@@ -1,0 +1,377 @@
+/* Cadastros - design system proprio
+   Hierarquia: header > tabs coloridas > panel (form + tabela) */
+
+.cad-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ===== HEADER ===== */
+.cad-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.cad-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #64748b;
+  margin: 0 0 0.4rem;
+}
+
+.cad-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0;
+  color: #0f172a;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.cad-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.cad-header__count {
+  font-size: 0.85rem;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.4rem;
+  white-space: nowrap;
+}
+
+.cad-header__count strong { color: #0f172a; }
+
+/* ===== TABS ===== */
+.cad-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.cad-tab {
+  --tab-cor: #0f4c81;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-bottom: -1px;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+
+.cad-tab i { font-size: 1rem; color: var(--tab-cor); opacity: 0.6; transition: opacity 0.12s; }
+
+.cad-tab:hover { color: #1e293b; background: #f8fafc; }
+.cad-tab:hover i { opacity: 1; }
+
+.cad-tab--active {
+  color: var(--tab-cor);
+  border-bottom-color: var(--tab-cor);
+  font-weight: 600;
+}
+
+.cad-tab--active i { opacity: 1; }
+
+.cad-tab__count {
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 1rem;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.cad-tab--active .cad-tab__count {
+  background: var(--tab-cor);
+  color: #fff;
+}
+
+/* ===== BODY ===== */
+.cad-body { min-height: 400px; }
+
+.cad-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cad-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cad-panel__title i { color: #0f4c81; }
+
+/* ===== FORM ===== */
+.cad-form {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.6rem;
+  padding: 1.25rem 1.5rem 1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.cad-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.cad-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.cad-field span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cad-field em { color: #ef4444; font-style: normal; }
+.cad-field small { color: #94a3b8; font-weight: 400; font-size: 0.78rem; }
+
+.cad-field--wide { grid-column: span 2; }
+.cad-field--full { grid-column: 1 / -1; }
+.cad-field--check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: end;
+  padding-bottom: 0.5rem;
+}
+
+.cad-field--check input { margin: 0; }
+
+.cad-input {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.4rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #0f172a;
+  background: #fff;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.cad-input:focus {
+  outline: none;
+  border-color: #0f4c81;
+  box-shadow: 0 0 0 3px rgba(15, 76, 129, 0.12);
+}
+
+.cad-input--mono {
+  font-family: 'IBM Plex Mono', 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+}
+
+.cad-form__actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.cad-form__warn {
+  color: #d97706;
+  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cad-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  border-radius: 0.4rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.cad-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.cad-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cad-btn--primary {
+  background: #0f4c81;
+  border-color: #0f4c81;
+  color: #fff;
+}
+
+.cad-btn--primary:hover:not(:disabled) {
+  background: #0c3d68;
+  border-color: #0c3d68;
+}
+
+/* ===== TABELA ===== */
+.cad-table-wrap {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.6rem;
+  overflow: auto;
+  max-height: 600px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.cad-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.88rem;
+}
+
+.cad-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fafc;
+}
+
+.cad-table th {
+  text-align: left;
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.cad-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.cad-table tbody tr:nth-child(even) td { background: #fafbfc; }
+.cad-table tbody tr:hover td { background: #f1f5f9; }
+.cad-table tbody tr:last-child td { border-bottom: 0; }
+
+.cad-num { text-align: right; }
+
+.cad-mono {
+  font-family: 'IBM Plex Mono', 'Cascadia Code', monospace;
+  font-size: 0.82rem;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+}
+
+.cad-muted { color: #94a3b8; }
+
+/* ===== PILLS / TAGS / STATUS ===== */
+.cad-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: #64748b;
+}
+
+.cad-pill--impl { background: #0f4c81; }
+.cad-pill--ciaa { background: #7c3aed; }
+
+.cad-tag {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.cad-tag--primary {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.cad-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.cad-status--ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.cad-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .cad-form__grid { grid-template-columns: 1fr; }
+  .cad-field--wide, .cad-field--full { grid-column: 1; }
+  .cad-header { flex-direction: column; align-items: flex-start; }
+}

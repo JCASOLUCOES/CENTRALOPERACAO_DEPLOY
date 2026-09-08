@@ -1,0 +1,371 @@
+/* Tarefas - design system proprio */
+
+.tar-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ===== HEADER ===== */
+.tar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.tar-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #64748b;
+  margin: 0 0 0.4rem;
+}
+
+.tar-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0;
+  color: #0f172a;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.tar-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.tar-header__stats {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tar-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.tar-stat strong { color: #0f172a; font-size: 1rem; }
+
+.tar-stat--atraso {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.tar-stat--atraso i { color: #ef4444; }
+.tar-stat--atraso strong { color: #991b1b; }
+
+/* ===== ATALHOS (TABS) ===== */
+.tar-atalhos {
+  display: flex;
+  gap: 0.4rem;
+  background: #f1f5f9;
+  padding: 0.3rem;
+  border-radius: 0.5rem;
+  width: fit-content;
+}
+
+.tar-atalho {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0.4rem;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.tar-atalho:hover { color: #0f172a; }
+
+.tar-atalho--active {
+  background: #fff;
+  color: #0f4c81;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+/* ===== FILTROS ===== */
+.tar-filtros {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tar-search {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+
+.tar-search i {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+.tar-search input {
+  width: 100%;
+  padding: 0.5rem 0.7rem 0.5rem 2.1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.4rem;
+  font-size: 0.9rem;
+  background: #fff;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.tar-search input:focus {
+  outline: none;
+  border-color: #0f4c81;
+  box-shadow: 0 0 0 3px rgba(15, 76, 129, 0.12);
+}
+
+.tar-select {
+  padding: 0.5rem 2rem 0.5rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.4rem;
+  font-size: 0.9rem;
+  background: #fff;
+  color: #0f172a;
+  min-width: 180px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2364748b' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+}
+
+.tar-select:focus {
+  outline: none;
+  border-color: #0f4c81;
+  box-shadow: 0 0 0 3px rgba(15, 76, 129, 0.12);
+}
+
+/* ===== GRID DE CARDS ===== */
+.tar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 0.85rem;
+}
+
+.tar-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.85rem 1rem 0.75rem;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+  position: relative;
+}
+
+.tar-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #0f4c81;
+  border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.tar-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.tar-card--atrasada::before { background: #ef4444; }
+.tar-card--bloqueada::before { background: #b91c1c; }
+
+.tar-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tar-card__id {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.25rem;
+}
+
+.tar-prio {
+  display: inline-flex;
+  align-items: end;
+  gap: 1px;
+  color: #d97706;
+  font-size: 0.65rem;
+  line-height: 1;
+  height: 12px;
+  align-self: center;
+}
+
+.tar-prio i { display: inline-block; }
+
+.tar-status {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.tar-status--backlog    { background: #f1f5f9; color: #475569; }
+.tar-status--afazer     { background: #dbeafe; color: #1e40af; }
+.tar-status--andamento  { background: #fef3c7; color: #92400e; }
+.tar-status--homologacao { background: #f3e8ff; color: #6b21a8; }
+.tar-status--concluida  { background: #d1fae5; color: #065f46; }
+.tar-status--cancelada  { background: #e2e8f0; color: #475569; }
+
+.tar-card__titulo {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.tar-card__titulo a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.tar-card__titulo a:hover { color: #0f4c81; }
+
+.tar-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.tar-card__projeto {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #475569;
+  text-decoration: none;
+  padding: 0.1rem 0.45rem;
+  background: #f1f5f9;
+  border-radius: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.tar-card__projeto:hover { background: #e2e8f0; color: #0f172a; }
+
+.tar-mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.tar-card__rodape {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f1f5f9;
+  font-size: 0.8rem;
+}
+
+.tar-card__responsavel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 65%;
+}
+
+.tar-card__responsavel--vazio { color: #94a3b8; font-style: italic; }
+
+.tar-card__prazo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #475569;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+}
+
+.tar-card__prazo--atrasada { color: #dc2626; font-weight: 600; }
+
+.tar-card__bloqueio {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: #fef2f2;
+  color: #991b1b;
+  border-radius: 0.3rem;
+  font-size: 0.8rem;
+}
+
+/* ===== ESTADOS ===== */
+.tar-loading,
+.tar-empty {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.tar-empty {
+  background: #fff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.5rem;
+}
+
+.tar-empty i {
+  display: block;
+  font-size: 2.5rem;
+  color: #cbd5e1;
+  margin-bottom: 0.75rem;
+}
+
+.tar-empty h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 0.4rem;
+}
+
+.tar-empty p { margin: 0; font-size: 0.85rem; }
+
+@media (max-width: 768px) {
+  .tar-header { flex-direction: column; align-items: flex-start; }
+  .tar-grid { grid-template-columns: 1fr; }
+  .tar-atalhos { overflow-x: auto; width: 100%; }
+}

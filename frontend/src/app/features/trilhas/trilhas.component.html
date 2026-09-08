@@ -1,0 +1,341 @@
+<section class="tdh">
+
+  <header class="tdh__hero">
+    <div class="tdh__blob tdh__blob--um"></div>
+    <div class="tdh__blob tdh__blob--dois"></div>
+    <div class="tdh__hero-inner">
+      <div class="tdh__topo">
+        <span class="tdh__icone"><i class="bi bi-compass-fill"></i></span>
+        <div>
+          <h1 class="tdh__titulo">Como resolver esse problema?</h1>
+          <p class="tdh__subtitulo">Lógica de atendimento e resolução de incidentes no CRM Actyon</p>
+        </div>
+      </div>
+
+      <div class="tdh__meta">
+        <span class="tdh__chip"><i class="bi bi-tag-fill"></i> Versão <strong>1.0</strong></span>
+        <span class="tdh__chip"><i class="bi bi-people-fill"></i> Suporte JCA</span>
+      </div>
+
+      <p class="tdh__objetivo">
+        Lógica clara e padronizada para atender e resolver incidentes no CRM Actyon, garantindo
+        classificação correta, diagnóstico eficiente, comunicação transparente e rastreabilidade das ações.
+      </p>
+    </div>
+  </header>
+
+  <nav class="tdh__indice" aria-label="Índice do guia">
+    <h2 class="tdh__indice-titulo">
+      <i class="bi bi-list-ul"></i> Índice <small>clique para abrir a seção</small>
+    </h2>
+    <div class="tdh__indice-grid">
+      <button type="button" class="tdh__link" (click)="toggleSecao('classificacao')">
+        <span class="tdh__link-num">1</span> Classificação do Incidente
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('diagnostico')">
+        <span class="tdh__link-num">2</span> Diagnóstico Inicial
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('documentos')">
+        <span class="tdh__link-num">3</span> Documentos e Histórico
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('plano-acao')">
+        <span class="tdh__link-num">4</span> Plano de Ação
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('comunicacao')">
+        <span class="tdh__link-num">5</span> Comunicação com o Cliente
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('fechamento')">
+        <span class="tdh__link-num">6</span> Fechamento do Incidente
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('fluxo-resumido')">
+        <span class="tdh__link-num">7</span> Fluxo Resumido
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('exemplos-praticos')">
+        <span class="tdh__link-num">8</span> Exemplos Práticos
+      </button>
+    </div>
+  </nav>
+
+  <div class="tdh__conteudo">
+
+    <!-- 1. Classificação -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'classificacao'">
+      <header class="tdh__secao-header" (click)="toggleSecao('classificacao')">
+        <span class="tdh__secao-num">1</span>
+        <h2 class="tdh__secao-titulo">Classificação do Incidente (Prioridade e Urgência)</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'classificacao'">
+        <p class="tdh__descricao">
+          Todo atendimento começa pela definição de impacto e prioridade — vale para qualquer incidente:
+          falhas no CRM, lentidão, indisponibilidade, erros de rede, falha IIS ↔ SQL ou erros de API.
+        </p>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-question-circle"></i> Perguntas iniciais</h3>
+          <ul class="tdh__lista">
+            <li><strong>Quantos usuários afetados?</strong> 1 usuário → baixo impacto; equipe inteira ou operação parada → alto impacto.</li>
+            <li><strong>O sistema está indisponível ou só lento?</strong> Indisponível → crítico; degradação parcial → moderado.</li>
+            <li><strong>Existe prazo operacional sensível?</strong> Ex.: fechamento, envio de arquivos, call center ativo.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-flag"></i> Resultado esperado</h3>
+          <ul class="tdh__lista">
+            <li><strong>P1</strong> = CRM ou operação parada</li>
+            <li><strong>P2</strong> = Lentidão / falhas parciais</li>
+            <li><strong>P3</strong> = Erros pontuais / dúvidas / comportamento isolado</li>
+          </ul>
+          <p class="tdh__sub-texto">Uma boa classificação define a urgência, orienta o esforço da equipe e a comunicação com o cliente, evitando retrabalho.</p>
+        </section>
+      </div>
+    </article>
+
+    <!-- 2. Diagnóstico -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'diagnostico'">
+      <header class="tdh__secao-header" (click)="toggleSecao('diagnostico')">
+        <span class="tdh__secao-num">2</span>
+        <h2 class="tdh__secao-titulo">Diagnóstico Inicial (Checklist de 60 segundos)</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'diagnostico'">
+        <p class="tdh__descricao">
+          Objetivo: identificar rápido se o problema é local, geral ou de infraestrutura, sem perder tempo em testes irrelevantes.
+        </p>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-person-check"></i> O problema é local ou geral?</h3>
+          <ul class="tdh__lista">
+            <li>Testar com outro usuário e em outro computador.</li>
+            <li>Testar a API diretamente pela URL base.</li>
+            <li><strong>Interpretação:</strong> se apenas um usuário é afetado, o problema é local (máquina, perfil, permissão, navegador, rede local).</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-hdd-stack"></i> Estado dos serviços principais</h3>
+          <ul class="tdh__lista">
+            <li>API do CRM Actyon online?</li>
+            <li>IIS respondendo?</li>
+            <li>SQL Server acessível?</li>
+          </ul>
+          <p class="tdh__sub-texto">Testes rápidos: login no CRM, endpoint público simples (ex.: /api/health) e, no servidor, verificar se o application pool do site está rodando.</p>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-arrow-left-right"></i> Comunicação entre servidores (IIS ↔ SQL)</h3>
+          <ul class="tdh__lista">
+            <li>O IIS consegue pingar o servidor SQL?</li>
+            <li>A porta 1433 está liberada?</li>
+            <li>A conexão está autenticando corretamente?</li>
+            <li>Algum serviço (IIS ou SQL) reiniciou recentemente?</li>
+            <li>Há lentidão só em consultas ao banco, e não na aplicação inteira?</li>
+          </ul>
+          <p class="tdh__sub-texto"><strong>Causas mais comuns</strong> em erros 500, de autenticação ou timeouts: latência de rede, application pool travado, SQL lento com alta espera e execuções pesadas consumindo recursos.</p>
+        </section>
+      </div>
+    </article>
+
+    <!-- 3. Documentos -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'documentos'">
+      <header class="tdh__secao-header" (click)="toggleSecao('documentos')">
+        <span class="tdh__secao-num">3</span>
+        <h2 class="tdh__secao-titulo">Consulta a Documentos e Histórico</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'documentos'">
+        <p class="tdh__descricao">Após a triagem rápida, consulte a documentação e o histórico de atendimentos.</p>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-folder-check"></i> Verificações necessárias</h3>
+          <ul class="tdh__lista">
+            <li>POPs relacionados ao tipo de incidente.</li>
+            <li>Chamados anteriores com o mesmo erro ou mensagem.</li>
+            <li>Orientação formal de atendimento já existente.</li>
+            <li>Solução rápida já validada para o problema.</li>
+          </ul>
+          <p class="tdh__sub-texto">
+            Isso evita redescobrir problemas conhecidos, padroniza o atendimento e mantém aderência aos procedimentos oficiais.
+            Sem POP para o caso, registre a solução adotada para embasar a criação futura do documento.
+          </p>
+        </section>
+      </div>
+    </article>
+
+    <!-- 4. Plano de Ação -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'plano-acao'">
+      <header class="tdh__secao-header" (click)="toggleSecao('plano-acao')">
+        <span class="tdh__secao-num">4</span>
+        <h2 class="tdh__secao-titulo">Execução do Plano de Ação</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'plano-acao'">
+        <p class="tdh__descricao">Com base na causa provável, execute ações de correção. As listadas abaixo resolvem a maior parte dos casos.</p>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-gear"></i> Ações gerais de infraestrutura</h3>
+          <ul class="tdh__lista">
+            <li>Reiniciar o application pool específico (sem reiniciar todo o site).</li>
+            <li>Verificar e corrigir credenciais de comunicação (banco, APIs etc.).</li>
+            <li>Ajustar configuração de rede / rota / DNS, quando aplicável.</li>
+            <li>Encerrar sessões zumbis no SQL com cuidado e, preferencialmente, com orientação do time técnico.</li>
+            <li>Confirmar que o servidor IIS não está saturado (CPU, memória, disco).</li>
+            <li>Verificar tarefas de carga ou rotinas que estejam travando o ambiente.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-bug"></i> Casos de erro de API ou aplicação</h3>
+          <ul class="tdh__lista">
+            <li>Verificar o arquivo de configuração (ex.: appsettings).</li>
+            <li>Testar o endpoint isolado, fora do CRM, quando possível.</li>
+            <li>Verificar exceções registradas nos logs do CRM.</li>
+            <li>Validar se o banco está acessível para a aplicação em execução.</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+    <!-- 5. Comunicação -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'comunicacao'">
+      <header class="tdh__secao-header" (click)="toggleSecao('comunicacao')">
+        <span class="tdh__secao-num">5</span>
+        <h2 class="tdh__secao-titulo">Comunicação com o Cliente</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'comunicacao'">
+        <p class="tdh__descricao">A comunicação deve ser clara, objetiva e contínua.</p>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-chat-left-text"></i> Boas práticas</h3>
+          <ul class="tdh__lista">
+            <li>Informar ao cliente o que já foi verificado.</li>
+            <li>Deixar claro que o atendimento segue o POP ou procedimento oficial.</li>
+            <li>Alinhar prazo realista com base na prioridade (P1, P2, P3).</li>
+            <li>Registrar todas as interações e passos no CRM Actyon.</li>
+          </ul>
+          <p class="tdh__sub-texto">Isso reduz ruídos, aumenta a confiança do cliente e gera histórico útil para casos futuros.</p>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-file-earmark-text"></i> Estrutura sugerida para atualizações</h3>
+          <ul class="tdh__lista">
+            <li><strong>Status atual:</strong> o que já foi feito.</li>
+            <li><strong>Próximo passo:</strong> o que está sendo verificado agora.</li>
+            <li><strong>Prazo:</strong> quando haverá nova posição ou conclusão estimada.</li>
+            <li><strong>Registro:</strong> síntese lançada no CRM Actyon para rastreabilidade.</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+    <!-- 6. Fechamento -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'fechamento'">
+      <header class="tdh__secao-header" (click)="toggleSecao('fechamento')">
+        <span class="tdh__secao-num">6</span>
+        <h2 class="tdh__secao-titulo">Fechamento do Incidente</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'fechamento'">
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-clipboard-check"></i> Documentação e categorização</h3>
+          <ul class="tdh__lista">
+            <li>Documentar a causa raiz (quando identificada) e todas as ações realizadas, inclusive as que não deram certo.</li>
+            <li>Categorizar corretamente: rede, banco de dados, aplicação, ambiente/infraestrutura, usuário/permissão, credenciais/autenticação ou operação/processo.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-lightning-charge"></i> Ações preventivas futuras</h3>
+          <ul class="tdh__lista">
+            <li>Ajuste de capacidade (servidor, banco, rede).</li>
+            <li>Revisão de configuração de ambiente.</li>
+            <li>Melhoria ou criação de POP.</li>
+            <li>Treinamento adicional para usuário ou equipe interna.</li>
+          </ul>
+          <p class="tdh__sub-texto">Um bom fechamento evita recorrência e melhora a qualidade dos próximos atendimentos.</p>
+        </section>
+      </div>
+    </article>
+
+    <!-- 7. Fluxo Resumido -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'fluxo-resumido'">
+      <header class="tdh__secao-header" (click)="toggleSecao('fluxo-resumido')">
+        <span class="tdh__secao-num">7</span>
+        <h2 class="tdh__secao-titulo">Fluxo Resumido (Visão de Suporte JCA)</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'fluxo-resumido'">
+        <div class="tdh__dica">
+          <i class="bi bi-check2-square"></i>
+          <div>Use este fluxo como checklist rápido em qualquer incidente.</div>
+        </div>
+        <ul class="tdh__lista">
+          <li>Classificar impacto (P1 / P2 / P3).</li>
+          <li>Checar se é problema geral ou isolado.</li>
+          <li>Testar infraestrutura: IIS, API, SQL, rede.</li>
+          <li>Consultar POPs e histórico de incidentes semelhantes.</li>
+          <li>Executar ações rápidas e validadas.</li>
+          <li>Atualizar CRM e comunicar o cliente.</li>
+          <li>Registrar solução e causa raiz.</li>
+        </ul>
+      </div>
+    </article>
+
+    <!-- 8. Exemplos Práticos -->
+    <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'exemplos-praticos'">
+      <header class="tdh__secao-header" (click)="toggleSecao('exemplos-praticos')">
+        <span class="tdh__secao-num">8</span>
+        <h2 class="tdh__secao-titulo">Exemplos Práticos de Lógica Aplicada</h2>
+        <i class="bi bi-chevron-down tdh__secao-seta"></i>
+      </header>
+
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'exemplos-praticos'">
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-hourglass-split"></i> Caso: Lentidão no CRM</h3>
+          <ul class="tdh__lista">
+            <li>Classificar impacto: normalmente P2 (lentidão, sem parada total).</li>
+            <li>Verificar se é geral (vários usuários/módulos) ou específico.</li>
+            <li>Testar endpoint de saúde (ex.: /api/health).</li>
+            <li>Verificar consumo de recursos no IIS (CPU, memória, filas de requisição).</li>
+            <li>Checar waits do SQL (sem ferramentas externas avançadas).</li>
+            <li>Registrar ações e comunicar o cliente sobre o andamento.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-x-octagon"></i> Caso: Erro 500 para todos os usuários</h3>
+          <ul class="tdh__lista">
+            <li>Classificar imediatamente como P1 (indisponibilidade geral).</li>
+            <li>Checar o application pool do IIS (estado, reciclagem, logs de erro).</li>
+            <li>Verificar comunicação IIS ↔ SQL (ping, porta 1433, autenticação).</li>
+            <li>Conferir logs do CRM por erros críticos ou exceções recentes.</li>
+            <li>Corrigir o problema ou escalar para o time responsável (desenvolvimento/infra).</li>
+            <li>Manter o cliente atualizado via CRM Actyon até a normalização.</li>
+          </ul>
+        </section>
+
+        <section class="tdh__sub">
+          <h3 class="tdh__sub-titulo"><i class="bi bi-person-exclamation"></i> Caso: Usuário não consegue acessar</h3>
+          <ul class="tdh__lista">
+            <li>Verificar se o login funciona para outro usuário (descartar problema geral).</li>
+            <li>Testar em navegador anônimo ou outra máquina para isolar cache/ambiente local.</li>
+            <li>Checar permissões do usuário no CRM (perfis, grupos, regras de acesso).</li>
+            <li>Verificar expiração de senha ou bloqueio de usuário.</li>
+            <li>Registrar no CRM e comunicar o cliente sobre causa e solução.</li>
+          </ul>
+        </section>
+      </div>
+    </article>
+
+  </div>
+</section>

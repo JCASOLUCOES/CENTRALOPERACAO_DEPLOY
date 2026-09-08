@@ -1,0 +1,315 @@
+<div class="tdh">
+
+  <!-- ================= Header ================= -->
+  <header class="tdh__hero">
+    <div class="tdh__blob tdh__blob--um"></div>
+    <div class="tdh__blob tdh__blob--dois"></div>
+    <div class="tdh__hero-inner">
+      <div class="tdh__topo">
+        <span class="tdh__icone"><i class="fas fa-server"></i></span>
+        <div>
+          <h1 class="tdh__titulo">Manual de Boas Práticas de Infra</h1>
+          <p class="tdh__subtitulo">Diagnóstico de problemas de infraestrutura no CRM Actyon.</p>
+        </div>
+      </div>
+
+      <div class="tdh__meta">
+        <span class="tdh__chip"><i class="fas fa-tag"></i><strong>Versão:</strong> 1.0</span>
+        <span class="tdh__chip"><i class="fas fa-users"></i>Suporte / Infraestrutura / Desenvolvimento</span>
+        <span class="tdh__chip"><i class="fas fa-list-ol"></i>5 seções</span>
+      </div>
+
+      <p class="tdh__objetivo">
+        Estabelecer boas práticas, padrões de conduta e orientações técnicas para diagnóstico de problemas de infraestrutura.
+      </p>
+    </div>
+  </header>
+
+  <!-- ================= Índice ================= -->
+  <nav class="tdh__indice" aria-label="Índice das seções">
+    <h2 class="tdh__indice-titulo"><i class="fas fa-list"></i> Índice <small>(clique para navegar)</small></h2>
+    <div class="tdh__indice-grid">
+      <button type="button" class="tdh__link" (click)="toggleSecao('visao-geral')">
+        <span class="tdh__link-num">1</span> Como Funcionam os Servidores
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('diagnostico')">
+        <span class="tdh__link-num">2</span> Como Identificar Onde Está o Problema
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('cenarios')">
+        <span class="tdh__link-num">3</span> Cenários de Infraestrutura
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('dicas-suporte')">
+        <span class="tdh__link-num">4</span> Dicas para o Suporte Diagnosticar
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('comandos')">
+        <span class="tdh__link-num">5</span> Comandos Rápidos de Diagnóstico
+      </button>
+    </div>
+  </nav>
+
+  <!-- ================= Conteúdo ================= -->
+  <div class="tdh__conteudo">
+
+    <!-- 1. Como Funcionam os Servidores -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'visao-geral'">
+      <header class="tdh__secao-header" (click)="toggleSecao('visao-geral')">
+        <span class="tdh__secao-num">1</span>
+        <h3 class="tdh__secao-titulo">Como Funcionam os Servidores e a Comunicação – Explicação para Leigos</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'visao-geral'">
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-utensils"></i> Metáfora do Restaurante</h4>
+          <p class="tdh__sub-texto">Imagine que o CRM Actyon funciona como um restaurante:</p>
+          <ul class="tdh__lista">
+            <li>O <strong>IIS</strong> é a cozinha, onde os pedidos são recebidos e preparados (a aplicação funciona aqui).</li>
+            <li>O <strong>Banco de Dados (SQL)</strong> é a despensa, onde ficam todos os ingredientes (dados dos clientes, títulos, atendimentos etc.).</li>
+            <li>A <strong>rede</strong> é o corredor que liga a cozinha à despensa.</li>
+          </ul>
+          <p class="tdh__sub-texto">Para o sistema funcionar, a cozinha precisa conseguir ir até a despensa buscar informações o tempo todo.</p>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-gears"></i> O que isso significa na prática</h4>
+          <p class="tdh__sub-texto">
+            Agora, dependendo do cliente, a cozinha e a despensa podem estar em locais diferentes. Isso impacta diretamente a estabilidade e a velocidade do sistema.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Como Identificar Onde Está o Problema -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'diagnostico'">
+      <header class="tdh__secao-header" (click)="toggleSecao('diagnostico')">
+        <span class="tdh__secao-num">2</span>
+        <h3 class="tdh__secao-titulo">Como Identificar Onde Está o Problema (Explicação para Leigos)</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'diagnostico'">
+        <p class="tdh__descricao">
+          Abaixo está um guia simples para diagnosticar onde está o problema, mesmo sem conhecimento técnico.
+        </p>
+
+        <div class="tdh__diagnostico">
+          <h4 class="tdh__diagnostico-titulo"><i class="fas fa-magnifying-glass"></i> 1. Se o sistema nem abre ou trava no login</h4>
+          <div class="tdh__diagnostico-grid">
+            <div class="tdh__diagnostico-bloco">
+              <p class="tdh__diagnostico-problema"><strong>Provável problema:</strong> Internet do cliente fraca ou caindo; servidor IIS fora do ar; firewall do cliente bloqueando o acesso.</p>
+              <p class="tdh__diagnostico-teste"><strong>Como testar:</strong> Testar abrir outro site; testar outro computador; verificar se todos estão com o mesmo problema.</p>
+              <p class="tdh__diagnostico-voto">Se todos estão com o problema → o erro está no servidor.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tdh__diagnostico">
+          <h4 class="tdh__diagnostico-titulo"><i class="fas fa-magnifying-glass"></i> 2. Se o sistema abre, mas fica lento</h4>
+          <div class="tdh__diagnostico-grid">
+            <div class="tdh__diagnostico-bloco">
+              <p class="tdh__diagnostico-problema"><strong>Provável problema:</strong> Lentidão entre o IIS e o Banco de Dados; internet oscilando (em ambientes híbridos); banco de dados sobrecarregado.</p>
+              <p class="tdh__diagnostico-teste"><strong>Como testar:</strong> Ver se a internet está estável; perguntar se vários usuários também percebem lentidão; perguntar se o cliente está em horário de pico.</p>
+              <p class="tdh__diagnostico-voto">Lentidão generalizada → geralmente o SQL está lento.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tdh__diagnostico">
+          <h4 class="tdh__diagnostico-titulo"><i class="fas fa-magnifying-glass"></i> 3. Se apenas uma tela específica não carrega</h4>
+          <div class="tdh__diagnostico-grid">
+            <div class="tdh__diagnostico-bloco">
+              <p class="tdh__diagnostico-problema"><strong>Provável problema:</strong> Falta de permissão; erro em algum dado específico; API retornando erro apenas naquele módulo.</p>
+              <p class="tdh__diagnostico-teste"><strong>Como testar:</strong> Pedir para outro usuário abrir a mesma tela; testar em outra máquina; testar um registro diferente.</p>
+              <p class="tdh__diagnostico-voto">Se só acontecer com um usuário → é permissão. Se só com um registro → é dado inconsistente.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tdh__diagnostico">
+          <h4 class="tdh__diagnostico-titulo"><i class="fas fa-magnifying-glass"></i> 4. Se o sistema trava de tempos em tempos</h4>
+          <div class="tdh__diagnostico-grid">
+            <div class="tdh__diagnostico-bloco">
+              <p class="tdh__diagnostico-problema"><strong>Provável problema:</strong> Instabilidade da comunicação entre IIS e SQL; internet do cliente oscilando.</p>
+              <p class="tdh__diagnostico-teste"><strong>Como testar:</strong> Ver se ocorre sempre no mesmo horário; ver se a internet do cliente está oscilando; ver se o servidor está com CPU alta.</p>
+              <p class="tdh__diagnostico-voto">Travas cíclicas → geralmente é o App Pool ou SQL com sessões presas. Considere reiniciar o IIS para avaliar melhora.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tdh__diagnostico">
+          <h4 class="tdh__diagnostico-titulo"><i class="fas fa-magnifying-glass"></i> 5. Se o sistema fica lento ou trava em horários aleatórios</h4>
+          <div class="tdh__diagnostico-grid">
+            <div class="tdh__diagnostico-bloco">
+              <p class="tdh__diagnostico-problema"><strong>Provável problema:</strong> Disco do servidor IIS ou SQL com pouco espaço; disco com escrita/leituras lentas (I/O alto); log do SQL crescendo sem controle (LOG.LDF gigante); backup rodando em horário comercial; antivírus escaneando pastas críticas; fragmentação alta do disco (em HDD).</p>
+              <p class="tdh__diagnostico-teste"><strong>Como testar:</strong> Verificar espaço livre no disco do servidor (C: e partição do SQL); verificar no Gerenciador de Tarefas o disco em 100%; checar backups/cópias/relatórios no horário; checar o tamanho do LOG.LDF; verificar se o antivírus analisa arquivos do IIS ou MDF/LDF; rodar CrystalDiskInfo/perfmon.</p>
+              <p class="tdh__diagnostico-voto">Disco lotado → SQL e IIS perdem performance imediatamente. Disco com I/O alto → telas lentas, travamentos e timeouts.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tdh__diagnostico">
+          <h4 class="tdh__diagnostico-titulo"><i class="fas fa-magnifying-glass"></i> 6. Se o servidor fica lento apenas em alguns momentos do dia</h4>
+          <div class="tdh__diagnostico-grid">
+            <div class="tdh__diagnostico-bloco">
+              <p class="tdh__diagnostico-problema"><strong>Provável problema:</strong> Servidor SQL com pouca memória disponível; CPU constante acima de 80% (IIS ou SQL); App Pool reciclando em horário crítico; serviços externos consumindo recursos; manutenção do Windows em horário comercial.</p>
+              <p class="tdh__diagnostico-teste"><strong>Como testar:</strong> Ver uso de CPU e memória no Gerenciador de Tarefas; ver histórico do SQL em horários de pico (Activity Monitor); consultar o agendamento de Reciclagem do App Pool; identificar processos que usam memória excessiva; verificar se há Windows Update ou serviços agendados.</p>
+              <p class="tdh__diagnostico-voto">CPU alta ou memória cheia → lentidão geral. App Pool reiniciando → usuários desconectados e telas travam.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Cenários de Infraestrutura -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'cenarios'">
+      <header class="tdh__secao-header" (click)="toggleSecao('cenarios')">
+        <span class="tdh__secao-num">3</span>
+        <h3 class="tdh__secao-titulo">Cenários de Infraestrutura – Onde Ficam Cozinha e Despensa</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'cenarios'">
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-building-flag"></i> 1. Cenário: IIS na nuvem + Banco local (híbrido)</h4>
+          <p class="tdh__sub-texto">
+            A cozinha (IIS) fica na internet.<br>
+            A despensa (SQL) fica dentro da empresa do cliente.<br>
+            O corredor é a internet.
+          </p>
+          <ul class="tdh__lista">
+            <li>👉 Se a internet do cliente cai ou fica lenta, o sistema trava.</li>
+            <li>👉 Se o firewall do cliente bloqueia a porta, a cozinha não consegue buscar dados.</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-building"></i> 2. Cenário: Tudo local (IIS + SQL dentro da empresa)</h4>
+          <p class="tdh__sub-texto">
+            Cozinha e despensa estão no mesmo prédio.<br>
+            O corredor é a rede interna (LAN).
+          </p>
+          <ul class="tdh__lista">
+            <li>👉 Se algum cabo, switch ou servidor local estiver lento, o sistema fica lento.</li>
+            <li>👉 Se a máquina do IIS cair, ninguém consegue usar o sistema.</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-cloud"></i> 3. Cenário: Tudo na nuvem</h4>
+          <p class="tdh__sub-texto">
+            Cozinha e despensa ficam no mesmo datacenter na internet.<br>
+            O corredor é interno e ultrarrápido.
+          </p>
+          <ul class="tdh__lista">
+            <li>👉 Mais estável</li>
+            <li>👉 Menos chance de travar</li>
+            <li>👉 Só depende da internet do cliente para acessar o sistema</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Dicas Simples para o Suporte -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'dicas-suporte'">
+      <header class="tdh__secao-header" (click)="toggleSecao('dicas-suporte')">
+        <span class="tdh__secao-num">4</span>
+        <h3 class="tdh__secao-titulo">Dicas Simples para o Suporte Diagnosticar Rápido</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'dicas-suporte'">
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-star"></i> Perguntas-chave para diagnóstico rápido</h4>
+          <ul class="tdh__lista">
+            <li><strong>Pergunte se o problema é geral</strong><br>→ Se todo mundo está com o problema, é o servidor.</li>
+            <li><strong>Pergunte se a internet está estável</strong><br>→ Em ambientes híbridos, é o principal culpado.</li>
+            <li><strong>Veja se outra máquina faz o mesmo erro</strong><br>→ Se não fizer, o problema é local da máquina do usuário.</li>
+            <li><strong>Teste comunicação IIS → SQL</strong><br>→ Quando essa comunicação falha, o sistema cai ou trava.</li>
+            <li><strong>Verifique espaço em disco e uso de CPU/Memória</strong><br>→ Disco cheio ou recursos esgotados causam lentidão imediata.</li>
+            <li><strong>Antes de reiniciar qualquer coisa, verifique logs</strong><br>→ Muitas vezes o log já mostra exatamente o erro.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Comandos Rápidos de Diagnóstico -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'comandos'">
+      <header class="tdh__secao-header" (click)="toggleSecao('comandos')">
+        <span class="tdh__secao-num">5</span>
+        <h3 class="tdh__secao-titulo">Comandos Rápidos de Diagnóstico</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'comandos'">
+        <p class="tdh__descricao">
+          Comandos executados no CMD/PowerShell para validar cada camada em poucos minutos. Adapte os endereços (IPs, nomes, portas) para o ambiente do cliente.
+        </p>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-id-card"></i> 5.1. Identidade da máquina e rede</h4>
+          <pre class="tdh__codigo">ipconfig /all          :: IP, máscara, gateway e DNS da estação
+hostname               :: nome do computador
+whoami                 :: usuário logado</pre>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-globe"></i> 5.2. Comunicação com o destino (rede/internet)</h4>
+          <pre class="tdh__codigo">ping 8.8.8.8 -t        :: conectividade + perda de pacotes (CTRL+C para parar)
+ping SERV_CLIENTE      :: destino por nome (resolução DNS)
+tracert SERV_CLIENTE   :: rota até o destino, salto a salto
+pathping SERV_CLIENTE  :: perda de pacotes por salto (mais lento, mais completo)
+nslookup www.actyon.com.br :: conferir resolução de DNS</pre>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-door-open"></i> 5.3. Portas e serviços (IIS, SQL, API)</h4>
+          <pre class="tdh__codigo">netstat -ano | findstr :443     :: porta 443 (HTTPS/IIS) em escuta?
+netstat -ano | findstr :1433    :: porta do SQL Server em escuta?
+netstat -ano | findstr :8080    :: porta de API/back em escuta?
+
+:: PowerShell (testa conectividade de porta como um telnet)
+Test-NetConnection SERV_CLIENTE -Port 1433
+Test-NetConnection API_JCA -Port 443</pre>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-gear"></i> 5.4. Serviços críticos (rodando no servidor)</h4>
+          <pre class="tdh__codigo">services.msc           :: abrir console de serviços
+:: Serviços a conferir:
+::   - World Wide Web Publishing Service (W3SVC) -> IIS
+::   - SQL Server (MSSQLSERVER)                   -> banco
+::   - SQL Server Agent                           -> jobs agendados
+
+:: Alternativa via PowerShell:
+Get-Service W3SVC, MSSQLSERVER | Select-Object Name, Status</pre>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-tachometer-alt"></i> 5.5. Recursos do servidor e logs</h4>
+          <pre class="tdh__codigo">:: Espaço em disco (no CMD)
+wmic logicaldisk get caption, freespace, size
+
+:: Uso de CPU/memória em tempo real
+taskmgr
+
+:: Eventos recentes de erro (PowerShell)
+Get-EventLog -LogName System -Newest 20 | Where-Object &#123; $_.EntryType -eq 'Error' &#125;
+Get-EventLog -LogName Application -Newest 20 | Where-Object &#123; $_.EntryType -eq 'Error' &#125;
+
+:: IIS: reiniciar App Pool sem reiniciar o servidor
+iisreset /stop
+iisreset /start</pre>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-list-check"></i> 5.6. Interpretação rápida dos resultados</h4>
+          <ul class="tdh__lista">
+            <li><strong>ping com perda de pacotes</strong> → instabilidade de rede ou internet.</li>
+            <li><strong>tracert parando no mesmo salto</strong> → o problema está naquele ponto da rota (roteador, firewall, operadora).</li>
+            <li><strong>nslookup sem resposta</strong> → problema de DNS (resolução de nomes).</li>
+            <li><strong>porta não escutando</strong> → serviço parado ou firewall bloqueando.</li>
+            <li><strong>porta escutando, mas sistema não conecta</strong> → firewall intermediário, string de conexão ou VPN.</li>
+            <li><strong>W3SVC/MSSQLSERVER parados</strong> → causa direta da indisponibilidade.</li>
+            <li><strong>Eventos de erro com hora exata</strong> → cruzar com o horário reportado pelo cliente.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>

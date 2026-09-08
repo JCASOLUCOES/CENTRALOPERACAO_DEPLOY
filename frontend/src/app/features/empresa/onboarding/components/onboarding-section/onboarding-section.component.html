@@ -1,0 +1,185 @@
+<div class="bloco" [ngSwitch]="bloco.tipo">
+
+  <!-- ✅ Parágrafo -->
+  <div *ngSwitchCase="'paragrafo'" class="b-parag">
+    <h3 class="b-titulo" *ngIf="bloco.titulo">{{ bloco.titulo }}</h3>
+    <p class="b-texto">{{ bloco.texto }}</p>
+  </div>
+
+  <!-- ✅ Lista simples -->
+  <div *ngSwitchCase="'lista'" class="b-lista">
+    <h4 class="b-titulo" *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+    <ul>
+      <li *ngFor="let item of bloco.itens; trackBy: trackByIndex"><i class="bi bi-arrow-right-short"></i>{{ item }}</li>
+    </ul>
+  </div>
+
+  <!-- ✅ Checklist -->
+  <div *ngSwitchCase="'checklist'" class="b-checklist">
+    <h4 class="b-titulo" *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+    <ul>
+      <li *ngFor="let item of bloco.itens; trackBy: trackByIndex"><i class="bi bi-check-circle-fill"></i>{{ item }}</li>
+    </ul>
+  </div>
+
+  <!-- ✅ Destaque -->
+  <div *ngSwitchCase="'destaque'" class="b-destaque">
+    <i class="bi bi-star-fill b-destaque__icone"></i>
+    <div>
+      <h4 *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+      <p>{{ bloco.texto }}</p>
+    </div>
+  </div>
+
+  <!-- ✅ Citação -->
+  <blockquote *ngSwitchCase="'citacao'" class="b-citacao">
+    <h4 *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+    <p><i class="bi bi-quote"></i>{{ bloco.texto }}</p>
+  </blockquote>
+
+  <!-- ✅ Card grande -->
+  <div *ngSwitchCase="'card'" class="b-card-grande">
+    <span class="b-card-grande__icone" [style.background]="cor + '1a'" [style.color]="cor">
+      <i class="bi" [ngClass]="bloco.icone || 'bi-journal-check'"></i>
+    </span>
+    <div>
+      <h4>{{ bloco.titulo }}</h4>
+      <p>{{ bloco.texto }}</p>
+    </div>
+  </div>
+
+  <!-- ✅ Grid de cards -->
+  <div *ngSwitchCase="'cards'" class="b-grid">
+    <h4 class="b-titulo b-grid__titulo" *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+    <div class="b-grid__inner">
+      <article class="b-item" *ngFor="let card of bloco.cards; trackBy: trackByIndex">
+        <span class="b-item__icone" [style.background]="cor + '1a'" [style.color]="cor" *ngIf="card.icone">
+          <i class="bi" [ngClass]="card.icone"></i>
+        </span>
+        <h5>{{ card.titulo }}</h5>
+        <p *ngIf="card.texto">{{ card.texto }}</p>
+      </article>
+    </div>
+  </div>
+
+  <!-- ✅ Valores -->
+  <div *ngSwitchCase="'valores'" class="b-valores">
+    <h4 class="b-titulo" *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+    <div class="b-valores__grid">
+      <article class="b-valor" *ngFor="let card of bloco.cards; trackBy: trackByIndex">
+        <span class="b-valor__icone" [style.background]="cor + '1a'" [style.color]="cor">
+          <i class="bi" [ngClass]="card.icone"></i>
+        </span>
+        <h5>{{ card.titulo }}</h5>
+        <p>{{ card.texto }}</p>
+      </article>
+    </div>
+  </div>
+
+  <!-- ✅ Produtos -->
+  <div *ngSwitchCase="'produtos'" class="b-produtos">
+    <h4 class="b-titulo" *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+    <div class="b-produtos__grid">
+      <article class="b-produto" *ngFor="let card of bloco.cards; trackBy: trackByIndex">
+        <span class="b-produto__icone" [style.background]="cor + '1a'" [style.color]="cor">
+          <i class="bi" [ngClass]="card.icone"></i>
+        </span>
+        <h5>{{ card.titulo }}</h5>
+        <p>{{ card.texto }}</p>
+      </article>
+    </div>
+  </div>
+
+  <!-- ✅ Departamentos -->
+  <div *ngSwitchCase="'departamentos'" class="b-departamentos">
+    <h4 class="b-titulo" *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+    <div class="b-departamentos__grid">
+      <article class="b-departamento" *ngFor="let card of bloco.cards; trackBy: trackByIndex">
+        <span class="b-departamento__icone" [style.background]="cor + '1a'" [style.color]="cor">
+          <i class="bi" [ngClass]="card.icone"></i>
+        </span>
+        <div class="b-departamento__info">
+          <h5>{{ card.titulo }}</h5>
+          <p>{{ card.texto }}</p>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <!-- ✅ Fluxo (stepper) -->
+  <div *ngSwitchCase="'fluxo'" class="b-fluxo">
+    <h4 class="b-titulo" *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+    <div class="b-fluxo__trilha">
+      <div class="b-fluxo__etapa" *ngFor="let etapa of bloco.etapas; let i = index; trackBy: trackByIndex">
+        <div class="b-fluxo__no">
+          <i class="bi" [ngClass]="etapa.icone || 'bi-circle'"></i>
+          <span class="b-fluxo__ordem">{{ i + 1 }}</span>
+        </div>
+        <div class="b-fluxo__conteudo">
+          <h5>{{ etapa.titulo }}</h5>
+          <p>{{ etapa.texto }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Timeline -->
+  <div *ngSwitchCase="'timeline'" class="b-timeline">
+    <h4 class="b-titulo" *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+    <div class="b-timeline__linha">
+      <div class="b-timeline__item" *ngFor="let etapa of bloco.etapas; trackBy: trackByIndex">
+        <span class="b-timeline__no" [style.background]="cor + '1a'" [style.color]="cor">
+          <i class="bi" [ngClass]="etapa.icone || 'bi-circle-fill'"></i>
+        </span>
+        <div class="b-timeline__card">
+          <h5>{{ etapa.titulo }}</h5>
+          <p>{{ etapa.texto }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Fases 90 dias -->
+  <div *ngSwitchCase="'fases90dias'" class="b-90dias">
+    <h4 class="b-titulo" *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+    <div class="b-90dias__linha">
+      <div class="b-90dias__item" *ngFor="let etapa of bloco.etapas; trackBy: trackByIndex">
+        <span class="b-90dias__badge" [style.background]="cor">
+          <i class="bi" [ngClass]="etapa.icone"></i>
+        </span>
+        <div class="b-90dias__card">
+          <h5>{{ etapa.titulo }}</h5>
+          <p>{{ etapa.texto }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Accordion -->
+  <div *ngSwitchCase="'acordeao'" class="b-acordeao">
+    <h4 class="b-titulo" *ngIf="bloco.titulo">{{ bloco.titulo }}</h4>
+    <div class="b-acordeao__item" *ngFor="let ac of bloco.acordeoes; let i = index; trackBy: trackByIndex">
+      <button
+        type="button"
+        class="b-acordeao__cab"
+        (click)="alternarAcordeao(i)"
+        [attr.aria-expanded]="ehAcordeaoAberto(i)"
+      >
+        <i class="bi" [ngClass]="ac.icone || 'bi-info-circle'" *ngIf="ac.icone"></i>
+        <span>{{ ac.titulo }}</span>
+        <i class="bi bi-chevron-down b-acordeao__seta" [class.b-acordeao__seta--aberto]="ehAcordeaoAberto(i)"></i>
+      </button>
+      <div class="b-acordeao__corpo" *ngIf="ehAcordeaoAberto(i)">
+        <p>{{ ac.texto }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Mensagem da Diretoria -->
+  <div *ngIf="bloco.tipo === 'mensagem'" class="b-mensagem">
+    <span class="b-mensagem__icone"><i class="bi bi-megaphone-fill"></i></span>
+    <h3>{{ bloco.titulo }}</h3>
+    <p>{{ bloco.texto }}</p>
+  </div>
+
+</div>

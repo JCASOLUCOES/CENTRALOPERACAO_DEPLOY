@@ -1,0 +1,37 @@
+feat(backend): services + controllers completos do modulo IMPLANTACAO
+
+Branch: projeto-implantacao
+
+DTOs (Dtos/Implantacao/):
+- ClienteDtos, EquipeDtos, TipoProjetoEtapaColunaDtos, ProjetoDtos, TarefaDtos, DashboardDtos
+- Records imutaveis com request/response separados
+
+Services (Services/Implantacao/):
+- ClienteService: CRUD + soft-delete (cliente com projetos)
+- EquipeService: CRUD + membros (N:N)
+- TipoProjetoService: CRUD (CLIENTE, CARTEIRA, INTEGRACAO, PROJETO_CIAA)
+- EtapaService: CRUD por tipo_projeto
+- ColunaKanbanService: CRUD + reordenar (limite 8 colunas; padrao nao pode excluir)
+- ProjetoService: CRUD com validacao de cliente_obrigatorio por tipo,
+  geracao automatica de codigo (IMP-0001, CIAA-0001 via prefixo da equipe)
+- TarefaService: CRUD + mudar coluna + comentarios (Kanban funcional)
+- DashboardService: KPIs + por equipe + detalhes Implantacao/CIAA + proximos prazos
+
+Controllers (Controllers/Implantacao/):
+- ClientesController, EquipesController, TiposProjetoController, EtapasController,
+  ColunasKanbanController, ProjetosController, TarefasController, DashboardController
+- Todos com [ApiController][ApiVersion("1.0")][Route("api/v{version:apiVersion}/implantacao/...")][Authorize]
+- Rate limiting validacao (5/min) para escrita; leitura sem limite
+
+Program.cs: 8 services registrados como Scoped
+
+Endpoints disponiveis (rota base /api/v1/implantacao):
+- clientes (GET, POST, PUT, DELETE)
+- equipes (idem + POST membros + DELETE membro)
+- tipos-projeto, etapas (CRUD)
+- colunas-kanban (CRUD + POST reordenar)
+- projetos (CRUD + PATCH status + GET proximo-codigo)
+- tarefas (CRUD + PATCH coluna + POST comentarios)
+- dashboard (GET)
+
+v1.0 Backend COMPLETO. v1.1 (depois): Kanban UI com cdk drag-drop.

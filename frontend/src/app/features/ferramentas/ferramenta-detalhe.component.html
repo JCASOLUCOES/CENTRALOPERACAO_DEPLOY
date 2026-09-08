@@ -1,0 +1,55 @@
+<section class="ferramenta-detalhe">
+  <nav class="ferramenta-detalhe__breadcrumb">
+    <a routerLink="/ferramentas"><i class="bi bi-arrow-left"></i> Central de Utilidades</a>
+    <span class="ferramenta-detalhe__separador">/</span>
+    <a [routerLink]="['/ferramentas']" [queryParams]="{ categoria: categoria?.id }">{{ categoria?.nome ?? 'Ferramentas' }}</a>
+  </nav>
+
+  <div class="ferramenta-detalhe__nao-encontrada" *ngIf="naoEncontrada">
+    <i class="bi bi-shield-exclamation"></i>
+    <h1>Ferramenta não encontrada</h1>
+    <p>A ferramenta que você procura não existe ou foi removida.</p>
+    <a routerLink="/ferramentas" class="ferramenta-detalhe__voltar">Voltar para a Central</a>
+  </div>
+
+  <ng-container *ngIf="!naoEncontrada && ferramenta">
+    <header class="ferramenta-detalhe__cabecalho">
+      <div class="ferramenta-detalhe__cabecalho-info">
+        <span
+          class="ferramenta-detalhe__icone"
+          [style.background]="(categoria?.cor ?? '#2563eb') + '1f'"
+          [style.color]="categoria?.cor ?? '#2563eb'"
+        >
+          <i class="bi {{ ferramenta.icone }}"></i>
+        </span>
+        <div>
+          <h1>{{ ferramenta.nome }}</h1>
+          <span class="ferramenta-detalhe__categoria">
+            <i class="bi {{ categoria?.icone }}"></i>
+            {{ categoria?.nome }}
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <p class="ferramenta-detalhe__descricao-curta">{{ ferramenta.descricao }}</p>
+
+    <div class="ferramenta-detalhe__tags" *ngIf="ferramenta.tags.length">
+      <span class="ferramenta-detalhe__tag" *ngFor="let tag of ferramenta.tags; trackBy: trackByIndex">{{ tag }}</span>
+    </div>
+
+    <div class="ferramenta-detalhe__conteudo">
+      <article class="ferramenta-detalhe__bloco" *ngIf="ferramenta.url">
+        <h2><i class="bi bi-box-arrow-up-right"></i> Link</h2>
+        <a
+          [href]="ferramenta.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="ferramenta-detalhe__link"
+        >
+          {{ ferramenta.url }} <i class="bi bi-external-link-alt"></i>
+        </a>
+      </article>
+    </div>
+  </ng-container>
+</section>

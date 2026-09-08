@@ -1,0 +1,273 @@
+:host {
+  display: block;
+}
+
+.sidebar {
+  width: 280px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--surface-main);
+  border: 1px solid var(--border-primary-soft);
+  padding: 1rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  border-radius: 1.25rem;
+  transition: width 0.2s ease;
+}
+
+.section {
+  background: var(--surface-main);
+  border-radius: 1.25rem;
+  padding: 0.9rem 1.1rem;
+  box-shadow: var(--shadow-section);
+  border: 1px solid var(--border-primary-soft);
+}
+
+.section-header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--primary-color),
+    var(--secondary-color)
+  );
+  box-shadow: var(--glow-primary-soft);
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+}
+
+.section-header small {
+  display: block;
+  color: var(--text-dark);
+  font-size: 0.78rem;
+  margin-top: 0.1rem;
+}
+
+.section-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-dark);
+  font-size: 0.93rem;
+  position: relative;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+
+  i {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    width: 1.4rem;
+    text-align: center;
+    transition: color 0.2s ease;
+  }
+
+  .link-label {
+    flex: 1;
+    min-width: 0;
+    word-wrap: break-word;
+    line-height: 1.3;
+  }
+
+  &:hover,
+  &.active {
+    background: var(--surface-hover-primary);
+    color: var(--primary-color);
+    transform: translateX(2px);
+
+    i {
+      color: var(--primary-color);
+    }
+  }
+
+  /* Tick de sinal: assinatura do console */
+  &.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 18px;
+    border-radius: 2px;
+    background: var(--signal);
+  }
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  border-radius: var(--radius-sm);
+  padding: 0.1rem 0.6rem;
+  background: var(--surface-badge-primary);
+  color: var(--primary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ======================== */
+/* Grupo expansível          */
+/* ======================== */
+
+.section-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
+.group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.75rem;
+  color: var(--text-dark);
+  font-size: 0.93rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+
+  i.bi:first-child {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    width: 1.4rem;
+    text-align: center;
+    transition: color 0.2s ease;
+  }
+
+  .group-chevron {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    transition: transform 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+
+    &--aberto {
+      transform: rotate(180deg);
+      color: var(--primary-color);
+    }
+  }
+
+  &:hover,
+  &--aberto {
+    background: var(--surface-hover-primary);
+    color: var(--primary-color);
+
+    i.bi:first-child {
+      color: var(--primary-color);
+    }
+  }
+}
+
+.group-children {
+  list-style: none;
+  margin: 0.2rem 0 0.25rem;
+  padding: 0 0 0 1.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border-left: 1px solid var(--border-primary-soft);
+  margin-left: 1.05rem;
+}
+
+.link-item--child {
+  font-size: 0.9rem;
+  padding: 0.4rem 0.65rem;
+
+  i {
+    font-size: 0.95rem;
+    width: 1.15rem;
+  }
+}
+
+.link-item--child .link-item--active-child::before,
+.link-item--child.active::before {
+  left: -1.05rem;
+}
+
+/* ======================== */
+/* Modo recolhido           */
+/* ======================== */
+
+.sidebar--collapsed {
+  width: 72px;
+  padding: 1rem 0.5rem;
+
+  .section {
+    padding: 0.85rem 0.3rem;
+  }
+
+  .section-header {
+    justify-content: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .section-links {
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .link-item {
+    justify-content: center;
+    padding: 0.6rem 0;
+
+    .link-label,
+    .badge {
+      display: none;
+    }
+  }
+
+  .group-toggle {
+    justify-content: center;
+    padding: 0.6rem 0;
+
+    .link-label,
+    .badge {
+      display: none;
+    }
+  }
+
+  .group-children {
+    padding-left: 0;
+    margin-left: 0;
+    border-left: none;
+    align-items: center;
+    gap: 0.45rem;
+  }
+}

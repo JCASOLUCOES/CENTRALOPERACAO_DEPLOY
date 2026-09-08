@@ -1,0 +1,57 @@
+<section class="politica-page">
+
+  <!-- Hero -->
+  <header class="politica-hero">
+    <div class="politica-hero__blob politica-hero__blob--um"></div>
+    <div class="politica-hero__blob politica-hero__blob--dois"></div>
+    <div class="politica-hero__inner">
+      <div class="politica-hero__topo">
+        <span class="politica-hero__icone">
+          <i class="bi bi-shield-check"></i>
+        </span>
+        <div>
+          <h1 class="politica-hero__titulo">{{ politica.titulo }}</h1>
+          <p class="politica-hero__subtitulo">{{ politica.descricao }}</p>
+        </div>
+      </div>
+      <div class="politica-hero__meta">
+        <span class="politica-chip"><i class="bi bi-tag"></i> v{{ politica.versao }}</span>
+        <span class="politica-chip"><i class="bi bi-calendar3"></i> Vigência: {{ politica.vigencia }}</span>
+        <span class="politica-chip"><i class="bi bi-clock-history"></i> Revisada em {{ politica.ultimaRevisao }}</span>
+        <span class="politica-chip"><i class="bi bi-person-gear"></i> {{ politica.responsavel }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Seções -->
+  <article class="politica-secao" *ngFor="let secao of politica.secoes; trackBy: trackByIndex">
+    <header class="politica-secao__header">
+      <span class="politica-secao__icone">
+        <i class="bi {{ secao.icone }}"></i>
+      </span>
+      <div>
+        <h2 class="politica-secao__titulo">{{ secao.titulo }}</h2>
+        <p class="politica-secao__intro">{{ secao.introducao }}</p>
+      </div>
+    </header>
+
+    <div class="politica-itens">
+      <div class="politica-item" *ngFor="let item of secao.itens; let i = index; trackBy: trackByIndex">
+        <span class="politica-item__num">{{ i + 1 }}</span>
+        <div class="politica-item__corpo">
+          <h3 class="politica-item__titulo">{{ item.titulo }}</h3>
+          <p class="politica-item__detalhe">{{ item.detalhe }}</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- Rodapé -->
+  <footer class="politica-fim">
+    <a class="politica-fim__link" routerLink="/">
+      <i class="bi bi-arrow-left"></i> Voltar ao início
+    </a>
+    <span class="politica-fim__versao">Central de Conhecimento · v{{ appVersion }}</span>
+  </footer>
+
+</section>

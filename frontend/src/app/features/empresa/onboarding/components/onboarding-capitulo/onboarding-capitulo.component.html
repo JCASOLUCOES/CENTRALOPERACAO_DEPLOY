@@ -1,0 +1,54 @@
+<nav class="ob-crumb" aria-label="breadcrumb">
+  <ol>
+    <li><a [routerLink]="['/']">Início</a></li>
+    <li class="ob-crumb__sep"><i class="bi bi-chevron-right"></i></li>
+    <li><a [routerLink]="['/empresa/onboarding']">Empresa / Onboarding</a></li>
+    <li class="ob-crumb__sep"><i class="bi bi-chevron-right"></i></li>
+    <li aria-current="page" *ngIf="capitulo">Capítulo {{ capitulo.numero }} — {{ capitulo.titulo }}</li>
+  </ol>
+</nav>
+
+<div class="ob-capitulo" *ngIf="capitulo" [style.--ob-cor]="capitulo.cor" [class.ob-capitulo--entrada]="animacao">
+
+  <!-- Conteúdo do capítulo -->
+  <main class="ob-conteudo">
+    <!-- Cabeçalho -->
+    <header class="ob-conteudo__hero">
+      <span class="ob-conteudo__icone"><i class="bi" [ngClass]="capitulo.icone"></i></span>
+      <div class="ob-conteudo__hero-info">
+        <span class="ob-conteudo__tag">Capítulo {{ capitulo.numero }} · {{ capitulo.tempoMinutos }} min</span>
+        <h1>{{ capitulo.titulo }}</h1>
+        <p>{{ capitulo.subtitulo }}</p>
+      </div>
+    </header>
+
+    <!-- Blocos de conteúdo -->
+    <div class="ob-blocos">
+      <app-onboarding-section
+        *ngFor="let bloco of capitulo.blocos; trackBy: trackByIndex"
+        [bloco]="bloco"
+        [cor]="capitulo.cor"
+      ></app-onboarding-section>
+    </div>
+
+    <!-- Navegação inferior -->
+    <footer class="ob-nav">
+      <button type="button" class="ob-nav__btn ob-nav__btn--voltar" (click)="voltar()">
+        <i class="bi bi-arrow-left"></i> Voltar
+      </button>
+
+      <span class="ob-nav__info">
+        Capítulo {{ capitulo.numero }} de {{ total }}
+      </span>
+
+      <button
+        type="button"
+        class="ob-nav__btn ob-nav__btn--proximo"
+        (click)="avancar()"
+      >
+        {{ ehUltimo ? 'Concluir Onboarding' : 'Próximo' }}
+        <i class="bi" [ngClass]="ehUltimo ? 'bi-flag-fill' : 'bi-arrow-right'"></i>
+      </button>
+    </footer>
+  </main>
+</div>

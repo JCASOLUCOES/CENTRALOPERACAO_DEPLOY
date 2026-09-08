@@ -1,0 +1,280 @@
+.ob-crumb {
+  margin-bottom: 1.1rem;
+
+  ol {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.86rem;
+    color: var(--text-muted);
+  }
+
+  a {
+    color: var(--primary-color);
+    font-weight: 600;
+
+    &:hover {
+      color: var(--primary-color-hover);
+    }
+  }
+
+  &__sep {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+  }
+}
+
+.ob-home {
+  display: block;
+}
+
+/* ── Banner institucional ───────────────── */
+.ob-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, var(--header-color) 0%, var(--primary-color) 60%, var(--secondary-color) 130%);
+  color: var(--text-light);
+  padding: 3rem 2.6rem;
+  box-shadow: var(--shadow-card-md);
+  display: flex;
+  align-items: center;
+
+  &__blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(2px);
+    opacity: 0.35;
+
+    &--um {
+      width: 340px;
+      height: 340px;
+      top: -120px;
+      right: -80px;
+      background: radial-gradient(circle, var(--secondary-color), transparent 70%);
+    }
+
+    &--dois {
+      width: 260px;
+      height: 260px;
+      bottom: -110px;
+      left: 40%;
+      background: radial-gradient(circle, var(--accent-color), transparent 70%);
+    }
+  }
+
+  &__conteudo {
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
+  }
+
+  &__selo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    margin-bottom: 1.1rem;
+
+    i {
+      color: var(--accent-color);
+    }
+  }
+
+  &__titulo {
+    font-family: var(--font-display);
+    font-size: clamp(1.7rem, 3.2vw, 2.6rem);
+    font-weight: 800;
+    line-height: 1.2;
+    color: #fff;
+    margin: 0 0 1rem;
+
+    span {
+      background: linear-gradient(90deg, var(--accent-color), #fff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  }
+
+  &__texto {
+    color: var(--text-light);
+    font-size: 1.02rem;
+    line-height: 1.7;
+    margin: 0 0 1.6rem;
+    opacity: 0.95;
+  }
+
+  &__acoes {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+}
+
+/* ── Botões ─────────────────────────────── */
+.ob-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  text-decoration: none;
+
+  &--primario {
+    background: linear-gradient(120deg, var(--primary-color), var(--secondary-color));
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(15, 76, 129, 0.35);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px rgba(15, 76, 129, 0.45);
+      color: #fff;
+    }
+  }
+
+  &--ghost {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--text-light);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+    }
+  }
+}
+
+/* ── Spoiler: capítulos ─────────────────── */
+.ob-spoiler {
+  margin-top: 1.6rem;
+
+  &__titulo {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0;
+  }
+
+  &__sub {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    margin: 0.2rem 0 1rem;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 0.85rem;
+  }
+
+  &__card {
+    --ob-card-cor: #2563eb;
+    position: relative;
+    display: flex;
+    gap: 0.85rem;
+    align-items: center;
+    background: var(--surface-main);
+    border: 1px solid var(--border-primary-soft);
+    border-radius: 1rem;
+    padding: 1rem 1.1rem;
+    box-shadow: var(--shadow-card-sm);
+    color: var(--text-dark);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-card-md);
+      border-color: var(--ob-card-cor);
+      color: var(--text-dark);
+    }
+
+    }
+
+  &__card-numero {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  &__card-icone {
+    width: 2.7rem;
+    height: 2.7rem;
+    border-radius: 0.8rem;
+    display: grid;
+    place-items: center;
+    font-size: 1.2rem;
+    background: color-mix(in srgb, var(--ob-card-cor) 15%, transparent);
+    color: var(--ob-card-cor);
+    flex-shrink: 0;
+  }
+
+  &__card-info {
+    flex: 1;
+    min-width: 0;
+
+    h4 {
+      font-family: var(--font-display);
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin: 0 0 0.15rem;
+    }
+
+    small {
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+  }
+
+  &__card-status {
+    font-size: 1.25rem;
+    color: var(--ob-card-cor);
+    flex-shrink: 0;
+  }
+}
+
+/* ── Responsivo ─────────────────────────── */
+@media (max-width: 991px) {
+  .ob-home {
+    display: block;
+  }
+
+  .ob-banner {
+    padding: 2.2rem 1.6rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .ob-banner__acoes {
+    flex-direction: column;
+
+    .ob-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}

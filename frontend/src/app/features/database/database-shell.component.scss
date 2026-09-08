@@ -1,0 +1,88 @@
+.db-shell__status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.5rem;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.db-shell__status--ok {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.db-shell__status--ok:hover { background: #d1fae5; }
+
+.db-shell__status--err {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.db-shell__status--err:hover { background: #fee2e2; }
+
+.db-shell__contadores {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.82rem;
+  color: inherit;
+  opacity: 0.9;
+}
+
+.db-shell__contadores span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.db-shell__status small {
+  color: inherit;
+  opacity: 0.85;
+  margin-left: 0.25rem;
+  font-weight: 400;
+}
+
+.db-shell__tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin: 1rem 0 1.5rem;
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+
+.db-shell__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.4rem 0.4rem 0 0;
+  color: #475569;
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.db-shell__tab:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.db-shell__tab--ativa {
+  color: #1d4ed8;
+  border-bottom-color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.db-shell__content {
+  min-height: 400px;
+}

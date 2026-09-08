@@ -1,0 +1,115 @@
+<div class="login">
+  <div class="login__painel">
+
+    <section class="login__marca">
+      <img src="assets/images/logo-jca.png" alt="JCA Soluções" class="login__logo" />
+      <h1>Central de Operações</h1>
+      <p>Suporte · Desenvolvimento · Implantação</p>
+    </section>
+
+    <section class="login__info">
+      <h2>Bem-vindo de volta!</h2>
+      <p>
+        Acesse a Central de Operações da JCA: consultas e boas práticas,
+        trilhas de estudo e ferramentas do dia a dia da equipe.
+      </p>
+      <ul>
+        <li><i class="bi bi-check-circle-fill"></i> Consultas e boas práticas de SQL</li>
+        <li><i class="bi bi-check-circle-fill"></i> Trilhas de Infraestrutura e Redes</li>
+        <li><i class="bi bi-check-circle-fill"></i> Cursos gratuitos de capacitação</li>
+        <li><i class="bi bi-check-circle-fill"></i> Ferramentas e utilitários de suporte</li>
+      </ul>
+    </section>
+
+    <footer class="login__rodape">
+      <i class="bi bi-lock-fill"></i> Ambiente restrito — uso exclusivo da equipe JCA Soluções.
+    </footer>
+
+  </div>
+
+  <section class="login__formulario">
+    <div class="login__card">
+      <header class="login__card-cabecalho">
+        <h2>Entrar</h2>
+        <p>Informe suas credenciais para continuar.</p>
+      </header>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+
+        <div class="mb-3">
+          <label class="form-label" for="usuario">Usuário</label>
+          <div class="login__campo">
+            <i class="bi bi-person-fill"></i>
+            <input
+              id="usuario"
+              class="form-control"
+              type="text"
+              formControlName="usuario"
+              placeholder="suporte@jcasolucoes.com.br"
+              autocomplete="username"
+              [class.is-invalid]="form.controls.usuario.invalid && form.controls.usuario.touched"
+            />
+          </div>
+          <small class="text-danger" *ngIf="form.controls.usuario.invalid && form.controls.usuario.touched">
+            Informe seu usuário.
+          </small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="senha">Senha</label>
+          <div class="login__campo">
+            <i class="bi bi-shield-lock-fill"></i>
+            <input
+              id="senha"
+              class="form-control"
+              [type]="mostrarSenha ? 'text' : 'password'"
+              formControlName="senha"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              [class.is-invalid]="form.controls.senha.invalid && form.controls.senha.touched"
+            />
+            <button
+              type="button"
+              class="login__olho"
+              (click)="alternarSenha()"
+              [attr.aria-label]="mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'"
+            >
+              <i class="bi" [ngClass]="mostrarSenha ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+            </button>
+          </div>
+          <small class="text-danger" *ngIf="form.controls.senha.invalid && form.controls.senha.touched">
+            Informe sua senha.
+          </small>
+        </div>
+
+        <div class="login__opcoes mb-3">
+          <div class="form-check">
+            <input
+              id="lembrarAcesso"
+              class="form-check-input"
+              type="checkbox"
+              formControlName="lembrarAcesso"
+            />
+            <label class="form-check-label" for="lembrarAcesso">Lembrar meu acesso</label>
+          </div>
+        </div>
+
+        <div *ngIf="errorMessage" class="alert alert-danger login__erro" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
+        </div>
+
+        <button class="btn btn-primary w-100 login__entrar" type="submit" [disabled]="loading">
+          <span *ngIf="!loading">Entrar <i class="bi bi-arrow-right"></i></span>
+          <span *ngIf="loading">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Autenticando...
+          </span>
+        </button>
+
+        <p class="login__ajuda">
+          Problemas para acessar? Contate o administrador da Central.
+        </p>
+      </form>
+    </div>
+  </section>
+</div>

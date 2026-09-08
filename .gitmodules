@@ -1,6 +1,0 @@
-[submodule "backend"]
-	path = backend
-	url = https://github.com/JCASOLUCOES/CCBAckend.git
-[submodule "frontend"]
-	path = frontend
-	url = https://github.com/JCASOLUCOES/Central-Conhecimento.git

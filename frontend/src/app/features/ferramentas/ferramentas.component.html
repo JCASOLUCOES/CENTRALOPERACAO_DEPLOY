@@ -1,0 +1,111 @@
+<section class="ferramentas">
+  <header class="ferramentas__header">
+    <h1>Central de Utilidades do Analista de Suporte</h1>
+    <p>Softwares, downloads e sites utilizados diariamente pela equipe durante atendimentos, implantacoes, desenvolvimento e suporte tecnico.</p>
+  </header>
+
+  <div class="ferramentas__stats">
+    <article class="ferramentas__stat">
+      <span class="ferramentas__stat-icone ferramentas__stat-icone--azul"><i class="bi bi-grid-fill"></i></span>
+      <div>
+        <strong>{{ totalFerramentas }}</strong>
+        <span>Ferramentas</span>
+      </div>
+    </article>
+    <article class="ferramentas__stat">
+      <span class="ferramentas__stat-icone ferramentas__stat-icone--roxo"><i class="bi bi-collection-fill"></i></span>
+      <div>
+        <strong>{{ totalCategorias }}</strong>
+        <span>Categorias</span>
+      </div>
+    </article>
+  </div>
+
+  <div class="ferramentas__busca">
+    <div class="ferramentas__busca-campo">
+      <i class="bi bi-search"></i>
+      <input
+        type="search"
+        placeholder="Pesquisar por nome ou descricao..."
+        [value]="termoBusca"
+        (input)="aplicarBusca($event)"
+      />
+    </div>
+  </div>
+
+  <nav class="ferramentas__categorias" aria-label="Categorias">
+    <button
+      type="button"
+      class="ferramentas__categoria"
+      [class.ativa]="categoriaSelecionada === 'todas'"
+      (click)="selecionarCategoria('todas')"
+    >
+      <i class="bi bi-grid"></i> Todas
+    </button>
+    <button
+      *ngFor="let categoria of categorias; trackBy: trackById"
+      type="button"
+      class="ferramentas__categoria"
+      [class.ativa]="categoriaSelecionada === categoria.id"
+      (click)="selecionarCategoria(categoria.id)"
+    >
+      <i class="bi {{ categoria.icone }}"></i> {{ categoria.nome }}
+    </button>
+  </nav>
+
+  <p class="ferramentas__contador" *ngIf="ferramentasFiltradas.length">
+    {{ ferramentasFiltradas.length }}
+    {{ ferramentasFiltradas.length === 1 ? 'ferramenta encontrada' : 'ferramentas encontradas' }}.
+  </p>
+
+  <div class="ferramentas__grid">
+    <article class="ferramentas__card" *ngFor="let ferramenta of ferramentasFiltradas; trackBy: trackById">
+      <div class="ferramentas__card-topo">
+        <span
+          class="ferramentas__card-icone"
+          [style.background]="(categoriaPorId(ferramenta.categoria)?.cor ?? '#2563eb') + '1f'"
+          [style.color]="categoriaPorId(ferramenta.categoria)?.cor ?? '#2563eb'"
+        >
+          <i class="bi {{ ferramenta.icone }}"></i>
+        </span>
+      </div>
+      <h3>{{ ferramenta.nome }}</h3>
+      <p>{{ ferramenta.descricao }}</p>
+      <span class="ferramentas__card-categoria">
+        <i class="bi {{ categoriaPorId(ferramenta.categoria)?.icone }}"></i>
+        {{ categoriaPorId(ferramenta.categoria)?.nome }}
+      </span>
+      <div class="ferramentas__card-acoes">
+        <a
+          class="ferramentas__card-abrir"
+          *ngIf="!ferramenta.externo"
+          [href]="ferramenta.url"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Acessar <i class="bi bi-box-arrow-up-right"></i>
+        </a>
+        <button
+          *ngIf="ferramenta.externo"
+          class="ferramentas__card-abrir"
+          type="button"
+          (click)="abrirLink(ferramenta.url, true)"
+        >
+          Acessar <i class="bi bi-box-arrow-up-right"></i>
+        </button>
+      </div>
+    </article>
+  </div>
+
+  <div class="ferramentas__vazio" *ngIf="ferramentasFiltradas.length === 0">
+    <i class="bi bi-search"></i>
+    <p>Nenhuma ferramenta encontrada para os filtros informados.</p>
+    <button
+      type="button"
+      class="ferramentas__vazio-limpar"
+      (click)="limparFiltros()"
+    >
+      Limpar filtros
+    </button>
+  </div>
+</section>

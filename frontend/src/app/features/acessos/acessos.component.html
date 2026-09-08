@@ -1,0 +1,206 @@
+<section class="acessos">
+  <header class="acessos__header">
+    <h1>Acessos das Empresas</h1>
+    <p>Credenciais e permissoes relevantes para suporte, implantacao e atendimento.</p>
+  </header>
+
+  <div class="acessos__stats">
+    <article class="acessos__stat">
+      <span class="acessos__stat-icone acessos__stat-icone--azul"><i class="bi bi-building"></i></span>
+      <div>
+        <strong>{{ totalEmpresas }}</strong>
+        <span>Empresas</span>
+      </div>
+    </article>
+  </div>
+
+  <div class="acessos__busca">
+    <div class="acessos__busca-campo">
+      <i class="bi bi-search"></i>
+      <input
+        type="search"
+        placeholder="Pesquisar por nome da empresa..."
+        [value]="termoBusca"
+        (input)="aplicarBusca($event)"
+      />
+    </div>
+  </div>
+
+  <p class="acessos__contador" *ngIf="empresasFiltradas.length && !carregando">
+    {{ empresasFiltradas.length }}
+    {{ empresasFiltradas.length === 1 ? 'empresa encontrada' : 'empresas encontradas' }}.
+  </p>
+
+  <div class="acessos__loading" *ngIf="carregando">
+    <div class="spinner"></div>
+    <p>Carregando empresas...</p>
+  </div>
+
+  <div class="acessos__erro" *ngIf="erro">
+    <i class="bi bi-exclamation-triangle"></i>
+    <p>{{ erro }}</p>
+    <button type="button" (click)="carregarEmpresas()">Tentar novamente</button>
+  </div>
+
+  <div class="acessos__grid" *ngIf="!carregando && !erro">
+    <article class="acessos__card" *ngFor="let empresa of empresasFiltradas; trackBy: trackById">
+      <div class="acessos__card-topo">
+        <span class="acessos__card-icone">
+          <i class="bi bi-building"></i>
+        </span>
+      </div>
+      <h3>{{ empresa.nomeEmpresa }}</h3>
+
+      <div class="acessos__card-acoes">
+        <button
+          type="button"
+          class="acessos__card-btn"
+          (click)="abrirDetalhe(empresa)"
+        >
+          <i class="bi bi-eye"></i> Visualizar Acessos
+        </button>
+      </div>
+    </article>
+  </div>
+
+  <div class="acessos__vazio" *ngIf="!carregando && !erro && empresasFiltradas.length === 0">
+    <i class="bi bi-search"></i>
+    <p>Nenhuma empresa encontrada para o termo pesquisado.</p>
+    <button type="button" class="acessos__vazio-limpar" (click)="termoBusca = ''; filtrar()">
+      Limpar busca
+    </button>
+  </div>
+</section>
+
+<!-- Modal de senha -->
+<ng-template #senhaModalRef let-modal>
+  <div class="modal-acesso">
+    <div class="modal-acesso__header">
+      <h4><i class="bi bi-shield-lock"></i> Validacao de Acesso</h4>
+      <button type="button" class="btn-close" (click)="modal.dismiss()" aria-label="Fechar"></button>
+    </div>
+    <div class="modal-acesso__body">
+      <p class="modal-acesso__empresa" *ngIf="empresaSelecionada">
+        <i class="bi bi-building"></i> {{ empresaSelecionada.nomeEmpresa }}
+      </p>
+      <p class="modal-acesso__aviso">
+        <i class="bi bi-info-circle"></i>
+        Informe suas credenciais para visualizar as informacoes desta empresa.
+      </p>
+      <div class="modal-acesso__campo">
+        <label for="usuarioAcesso">Usuario</label>
+        <input
+          id="usuarioAcesso"
+          type="text"
+          [(ngModel)]="modalUsuario"
+          (keyup.enter)="confirmarSenha(modal)"
+          placeholder="Digite seu usuario..."
+          autofocus
+        />
+      </div>
+      <div class="modal-acesso__campo">
+        <label for="senhaAcesso">Senha</label>
+        <input
+          id="senhaAcesso"
+          type="password"
+          [(ngModel)]="modalSenha"
+          (keyup.enter)="confirmarSenha(modal)"
+          placeholder="Digite sua senha..."
+        />
+      </div>
+      <p class="modal-acesso__erro" *ngIf="senhaErro">
+        <i class="bi bi-exclamation-circle"></i> {{ senhaErro }}
+      </p>
+    </div>
+    <div class="modal-acesso__footer">
+      <button type="button" class="btn-modal btn-modal--cancelar" (click)="modal.dismiss()">Cancelar</button>
+      <button
+        type="button"
+        class="btn-modal btn-modal--confirmar"
+        [disabled]="!modalUsuario || !modalSenha || carregandoDetalhe"
+        (click)="confirmarSenha(modal)"
+      >
+        <span class="spinner-sm" *ngIf="carregandoDetalhe"></span>
+        {{ carregandoDetalhe ? 'Validando...' : 'Confirmar' }}
+      </button>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Modal de detalhes -->
+<ng-template #detalheModalRef let-modal>
+  <div class="modal-detalhe">
+    <div class="modal-detalhe__header">
+      <div>
+        <h4><i class="bi bi-building"></i> {{ empresaDetalhe?.nomeEmpresa || 'Carregando...' }}</h4>
+        <small *ngIf="empresaDetalhe">Credenciais e informacoes de acesso</small>
+      </div>
+      <button type="button" class="btn-close" (click)="modal.dismiss()" aria-label="Fechar"></button>
+    </div>
+
+    <div class="modal-detalhe__body">
+      <div class="modal-detalhe__loading" *ngIf="carregandoDetalhe && !empresaDetalhe">
+        <div class="spinner"></div>
+        <p>Carregando credenciais...</p>
+      </div>
+
+      <div class="credencial-grupo" *ngFor="let grupo of gruposDetalhe; trackBy: trackByIndex">
+        <div class="credencial-grupo__header">
+          <span class="credencial-grupo__badge" [class]="'credencial-grupo__badge--' + grupo.classe">
+            <i class="bi" [ngClass]="grupo.icone"></i> {{ grupo.titulo }}
+          </span>
+        </div>
+
+        <div class="credencial-grupo__campos">
+          <div class="campo-credencial" *ngFor="let campo of grupo.campos; trackBy: trackByIndex">
+            <label>{{ campo.label }}</label>
+            <div
+              class="campo-credencial__valor"
+              [class.campo-credencial__valor--multilinha]="campo.multilinha"
+            >
+              <span *ngIf="campo.tipo !== 'senha'" class="texto-valor">{{ campo.valor }}</span>
+              <span *ngIf="campo.tipo === 'senha'" class="senha-valor" [class.visivel]="senhasVisiveis[campo.chave]">
+                {{ senhasVisiveis[campo.chave] ? campo.valor : '••••••••' }}
+              </span>
+
+              <a
+                *ngIf="campo.tipo === 'link' && campo.informado && ehUrl(campo.valor)"
+                class="btn-abrir"
+                href="#"
+                title="Abrir link"
+                (click)="abrirLink(campo.valor); $event.preventDefault()"
+              >
+                <i class="bi bi-box-arrow-up-right"></i>
+              </a>
+
+              <button
+                *ngIf="campo.tipo === 'senha' && campo.informado"
+                type="button"
+                class="btn-toggle-senha"
+                (click)="toggleSenha(campo.chave)"
+                title="Mostrar/ocultar"
+              >
+                <i class="bi" [ngClass]="senhasVisiveis[campo.chave] ? 'bi-eye-slash' : 'bi-eye'"></i>
+              </button>
+
+              <button
+                *ngIf="campo.informado"
+                type="button"
+                class="btn-copiar"
+                [class.copiado]="copiadoId === campo.chave"
+                (click)="copiar(campo.valor, campo.chave)"
+                title="Copiar"
+              >
+                <i class="bi" [ngClass]="copiadoId === campo.chave ? 'bi-check-lg' : 'bi-clipboard'"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-detalhe__footer">
+      <button type="button" class="btn-modal btn-modal--cancelar" (click)="modal.close()">Fechar</button>
+    </div>
+  </div>
+</ng-template>

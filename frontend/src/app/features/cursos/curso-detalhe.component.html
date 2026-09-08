@@ -1,0 +1,137 @@
+<section class="curso-detalhe">
+  <nav class="curso-detalhe__breadcrumb">
+    <a routerLink="/cursos"><i class="bi bi-arrow-left"></i> Cursos</a>
+    <span class="curso-detalhe__separador">/</span>
+    <span>{{ curso?.titulo }}</span>
+  </nav>
+
+  <div class="curso-detalhe__nao-encontrado" *ngIf="naoEncontrado">
+    <i class="bi bi-exclamation-triangle"></i>
+    <h1>Curso não encontrado</h1>
+    <p>O curso que você procura não existe ou foi removido.</p>
+    <a routerLink="/cursos" class="curso-detalhe__voltar">Voltar para Cursos</a>
+  </div>
+
+  <ng-container *ngIf="!naoEncontrado && curso">
+    <header class="curso-detalhe__cabecalho">
+      <div class="curso-detalhe__cabecalho-info">
+        <span
+          class="curso-detalhe__icone"
+          [style.background]="categoriaCor + '1a'"
+          [style.color]="categoriaCor"
+        >
+          <i class="bi {{ categoriaIcone }}"></i>
+        </span>
+        <div>
+          <div class="curso-detalhe__badges-topo">
+            <span class="curso-detalhe__badge-plataforma">
+              <i class="bi bi-play-circle-fill"></i> {{ curso.plataforma }}
+            </span>
+            <span class="curso-detalhe__badge-nivel" [ngClass]="nivelClass()">
+              <i class="bi bi-signal"></i> {{ curso.nivel }}
+            </span>
+            <span class="curso-detalhe__badge-duracao">
+              <i class="bi bi-clock"></i> {{ curso.duracao }}
+            </span>
+            <span class="curso-detalhe__badge-idioma">
+              <i class="bi bi-translate"></i> {{ curso.idioma }}
+            </span>
+          </div>
+          <h1>{{ curso.titulo }}</h1>
+          <span class="curso-detalhe__autor" *ngIf="curso.autor !== 'Alura'">
+            <i class="bi bi-person-fill"></i> {{ curso.autor }}
+          </span>
+        </div>
+      </div>
+      <div class="curso-detalhe__acoes">
+        <a
+          class="curso-detalhe__acao curso-detalhe__acao--externo"
+          [href]="curso.url"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <i class="bi bi-box-arrow-up-right"></i>
+          Acessar na {{ curso.plataforma }}
+        </a>
+      </div>
+    </header>
+
+    <p class="curso-detalhe__descricao">{{ curso.descricao }}</p>
+
+    <div class="curso-detalhe__trilhas" *ngIf="trilhasRelacionadas.length">
+      <span class="curso-detalhe__trilhas-label">Trilhas:</span>
+      <span
+        *ngFor="let t of trilhasRelacionadas; trackBy: trackByIndex"
+        class="curso-detalhe__trilha-tag"
+        [style.background]="t.cor + '1a'"
+        [style.color]="t.cor"
+      >
+        <i class="bi {{ t.icone }}"></i> {{ t.nome }}
+      </span>
+    </div>
+
+    <div class="curso-detalhe__video" *ngIf="embedUrl">
+      <iframe
+        [src]="embedUrl"
+        title="Player do curso {{ curso.titulo }}"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      ></iframe>
+    </div>
+
+    <div class="curso-detalhe__video-link" *ngIf="!embedUrl && curso.url">
+      <a
+        [href]="curso.url"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="curso-detalhe__abrir-aula"
+      >
+        <i class="bi bi-play-fill"></i> Abrir aulas na {{ curso.plataforma }}
+      </a>
+    </div>
+
+    <div class="curso-detalhe__grid-info">
+      <article class="curso-detalhe__bloco" *ngIf="curso.objetivos?.length">
+        <h2><i class="bi bi-bullseye"></i> O que você vai aprender</h2>
+        <ul>
+          <li *ngFor="let obj of curso.objetivos; trackBy: trackByIndex">
+            <i class="bi bi-check2-circle"></i> {{ obj }}
+          </li>
+        </ul>
+      </article>
+
+      <article class="curso-detalhe__bloco" *ngIf="curso.preRequisitos?.length">
+        <h2><i class="bi bi-list-check"></i> Pré-requisitos</h2>
+        <ul>
+          <li *ngFor="let pre of curso.preRequisitos; trackBy: trackByIndex">
+            <i class="bi bi-arrow-right-circle"></i> {{ pre }}
+          </li>
+        </ul>
+      </article>
+
+      <article class="curso-detalhe__bloco" *ngIf="curso.tecnologiasRelacionadas?.length">
+        <h2><i class="bi bi-code-slash"></i> Tecnologias</h2>
+        <div class="curso-detalhe__tech-tags">
+          <span *ngFor="let tech of curso.tecnologiasRelacionadas; trackBy: trackByIndex" class="curso-detalhe__tech-tag">
+            {{ tech }}
+          </span>
+        </div>
+      </article>
+    </div>
+
+    <div class="curso-detalhe__tags" *ngIf="curso.tags?.length">
+      <span *ngFor="let tag of curso.tags; trackBy: trackByIndex" class="curso-detalhe__tag">#{{ tag }}</span>
+    </div>
+
+    <div class="curso-detalhe__proximo" *ngIf="proximoCurso">
+      <span class="curso-detalhe__proximo-label">Próximo curso:</span>
+      <a
+        [routerLink]="['/cursos/detalhe', proximoCurso.id]"
+        class="curso-detalhe__proximo-link"
+      >
+        <i class="bi bi-arrow-right-circle-fill"></i>
+        {{ proximoCurso.titulo }}
+      </a>
+    </div>
+  </ng-container>
+</section>

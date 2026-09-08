@@ -1,0 +1,63 @@
+<nav class="ob-crumb" aria-label="breadcrumb">
+  <ol>
+    <li>
+      <a [routerLink]="['/']" routerLinkActive="active">Início</a>
+    </li>
+    <li class="ob-crumb__sep"><i class="bi bi-chevron-right"></i></li>
+    <li aria-current="page">Empresa / Onboarding Corporativo</li>
+  </ol>
+</nav>
+
+<section class="ob-home">
+  <div class="ob-banner">
+    <div class="ob-banner__blob ob-banner__blob--um"></div>
+    <div class="ob-banner__blob ob-banner__blob--dois"></div>
+    <div class="ob-banner__conteudo">
+      <span class="ob-banner__selo"><i class="bi bi-building"></i> JCA Soluções &amp; Sistemas</span>
+      <h1 class="ob-banner__titulo">
+        Bem-vindo à <span>JCA Soluções &amp; Sistemas</span>
+      </h1>
+      <p class="ob-banner__texto">
+        Este é o seu Onboarding Corporativo: uma jornada para conhecer a empresa, nossa
+        cultura, nossos produtos, departamentos, processos e a forma como trabalhamos —
+        independentemente do seu cargo. Mais do que sistemas, aqui entregamos relacionamento,
+        confiança e resultado.
+      </p>
+
+      <div class="ob-banner__acoes">
+        <button type="button" class="ob-btn ob-btn--primario" (click)="iniciar()">
+          <i class="bi bi-rocket-takeoff"></i>
+          Iniciar Onboarding
+        </button>
+        <a class="ob-btn ob-btn--ghost" routerLink="/">
+          <i class="bi bi-arrow-left"></i> Voltar à Central
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ob-spoiler">
+  <h3 class="ob-spoiler__titulo">O que você vai conhecer</h3>
+  <p class="ob-spoiler__sub">
+    Quinze etapas, uma jornada completa de integração à empresa.
+  </p>
+  <div class="ob-spoiler__grid">
+    <a
+      class="ob-spoiler__card"
+      *ngFor="let c of capitulos; trackBy: trackById"
+      [routerLink]="['/empresa/onboarding/capitulo', c.id]"
+      [style.--ob-card-cor]="c.cor"
+    >
+      <span class="ob-spoiler__card-numero">{{ c.numero }}</span>
+      <span class="ob-spoiler__card-icone">
+        <i class="bi" [ngClass]="c.icone"></i>
+      </span>
+      <div class="ob-spoiler__card-info">
+        <h4>{{ c.titulo }}</h4>
+        <small>{{ c.tempoMinutos }} min</small>
+      </div>
+      <i class="ob-spoiler__card-status bi bi-arrow-right-circle"></i>
+    </a>
+  </div>
+</section>

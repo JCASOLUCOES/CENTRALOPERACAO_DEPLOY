@@ -1,0 +1,40 @@
+.imp-modal-tipos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.imp-modal-tipo {
+  cursor: pointer;
+  user-select: none;
+}
+
+.imp-modal-tipo input { display: none; }
+
+.imp-modal-tipo__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 1rem;
+  color: #fff;
+  font-size: 0.8rem;
+  opacity: 0.45;
+  transition: opacity 0.15s;
+}
+
+.imp-modal-tipo input:checked + .imp-modal-tipo__chip {
+  opacity: 1;
+  box-shadow: 0 0 0 2px #1e293b;
+}
+
+.imp-modal-vis {
+  display: flex;
+  gap: 1rem;
+}
+
+.imp-modal-vis-op {
+  cursor: pointer;
+}
+
+.imp-modal-vis-op input { margin-right: 0.35rem; }

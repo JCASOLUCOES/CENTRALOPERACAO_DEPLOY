@@ -1,0 +1,154 @@
+<nav class="top-bar" aria-label="Cabeçalho principal">
+  <!-- Linha principal: marca | busca global | usuário -->
+  <div class="top-bar__row">
+    <div class="top-bar__left">
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="toggleSidebar.emit()"
+        aria-label="Alternar menu lateral"
+        title="Alternar menu lateral"
+      >
+        <i class="bi bi-list" aria-hidden="true"></i>
+      </button>
+
+      <a class="navbar-brand" routerLink="/" aria-label="Ir para a página inicial">
+        <img src="assets/images/logo-jca.png" alt="Central de Operação Actyon" />
+        <div class="brand-text">
+          <span class="title">Central de Operação Actyon</span>
+          <small>Wiki interna JCA Soluções</small>
+        </div>
+      </a>
+    </div>
+
+    <div class="top-bar__center">
+      <div class="global-search" [class.global-search--open]="buscaAberta">
+        <i class="bi bi-search global-search__icon" aria-hidden="true"></i>
+        <input
+          #searchInput
+          type="search"
+          class="global-search__input"
+          placeholder="Pesquisar qualquer conteúdo..."
+          aria-label="Pesquisar qualquer conteúdo"
+          [(ngModel)]="termoBusca"
+          (input)="onBuscaInput()"
+          (focus)="buscaAberta = true"
+          (blur)="onBuscaBlur()"
+          (keydown.escape)="fecharBusca()"
+        />
+        <kbd class="global-search__kbd" aria-hidden="true">Ctrl + K</kbd>
+
+        <div class="global-search__panel" *ngIf="buscaAberta">
+          <div class="global-search__header">
+            <span>{{ termoBusca.trim() ? 'Resultados' : 'Sugestões' }}</span>
+            <span class="global-search__count" *ngIf="resultadosBusca.length">{{ resultadosBusca.length }}</span>
+          </div>
+
+          <ul class="global-search__list">
+            <li *ngFor="let r of resultadosBusca; trackBy: trackByIndex">
+              <a class="global-search__item" [routerLink]="r.rota" (click)="fecharBusca()">
+                <i class="bi" [ngClass]="r.icone" aria-hidden="true"></i>
+                <span class="global-search__text">
+                  <span class="global-search__titulo">{{ r.titulo }}</span>
+                  <span class="global-search__tipo">{{ r.tipo }}</span>
+                </span>
+                <i class="bi bi-arrow-right-short global-search__go" aria-hidden="true"></i>
+              </a>
+            </li>
+          </ul>
+
+          <div class="global-search__empty" *ngIf="!resultadosBusca.length">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <span>Nenhum resultado para “{{ termoBusca }}”.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="top-bar__right">
+      <ul class="navbar-nav align-items-center">
+        <li class="nav-item">
+          <button
+            class="theme-toggle"
+            type="button"
+            [attr.aria-label]="isDark ? 'Ativar modo claro' : 'Ativar modo escuro'"
+            [title]="isDark ? 'Modo claro' : 'Modo escuro'"
+            (click)="toggleTheme()"
+          >
+            <i class="bi" [ngClass]="isDark ? 'bi-sun-fill' : 'bi-moon-stars-fill'" aria-hidden="true"></i>
+          </button>
+        </li>
+        <li class="nav-item user-nav" ngbDropdown *ngIf="currentUser">
+          <button class="user-nav__trigger" ngbDropdownToggle [attr.aria-label]="'Menu do usuário: ' + currentUser.nome">
+            <span class="user-nav__avatar">{{ getIniciais(currentUser) }}</span>
+            <span class="user-nav__name">{{ currentUser.nome }}</span>
+            <span class="user-nav__caret" aria-hidden="true">▾</span>
+          </button>
+          <div class="user-nav__menu dropdown-menu-end" ngbDropdownMenu>
+            <div class="user-nav__header">
+              <span class="user-nav__user-name">{{ currentUser.nome }}</span>
+              <span class="user-nav__user-email">{{ currentUser.email }}</span>
+              <span class="user-nav__user-role">{{ currentUser.perfil }}</span>
+            </div>
+            <div class="user-nav__divider"></div>
+            <button class="user-nav__item" ngbDropdownItem>
+              <i class="bi bi-person" aria-hidden="true"></i> Meu Perfil
+            </button>
+            <button class="user-nav__item" ngbDropdownItem>
+              <i class="bi bi-sliders" aria-hidden="true"></i> Preferências
+            </button>
+            <button class="user-nav__item" ngbDropdownItem (click)="toggleTheme()">
+              <i class="bi" [ngClass]="isDark ? 'bi-sun-fill' : 'bi-moon-stars-fill'" aria-hidden="true"></i>
+              {{ isDark ? 'Modo claro' : 'Modo escuro' }}
+            </button>
+            <button class="user-nav__item" ngbDropdownItem>
+              <i class="bi bi-info-circle" aria-hidden="true"></i> Sobre o Sistema
+            </button>
+            <button class="user-nav__item" ngbDropdownItem *ngIf="currentUser.perfil === 'Administrador'">
+              <i class="bi bi-gear" aria-hidden="true"></i> Administração
+            </button>
+            <div class="user-nav__divider"></div>
+            <button class="user-nav__item user-nav__item--danger" ngbDropdownItem (click)="logout()">
+              <i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sair
+            </button>
+            <div class="user-nav__footer">
+              Central de Operação Actyon · v{{ versao }}
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Menu principal -->
+  <div class="top-bar__menu">
+    <ul class="header-nav">
+      <li *ngFor="let item of navItems; trackBy: trackByIndex">
+        <a
+          class="nav-link"
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: !!item.exact }"
+        >
+          <i class="bi" [ngClass]="item.icone" aria-hidden="true"></i>
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Segunda linha: breadcrumb -->
+  <div class="top-bar__meta">
+    <nav class="top-bar__breadcrumb" aria-label="Trilha de navegação">
+      <ng-container *ngFor="let crumb of breadcrumb; let last = last; trackBy: trackByIndex">
+        <a
+          *ngIf="!last && crumb.route"
+          class="breadcrumb-link"
+          [routerLink]="crumb.route"
+        >{{ crumb.label }}</a>
+        <span *ngIf="!last && crumb.route" class="breadcrumb-sep" aria-hidden="true">›</span>
+        <span *ngIf="last" class="breadcrumb-current" aria-current="page">{{ crumb.label }}</span>
+      </ng-container>
+    </nav>
+  </div>
+</nav>

@@ -1,0 +1,555 @@
+﻿<div class="tdh">
+
+  <!-- ================= Header ================= -->
+  <header class="tdh__hero">
+    <div class="tdh__blob tdh__blob--um"></div>
+    <div class="tdh__blob tdh__blob--dois"></div>
+    <div class="tdh__hero-inner">
+      <div class="tdh__topo">
+        <span class="tdh__icone"><i class="fas fa-network-wired"></i></span>
+        <div>
+          <h1 class="tdh__titulo">Manual de Boas Práticas de Rede e API</h1>
+          <p class="tdh__subtitulo">Diagnóstico e resolução de problemas de rede, API e conectividade no CRM Actyon.</p>
+        </div>
+      </div>
+
+      <div class="tdh__meta">
+        <span class="tdh__chip"><i class="fas fa-tag"></i><strong>Versão:</strong> 1.0</span>
+        <span class="tdh__chip"><i class="fas fa-users"></i>Suporte / Infraestrutura / Desenvolvimento</span>
+        <span class="tdh__chip"><i class="fas fa-list-ol"></i>13 seções</span>
+      </div>
+
+      <p class="tdh__objetivo">
+        Estabelecer boas práticas, padrões de conduta e orientações técnicas para diagnóstico e resolução de problemas de rede, API e conectividade no CRM Actyon, garantindo rastreabilidade, eficiência e qualidade no atendimento.
+      </p>
+    </div>
+  </header>
+
+  <!-- ================= Índice ================= -->
+  <nav class="tdh__indice" aria-label="Índice das seções">
+    <h2 class="tdh__indice-titulo"><i class="fas fa-list"></i> Índice <small>(clique para navegar)</small></h2>
+    <div class="tdh__indice-grid">
+      <button type="button" class="tdh__link" (click)="toggleSecao('objetivo')">
+        <span class="tdh__link-num">0</span> Objetivo do Manual
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('visao-geral')">
+        <span class="tdh__link-num">1</span> Visão Geral do Ambiente
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('principios')">
+        <span class="tdh__link-num">2</span> Princípios Gerais de Atendimento
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('api-iis')">
+        <span class="tdh__link-num">3</span> Camada API / IIS
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('iis-sql')">
+        <span class="tdh__link-num">4</span> Camada IIS ↔ SQL Server
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('rede-interna')">
+        <span class="tdh__link-num">5</span> Rede Interna (JCA e Cliente)
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('firewall')">
+        <span class="tdh__link-num">6</span> Firewall e Portas Críticas
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('rota-externa')">
+        <span class="tdh__link-num">7</span> Internet / Rota Externa
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('status-http')">
+        <span class="tdh__link-num">8</span> Status HTTP
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('sql-server')">
+        <span class="tdh__link-num">9</span> SQL Server
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('checklists')">
+        <span class="tdh__link-num">10</span> Checklists de Uso Diário
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('exemplos')">
+        <span class="tdh__link-num">11</span> Exemplos Rápidos
+      </button>
+      <button type="button" class="tdh__link" (click)="toggleSecao('boas-praticas')">
+        <span class="tdh__link-num">12</span> Boas Práticas Preventivas
+      </button>
+    </div>
+  </nav>
+
+  <!-- ================= Conteúdo ================= -->
+  <div class="tdh__conteudo">
+
+    <!-- 0. Objetivo -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'objetivo'">
+      <header class="tdh__secao-header" (click)="toggleSecao('objetivo')">
+        <span class="tdh__secao-num">0</span>
+        <h3 class="tdh__secao-titulo">Objetivo do Manual</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'objetivo'">
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-bullseye"></i> Finalidade</h4>
+          <p class="tdh__sub-texto">
+            Este manual serve como referência oficial para o time da JCA na análise de problemas de rede, lentidão e falhas no CRM Actyon, além de erros de integração via API (marketplaces, parceiros etc.).
+          </p>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-users"></i> Público-alvo</h4>
+          <p class="tdh__sub-texto">A ideia é que qualquer analista, mesmo menos experiente, consiga:</p>
+          <ul class="tdh__lista">
+            <li>Seguir um passo a passo claro;</li>
+            <li>Entender onde está o problema (cliente, internet, rede interna, firewall, IIS, SQL, API externa);</li>
+            <li>Registrar corretamente as evidências no chamado.</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-compass"></i> Uso recomendado</h4>
+          <p class="tdh__sub-texto">
+            Sempre que possível, use este manual do começo ao fim do fluxo antes de escalar.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. Visão Geral -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'visao-geral'">
+      <header class="tdh__secao-header" (click)="toggleSecao('visao-geral')">
+        <span class="tdh__secao-num">1</span>
+        <h3 class="tdh__secao-titulo">Visão Geral do Ambiente Actyon</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'visao-geral'">
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-diagram-project"></i> 1.1 Fluxo de Comunicação</h4>
+          <p class="tdh__sub-texto">Fluxo básico:</p>
+          <pre class="tdh__codigo">WEB: Usuário / Sistema Externo → Internet → Firewall / Rede Interna → IIS (API Actyon) → SQL Server</pre>
+          <pre class="tdh__codigo">COB: Usuário / Sistema Externo → Internet → Firewall / Rede Interna → SQL Server (CONEXÃO LOCAL)</pre>
+          <ul class="tdh__lista">
+            <li>Quando há integração externa: Actyon (IIS) → Internet → API do Parceiro</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-exclamation-triangle"></i> 1.2 Possíveis Pontos de Falha</h4>
+          <ul class="tdh__lista">
+            <li>API / IIS / Actyon</li>
+            <li>Comunicação IIS ↔ SQL Server</li>
+            <li>Rede interna (cliente ou JCA)</li>
+            <li>Internet / rota até APIs externas</li>
+            <li>SQL Server (performance)</li>
+            <li>Configuração da API (status HTTP / regras de negócio)</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-stethoscope"></i> 1.3 Fluxo Padrão de Diagnóstico JCA</h4>
+          <ul class="tdh__lista">
+            <li><strong>0.</strong> Testar máquina local ↔ SQL (ActyonCOB)</li>
+            <li><strong>1.</strong> Testar API internamente (no servidor)</li>
+            <li><strong>2.</strong> Testar comunicação IIS ↔ SQL</li>
+            <li><strong>3.</strong> Checar rede interna / DNS / firewall</li>
+            <li><strong>4.</strong> Checar internet do cliente</li>
+            <li><strong>5.</strong> Validar API externa POSTMAN (status HTTP e corpo de resposta)</li>
+            <li><strong>6.</strong> Verificar SQL (performance) se necessário</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Princípios Gerais -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'principios'">
+      <header class="tdh__secao-header" (click)="toggleSecao('principios')">
+        <span class="tdh__secao-num">2</span>
+        <h3 class="tdh__secao-titulo">Princípios Gerais de Atendimento</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'principios'">
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-code-branch"></i> 2.1 Separar Rede de Aplicação</h4>
+          <ul class="tdh__lista">
+            <li>Se você recebe um código HTTP (200-499), a rede em geral está funcionando; o problema tende a ser formato de requisição, autenticação, regra de negócio ou erro interno da aplicação.</li>
+            <li>Se você não recebe nada (timeout / conexão expirou) ou erro HTTP (500), é necessário investigar rede, firewall, DNS, rota ou indisponibilidade total do serviço.</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-camera"></i> 2.2 Registrar Evidências</h4>
+          <p class="tdh__sub-texto">Sempre registrar no chamado (se possível):</p>
+          <ul class="tdh__lista">
+            <li>Print ou texto completo do erro</li>
+            <li>Data e hora aproximadas</li>
+            <li>URL chamada (endpoint completo)</li>
+            <li>Método HTTP (GET / POST / PUT / DELETE)</li>
+            <li>Corpo da requisição (quando for API)</li>
+            <li>Código HTTP retornado (quando houver)</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-scale-balanced"></i> 2.3 Comparar Cenários</h4>
+          <ul class="tdh__lista">
+            <li>Funciona em um computador e não em outro?</li>
+            <li>Funciona via 4G e não via rede corporativa?</li>
+            <li>Funciona localmente no servidor, mas não de fora?</li>
+            <li>Comparar cenários ajuda a isolar onde está o problema.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Camada API / IIS -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'api-iis'">
+      <header class="tdh__secao-header" (click)="toggleSecao('api-iis')">
+        <span class="tdh__secao-num">3</span>
+        <h3 class="tdh__secao-titulo">Camada API / IIS – O Actyon está Respondendo?</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'api-iis'">
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-server"></i> 3.1 Testes Básicos no Servidor IIS</h4>
+          <p class="tdh__sub-texto">Objetivo: saber se o backend está OK antes de culpar rede externa.</p>
+          <ul class="tdh__lista">
+            <li>No servidor IIS:</li>
+            <li>Testar via navegador: http://localhost/swagger (se existir)</li>
+            <li>Testar via Postman no próprio IIS usando os mesmos endpoints, métodos, headers e body que o cliente utiliza</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-magnifying-glass"></i> 3.2 Interpretação</h4>
+          <ul class="tdh__lista">
+            <li>Se localmente responde rápido e estável: provável problema fora do servidor (rede do cliente, internet, firewall/rota).</li>
+            <li>Se localmente já está lento ou com erro: problema no próprio Actyon / IIS, na comunicação com SQL ou no SQL / regras de negócio.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Camada IIS ↔ SQL Server -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'iis-sql'">
+      <header class="tdh__secao-header" (click)="toggleSecao('iis-sql')">
+        <span class="tdh__secao-num">4</span>
+        <h3 class="tdh__secao-titulo">Camada IIS ↔ SQL Server – Comunicação Entre Servidores</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'iis-sql'">
+        <p class="tdh__descricao">
+          A comunicação entre IIS e SQL é crítica para o Actyon. Instabilidade aqui aumenta muito o tempo de resposta da API.
+        </p>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-plug-circle-bolt"></i> 4.1 Testes de Conectividade</h4>
+          <p class="tdh__sub-texto">Ping interno (latência e perda):</p>
+          <pre class="tdh__codigo">ping 192.168.2.154 -t</pre>
+          <ul class="tdh__lista">
+            <li><strong>0–1 ms</strong> → ideal</li>
+            <li><strong>&gt; 5 ms</strong> → pode gerar lentidão perceptível</li>
+            <li>Perda de pacotes → problema de rede interna (switch, cabo, VLAN, firewall)</li>
+            <li>Teste da porta do SQL (padrão 1433): <code>telnet SQLSERVER 1433</code></li>
+            <li>Conectou → porta acessível</li>
+            <li>Não conectou → firewall bloqueando, porta alterada ou serviço SQL parado</li>
+            <li>Rota interna (tracert): <code>tracert SQLSERVER</code></li>
+            <li>Ideal: 1 ou 2 hops</li>
+            <li>Muitos hops → rede interna mal segmentada (VLAN/switch/roteamento)</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-network-wired"></i> 4.2 Análise de Conexões no IIS</h4>
+          <pre class="tdh__codigo">netstat -ano | findstr 1433</pre>
+          <ul class="tdh__lista">
+            <li>Observar:</li>
+            <li>Muitas conexões em SYN_SENT → algo está filtrando ou bloqueando (firewall, rede instável)</li>
+            <li>Muito TIME_WAIT → muitas reconexões, pode indicar quedas frequentes</li>
+            <li>Poucas conexões ativas → verificar se a aplicação está reconectando demais</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-database"></i> 4.3 Verificações Diretas no SQL Server</h4>
+          <pre class="tdh__codigo">SELECT client_net_address, connect_time
+FROM sys.dm_exec_connections
+WHERE session_id > 50;</pre>
+          <ul class="tdh__lista">
+            <li>Verificar:</li>
+            <li>Se o IIS aparece como origem</li>
+            <li>Se há muitas reconexões em curto período (quedas)</li>
+          </ul>
+        </div>
+
+        <div class="tdh__dica">
+          <i class="fas fa-circle-exclamation"></i>
+          <div>
+            <strong>Erro FIREDAC entre ActyonCOB e SQL:</strong> quando o cliente apresenta erro FIREDAC ao tentar conectar do ActyonCOB ao SQL, significa que aquela máquina específica não está conseguindo estabelecer conexão com o SQL. Analise da estação com erro: teste ping e porta 1433 (telnet) para o servidor SQL, confirme a rede/VPN, verifique firewall local (Windows Defender, antivírus) e a string de conexão. Se as demais máquinas conectam normalmente, é forte indício de problema local na estação.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Rede Interna -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'rede-interna'">
+      <header class="tdh__secao-header" (click)="toggleSecao('rede-interna')">
+        <span class="tdh__secao-num">5</span>
+        <h3 class="tdh__secao-titulo">Rede Interna (JSA e Cliente)</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'rede-interna'">
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-signal"></i> 5.1 Testes Básicos</h4>
+          <ul class="tdh__lista">
+            <li>No computador do usuário ou no servidor, usar:</li>
+            <li><code>ping</code> → latência e perda de pacotes</li>
+            <li><code>pathping</code> → perda de pacotes por salto</li>
+            <li><code>tracert</code> → rota até o destino (IIS, SQL, API externa)</li>
+            <li>Observar: latência muito variável, perda de pacotes em qualquer salto, rotas com muitos hops</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-code-compare"></i> 5.2 Comparação de Estações e Redes</h4>
+          <ul class="tdh__lista">
+            <li>Em outra máquina da mesma rede o problema existe?</li>
+            <li>Em outra rede (4G, outra operadora) o problema some?</li>
+            <li>Se testar direto do servidor para fora, está normal?</li>
+            <li>Isso ajuda a saber se o problema é restrito a uma estação, a uma sub-rede/VLAN, ao link de internet ou ao firewall.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Firewall e Portas -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'firewall'">
+      <header class="tdh__secao-header" (click)="toggleSecao('firewall')">
+        <span class="tdh__secao-num">6</span>
+        <h3 class="tdh__secao-titulo">Firewall e Portas Críticas</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'firewall'">
+        <p class="tdh__descricao">Problemas frequentes: bloqueios parciais ou inspeção excessiva.</p>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-shield-halved"></i> 6.1 Pontos Críticos <small>(verificação geralmente cabe à empresa que cuida do servidor)</small></h4>
+          <ul class="tdh__lista">
+            <li>Regras liberando apenas porta, mas não o origem/destino corretos</li>
+            <li>Inspeção profunda (DPI) em tráfego interno IIS ↔ SQL</li>
+            <li>SSL inspection quebrando comunicação HTTPS com APIs externas</li>
+            <li>Logs mostrando quedas intermitentes do mesmo IP/porta</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-lock"></i> 6.2 Portas Mais Visadas e Recomendações (Internet)</h4>
+          <ul class="tdh__lista">
+            <li><strong>22 (SSH):</strong> acesso remoto seguro. Usar chave pública, limitar IPs, idealmente via VPN.</li>
+            <li><strong>23 (Telnet):</strong> acesso remoto não seguro. Evitar uso e nunca expor na internet.</li>
+            <li><strong>25 (SMTP):</strong> envio de e-mails. Cuidado com relay aberto e spam.</li>
+            <li><strong>53 (DNS):</strong> resolução de nomes. Cuidado com spoofing e DDoS de amplificação.</li>
+            <li><strong>80 (HTTP):</strong> navegação web. Usar HTTPS sempre que possível.</li>
+            <li><strong>443 (HTTPS):</strong> navegação segura. Manter protocolos e cifras atualizados.</li>
+            <li><strong>445 (SMB):</strong> compartilhamento de arquivos. Nunca expor na internet (riscos como EternalBlue/WannaCry).</li>
+            <li><strong>3389 (RDP):</strong> acesso remoto a desktops Windows. Usar VPN, MFA e restringir IPs.</li>
+            <li>Regra de ouro: tudo que for acesso remoto (SSH, RDP, SMB) não deve estar exposto diretamente na internet. Usar VPN ou túnel seguro.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Internet / Rota Externa -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'rota-externa'">
+      <header class="tdh__secao-header" (click)="toggleSecao('rota-externa')">
+        <span class="tdh__secao-num">7</span>
+        <h3 class="tdh__secao-titulo">Internet / Rota Externa até a JSA ou APIs</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'rota-externa'">
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-earth-americas"></i> 7.1 Testes Recomendados</h4>
+          <p class="tdh__sub-texto">A partir do cliente:</p>
+          <ul class="tdh__lista">
+            <li><code>ping</code> para o host externo (JSA ou API do parceiro)</li>
+            <li><code>tracert</code> para o mesmo host</li>
+            <li><code>pathping</code> para avaliar perda de pacotes</li>
+            <li>Testar a mesma URL de outra rede (4G) e/ou outro computador</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-magnifying-glass-chart"></i> 7.2 Interpretação</h4>
+          <ul class="tdh__lista">
+            <li>Se apenas a rede corporativa falha, mas 4G funciona: problema no firewall/roteador/regras de saída do cliente</li>
+            <li>Se há perda de pacotes ou latência alta já no provedor: orientar o cliente a abrir chamado com a operadora</li>
+            <li>Se todos têm problema para o mesmo endpoint: possível instabilidade do parceiro ou da própria JSA</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Status HTTP -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'status-http'">
+      <header class="tdh__secao-header" (click)="toggleSecao('status-http')">
+        <span class="tdh__secao-num">8</span>
+        <h3 class="tdh__secao-titulo">Status HTTP – Interpretação na Prática</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'status-http'">
+        <p class="tdh__descricao">Lembrar: 2xx → sucesso; 4xx → erro na requisição do cliente; 5xx → erro no servidor (lado API).</p>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-table"></i> 8.1 Tabela de Referência (Resumida)</h4>
+          <ul class="tdh__lista">
+            <li><strong>200 (OK):</strong> requisição processada com sucesso</li>
+            <li><strong>201 (Created):</strong> recurso criado com sucesso</li>
+            <li><strong>204 (No Content):</strong> ação concluída sem conteúdo na resposta</li>
+            <li><strong>400 (Bad Request):</strong> JSON mal formado, campo obrigatório ausente ou formato inválido</li>
+            <li><strong>401 (Unauthorized):</strong> autenticação inválida (token/usuário/senha)</li>
+            <li><strong>403 (Forbidden):</strong> autenticado, mas sem permissão ao recurso</li>
+            <li><strong>404 (Not Found):</strong> recurso não existe na API (endpoint/pedido etc.)</li>
+            <li><strong>406 (Not Acceptable):</strong> header Accept pedindo formato não suportado</li>
+            <li><strong>415 (Unsupported Media Type):</strong> Content-Type incorreto (usar application/json; charset=UTF-8)</li>
+            <li><strong>422 (Unprocessable Entity):</strong> viola regra de negócio, mesmo com formato correto</li>
+            <li><strong>429 (Too Many Requests):</strong> limite de requisições excedido (rate limit)</li>
+            <li><strong>500/502 (Internal Server Error):</strong> erro interno no servidor da API</li>
+            <li><strong>503 (Service Unavailable):</strong> API temporariamente indisponível/manutenção</li>
+            <li><strong>504 (Gateway Timeout):</strong> servidor da API demorou demais para responder</li>
+          </ul>
+        </div>
+
+        <div class="tdh__dica">
+          <i class="fas fa-circle-check"></i>
+          <div>
+            <strong>Quando o Problema NÃO é Rede:</strong> se você recebe qualquer 2xx ou 4xx, a requisição chegou na API (DNS, rota, firewall básico e internet estão funcionando). O foco passa a ser: corpo da requisição (JSON, campos, tipos), autenticação, regras de negócio e possíveis erros internos do parceiro (5xx).
+          </div>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-file-code"></i> 8.3 Corpo de Erro (JSON)</h4>
+          <p class="tdh__sub-texto">Sempre registrar no chamado:</p>
+          <ul class="tdh__lista">
+            <li>JSON de erro retornado</li>
+            <li>Endpoint</li>
+            <li>Método</li>
+            <li>Headers principais (Authorization, Content-Type, Accept)</li>
+            <li>Body enviado</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. SQL Server -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'sql-server'">
+      <header class="tdh__secao-header" (click)="toggleSecao('sql-server')">
+        <span class="tdh__secao-num">9</span>
+        <h3 class="tdh__secao-titulo">SQL Server – Quando Parece Rede, mas é Banco</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'sql-server'">
+        <p class="tdh__descricao">Muitos relatos de "rede lenta" são, na verdade, problemas de SQL.</p>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-gauge-high"></i> 9.1 Indicadores</h4>
+          <ul class="tdh__lista">
+            <li>WAITs altos (PAGEIOLATCH, ASYNC_NETWORK_IO, LCK_*)</li>
+            <li>CPU alta no servidor SQL</li>
+            <li>Índices muito fragmentados</li>
+            <li>Consultas demoradas</li>
+            <li>Deadlocks frequentes</li>
+            <li>TempDB sobrecarregada</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-screwdriver-wrench"></i> 9.2 Ferramentas</h4>
+          <ul class="tdh__lista">
+            <li><strong>sp_whoisactive</strong> para ver sessões, waits e consultas em execução</li>
+            <li><strong>SQL Profiler / Extended Events</strong> para rastrear queries problemáticas</li>
+            <li><strong>DMVs</strong> (sys.dm_exec_query_stats, sys.dm_db_index_physical_stats etc.)</li>
+            <li>Se o SQL está sobrecarregado, a API vai responder mais lenta e pode estourar timeout em algumas requisições, mesmo que a rede esteja perfeita.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Checklists -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'checklists'">
+      <header class="tdh__secao-header" (click)="toggleSecao('checklists')">
+        <span class="tdh__secao-num">10</span>
+        <h3 class="tdh__secao-titulo">Checklists de Uso Diário</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'checklists'">
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-list-check"></i> 10.1 Checklist Rápido (Nível 1)</h4>
+          <ul class="tdh__lista">
+            <li>O que o usuário sente? (lento, não abre, erro específico, horário em que acontece)</li>
+            <li>Sistema local ou integração externa?</li>
+            <li>Tem código de erro? (print, status HTTP, mensagem)</li>
+            <li>Testar acesso básico no cliente (outros sites)</li>
+            <li>Registrar tudo no chamado (data/hora, usuário, estação/IP, prints)</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-toolbox"></i> 10.2 Checklist Estendido – Problema no Actyon</h4>
+          <ul class="tdh__lista">
+            <li>Testar os servidores IIS (health, swagger, Postman local)</li>
+            <li>Se local está OK → focar na rede do cliente (ping, tracert, pathping, comparação)</li>
+            <li>Se local está lento → focar em IIS ↔ SQL (ping, telnet, tracert, netstat) e depois SQL (waits, CPU, consultas)</li>
+          </ul>
+        </div>
+
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-handshake"></i> 10.3 Checklist – Problema em Integração Externa</h4>
+          <ul class="tdh__lista">
+            <li>Fazer requisição de teste via Postman com credenciais e payload reais</li>
+            <li>Se não houver resposta (timeout): testar ping/path para host da API e outra rede (4G)</li>
+            <li>Se houver resposta com status HTTP: usar a tabela de status (4xx = requisição; 5xx = parceiro)</li>
+            <li>Registrar endpoint, método, headers, body, código HTTP e corpo de resposta</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Exemplos -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'exemplos'">
+      <header class="tdh__secao-header" (click)="toggleSecao('exemplos')">
+        <span class="tdh__secao-num">11</span>
+        <h3 class="tdh__secao-titulo">Exemplos Rápidos</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'exemplos'">
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-gauge"></i> Caso 1 – Actyon lento para todos</h4>
+          <p class="tdh__sub-texto">Testar health local → se lento, olhar IIS ↔ SQL e depois o banco.</p>
+        </div>
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-clock"></i> Caso 2 – Integração com marketplace retorna 504</h4>
+          <p class="tdh__sub-texto">Testar Postman, rota e, se tudo normal, provável problema no parceiro.</p>
+        </div>
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-key"></i> Caso 3 – Erro 401 em integração</h4>
+          <p class="tdh__sub-texto">Revisar credenciais, token, headers e permissões no painel do parceiro.</p>
+        </div>
+        <div class="tdh__sub">
+          <h4 class="tdh__sub-titulo"><i class="fas fa-user-slash"></i> Caso 4 – Usuários caindo o tempo todo</h4>
+          <p class="tdh__sub-texto">Executar <code>ping -t</code> do cliente para o servidor, pathping e verificar se é geral ou só em uma estação.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. Boas Práticas Preventivas -->
+    <section class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'boas-praticas'">
+      <header class="tdh__secao-header" (click)="toggleSecao('boas-praticas')">
+        <span class="tdh__secao-num">12</span>
+        <h3 class="tdh__secao-titulo">Boas Práticas Preventivas</h3>
+        <i class="fas fa-chevron-down tdh__secao-seta"></i>
+      </header>
+      <div class="tdh__secao-corpo" *ngIf="secaoAbertaId === 'boas-praticas'">
+        <ul class="tdh__lista">
+          <li>Monitorar latência IIS ↔ SQL e CPU/memória de IIS e SQL</li>
+          <li>Documentar IPs, nomes, portas e URLs de APIs externas</li>
+          <li>Não expor RDP/SSH/SMB diretamente; usar VPN e MFA</li>
+          <li>Manter SO, IIS, SQL e firewall atualizados</li>
+          <li>Manter padrão de logs com data/hora, usuário, estação, códigos de erro, prints e JSONs</li>
+        </ul>
+      </div>
+    </section>
+
+  </div>
+</div>

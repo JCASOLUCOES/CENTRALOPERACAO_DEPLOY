@@ -1,0 +1,240 @@
+<section class="cursos">
+  <!-- BANNER ALURA -->
+  <div class="cursos__banner" *ngIf="abaAtiva === 'cursos'">
+    <div class="cursos__banner-conteudo">
+      <h1>Plataforma oficial de capacitação</h1>
+      <p>Acesse a plataforma oficial e os conteúdos selecionados para sua capacitação.</p>
+      <div class="cursos__banner-stats">
+        <span><i class="bi bi-play-circle-fill"></i> {{ totalCursos }} cursos</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABAS: CURSOS / TRILHAS -->
+  <nav class="cursos__abas">
+    <button
+      type="button"
+      class="cursos__aba"
+      [class.ativa]="abaAtiva === 'cursos'"
+      (click)="alternarAba('cursos')"
+    >
+      <i class="bi bi-grid-3x3-gap-fill"></i> Cursos
+    </button>
+    <button
+      type="button"
+      class="cursos__aba"
+      [class.ativa]="abaAtiva === 'trilhas'"
+      (click)="alternarAba('trilhas')"
+    >
+      <i class="bi bi-signpost-split-fill"></i> Trilhas
+    </button>
+  </nav>
+
+  <!-- ABA CURSOS -->
+  <ng-container *ngIf="abaAtiva === 'cursos'">
+    <!-- BUSCA + FILTROS -->
+    <div class="cursos__filtros">
+      <div class="cursos__busca">
+        <i class="bi bi-search"></i>
+        <input
+          type="search"
+          placeholder="Pesquisar curso, tecnologia ou autor..."
+          [value]="termoBusca"
+          (input)="aplicarBusca($event)"
+        />
+      </div>
+      <div class="cursos__filtros-linha">
+        <div class="cursos__niveis" role="group" aria-label="Filtrar por nivel">
+          <button
+            *ngFor="let nivel of niveis; trackBy: trackByIndex"
+            type="button"
+            class="cursos__nivel"
+            [class.ativa]="nivelSelecionado === nivel"
+            (click)="selecionarNivel(nivel)"
+          >
+            {{ nivel }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CATEGORIAS -->
+    <nav class="cursos__categorias" aria-label="Categorias">
+      <button
+        type="button"
+        class="cursos__categoria"
+        [class.ativa]="categoriaAtiva === 'todas'"
+        (click)="selecionarCategoria('todas')"
+      >
+        <i class="bi bi-grid"></i> Todos
+      </button>
+      <button
+        *ngFor="let cat of categorias; trackBy: trackById"
+        type="button"
+        class="cursos__categoria"
+        [class.ativa]="categoriaAtiva === cat.id"
+        (click)="selecionarCategoria(cat.id)"
+      >
+        <i class="bi {{ cat.icone }}"></i> {{ cat.nome }}
+      </button>
+    </nav>
+
+    <!-- CONTADOR -->
+    <p class="cursos__contador" *ngIf="cursosFiltrados.length">
+      {{ cursosFiltrados.length }}
+      {{ cursosFiltrados.length === 1 ? 'curso encontrado' : 'cursos encontrados' }}.
+    </p>
+
+    <!-- GRID DE CURSOS -->
+    <div class="cursos__grid">
+      <article class="cursos__card" *ngFor="let curso of cursosFiltrados; trackBy: trackById">
+        <div class="cursos__thumb" (click)="irParaCurso(curso.id)">
+          <img
+            *ngIf="thumbnail(curso)"
+            [src]="thumbnail(curso)"
+            [alt]="curso.titulo"
+            loading="lazy"
+          />
+          <div class="cursos__thumb-placeholder" *ngIf="!thumbnail(curso)">
+            <i class="bi {{ iconeCategoria(curso.categoria) }}"></i>
+            <span>{{ curso.plataforma }}</span>
+          </div>
+          <span class="cursos__duracao"><i class="bi bi-clock"></i> {{ curso.duracao }}</span>
+          <span class="cursos__play" title="Ver detalhes">
+            <i class="bi bi-arrow-right"></i>
+          </span>
+        </div>
+
+        <div class="cursos__corpo">
+          <div class="cursos__badges">
+            <span
+              class="cursos__badge"
+              [style.background]="corCategoria(curso.categoria) + '1a'"
+              [style.color]="corCategoria(curso.categoria)"
+            >
+              <i class="bi {{ iconeCategoria(curso.categoria) }}"></i>
+              {{ nomeCategoria(curso.categoria) }}
+            </span>
+            <span class="cursos__badge" [class]="'cursos__badge--' + nivelSlug(curso.nivel)">
+              <i class="bi bi-signal"></i> {{ curso.nivel }}
+            </span>
+          </div>
+
+          <h3>{{ curso.titulo }}</h3>
+          <p>{{ curso.descricao }}</p>
+
+          <div class="cursos__info">
+            <span><i class="bi bi-person-fill"></i> {{ curso.autor }}</span>
+            <span><i class="bi bi-globe2"></i> {{ curso.plataforma }}</span>
+          </div>
+
+          <div class="cursos__acoes">
+            <button
+              type="button"
+              class="cursos__ver-detalhes"
+              (click)="irParaCurso(curso.id)"
+            >
+              <i class="bi bi-arrow-right-circle"></i> Ver curso
+            </button>
+            <a
+              class="cursos__externo"
+              [href]="curso.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              (click)="$event.stopPropagation()"
+            >
+              <i class="bi bi-box-arrow-up-right"></i>
+            </a>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- VAZIO -->
+    <div class="cursos__vazio" *ngIf="cursosFiltrados.length === 0">
+      <i class="bi bi-search"></i>
+      <p>Nenhum curso encontrado para os filtros informados.</p>
+      <button type="button" class="cursos__vazio-limpar" (click)="limparFiltros()">
+        Limpar filtros
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- ABA TRILHAS -->
+  <ng-container *ngIf="abaAtiva === 'trilhas'">
+    <div class="cursos__trilhas-intro">
+      <h2><i class="bi bi-signpost-split-fill"></i> Áreas de Conhecimento</h2>
+      <p>Trilhas organizadas por areas de conhecimento, com cursos recomendados para cada uma.</p>
+    </div>
+
+    <div class="cursos__trilhas-grid">
+      <article
+        class="cursos__trilha-card"
+        *ngFor="let trilha of trilhasDisponiveis; trackBy: trackById"
+      >
+        <header class="cursos__trilha-cabecalho" [style.borderLeftColor]="trilha.cor">
+          <span
+            class="cursos__trilha-icone"
+            [style.background]="trilha.cor + '1a'"
+            [style.color]="trilha.cor"
+          >
+            <i class="bi {{ trilha.icone }}"></i>
+          </span>
+          <div>
+            <h3>{{ trilha.nome }}</h3>
+            <p>{{ trilha.descricao }}</p>
+          </div>
+        </header>
+        <div class="cursos__trilha-cursos">
+          <a
+            *ngFor="let curso of cursosPorTrilha(trilha.id); trackBy: trackById"
+            class="cursos__trilha-item"
+            (click)="irParaCurso(curso.id)"
+          >
+            <span
+              class="cursos__trilha-item-dot"
+              [style.background]="trilha.cor"
+            ></span>
+            <span class="cursos__trilha-item-titulo">{{ curso.titulo }}</span>
+            <span class="cursos__trilha-item-info">
+              {{ curso.duracao }} · {{ curso.plataforma }}
+            </span>
+          </a>
+        </div>
+        <div class="cursos__trilha-rodape">
+          <span>{{ trilha.cursoIds.length }} cursos</span>
+        </div>
+      </article>
+    </div>
+  </ng-container>
+</section>
+
+<!-- MODAL DE VIDEO -->
+<ng-template #modalVideo>
+  <div class="cursos-modal__corpo" *ngIf="cursoEmExibicao">
+    <div class="cursos-modal__cabecalho">
+      <div>
+        <h4>{{ cursoEmExibicao.titulo }}</h4>
+        <span>{{ cursoEmExibicao.autor }} · {{ cursoEmExibicao.plataforma }} · {{ cursoEmExibicao.duracao }}</span>
+      </div>
+      <a
+        class="cursos-modal__externo"
+        [href]="cursoEmExibicao.url"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Abrir no YouTube"
+      >
+        <i class="bi bi-box-arrow-up-right"></i>
+      </a>
+    </div>
+    <div class="cursos-modal__video">
+      <iframe
+        *ngIf="iframeUrl"
+        [src]="iframeUrl"
+        title="Player de video do curso"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      ></iframe>
+    </div>
+  </div>
+</ng-template>

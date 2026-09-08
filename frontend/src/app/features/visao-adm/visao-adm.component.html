@@ -1,0 +1,356 @@
+<section class="adm-page">
+  <header>
+    <h1 class="adm-header__title"><i class="bi bi-clipboard-data-fill"></i> Visão ADM</h1>
+    <p class="adm-header__desc">
+      Procedimentos administrativos padronizados das áreas da JCA Soluções: Financeiro, Recursos Humanos e Comercial.
+      Consulte passo a passo, pré-requisitos, erros comuns e boas práticas de cada rotina.
+    </p>
+  </header>
+
+  <div class="adm-stats">
+    <div class="adm-stat">
+      <span class="adm-stat__icone" style="background: rgba(37, 99, 235, 0.12); color: #2563eb;">
+        <i class="bi bi-files"></i>
+      </span>
+      <div>
+        <strong>{{ totalProcedimentos }}</strong>
+        <span>Procedimentos</span>
+      </div>
+    </div>
+    <div
+      class="adm-stat"
+      *ngFor="let setor of setores; trackBy: trackById">
+      <span class="adm-stat__icone" [style.background]="setor.cor + '1a'" [style.color]="setor.cor">
+        <i class="bi {{ setor.icone }}"></i>
+      </span>
+      <div>
+        <strong>{{ contagemPorSetor(setor.id) }}</strong>
+        <span>{{ setor.nome }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="adm-search">
+    <i class="bi bi-search"></i>
+    <input
+      type="search"
+      placeholder="Buscar procedimento por nome, tag ou categoria..."
+      [value]="termoBusca"
+      (input)="aplicarBusca($event)"
+    />
+  </div>
+
+  <div class="adm-pills">
+    <button
+      type="button"
+      class="adm-pill"
+      [class.adm-pill--ativa]="setorAtivo === 'todos'"
+      (click)="selecionarSetor('todos')"
+    >
+      Todos
+    </button>
+    <button
+      type="button"
+      class="adm-pill"
+      *ngFor="let setor of setores; trackBy: trackById"
+      [class.adm-pill--ativa]="setorAtivo === setor.id"
+      (click)="selecionarSetor(setor.id)"
+    >
+      <i class="bi {{ setor.icone }}"></i>
+      {{ setor.nome }}
+    </button>
+  </div>
+
+  <div class="adm-grid" *ngIf="procedimentosFiltrados.length > 0">
+    <a
+      class="adm-card adm-card--link"
+      *ngFor="let proc of procedimentosFiltrados; trackBy: trackById"
+      [routerLink]="['/visao-adm/detalhe', proc.id]"
+    >
+      <span
+        class="adm-card__icone"
+        [style.background]="service.setorInfo(proc.setor).cor + '1a'"
+        [style.color]="service.setorInfo(proc.setor).cor"
+      >
+        <i class="bi {{ proc.icone }}"></i>
+      </span>
+      <h2 class="adm-card__title">{{ proc.titulo }}</h2>
+      <p class="adm-card__desc">{{ proc.resumo }}</p>
+      <div class="adm-tags">
+        <span class="adm-tag" *ngFor="let tag of proc.tags.slice(0, 4); trackBy: trackByIndex">
+          <i class="bi bi-tag"></i> {{ tag }}
+        </span>
+      </div>
+      <div class="adm-card__footer">
+        <span class="adm-badge">
+          <i class="bi {{ service.setorInfo(proc.setor).icone }}"></i>
+          {{ service.setorInfo(proc.setor).nome }}
+        </span>
+        <span class="adm-card__meta">v{{ proc.versao }} &middot; {{ proc.atualizadoEm }}</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="adm-empty" *ngIf="procedimentosFiltrados.length === 0">
+    <i class="bi bi-inbox"></i>
+    <p>Nenhum procedimento encontrado em <strong>{{ setorAtivoNome }}</strong>.</p>
+    <button type="button" class="adm-btn adm-btn--ghost" (click)="limparFiltros()">
+      <i class="bi bi-arrow-counterclockwise"></i> Limpar filtros
+    </button>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     CENTRAL DE UTILIDADES
+     ═══════════════════════════════════════════ -->
+<section class="util">
+  <header class="util__hero">
+    <div class="util__blob util__blob--um"></div>
+    <div class="util__blob util__blob--dois"></div>
+    <div class="util__hero-inner">
+      <div class="util__topo">
+        <span class="util__icone"><i class="bi bi-grid-1x2-fill"></i></span>
+        <div>
+          <h1 class="util__titulo">Central de Utilidades</h1>
+          <p class="util__subtitulo">
+            Sistemas utilizados diariamente pelas áreas Administrativa, Financeira, Comercial e RH.
+            Acesso rápido com um clique.
+          </p>
+        </div>
+      </div>
+      <div class="util__meta">
+        <span class="util__chip"><i class="bi bi-collection"></i><strong>{{ totalUtilidades }}</strong> sistemas</span>
+        <span class="util__chip"><i class="bi bi-star-fill"></i><strong>{{ favoritas.length }}</strong> favoritos</span>
+        <span class="util__chip" *ngIf="ultimosUtilizados.length > 0"><i class="bi bi-clock-history"></i>últimos acessos</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Favoritos -->
+  <section class="util__bloco" *ngIf="favoritas.length > 0">
+    <h2 class="util__bloco-titulo"><i class="bi bi-star-fill"></i> Acesso rápido <small>favoritos</small></h2>
+    <div class="util__rapido">
+      <a
+        class="util__rapido-card"
+        *ngFor="let fav of favoritas; trackBy: trackById"
+        [href]="fav.url"
+        target="_blank"
+        rel="noopener"
+        (click)="registrarAcesso(fav.id)"
+        [style.background]="fav.cor + '14'"
+        [style.borderColor]="fav.cor + '55'"
+      >
+        <span class="util__rapido-icone" [style.background]="fav.cor + '22'" [style.color]="fav.cor">
+          <i class="bi {{ fav.icone }}"></i>
+        </span>
+        <div>
+          <strong>{{ fav.nome }}</strong>
+          <small>{{ utilidadesService.categoriaInfo(fav.categoria).nome }}</small>
+        </div>
+        <i class="bi bi-box-arrow-up-right util__rapido-seta"></i>
+      </a>
+    </div>
+  </section>
+
+  <!-- Últimos utilizados -->
+  <section class="util__bloco" *ngIf="ultimosUtilizados.length > 0">
+    <h2 class="util__bloco-titulo"><i class="bi bi-clock-history"></i> Últimos utilizados</h2>
+    <div class="util__rapido">
+      <a
+        class="util__rapido-card"
+        *ngFor="let ult of ultimosUtilizados; trackBy: trackById"
+        [href]="ult.url"
+        target="_blank"
+        rel="noopener"
+        (click)="registrarAcesso(ult.id)"
+        [style.background]="ult.cor + '14'"
+        [style.borderColor]="ult.cor + '55'"
+      >
+        <span class="util__rapido-icone" [style.background]="ult.cor + '22'" [style.color]="ult.cor">
+          <i class="bi {{ ult.icone }}"></i>
+        </span>
+        <div>
+          <strong>{{ ult.nome }}</strong>
+          <small>{{ utilidadesService.categoriaInfo(ult.categoria).nome }}</small>
+        </div>
+        <i class="bi bi-box-arrow-up-right util__rapido-seta"></i>
+      </a>
+    </div>
+  </section>
+
+  <!-- Busca + controles -->
+  <div class="util__controles">
+    <div class="util__busca">
+      <i class="bi bi-search"></i>
+      <input
+        type="search"
+        placeholder="Buscar sistema por nome, categoria ou tag (ex.: nota, fgts, canva, assinatura, saúde)..."
+        [(ngModel)]="termoUtilidade"
+      />
+    </div>
+
+    <div class="util__acoes">
+      <select class="util__select" [value]="ordenacaoUtilidade" (change)="alterarOrdenacao($event)">
+        <option value="categoria">Ordenar por categoria</option>
+        <option value="nome">Ordenar por nome</option>
+        <option value="acessos">Mais acessados</option>
+      </select>
+
+      <div class="util__toggle" role="group" aria-label="Modo de exibição">
+        <button
+          type="button"
+          class="util__toggle-btn"
+          [class.util__toggle-btn--ativa]="exibicaoUtilidade === 'grade'"
+          (click)="alterarExibicao('grade')"
+          title="Grade (cards)"
+        >
+          <i class="bi bi-grid-3x3-gap-fill"></i>
+        </button>
+        <button
+          type="button"
+          class="util__toggle-btn"
+          [class.util__toggle-btn--ativa]="exibicaoUtilidade === 'lista'"
+          (click)="alterarExibicao('lista')"
+          title="Lista"
+        >
+          <i class="bi bi-list-ul"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtro por categoria -->
+  <div class="util__pills">
+    <button
+      type="button"
+      class="util__pill"
+      [class.util__pill--ativa]="categoriaUtilidade === 'todas'"
+      (click)="selecionarCategoriaUtilidade('todas')"
+    >
+      Todas
+    </button>
+    <button
+      type="button"
+      class="util__pill"
+      *ngFor="let cat of utilidadesService.categorias(); trackBy: trackById"
+      [class.util__pill--ativa]="categoriaUtilidade === cat.id"
+      (click)="selecionarCategoriaUtilidade(cat.id)"
+    >
+      <i class="bi {{ cat.icone }}"></i>
+      {{ cat.nome }}
+    </button>
+  </div>
+
+  <!-- Cards: Grade -->
+  <div class="util__grid" *ngIf="exibicaoUtilidade === 'grade' && utilidadesFiltradas.length > 0">
+    <article
+      class="util__card"
+      *ngFor="let u of utilidadesFiltradas; trackBy: trackById"
+      [style.background]="u.cor + '0d'"
+      [style.borderColor]="u.cor + '3d'"
+    >
+      <div class="util__card-topo">
+        <span class="util__card-icone" [style.background]="u.cor + '1f'" [style.color]="u.cor">
+          <i class="bi {{ u.icone }}"></i>
+        </span>
+        <button
+          type="button"
+          class="util__fav"
+          [class.util__fav--ativa]="ehFavorito(u.id)"
+          (click)="alternarFavorito(u.id)"
+          [attr.aria-label]="ehFavorito(u.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+        >
+          <i class="bi" [ngClass]="ehFavorito(u.id) ? 'bi-star-fill' : 'bi-star'"></i>
+        </button>
+      </div>
+
+      <h3 class="util__card-titulo">{{ u.nome }}</h3>
+      <p class="util__card-desc">{{ u.descricao }}</p>
+
+      <div class="util__card-badges">
+        <span class="util__badge" [style.background]="u.cor + '1a'" [style.color]="u.cor">
+          <i class="bi {{ utilidadesService.iconeCategoria(u.categoria) }}"></i>
+          {{ utilidadesService.categoriaInfo(u.categoria).nome }}
+        </span>
+        <span
+          class="util__status"
+          [class.util__status--online]="u.status === 'online'"
+          [class.util__status--offline]="u.status === 'offline'"
+        >
+          <i class="bi" [ngClass]="u.status === 'online' ? 'bi-circle-fill' : 'bi-circle'"></i>
+          {{ u.status === 'online' ? 'Online' : u.status === 'offline' ? 'Offline' : 'Indefinido' }}
+        </span>
+      </div>
+
+      <div class="util__tags" *ngIf="u.tags.length > 0">
+        <span class="util__tag" *ngFor="let tag of u.tags.slice(0, 3); trackBy: trackByIndex">
+          <i class="bi bi-tag"></i> {{ tag }}
+        </span>
+      </div>
+
+      <div class="util__card-acoes">
+        <a class="util__btn util__btn--primario" [href]="u.url" (click)="registrarAcesso(u.id)">
+          <i class="bi bi-box-arrow-in-right"></i> Acessar Sistema
+        </a>
+        <a
+          class="util__btn util__btn--ghost"
+          [href]="u.url"
+          target="_blank"
+          rel="noopener"
+          (click)="registrarAcesso(u.id)"
+          title="Abrir em nova aba"
+        >
+          <i class="bi bi-box-arrow-up-right"></i>
+        </a>
+      </div>
+
+      <div class="util__card-rodape" *ngIf="acessosDe(u.id) > 0">
+        <span><i class="bi bi-eye"></i> {{ acessosDe(u.id) }} acessos</span>
+        <span *ngIf="utilidadesService.ultimoAcesso(u.id)"><i class="bi bi-clock"></i> última visita</span>
+      </div>
+    </article>
+  </div>
+
+  <!-- Cards: Lista -->
+  <div class="util__lista" *ngIf="exibicaoUtilidade === 'lista' && utilidadesFiltradas.length > 0">
+    <div class="util__linha" *ngFor="let u of utilidadesFiltradas; trackBy: trackById">
+      <span class="util__linha-icone" [style.background]="u.cor + '1f'" [style.color]="u.cor">
+        <i class="bi {{ u.icone }}"></i>
+      </span>
+      <div class="util__linha-info">
+        <strong>{{ u.nome }}</strong>
+        <small>{{ u.descricao }}</small>
+      </div>
+      <span class="util__badge util__badge--cat" [style.background]="u.cor + '1a'" [style.color]="u.cor">
+        <i class="bi {{ utilidadesService.iconeCategoria(u.categoria) }}"></i>
+        {{ utilidadesService.categoriaInfo(u.categoria).nome }}
+      </span>
+      <span
+        class="util__status"
+        [class.util__status--online]="u.status === 'online'"
+        [class.util__status--offline]="u.status === 'offline'"
+      >
+        <i class="bi" [ngClass]="u.status === 'online' ? 'bi-circle-fill' : 'bi-circle'"></i>
+        {{ u.status === 'online' ? 'Online' : u.status === 'offline' ? 'Offline' : 'Indefinido' }}
+      </span>
+      <div class="util__linha-acoes">
+        <a class="util__btn util__btn--primario util__btn--sm" [href]="u.url" (click)="registrarAcesso(u.id)">
+          Acessar
+        </a>
+        <button
+          type="button"
+          class="util__fav"
+          [class.util__fav--ativa]="ehFavorito(u.id)"
+          (click)="alternarFavorito(u.id)"
+        >
+          <i class="bi" [ngClass]="ehFavorito(u.id) ? 'bi-star-fill' : 'bi-star'"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="util__empty" *ngIf="utilidadesFiltradas.length === 0">
+    <i class="bi bi-search"></i>
+    <p>Nenhum sistema encontrado para <strong>"{{ termoUtilidade }}"</strong>.</p>
+  </div>
+</section>

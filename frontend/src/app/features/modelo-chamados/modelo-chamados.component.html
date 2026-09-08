@@ -1,0 +1,265 @@
+<section class="mc" [class.mc--chamado]="abaAtiva === 'chamado'">
+
+  <!-- ============ Topo ============ -->
+  <header class="mc-topo">
+    <span class="mc-topo__tag"><i class="bi bi-file-earmark-text-fill"></i> Modelos de Chamados</span>
+    <h1>Documentar chamados e atendimentos</h1>
+    <p>Escolha o tipo de registro abaixo e copie o conteúdo formatado para colar no sistema interno.</p>
+  </header>
+
+  <!-- ============ Abas ============ -->
+  <nav class="mc-abas">
+    <button
+      class="mc-abas__botao"
+      [class.mc-abas__botao--ativa]="abaAtiva === 'modelo'"
+      (click)="abaAtiva = 'modelo'">
+      <i class="bi bi-file-earmark-text-fill"></i> Modelo de Passagem
+    </button>
+    <button
+      class="mc-abas__botao"
+      [class.mc-abas__botao--ativa]="abaAtiva === 'chamado'"
+      (click)="abaAtiva = 'chamado'">
+      <i class="bi bi-clipboard2-check-fill"></i> Chamados de Atendimento
+    </button>
+  </nav>
+
+  <!-- ================================================================ -->
+  <!-- ABA 1 — Modelo de Passagem de Chamados                           -->
+  <!-- ================================================================ -->
+  <ng-container *ngIf="abaAtiva === 'modelo'">
+
+    <!-- Identificação -->
+    <div class="mc-bloco mc-bloco--identificacao">
+      <div class="mc-bloco__titulo">
+        <i class="bi bi-person-vcard-fill"></i>
+        <strong>Identificação</strong>
+      </div>
+      <div class="mc-form-grid">
+        <label class="mc-campo">
+          <span>Contratante <em>*</em></span>
+          <input type="text" class="mc-input" [class.mc-input--invalido]="campoInvalido('contratante')" [(ngModel)]="identificacao['contratante']" placeholder="Ex.: Distribuidora Exemplo LTDA" />
+        </label>
+        <label class="mc-campo">
+          <span>Produto</span>
+          <input type="text" class="mc-input" [(ngModel)]="identificacao['produto']" placeholder="Ex.: ActyonCOB / ActyonWEB / Portal" />
+        </label>
+        <label class="mc-campo">
+          <span>Responsável pelo chamado</span>
+          <input type="text" class="mc-input" [(ngModel)]="identificacao['modulo']" placeholder="Ex.: Nome do responsável" />
+        </label>
+        <label class="mc-campo">
+          <span>Prioridade</span>
+          <select class="mc-input" [(ngModel)]="identificacao['prioridade']">
+            <option value="">Selecione...</option>
+            <option value="Alta">Alta</option>
+            <option value="Média">Média</option>
+            <option value="Baixa">Baixa</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <!-- Campos principais -->
+    <div class="mc-campos">
+
+      <article class="mc-bloco">
+        <header class="mc-bloco__header">
+          <span class="mc-bloco__icone mc-bloco__icone--vermelha"><i class="bi bi-bug-fill"></i></span>
+          <div>
+            <h2>Problema <em>*</em></h2>
+            <p>Descreva o que está acontecendo: erro, mensagem exibida, comportamento observado.</p>
+          </div>
+        </header>
+        <textarea class="mc-input mc-input--area" rows="3" [class.mc-input--invalido]="campoTextoInvalido('problema')" [(ngModel)]="problema" placeholder="Ex.: Ao emitir um novo boleto com a mesma data de vencimento de outro em aberto, o sistema bloqueia a operação com a mensagem X..."></textarea>
+      </article>
+
+      <article class="mc-bloco">
+        <header class="mc-bloco__header">
+          <span class="mc-bloco__icone mc-bloco__icone--azul"><i class="bi bi-bullseye"></i></span>
+          <div>
+            <h2>Objetivo <em>*</em></h2>
+            <p>O que o cliente espera alcançar com esta solicitação.</p>
+          </div>
+        </header>
+        <textarea class="mc-input mc-input--area" rows="2" [class.mc-input--invalido]="campoTextoInvalido('objetivo')" [(ngModel)]="objetivo" placeholder="Ex.: O cliente precisa gerar o novo boleto mantendo a data de vencimento do anterior para concluir a renegociação do título..."></textarea>
+      </article>
+
+      <article class="mc-bloco">
+        <header class="mc-bloco__header">
+          <span class="mc-bloco__icone mc-bloco__icone--verde"><i class="bi bi-eye-fill"></i></span>
+          <div>
+            <h2>O que já foi visto</h2>
+            <p>Validações, evidências e investigações já realizadas durante o atendimento.</p>
+          </div>
+        </header>
+        <textarea class="mc-input mc-input--area" rows="3" [(ngModel)]="jaVisto" placeholder="Ex.: Reproduzido em produção; cache limpo; IIS reiniciado; SQL validado; print do erro anexado; testado com outro usuário..."></textarea>
+      </article>
+
+      <article class="mc-bloco">
+        <header class="mc-bloco__header">
+          <span class="mc-bloco__icone mc-bloco__icone--laranja"><i class="bi bi-list-ol"></i></span>
+          <div>
+            <h2>Cenário para teste <em>*</em></h2>
+            <p>Passo a passo para reproduzir o problema, na ordem em que o cliente executa.</p>
+          </div>
+        </header>
+        <textarea class="mc-input mc-input--area" rows="3" [class.mc-input--invalido]="campoTextoInvalido('cenarioTeste')" [(ngModel)]="cenarioTeste" placeholder="Ex.: 1. Acessar o Actyon Web; 2. Abrir Contas a Receber; 3. Selecionar o título em aberto; 4. Clicar em Gerar novo boleto; 5. Manter a mesma data de vencimento; 6. Confirmar..."></textarea>
+      </article>
+
+      <article class="mc-bloco mc-bloco--cheia">
+        <header class="mc-bloco__header">
+          <span class="mc-bloco__icone mc-bloco__icone--ciano"><i class="bi bi-check2-circle"></i></span>
+          <div>
+            <h2>Resultado esperado <em>*</em></h2>
+            <p>Qual deve ser o comportamento correto do sistema ao executar o cenário.</p>
+          </div>
+        </header>
+        <textarea class="mc-input mc-input--area" rows="2" [class.mc-input--invalido]="campoTextoInvalido('resultadoEsperado')" [(ngModel)]="resultadoEsperado" placeholder="Ex.: O sistema deveria permitir a geração do novo boleto e emitir normalmente, sem bloquear a operação..."></textarea>
+      </article>
+
+    </div>
+
+    <!-- Rodapé -->
+    <footer class="mc-rodape">
+      <p>Os campos com <em>*</em> são obrigatórios para gerar o chamado.</p>
+      <button type="button" class="mc-btn" (click)="gerarTextoChamado()">
+        <i class="bi bi-clipboard-check-fill"></i> Copiar chamado formatado
+      </button>
+    </footer>
+
+  </ng-container>
+
+  <!-- ================================================================ -->
+  <!-- ABA 2 — Chamados de Atendimento                                   -->
+  <!-- ================================================================ -->
+  <ng-container *ngIf="abaAtiva === 'chamado'">
+
+    <div class="mc-chamado-grid">
+
+      <!-- Coluna esquerda: Formulário -->
+      <div class="mc-chamado-grid__form">
+
+        <div class="mc-chamado-form-scroll">
+
+        <div class="mc-campos">
+
+        <article class="mc-bloco">
+          <header class="mc-bloco__header">
+            <span class="mc-bloco__icone"><i class="bi bi-person-fill"></i></span>
+              <div>
+                <h2>Quem solicitou?</h2>
+                <p>Nome de quem realizou a solicitação.</p>
+              </div>
+            </header>
+            <input type="text" class="mc-input" [(ngModel)]="quemSolicitou" placeholder="Ex.: João Silva" />
+          </article>
+
+          <article class="mc-bloco">
+            <header class="mc-bloco__header">
+              <span class="mc-bloco__icone mc-bloco__icone--laranja"><i class="bi bi-question-circle-fill"></i></span>
+              <div>
+                <h2>O que foi solicitado?</h2>
+                <p>Descrição breve da solicitação.</p>
+              </div>
+            </header>
+            <textarea class="mc-input mc-input--area" rows="2" [(ngModel)]="oQueFoiSolicitado" placeholder="Ex.: Alteração de senha de acesso ao sistema."></textarea>
+          </article>
+
+          <article class="mc-bloco">
+            <header class="mc-bloco__header">
+              <span class="mc-bloco__icone mc-bloco__icone--verde"><i class="bi bi-gear-fill"></i></span>
+              <div>
+                <h2>O que foi feito?</h2>
+                <p>Ações realizadas para atender a solicitação.</p>
+              </div>
+            </header>
+            <textarea class="mc-input mc-input--area" rows="2" [(ngModel)]="oQueFoiFeito" placeholder="Ex.: Senha redefinida e realizado teste de acesso."></textarea>
+          </article>
+
+          <article class="mc-bloco">
+            <header class="mc-bloco__header">
+              <span class="mc-bloco__icone mc-bloco__icone--ciano"><i class="bi bi-check-circle-fill"></i></span>
+              <div>
+                <h2>Conclusão</h2>
+                <p>Resultado final do atendimento.</p>
+              </div>
+            </header>
+            <textarea class="mc-input mc-input--area" rows="2" [(ngModel)]="conclusao" placeholder="Ex.: Cliente validou o acesso e a solicitação foi concluída."></textarea>
+          </article>
+
+        </div>
+
+        </div>
+
+        <!-- WhatsApp -->
+        <article class="mc-bloco mc-bloco--whatsapp">
+          <label class="mc-checkbox">
+            <input type="checkbox" [(ngModel)]="anexarWhatsApp" />
+            <span class="mc-checkbox__marca"></span>
+            <span class="mc-checkbox__texto">
+              <i class="bi bi-whatsapp"></i> Anexar conversa do WhatsApp <em>(caso necessário)</em>
+            </span>
+          </label>
+
+          <div class="mc-whatsapp-campo" *ngIf="anexarWhatsApp">
+            <textarea
+              class="mc-input mc-input--area"
+              rows="3"
+              [(ngModel)]="conversaWhatsApp"
+              placeholder="Cole aqui toda a conversa do WhatsApp com o cliente..."></textarea>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- Coluna direita: Pré-visualização -->
+      <div class="mc-chamado-grid__preview">
+        <article class="mc-bloco mc-preview">
+          <header class="mc-bloco__header">
+            <span class="mc-bloco__icone mc-bloco__icone--azul"><i class="bi bi-eye-fill"></i></span>
+            <div>
+              <h2>Pré-visualização</h2>
+              <p>Texto gerado automaticamente conforme o preenchimento.</p>
+            </div>
+          </header>
+          <div class="mc-preview__conteudo">
+            <p><strong>Quem solicitou:</strong></p>
+            <p>{{ quemSolicitou || '—' }}</p>
+            <p><strong>O que foi solicitado:</strong></p>
+            <p>{{ oQueFoiSolicitado || '—' }}</p>
+            <p><strong>O que foi feito:</strong></p>
+            <p>{{ oQueFoiFeito || '—' }}</p>
+            <p><strong>Conclusão:</strong></p>
+            <p>{{ conclusao || '—' }}</p>
+
+            <ng-container *ngIf="anexarWhatsApp && conversaWhatsApp">
+              <hr class="mc-preview__divisor" />
+              <h3>Conversa do WhatsApp</h3>
+              <pre class="mc-preview__whatsapp">{{ conversaWhatsApp }}</pre>
+            </ng-container>
+          </div>
+        </article>
+
+      </div>
+
+    </div>
+
+    <!-- Rodapé de ações (sticky) -->
+    <footer class="mc-chamado-rodape">
+      <button type="button" class="mc-btn mc-btn--copiar" (click)="copiarMarkdownChamado()">
+        <i class="bi bi-clipboard-fill"></i> Copiar Markdown
+      </button>
+      <button type="button" class="mc-btn mc-btn--limpar" (click)="limparCamposChamado()">
+        <i class="bi bi-trash3-fill"></i> Limpar
+      </button>
+    </footer>
+
+  </ng-container>
+
+  <!-- ============ Toast ============ -->
+  <div class="mc-toast" *ngIf="toastVisivel" [class.mc-toast--alerta]="toastTipo === 'alerta'">
+    <i class="bi" [ngClass]="toastTipo === 'ok' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'"></i>
+    {{ toastMensagem }}
+  </div>
+
+</section>

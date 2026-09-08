@@ -1,0 +1,3345 @@
+﻿<section class="glossario">
+
+  <!-- Header -->
+  <header class="glossario__header">
+    <h1>📖 Glossário Interno Actyon</h1>
+    <p>Termos e conceitos padronizados da operação, organizados por capítulos temáticos para consulta rápida do time.</p>
+  </header>
+
+  <!-- Capítulos -->
+  <nav class="gl-capitulos" aria-label="Capítulos do glossário">
+    <button
+      *ngFor="let cap of capitulos; trackBy: trackById"
+      type="button"
+      class="gl-capitulo"
+      [class.gl-capitulo--ativa]="capituloSelecionado === cap.numero"
+      (click)="selecionarCapitulo(cap.numero)"
+    >
+      <span class="gl-capitulo__num">{{ cap.numero }}</span>
+      <span class="gl-capitulo__titulo">{{ cap.titulo }}</span>
+    </button>
+  </nav>
+
+  <!-- ========================================================== -->
+  <!-- Capítulo 1 – Conceitos Gerais                              -->
+  <!-- ========================================================== -->
+  <div *ngIf="capituloSelecionado === 1">
+    <article class="gl-corpo">
+
+      <header class="gl-corpo__header">
+        <span class="gl-corpo__badge">Capítulo 1</span>
+        <h2>Conceitos Gerais</h2>
+      </header>
+
+      <!-- Objetivo -->
+      <section class="gl-chamada">
+        <h3><i class="bi bi-bullseye"></i> Objetivo</h3>
+        <p>Este capítulo apresenta os principais conceitos utilizados no dia a dia da operação do CRM Actyon. Seu objetivo é padronizar o entendimento entre as equipes de Suporte, Implantação, Desenvolvimento, Comercial e Customer Success, reduzindo dúvidas e garantindo que todos utilizem a mesma linguagem durante atendimentos, treinamentos e análises.</p>
+      </section>
+
+      <div class="gl-grid">
+
+        <!-- CRM de Cobrança -->
+        <article class="gl-conceito">
+          <h3>O que é um CRM de Cobrança?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p>Um <strong>CRM de Cobrança</strong> é um sistema desenvolvido para gerenciar todo o ciclo de recuperação de crédito de uma empresa. Ele centraliza informações de devedores, títulos, negociações, acordos, boletos, contatos e estratégias de cobrança, permitindo que operadores realizem atendimentos de forma organizada e eficiente.</p>
+            <p>No Actyon, todas as informações referentes ao processo de cobrança ficam concentradas em um único ambiente, possibilitando o acompanhamento completo desde a importação da carteira até a liquidação da dívida.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+            <p>Uma universidade possui milhares de alunos inadimplentes.</p>
+            <p>Esses alunos são importados para o Actyon juntamente com seus débitos.</p>
+            <p>A equipe de cobrança utiliza o sistema para:</p>
+            <ul>
+              <li>Consultar os débitos;</li>
+              <li>Entrar em contato com o aluno;</li>
+              <li>Registrar o atendimento;</li>
+              <li>Negociar descontos;</li>
+              <li>Gerar boletos;</li>
+              <li>Acompanhar os pagamentos.</li>
+            </ul>
+          </section>
+          <section class="gl-bloco gl-bloco--importante">
+            <h4><i class="bi bi-exclamation-triangle-fill"></i> Importante</h4>
+            <p>O CRM não realiza apenas cobranças.</p>
+            <p>Ele também organiza informações, registra históricos, automatiza processos e fornece indicadores para tomada de decisão.</p>
+          </section>
+        </article>
+
+        <!-- Carteira -->
+        <article class="gl-conceito">
+          <h3>O que é uma Carteira?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Carteira</strong> é o conjunto de devedores e títulos que pertencem a um determinado contratante ou operação.</p>
+            <p>Ela funciona como um agrupamento de registros que serão trabalhados pela equipe de cobrança.</p>
+            <p>Uma empresa pode possuir diversas carteiras, separadas por critérios como:</p>
+            <ul>
+              <li>Região;</li>
+              <li>Produto;</li>
+              <li>Tipo de dívida;</li>
+              <li>Faixa de atraso;</li>
+              <li>Campanha;</li>
+              <li>Unidade;</li>
+              <li>Cliente.</li>
+            </ul>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+            <p><strong>Empresa ABC</strong></p>
+            <p><strong>Carteira A</strong></p>
+            <ul>
+              <li>Mensalidades em atraso</li>
+            </ul>
+            <p><strong>Carteira B</strong></p>
+            <ul>
+              <li>Acordos quebrados</li>
+            </ul>
+            <p><strong>Carteira C</strong></p>
+            <ul>
+              <li>Dívidas judiciais</li>
+            </ul>
+          </section>
+          <section class="gl-bloco gl-bloco--importante">
+            <h4><i class="bi bi-exclamation-triangle-fill"></i> Importante</h4>
+            <p>Um operador normalmente possui acesso apenas às carteiras autorizadas pelo administrador do sistema.</p>
+          </section>
+        </article>
+
+        <!-- Contratante -->
+        <article class="gl-conceito">
+          <h3>O que é um Contratante?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Contratante</strong> é a empresa proprietária da dívida.</p>
+            <p>É quem contrata os serviços de cobrança e fornece os dados que serão trabalhados dentro do Actyon.</p>
+            <p>Em outras palavras, é o cliente da empresa que utiliza o CRM Actyon.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+            <p>Uma faculdade contrata uma assessoria de cobrança.</p>
+            <p>A faculdade é o contratante.</p>
+            <p>A assessoria utiliza o Actyon para recuperar os valores em aberto.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--nao-confundir">
+            <h4><i class="bi bi-x-circle-fill"></i> Não confundir</h4>
+            <p><strong>Contratante ≠ Devedor</strong></p>
+            <p>Contratante → dono da dívida.</p>
+            <p>Devedor → pessoa ou empresa que possui a dívida.</p>
+          </section>
+        </article>
+
+        <!-- Devedor -->
+        <article class="gl-conceito">
+          <h3>O que é um Devedor?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Devedor</strong> é a pessoa física ou jurídica que possui uma ou mais dívidas registradas no sistema.</p>
+            <p>Cada devedor pode possuir diversas informações cadastrais, como:</p>
+            <ul>
+              <li>Nome;</li>
+              <li>CPF ou CNPJ;</li>
+              <li>Telefones;</li>
+              <li>E-mails;</li>
+              <li>Endereços;</li>
+              <li>Títulos;</li>
+              <li>Histórico de atendimentos;</li>
+              <li>Negociações;</li>
+              <li>Boletos;</li>
+              <li>Acordos.</li>
+            </ul>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+            <p><strong>João da Silva</strong></p>
+            <p>Possui:</p>
+            <ul>
+              <li>3 títulos em aberto;</li>
+              <li>1 acordo vigente;</li>
+              <li>2 boletos emitidos;</li>
+              <li>Histórico de contatos telefônicos.</li>
+            </ul>
+            <p>Todo esse conjunto de informações pertence ao cadastro do devedor.</p>
+          </section>
+        </article>
+
+        <!-- Operador -->
+        <article class="gl-conceito">
+          <h3>O que é um Operador?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Operador</strong> (também chamado de <strong>Usuário</strong>) é toda pessoa que possui acesso ao sistema. Todo acesso ao Actyon é realizado através de um Operador.</p>
+            <p>Cada operador possui:</p>
+            <ul>
+              <li>Login;</li>
+              <li>Senha;</li>
+              <li>Permissões de acesso;</li>
+              <li>Perfil de utilização;</li>
+              <li>Configurações individuais.</li>
+            </ul>
+            <p>Dependendo das permissões recebidas, o operador poderá, por exemplo:</p>
+            <ul>
+              <li>Consultar devedores;</li>
+              <li>Negociar dívidas;</li>
+              <li>Gerar boletos;</li>
+              <li>Registrar ocorrências;</li>
+              <li>Agendar retornos;</li>
+              <li>Atualizar cadastros.</li>
+            </ul>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Perfis de Operador</h4>
+            <p>O operador pode possuir diferentes perfis, como por exemplo:</p>
+            <ul>
+              <li>Administrador;</li>
+              <li>Supervisor;</li>
+              <li>Operador de Cobrança;</li>
+              <li>Implantação;</li>
+              <li>Suporte Técnico;</li>
+              <li>Desenvolvimento;</li>
+              <li>Financeiro;</li>
+              <li>Outros perfis definidos pela empresa.</li>
+            </ul>
+          </section>
+          <section class="gl-bloco gl-bloco--importante">
+            <h4><i class="bi bi-exclamation-triangle-fill"></i> Importante</h4>
+            <p><strong>Usuário = Operador.</strong></p>
+            <p>Sempre que possível, utilize o termo <strong>Operador</strong>, pois é a nomenclatura adotada pelo sistema.</p>
+            <p>Ser um "Operador de Cobrança" é um <strong>perfil</strong>. Nem todo Operador realiza negociações — isso depende do perfil e das permissões recebidas.</p>
+          </section>
+        </article>
+
+        <!-- Usuário -->
+        <article class="gl-conceito">
+          <h3>O que é um Usuário?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Usuário</strong> e <strong>Operador</strong> representam o mesmo conceito dentro do sistema.</p>
+            <p>Ambos se referem a toda pessoa que possui acesso ao Actyon por meio de login e senha, com permissões e perfil definidos pelo administrador.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+            <p>Independentemente do perfil, todos são Operadores do sistema:</p>
+            <ul>
+              <li>Administrador</li>
+              <li>Supervisor</li>
+              <li>Operador de Cobrança</li>
+              <li>Implantação</li>
+              <li>Suporte Técnico</li>
+              <li>Desenvolvimento</li>
+              <li>Financeiro</li>
+            </ul>
+            <p>Todos acessam o sistema através de um Operador.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--importante">
+            <h4><i class="bi bi-exclamation-triangle-fill"></i> Importante</h4>
+            <p><strong>Usuário ≠ Cobrador.</strong></p>
+            <p>O Cobrador não é um usuário do sistema, mas um cadastro operacional vinculado a um Operador.</p>
+          </section>
+        </article>
+
+        <!-- Cobrador -->
+        <article class="gl-conceito">
+          <h3>O que é um Cobrador?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Cobrador</strong> é um cadastro operacional responsável por realizar negociações.</p>
+            <p>O Cobrador <strong>não é um usuário do sistema</strong>.</p>
+            <p>Todo Cobrador obrigatoriamente deve possuir um <strong>Operador vinculado</strong> para conseguir acessar o sistema.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Relação com o Operador</h4>
+            <ul>
+              <li>Todo Cobrador possui um Operador vinculado.</li>
+              <li>Nem todo Operador é um Cobrador.</li>
+            </ul>
+            <p>Um Administrador possui Operador, mas não é um Cobrador.</p>
+            <p>Um usuário do Suporte possui Operador, mas não é um Cobrador.</p>
+            <p>Um Implantador possui Operador, mas não é um Cobrador.</p>
+            <p>Apenas quem realiza negociações necessita possuir um cadastro de Cobrador.</p>
+          </section>
+        </article>
+
+        <!-- Equipe -->
+        <article class="gl-conceito">
+          <h3>O que é uma Equipe?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Equipe</strong> é um agrupamento utilizado para organizar a operação de cobrança.</p>
+            <p>O cadastro de Cobrador pode ser associado a uma ou mais <strong>Equipes</strong>.</p>
+            <p>O <strong>Operador não pertence diretamente às Equipes</strong>. Quem participa das Equipes é o cadastro de Cobrador.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+            <ul>
+              <li>Cobrança Bancária;</li>
+              <li>Cobrança Varejo;</li>
+              <li>Cobrança Jurídica;</li>
+              <li>Cobrança Digital;</li>
+              <li>Equipes definidas pela própria operação.</li>
+            </ul>
+          </section>
+        </article>
+
+        <!-- Relacionamento entre entidades -->
+        <article class="gl-conceito gl-conceito--cheio">
+          <h3>Relacionamento entre as entidades</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-signpost-2-fill"></i> Hierarquia no sistema</h4>
+            <ol class="gl-fluxo">
+              <li>Operador (Usuário)</li>
+              <li>Cobrador <span class="gl-fluxo__nota">(opcional)</span></li>
+              <li>Uma ou mais Equipes</li>
+            </ol>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Como ler</h4>
+            <ul>
+              <li>O Operador pode possuir (opcionalmente) um cadastro de Cobrador.</li>
+              <li>O Cobrador pode pertencer a uma ou mais Equipes.</li>
+            </ul>
+          </section>
+        </article>
+
+        <!-- Perfil de Acesso -->
+        <article class="gl-conceito">
+          <h3>O que é um Perfil de Acesso?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Perfil</strong> é o conjunto de permissões atribuídas a um Operador.</p>
+            <p>Ele determina quais funcionalidades poderão ser utilizadas.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplos de permissões</h4>
+            <ul>
+              <li>Emitir boletos;</li>
+              <li>Cancelar acordos;</li>
+              <li>Excluir negociações;</li>
+              <li>Visualizar relatórios;</li>
+              <li>Exportar dados;</li>
+              <li>Alterar configurações;</li>
+              <li>Acessar cadastros.</li>
+            </ul>
+          </section>
+          <section class="gl-bloco gl-bloco--importante">
+            <h4><i class="bi bi-exclamation-triangle-fill"></i> Importante</h4>
+            <p>Dois Operadores diferentes podem possuir exatamente o mesmo perfil.</p>
+            <p>Isso facilita a administração do sistema.</p>
+          </section>
+        </article>
+
+        <!-- Operação -->
+        <article class="gl-conceito">
+          <h3>O que é uma Operação?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Operação</strong> representa uma estrutura organizacional utilizada para separar processos de cobrança.</p>
+            <p>Ela permite que diferentes clientes, campanhas ou unidades trabalhem de forma independente dentro do mesmo ambiente.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+            <p><strong>Empresa de cobrança</strong></p>
+            <p><strong>Operação Banco A</strong></p>
+            <p><strong>Operação Banco B</strong></p>
+            <p><strong>Operação Faculdade C</strong></p>
+            <p>Cada operação possui suas próprias regras, usuários, layouts e estratégias.</p>
+          </section>
+        </article>
+
+        <!-- Histórico -->
+        <article class="gl-conceito">
+          <h3>O que é um Histórico?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Histórico</strong> é o registro cronológico de tudo o que aconteceu com um devedor.</p>
+            <p>Cada interação realizada no sistema gera uma informação que poderá ser consultada posteriormente.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+            <ul>
+              <li>Ligação realizada;</li>
+              <li>WhatsApp enviado;</li>
+              <li>E-mail enviado;</li>
+              <li>Promessa registrada;</li>
+              <li>Negociação efetuada;</li>
+              <li>Boleto emitido;</li>
+              <li>Atualização cadastral.</li>
+            </ul>
+          </section>
+          <section class="gl-bloco gl-bloco--importante">
+            <h4><i class="bi bi-exclamation-triangle-fill"></i> Importante</h4>
+            <p>O histórico permite acompanhar toda a jornada do atendimento.</p>
+          </section>
+        </article>
+
+        <!-- Ocorrência -->
+        <article class="gl-conceito">
+          <h3>O que é uma Ocorrência?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Ocorrência</strong> é a classificação utilizada para registrar o resultado de um atendimento.</p>
+            <p>Ela informa o que aconteceu durante o contato com o devedor.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+            <ul>
+              <li>Não atendeu;</li>
+              <li>Caixa postal;</li>
+              <li>Número inexistente;</li>
+              <li>Promessa de pagamento;</li>
+              <li>Acordo fechado;</li>
+              <li>Recado deixado;</li>
+              <li>Cliente recusou negociação.</li>
+            </ul>
+          </section>
+          <section class="gl-bloco gl-bloco--importante">
+            <h4><i class="bi bi-exclamation-triangle-fill"></i> Importante</h4>
+            <p>As ocorrências alimentam relatórios gerenciais e indicadores operacionais.</p>
+          </section>
+        </article>
+
+        <!-- Atendimento -->
+        <article class="gl-conceito">
+          <h3>O que é um Atendimento?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Atendimento</strong> é qualquer interação realizada entre o operador e o devedor.</p>
+            <p>Pode ocorrer por diversos canais de comunicação.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+            <ul>
+              <li>Telefone;</li>
+              <li>WhatsApp;</li>
+              <li>E-mail;</li>
+              <li>Atendimento presencial;</li>
+              <li>Chat;</li>
+              <li>SMS.</li>
+            </ul>
+          </section>
+          <section class="gl-bloco gl-bloco--importante">
+            <h4><i class="bi bi-exclamation-triangle-fill"></i> Durante um atendimento podem ocorrer</h4>
+            <ul>
+              <li>Atualização cadastral;</li>
+              <li>Registro de ocorrência;</li>
+              <li>Negociação;</li>
+              <li>Emissão de boleto;</li>
+              <li>Agendamento;</li>
+              <li>Registro de observações.</li>
+            </ul>
+          </section>
+        </article>
+
+        <!-- Campanha -->
+        <article class="gl-conceito">
+          <h3>O que é uma Campanha?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Campanha</strong> é um conjunto de ações direcionadas para determinado grupo de devedores.</p>
+            <p>Ela normalmente possui critérios específicos de atuação.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+            <ul>
+              <li>Dívidas acima de 180 dias;</li>
+              <li>Campanha de renegociação;</li>
+              <li>Desconto especial de final de mês;</li>
+              <li>Recuperação judicial;</li>
+              <li>Cobrança preventiva.</li>
+            </ul>
+          </section>
+        </article>
+
+        <!-- Estratégia -->
+        <article class="gl-conceito">
+          <h3>O que é uma Estratégia?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Estratégia</strong> é o conjunto de regras que define como o sistema deve agir automaticamente diante de determinadas situações.</p>
+            <p>As estratégias podem controlar:</p>
+            <ul>
+              <li>Disparos automáticos;</li>
+              <li>Encaminhamentos;</li>
+              <li>Priorizações;</li>
+              <li>Regras de cobrança;</li>
+              <li>Distribuição de carteiras.</li>
+            </ul>
+          </section>
+        </article>
+
+        <!-- Regra -->
+        <article class="gl-conceito">
+          <h3>O que é uma Regra?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Regra</strong> é uma condição configurada no sistema para automatizar comportamentos.</p>
+            <p>Uma estratégia normalmente é composta por diversas regras.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+            <p>Se o título possuir atraso superior a 30 dias:</p>
+            <ul>
+              <li>Enviar SMS;</li>
+              <li>Disponibilizar para discador;</li>
+              <li>Gerar tarefa para operador.</li>
+            </ul>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- Jornada de Cobrança -->
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>O que é uma Jornada de Cobrança?</h3>
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+          <p>A <strong>jornada de cobrança</strong> representa todas as etapas percorridas por uma carteira dentro do Actyon, desde sua entrada no sistema até a regularização e o encerramento dos casos.</p>
+          <p>É um fluxo único e cronológico: os dados entram no Actyon, são processados e validados, recebem os dados do devedor e dos títulos, passam pela lógica de regras e estratégias, chegam à operação por meio das filas e seguem pelo acionamento, negociação e acordo até a formalização, pagamento, baixa financeira e encerramento.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-signpost-2-fill"></i> Fluxo simplificado</h4>
+          <ol class="gl-fluxo">
+            <li>Carteira
+              <span class="gl-fluxo__nota">Base de devedores, títulos e demais informações que serão trabalhadas pela operação</span>
+            </li>
+            <li>Importação / Integração
+              <span class="gl-fluxo__nota">Entrada das informações no Actyon por arquivos, importações ou integrações, conforme a operação</span>
+            </li>
+            <li>Processamento e Validação
+              <span class="gl-fluxo__nota">Processamento dos dados, identificação e tratamento de inconsistências antes da utilização</span>
+            </li>
+            <li>Dados do Devedor
+              <span class="gl-fluxo__nota">Estruturação dos dados cadastrais: nome, CPF/CNPJ, telefones, e-mails, endereços etc.</span>
+            </li>
+            <li>Dados dos Títulos
+              <span class="gl-fluxo__nota">Obrigações financeiras que serão trabalhadas durante a cobrança</span>
+            </li>
+            <li>Regras e Estratégias
+              <span class="gl-fluxo__nota">Lógica da operação aplicada aos casos: atraso, valor, perfil, produto, prioridade e demais critérios configurados</span>
+            </li>
+            <li>Filas
+              <span class="gl-fluxo__nota">Organização e disponibilização dos casos para tratamento conforme essa lógica</span>
+            </li>
+            <li>Acionamento / Contato
+              <span class="gl-fluxo__nota">Tentativas de contato pelos canais configurados: telefone, discador, WhatsApp, SMS, e-mail etc., com resultado registrado no sistema</span>
+            </li>
+            <li>Negociação
+              <span class="gl-fluxo__nota">Ocorre quando há interesse de regularização; define as condições permitidas pela operação</span>
+            </li>
+            <li>Acordo
+              <span class="gl-fluxo__nota">Condição de pagamento estabelecida: valor, vencimento, parcelas e demais condições negociadas</span>
+            </li>
+            <li>Formalização do Pagamento
+              <span class="gl-fluxo__nota">Formalização da condição combinada; conforme a operação, podem ser usados diferentes meios ou documentos — o boleto é um exemplo, não obrigatório</span>
+            </li>
+            <li>Pagamento
+              <span class="gl-fluxo__nota">Informação de pagamento recebida/processada e identificada em relação à condição negociada</span>
+            </li>
+            <li>Baixa Financeira
+              <span class="gl-fluxo__nota">Atualização financeira decorrente da liquidação do título ou parcela, conforme as regras da operação</span>
+            </li>
+            <li>Encerramento
+              <span class="gl-fluxo__nota">Caso regularizado sai da cobrança ativa; o histórico permanece para consultas, auditorias, indicadores e relatórios</span>
+            </li>
+          </ol>
+        </section>
+      </article>
+
+      <!-- Resumo dos Conceitos -->
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Resumo dos Conceitos</h3>
+        <div class="gl-tabela-wrap">
+          <table class="gl-tabela">
+            <thead>
+              <tr>
+                <th>Conceito</th>
+                <th>Definição resumida</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>CRM</td><td>Sistema para gerenciamento da cobrança.</td></tr>
+              <tr><td>Contratante</td><td>Empresa proprietária da dívida.</td></tr>
+              <tr><td>Devedor</td><td>Pessoa ou empresa que possui a dívida.</td></tr>
+              <tr><td>Carteira</td><td>Conjunto de devedores e títulos.</td></tr>
+              <tr><td>Operação</td><td>Separação organizacional de clientes ou campanhas.</td></tr>
+              <tr><td>Usuário</td><td>Mesmo conceito de Operador — pessoa que acessa o sistema.</td></tr>
+              <tr><td>Operador</td><td>Usuário do sistema; nomenclatura oficial adotada pelo Actyon.</td></tr>
+              <tr><td>Cobrador</td><td>Cadastro operacional para negociações, vinculado a um Operador.</td></tr>
+              <tr><td>Equipe</td><td>Agrupamento ao qual o cadastro de Cobrador pode ser associado.</td></tr>
+              <tr><td>Perfil</td><td>Conjunto de permissões de acesso.</td></tr>
+              <tr><td>Atendimento</td><td>Interação realizada com o devedor.</td></tr>
+              <tr><td>Histórico</td><td>Registro de tudo que ocorreu com o devedor.</td></tr>
+              <tr><td>Ocorrência</td><td>Resultado registrado durante um atendimento.</td></tr>
+              <tr><td>Campanha</td><td>Grupo de ações voltadas para um público específico.</td></tr>
+              <tr><td>Estratégia</td><td>Conjunto de automações do sistema.</td></tr>
+              <tr><td>Regra</td><td>Condição utilizada nas automações.</td></tr>
+              <tr><td>Jornada de Cobrança</td><td>Ciclo completo da dívida dentro do CRM.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <!-- Conclusão -->
+      <section class="gl-chamada gl-chamada--conclusao">
+        <h3><i class="bi bi-flag-fill"></i> Conclusão</h3>
+        <p>Os conceitos apresentados neste capítulo são a base para compreender o funcionamento do CRM Actyon e os demais conteúdos deste glossário. Nos próximos capítulos serão detalhados os componentes financeiros, emissão de boletos, integrações bancárias, importações de dados e demais funcionalidades do sistema, utilizando estes termos como referência.</p>
+      </section>
+
+    </article>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- Capítulo 2 – Financeiro                                    -->
+  <!-- ========================================================== -->
+  <!-- Capítulo 2 – Financeiro                                    -->
+  <div *ngIf="capituloSelecionado === 2">
+    <article class="gl-corpo">
+
+      <header class="gl-corpo__header">
+        <span class="gl-corpo__badge">Capítulo 2</span>
+        <h2>Financeiro</h2>
+      </header>
+
+      <!-- Objetivo -->
+      <section class="gl-chamada">
+        <h3><i class="bi bi-bullseye"></i> Objetivo</h3>
+        <p>O módulo financeiro é o núcleo do CRM Actyon. É nele que são gerenciadas as dívidas dos devedores, negociações, acordos, emissão de boletos, integrações bancárias e registros de pagamento.</p>
+        <p>Compreender estes conceitos é essencial para analisar chamados, orientar clientes e identificar possíveis inconsistências.</p>
+      </section>
+
+      <!-- 2.1 Títulos -->
+      <h3 class="gl-secao gl-secao--primeiro"><span class="gl-secao__num">2.1</span> Títulos</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>O que é um Título?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p>O <strong>título</strong> representa uma dívida cadastrada no sistema.</p>
+            <p>Todo o processo financeiro gira em torno do título, desde sua importação até sua liquidação.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+            <p>João possui uma mensalidade de <strong>R$ 800,00</strong> vencida.</p>
+            <p>Essa dívida será cadastrada como um título.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Título Original?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Título Original</strong> é a dívida inicialmente importada ou cadastrada.</p>
+            <p>Pode posteriormente ser negociada ou transformada em acordo.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Título de Acordo?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p>É o <strong>título</strong> criado após uma negociação.</p>
+            <p>Normalmente substitui ou representa uma nova obrigação financeira.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito gl-conceito--cheio">
+          <h3>Situações de um Título</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-list-check"></i> Situações</h4>
+            <p>Um título pode estar:</p>
+            <ul>
+              <li>Em aberto;</li>
+              <li>Pago;</li>
+              <li>Cancelado;</li>
+              <li>Negociado;</li>
+              <li>Em acordo;</li>
+              <li>Baixado;</li>
+              <li>Liquidado.</li>
+            </ul>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- 2.2 Atualização Financeira -->
+      <h3 class="gl-secao"><span class="gl-secao__num">2.2</span> Atualização Financeira</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>O que é Valor Original?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Valor Original</strong> é o valor da dívida sem qualquer atualização.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Valor Atualizado?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Valor Atualizado</strong> é o valor calculado considerando:</p>
+            <ul>
+              <li>Juros;</li>
+              <li>Multa;</li>
+              <li>Correção Monetária;</li>
+              <li>Honorários;</li>
+              <li>Custas;</li>
+              <li>Acréscimos.</li>
+            </ul>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Juros?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Juros</strong> é o valor cobrado pelo atraso no pagamento.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Multa?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Multa</strong> é a penalidade aplicada após o vencimento.</p>
+            <p>Normalmente é aplicada apenas uma vez.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Correção Monetária?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Correção Monetária</strong> é a atualização do valor da dívida conforme índice econômico definido pelo contratante.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Desconto?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Desconto</strong> é a redução concedida durante uma negociação.</p>
+            <p>Pode ser aplicado sobre juros, multa ou valor principal, conforme regras do cliente.</p>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- 2.3 Acordos -->
+      <h3 class="gl-secao"><span class="gl-secao__num">2.3</span> Acordos</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>O que é um Acordo?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p>É uma negociação realizada entre o <strong>devedor</strong> e o <strong>contratante</strong> para regularização da dívida.</p>
+            <p>Pode envolver:</p>
+            <ul>
+              <li>Descontos;</li>
+              <li>Parcelamento;</li>
+              <li>Novos vencimentos;</li>
+              <li>Novas condições de pagamento.</li>
+            </ul>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Parcela?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Parcela</strong> é cada divisão financeira de um acordo.</p>
+            <p>Cada parcela normalmente gera um boleto individual.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Acordo Quebrado?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p>Ocorre quando o <strong>devedor</strong> deixa de cumprir as condições negociadas.</p>
+            <p>Dependendo das regras do cliente, o sistema poderá cancelar descontos e reativar os títulos originais.</p>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- 2.4 Boletos -->
+      <h3 class="gl-secao"><span class="gl-secao__num">2.4</span> Boletos</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>O que é um Boleto?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p>É o <strong>documento</strong> utilizado para realizar o pagamento de um título ou parcela de acordo.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--importante">
+            <h4><i class="bi bi-exclamation-triangle-fill"></i> Importante</h4>
+            <p><strong>Título não é boleto.</strong></p>
+            <p>Um mesmo título pode gerar diversos boletos.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Segunda Via?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Segunda via</strong> é a nova emissão de um boleto para o mesmo título.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Reemissão?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Reemissão</strong> é a geração de um novo boleto quando há alteração de vencimento, valor ou necessidade operacional.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Registro de Boletos?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p>Antes do pagamento, muitos bancos exigem que o boleto seja <strong>registrado</strong>.</p>
+            <p>Esse registro pode ocorrer por:</p>
+            <ul>
+              <li>API;</li>
+              <li>Arquivo CNAB.</li>
+            </ul>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- 2.5 Registro via API -->
+      <h3 class="gl-secao"><span class="gl-secao__num">2.5</span> Registro via API</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito gl-conceito--cheio">
+          <h3>O que é Registro via API?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p>O registro é realizado diretamente entre o <strong>Actyon</strong> e o <strong>banco</strong> através de serviços web.</p>
+          </section>
+          <section class="gl-bloco gl-bloco--exemplo">
+            <h4><i class="bi bi-lightbulb-fill"></i> Vantagens</h4>
+            <ul>
+              <li>Registro imediato;</li>
+              <li>Menor intervenção manual;</li>
+              <li>Resposta em tempo real;</li>
+              <li>Menor risco operacional.</li>
+            </ul>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- 2.6 CNAB -->
+      <h3 class="gl-secao"><span class="gl-secao__num">2.6</span> CNAB</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>O que é CNAB?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>CNAB</strong> é um padrão criado pela FEBRABAN para troca de informações financeiras entre empresas e bancos.</p>
+            <p>É utilizado principalmente para registrar boletos e processar pagamentos.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é CNAB 240?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>CNAB 240</strong> é o arquivo composto por registros de 240 posições.</p>
+            <p>É o padrão mais utilizado atualmente.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é CNAB 400?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>CNAB 400</strong> é o arquivo composto por registros de 400 posições.</p>
+            <p>Ainda utilizado por alguns bancos.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Remessa CNAB?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Remessa CNAB</strong> é o arquivo enviado ao banco contendo solicitações como:</p>
+            <ul>
+              <li>Registro de boletos;</li>
+              <li>Alteração de vencimentos;</li>
+              <li>Cancelamentos;</li>
+              <li>Instruções bancárias.</li>
+            </ul>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Retorno CNAB?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Retorno CNAB</strong> é o arquivo enviado pelo banco informando o resultado do processamento.</p>
+            <p>Pode informar:</p>
+            <ul>
+              <li>Registro realizado;</li>
+              <li>Pagamento;</li>
+              <li>Cancelamento;</li>
+              <li>Rejeições;</li>
+              <li>Ocorrências.</li>
+            </ul>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Código de Ocorrência?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Código de Ocorrência</strong> é o código informado pelo banco indicando o resultado do processamento.</p>
+            <p>Cada banco possui sua própria tabela de ocorrências.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Convênio Bancário?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Convênio Bancário</strong> é o cadastro que identifica a empresa junto ao banco.</p>
+            <p>Sem um convênio válido normalmente não é possível registrar boletos.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Carteira Bancária?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Carteira Bancária</strong> define como determinado banco administrará a cobrança.</p>
+            <p>Cada cliente poderá possuir diferentes carteiras.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Nosso Número?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Nosso Número</strong> é o identificador único utilizado pelo banco para localizar um boleto.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Linha Digitável?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Linha Digitável</strong> é a representação numérica do código de barras utilizada para pagamento.</p>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- 2.7 Pagamentos -->
+      <h3 class="gl-secao"><span class="gl-secao__num">2.7</span> Pagamentos</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>O que é Pagamento?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Pagamento</strong> é a liquidação financeira de um boleto.</p>
+            <p>Após identificado, o sistema poderá efetuar a baixa do título.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Baixa?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Baixa</strong> é o processo que altera a situação do título após o pagamento.</p>
+            <p>Pode ocorrer de forma:</p>
+            <ul>
+              <li>Manual;</li>
+              <li>Automática;</li>
+              <li>Via API;</li>
+              <li>Via Retorno CNAB.</li>
+            </ul>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Baixa Manual?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Baixa Manual</strong> é realizada diretamente por um usuário autorizado.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Baixa Automática?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Baixa Automática</strong> é realizada pelo sistema após confirmação bancária.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Liquidação?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Liquidação</strong> indica que toda a obrigação financeira foi quitada.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Quitação?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Quitação</strong> é a confirmação definitiva de que não existem valores pendentes.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que é Estorno?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-info-circle-fill"></i> Definição</h4>
+            <p><strong>Estorno</strong> é o cancelamento de uma baixa anteriormente realizada.</p>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- 2.8 Fluxo Financeiro -->
+      <h3 class="gl-secao"><span class="gl-secao__num">2.8</span> Fluxo Financeiro</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Fluxo simplificado dentro do Actyon</h3>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <ol class="gl-fluxo">
+            <li>Importação da Carteira</li>
+            <li>Cadastro do Devedor</li>
+            <li>Cadastro dos Títulos</li>
+            <li>Atualização Financeira</li>
+            <li>Negociação</li>
+            <li>Acordo</li>
+            <li>Parcelamento</li>
+            <li>Emissão do Boleto</li>
+            <li>Registro do Boleto <span class="gl-fluxo__nota">(API ou CNAB)</span></li>
+            <li>Banco</li>
+            <li>Pagamento</li>
+            <li>Retorno Bancário</li>
+            <li>Baixa</li>
+            <li>Liquidação</li>
+          </ol>
+        </section>
+      </article>
+
+      <!-- 2.9 Perguntas Frequentes -->
+      <h3 class="gl-secao"><span class="gl-secao__num">2.9</span> Perguntas Frequentes</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>Título é igual a boleto?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Não.</strong></p>
+            <p>O título representa a dívida.</p>
+            <p>O boleto é apenas um meio utilizado para realizar o pagamento.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>Posso emitir vários boletos para o mesmo título?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Sim.</strong></p>
+            <p>Dependendo das regras do contratante, um título pode possuir diversas emissões de boletos.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>Qual a diferença entre API e CNAB?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>API:</strong> comunicação online com o banco em tempo real.</p>
+            <p><strong>CNAB:</strong> comunicação por troca de arquivos de remessa e retorno.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O pagamento baixa automaticamente?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Depende da configuração do cliente.</p>
+            <p>A baixa pode ocorrer:</p>
+            <ul>
+              <li>Manualmente;</li>
+              <li>Via API;</li>
+              <li>Via arquivo de retorno CNAB.</li>
+            </ul>
+          </section>
+        </article>
+
+        <article class="gl-conceito gl-conceito--cheio">
+          <h3>O que acontece quando um acordo é quebrado?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Conforme as regras do contratante, o sistema poderá:</p>
+            <ul>
+              <li>Cancelar descontos;</li>
+              <li>Reativar títulos originais;</li>
+              <li>Atualizar encargos;</li>
+              <li>Reiniciar o processo de cobrança.</li>
+            </ul>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- Resumo -->
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Resumo</h3>
+        <div class="gl-tabela">
+          <table>
+            <thead>
+              <tr>
+                <th>Conceito</th>
+                <th>Definição</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Título</td><td>Representa uma dívida cadastrada no sistema.</td></tr>
+              <tr><td>Acordo</td><td>Negociação realizada para regularização da dívida.</td></tr>
+              <tr><td>Parcela</td><td>Divisão financeira de um acordo.</td></tr>
+              <tr><td>Boleto</td><td>Documento utilizado para pagamento.</td></tr>
+              <tr><td>Registro</td><td>Envio das informações do boleto ao banco.</td></tr>
+              <tr><td>API</td><td>Comunicação online com a instituição bancária.</td></tr>
+              <tr><td>CNAB</td><td>Padrão de troca de arquivos entre empresa e banco.</td></tr>
+              <tr><td>Remessa</td><td>Arquivo enviado ao banco.</td></tr>
+              <tr><td>Retorno</td><td>Arquivo recebido do banco.</td></tr>
+              <tr><td>Baixa</td><td>Registro do pagamento no sistema.</td></tr>
+              <tr><td>Liquidação</td><td>Quitação total da obrigação financeira.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <!-- Conclusão -->
+      <section class="gl-chamada gl-chamada--conclusao">
+        <h3><i class="bi bi-flag-fill"></i> Conclusão</h3>
+        <p>O módulo financeiro concentra todo o ciclo de vida da dívida no CRM Actyon. Desde a entrada de um título até sua liquidação, diversos processos trabalham em conjunto, como acordos, boletos, registros bancários, integrações via API ou CNAB e processamento de pagamentos. Conhecer esses conceitos permite compreender o funcionamento do sistema, prestar um suporte mais assertivo e identificar rapidamente possíveis inconsistências operacionais.</p>
+      </section>
+
+    </article>
+  </div>
+  <!-- ========================================================== -->
+  <!-- Capítulo 3 – Importações                                   -->
+  <div *ngIf="capituloSelecionado === 3">
+    <article class="gl-corpo">
+
+      <header class="gl-corpo__header">
+        <span class="gl-corpo__badge">Capítulo 3</span>
+        <h2>Importações</h2>
+      </header>
+
+      <!-- Objetivo -->
+      <section class="gl-chamada">
+        <h3><i class="bi bi-bullseye"></i> Objetivo</h3>
+        <p>O processo de importação é responsável por inserir ou atualizar informações no CRM Actyon. É através dele que devedores, títulos, telefones, endereços, e-mails e demais dados passam a fazer parte da base utilizada pela operação de cobrança.</p>
+        <p>Uma importação realizada corretamente garante que a operação trabalhe com informações atualizadas e confiáveis.</p>
+      </section>
+
+      <!-- 3.1 -->
+      <h3 class="gl-secao gl-secao--primeiro"><span class="gl-secao__num">3.1</span> O que é uma Importação?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-box-arrow-in-down"></i> Definição</h4>
+          <p>A <strong>importação</strong> é o processo de inclusão ou atualização de informações no sistema por meio de arquivos enviados pelo cliente.</p>
+          <p>Esses arquivos seguem um layout previamente definido para que o Actyon consiga interpretar cada informação corretamente.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <p>Uma universidade envia diariamente uma planilha contendo:</p>
+          <ul>
+            <li>Novos alunos inadimplentes;</li>
+            <li>Novas mensalidades;</li>
+            <li>Alterações cadastrais;</li>
+            <li>Pagamentos realizados.</li>
+          </ul>
+          <p>Após a importação, essas informações passam a fazer parte da base do sistema.</p>
+        </section>
+      </article>
+
+      <!-- 3.2 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.2</span> O que é um Mailing?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-person-lines-fill"></i> Definição</h4>
+          <p><strong>Mailing</strong> é o conjunto de registros enviados pelo contratante para serem trabalhados pela operação.</p>
+          <p>Normalmente um mailing contém:</p>
+          <ul>
+            <li>Devedores;</li>
+            <li>Títulos;</li>
+            <li>Telefones;</li>
+            <li>Endereços;</li>
+            <li>E-mails;</li>
+            <li>Contratos;</li>
+            <li>Informações financeiras.</li>
+          </ul>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <p>Um banco envia um arquivo contendo 50.000 contratos inadimplentes.</p>
+          <p>Esse conjunto de informações representa um mailing.</p>
+        </section>
+      </article>
+
+      <!-- 3.3 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.3</span> O que é um Layout?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-table"></i> Definição</h4>
+          <p><strong>Layout</strong> é a estrutura utilizada para informar ao sistema onde cada informação está localizada dentro do arquivo de importação.</p>
+          <p>O layout define, por exemplo:</p>
+          <ul>
+            <li>Qual coluna representa o CPF;</li>
+            <li>Qual coluna contém o nome;</li>
+            <li>Qual coluna possui o valor da dívida;</li>
+            <li>Qual coluna possui a data de vencimento.</li>
+          </ul>
+          <p>Sem um layout corretamente configurado, o sistema não consegue interpretar os dados.</p>
+        </section>
+      </article>
+
+      <!-- 3.4 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.4</span> O que é um Layout Genérico?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-layout-text-window-reverse"></i> Definição</h4>
+          <p>É um modelo de <strong>layout flexível</strong> que permite importar arquivos de diferentes clientes sem necessidade de desenvolvimento específico.</p>
+          <p>Durante a configuração, é realizado um mapeamento das colunas do arquivo para os campos do sistema.</p>
+          <p>Esse modelo reduz o tempo de implantação e facilita a integração com novos clientes.</p>
+        </section>
+      </article>
+
+      <!-- 3.5 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.5</span> O que é um De-Para?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-arrow-left-right"></i> Definição</h4>
+          <p>O <strong>De-Para</strong> é o processo de mapeamento entre os campos do arquivo enviado pelo cliente e os campos existentes no CRM Actyon.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <p><strong>Arquivo do Cliente</strong></p>
+          <p><strong>Nome Cliente</strong> &rarr; Nome do Devedor</p>
+          <p><strong>Documento</strong> &rarr; CPF</p>
+          <p><strong>Valor Aberto</strong> &rarr; Valor do Título</p>
+          <p><strong>Vencimento</strong> &rarr; Data de Vencimento</p>
+        </section>
+      </article>
+
+      <!-- 3.6 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.6</span> O que é um Batimento?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-git-compare"></i> Definição</h4>
+          <p><strong>Batimento</strong> é o processo de comparação entre os dados recebidos e os registros já existentes na base.</p>
+          <p>Seu objetivo é identificar:</p>
+          <ul>
+            <li>Registros novos;</li>
+            <li>Registros alterados;</li>
+            <li>Registros duplicados;</li>
+            <li>Registros inexistentes.</li>
+          </ul>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <p>O sistema recebe um título cujo número já existe.</p>
+          <p>Durante o batimento será identificado se:</p>
+          <ul>
+            <li>Deve atualizar;</li>
+            <li>Ignorar;</li>
+            <li>Duplicar;</li>
+            <li>Informar erro.</li>
+          </ul>
+          <p>A decisão dependerá das regras de negócio definidas para o cliente.</p>
+        </section>
+      </article>
+
+      <!-- 3.7 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.7</span> Carga Inicial</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-rocket-takeoff"></i> Definição</h4>
+          <p><strong>Carga Inicial</strong> é a primeira importação realizada para um cliente.</p>
+          <p>Normalmente contém toda a carteira de cobrança.</p>
+          <p>Após essa etapa, passam a ser realizadas apenas atualizações.</p>
+        </section>
+      </article>
+
+      <!-- 3.8 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.8</span> Atualização Cadastral</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-person-vcard"></i> Definição</h4>
+          <p><strong>Atualização Cadastral</strong> é o processo utilizado para atualizar informações já existentes na base.</p>
+          <p>Pode alterar:</p>
+          <ul>
+            <li>Telefones;</li>
+            <li>Endereços;</li>
+            <li>E-mails;</li>
+            <li>Nome;</li>
+            <li>Situação cadastral;</li>
+            <li>Informações complementares.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 3.9 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.9</span> Atualização Financeira</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-cash-coin"></i> Definição</h4>
+          <p><strong>Atualização Financeira</strong> é a importação utilizada para atualizar informações relacionadas aos títulos.</p>
+          <p>Pode incluir:</p>
+          <ul>
+            <li>Novos títulos;</li>
+            <li>Baixas;</li>
+            <li>Cancelamentos;</li>
+            <li>Alteração de vencimento;</li>
+            <li>Alteração de valores;</li>
+            <li>Novas parcelas.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 3.10 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.10</span> Arquivo de Importação</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-file-earmark-arrow-up"></i> Definição</h4>
+          <p>É o <strong>arquivo</strong> fornecido pelo contratante para processamento.</p>
+          <p>Os formatos mais comuns são:</p>
+          <ul>
+            <li>TXT;</li>
+            <li>CSV;</li>
+            <li>XLS;</li>
+            <li>XLSX.</li>
+          </ul>
+          <p>Cada cliente pode possuir um layout próprio.</p>
+        </section>
+      </article>
+
+      <!-- 3.11 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.11</span> Processamento da Importação</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-gear"></i> Definição</h4>
+          <p>Após o envio do arquivo, o sistema realiza diversas etapas:</p>
+          <ol>
+            <li>Leitura do arquivo.</li>
+            <li>Validação do layout.</li>
+            <li>Verificação dos campos obrigatórios.</li>
+            <li>Batimento dos registros.</li>
+            <li>Inclusão ou atualização dos dados.</li>
+            <li>Geração do relatório de processamento.</li>
+          </ol>
+          <p>Caso alguma inconsistência seja encontrada, o sistema poderá interromper ou registrar erros para análise.</p>
+        </section>
+      </article>
+
+      <!-- 3.12 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.12</span> Reprocessamento</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-arrow-repeat"></i> Definição</h4>
+          <p><strong>Reprocessamento</strong> é a execução novamente de uma importação já realizada.</p>
+          <p>Pode ser necessário quando:</p>
+          <ul>
+            <li>Houve erro durante o processamento;</li>
+            <li>O layout foi corrigido;</li>
+            <li>O arquivo foi ajustado;</li>
+            <li>Foram identificadas inconsistências.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 3.13 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.13</span> Inconsistências de Importação</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-exclamation-octagon"></i> Definição</h4>
+          <p>São situações que impedem ou comprometem o processamento correto dos dados.</p>
+          <p>Exemplos:</p>
+          <ul>
+            <li>CPF inválido;</li>
+            <li>Campo obrigatório vazio;</li>
+            <li>Valor financeiro inválido;</li>
+            <li>Data em formato incorreto;</li>
+            <li>Coluna inexistente;</li>
+            <li>Layout incompatível;</li>
+            <li>Arquivo corrompido;</li>
+            <li>Registro duplicado.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 3.14 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.14</span> Log de Importação</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-journal-text"></i> Definição</h4>
+          <p>Após cada processamento, o sistema gera <strong>registros</strong> contendo informações sobre a execução.</p>
+          <p>Esses logs auxiliam na identificação de falhas e permitem rastrear o processamento realizado.</p>
+          <p>As informações normalmente incluem:</p>
+          <ul>
+            <li>Data e hora;</li>
+            <li>Usuário responsável;</li>
+            <li>Arquivo processado;</li>
+            <li>Quantidade de registros;</li>
+            <li>Registros importados;</li>
+            <li>Registros rejeitados;</li>
+            <li>Mensagens de erro.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 3.15 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">3.15</span> Relatório de Importação</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-file-earmark-bar-graph"></i> Definição</h4>
+          <p>Ao final do processamento, é possível consultar um <strong>resumo</strong> contendo:</p>
+          <ul>
+            <li>Total de registros lidos;</li>
+            <li>Total importado;</li>
+            <li>Total atualizado;</li>
+            <li>Total rejeitado;</li>
+            <li>Motivos das rejeições.</li>
+          </ul>
+          <p>Esse relatório é uma importante ferramenta para validação do processo.</p>
+        </section>
+      </article>
+
+      <!-- Fluxo de Importação -->
+      <h3 class="gl-secao"><i class="bi bi-diagram-3 gl-secao__icone"></i> Fluxo de Importação</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--exemplo">
+          <ol class="gl-fluxo">
+            <li>Recebimento do Arquivo</li>
+            <li>Validação do Layout</li>
+            <li>Leitura dos Dados</li>
+            <li>Batimento</li>
+            <li>Validação das Informações</li>
+            <li>Inclusão ou Atualização</li>
+            <li>Geração de Logs</li>
+            <li>Relatório Final</li>
+          </ol>
+        </section>
+      </article>
+
+      <!-- Importações via API e via Procedure -->
+      <h3 class="gl-secao"><i class="bi bi-arrow-left-right gl-secao__icone"></i> Importações via API e via Procedure</h3>
+
+      <section class="gl-chamada">
+        <h3><i class="bi bi-bullseye"></i> Objetivo</h3>
+        <p>Além da importação tradicional por arquivos (TXT, CSV, XLS, etc.), o CRM Actyon também pode receber informações automaticamente através de integrações sistêmicas.</p>
+        <p>As duas formas mais utilizadas são <strong>Importação via API</strong> e <strong>Importação via Procedure (Stored Procedure)</strong>. Embora ambas tenham o mesmo objetivo — inserir ou atualizar informações no sistema — elas funcionam de maneiras diferentes.</p>
+      </section>
+
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Importação via API</h3>
+
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-info-circle-fill"></i> O que é?</h4>
+          <p>A <strong>importação via API</strong> ocorre quando um sistema externo envia informações diretamente ao CRM Actyon por meio de uma interface de integração (API), sem a necessidade de gerar arquivos intermediários.</p>
+          <p>Toda comunicação acontece pela rede, utilizando requisições HTTP/HTTPS.</p>
+        </section>
+
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-list-ol"></i> Como funciona?</h4>
+          <ol>
+            <li>Um sistema externo (ERP, Financeiro, Portal, Sistema Acadêmico, etc.) identifica uma alteração.</li>
+            <li>Esse sistema envia uma requisição para a API do Actyon.</li>
+            <li>A API valida as informações recebidas.</li>
+            <li>Os dados são processados.</li>
+            <li>As informações são gravadas no banco de dados.</li>
+            <li>A API retorna uma resposta indicando sucesso ou erro.</li>
+          </ol>
+        </section>
+
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-diagram-3"></i> Fluxo Simplificado</h4>
+          <ol class="gl-fluxo">
+            <li>Sistema Externo</li>
+            <li>API do Actyon</li>
+            <li>Validação</li>
+            <li>Processamento</li>
+            <li>Banco de Dados</li>
+            <li>Resposta ao Sistema</li>
+          </ol>
+        </section>
+
+        <section class="gl-bloco gl-bloco--importante">
+          <h4><i class="bi bi-check-circle-fill"></i> Vantagens</h4>
+          <ul>
+            <li>Comunicação em tempo real.</li>
+            <li>Não depende da geração de arquivos.</li>
+            <li>Menor intervenção manual.</li>
+            <li>Menor risco de utilização de arquivos desatualizados.</li>
+            <li>Fácil integração com sistemas modernos.</li>
+          </ul>
+        </section>
+
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-list-check"></i> Quando normalmente é utilizada?</h4>
+          <ul>
+            <li>Cadastro automático de devedores.</li>
+            <li>Inclusão de novos títulos.</li>
+            <li>Atualização cadastral.</li>
+            <li>Consulta de informações.</li>
+            <li>Registro de pagamentos.</li>
+            <li>Integração com ERPs.</li>
+            <li>Integração com portais do cliente.</li>
+          </ul>
+        </section>
+
+        <section class="gl-bloco gl-bloco--nao-confundir">
+          <h4><i class="bi bi-exclamation-triangle-fill"></i> Cuidados</h4>
+          <ul>
+            <li>A API deve estar disponível.</li>
+            <li>A autenticação deve estar correta.</li>
+            <li>Os dados enviados devem seguir o padrão definido.</li>
+            <li>É importante monitorar logs para identificar possíveis falhas.</li>
+          </ul>
+        </section>
+      </article>
+
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Importação via Procedure (Stored Procedure)</h3>
+
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-info-circle-fill"></i> O que é?</h4>
+          <p>Na <strong>importação via Procedure</strong>, o cliente grava as informações diretamente em tabelas específicas do banco de dados ou disponibiliza os dados para uma Procedure previamente desenvolvida.</p>
+          <p>Essa Procedure é responsável por ler os registros, realizar as validações necessárias e importar as informações para as tabelas oficiais do CRM Actyon.</p>
+          <p>Esse modelo é muito utilizado em clientes que possuem integração direta com o banco de dados.</p>
+        </section>
+
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-list-ol"></i> Como funciona?</h4>
+          <ol>
+            <li>O sistema do cliente grava os dados em tabelas de integração ou disponibiliza as informações para a Procedure.</li>
+            <li>A Procedure é executada manualmente ou por agendamento.</li>
+            <li>Os dados são validados.</li>
+            <li>O sistema verifica registros existentes (batimento).</li>
+            <li>Os dados são importados.</li>
+            <li>São gerados logs e relatórios do processamento.</li>
+          </ol>
+        </section>
+
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-diagram-3"></i> Fluxo Simplificado</h4>
+          <ol class="gl-fluxo">
+            <li>Sistema do Cliente</li>
+            <li>Tabelas de Integração</li>
+            <li>Procedure</li>
+            <li>Validações</li>
+            <li>Processamento</li>
+            <li>Banco do Actyon</li>
+            <li>Logs</li>
+          </ol>
+        </section>
+
+        <section class="gl-bloco gl-bloco--importante">
+          <h4><i class="bi bi-check-circle-fill"></i> Vantagens</h4>
+          <ul>
+            <li>Alto desempenho para grandes volumes de dados.</li>
+            <li>Ideal para integrações locais.</li>
+            <li>Não depende de comunicação via internet.</li>
+            <li>Permite regras complexas diretamente no banco de dados.</li>
+            <li>Excelente para processamentos em lote.</li>
+          </ul>
+        </section>
+
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-list-check"></i> Quando normalmente é utilizada?</h4>
+          <ul>
+            <li>Importação diária de grandes carteiras.</li>
+            <li>Atualizações financeiras em massa.</li>
+            <li>Atualizações cadastrais.</li>
+            <li>Migração de informações.</li>
+            <li>Integração entre bancos de dados internos.</li>
+          </ul>
+        </section>
+
+        <section class="gl-bloco gl-bloco--nao-confundir">
+          <h4><i class="bi bi-exclamation-triangle-fill"></i> Cuidados</h4>
+          <ul>
+            <li>A Procedure deve estar atualizada conforme a versão do sistema.</li>
+            <li>Alterações na estrutura das tabelas podem exigir ajustes.</li>
+            <li>Deve existir controle de execução para evitar duplicidades.</li>
+            <li>Erros normalmente são identificados através dos logs da Procedure.</li>
+          </ul>
+        </section>
+      </article>
+
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Principais diferenças</h3>
+        <div class="gl-tabela">
+          <table>
+            <thead>
+              <tr>
+                <th>Característica</th>
+                <th>Importação via API</th>
+                <th>Importação via Procedure</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Comunicação</td><td>HTTP/HTTPS</td><td>Banco de Dados</td></tr>
+              <tr><td>Tempo de processamento</td><td>Tempo real</td><td>Lote ou agendado</td></tr>
+              <tr><td>Necessita arquivo</td><td>Não</td><td>Não</td></tr>
+              <tr><td>Necessita acesso ao banco</td><td>Não</td><td>Sim</td></tr>
+              <tr><td>Melhor para</td><td>Integrações online</td><td>Grandes volumes de dados</td></tr>
+              <tr><td>Utilização comum</td><td>ERPs, Portais, Sistemas Web</td><td>Sistemas locais e integrações legadas</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Qual método utilizar?</h3>
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-compass"></i> Critérios de escolha</h4>
+          <p>Não existe um método "melhor". A escolha depende da necessidade do cliente e da arquitetura da integração.</p>
+          <p><strong>Importação via API</strong> é indicada quando há necessidade de sincronização em tempo real e integração com sistemas modernos.</p>
+          <p><strong>Importação via Procedure</strong> é recomendada quando o cliente possui acesso direto ao banco de dados, precisa importar grandes volumes de informações ou utiliza processos internos baseados em SQL Server.</p>
+        </section>
+      </article>
+
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Importante</h3>
+        <section class="gl-bloco gl-bloco--importante">
+          <h4><i class="bi bi-exclamation-triangle-fill"></i> Garantias da importação</h4>
+          <p>Independentemente do método utilizado, toda importação deve garantir:</p>
+          <ul>
+            <li>Integridade das informações;</li>
+            <li>Validação dos dados recebidos;</li>
+            <li>Registro de logs para auditoria;</li>
+            <li>Tratamento de erros;</li>
+            <li>Controle para evitar registros duplicados;</li>
+            <li>Compatibilidade com as regras de negócio do CRM Actyon.</li>
+          </ul>
+          <p>O objetivo final é assegurar que as informações sejam processadas corretamente, mantendo a consistência da base de dados e a confiabilidade da operação de cobrança.</p>
+        </section>
+      </article>
+
+      <!-- Perguntas Frequentes -->
+      <h3 class="gl-secao"><i class="bi bi-question-circle gl-secao__icone"></i> Perguntas Frequentes</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>O sistema aceita qualquer planilha?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Não.</strong></p>
+            <p>O arquivo deve seguir um layout previamente configurado.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que acontece se uma coluna estiver incorreta?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>A importação poderá gerar inconsistências ou ser interrompida, dependendo da configuração.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>É possível atualizar apenas telefones?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Sim.</strong></p>
+            <p>Desde que exista um layout específico para atualização cadastral.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que acontece quando um registro já existe?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>O sistema realizará o batimento e seguirá as regras definidas para aquele cliente, podendo atualizar, ignorar ou rejeitar o registro.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito gl-conceito--cheio">
+          <h3>O relatório de importação é importante?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Sim.</strong></p>
+            <p>Ele permite validar se todos os registros foram processados corretamente e identificar rapidamente possíveis problemas.</p>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- Resumo -->
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Resumo</h3>
+        <div class="gl-tabela">
+          <table>
+            <thead>
+              <tr>
+                <th>Conceito</th>
+                <th>Definição</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Importação</td><td>Processo de inclusão ou atualização de dados no sistema.</td></tr>
+              <tr><td>Mailing</td><td>Conjunto de registros enviados pelo contratante.</td></tr>
+              <tr><td>Layout</td><td>Estrutura utilizada para interpretar o arquivo.</td></tr>
+              <tr><td>Layout Genérico</td><td>Modelo flexível para diferentes formatos de arquivos.</td></tr>
+              <tr><td>De-Para</td><td>Mapeamento entre os campos do arquivo e do sistema.</td></tr>
+              <tr><td>Batimento</td><td>Comparação entre registros existentes e recebidos.</td></tr>
+              <tr><td>Carga Inicial</td><td>Primeira importação da carteira.</td></tr>
+              <tr><td>Atualização Cadastral</td><td>Alteração de dados do devedor.</td></tr>
+              <tr><td>Atualização Financeira</td><td>Alteração de informações dos títulos.</td></tr>
+              <tr><td>Log de Importação</td><td>Registro técnico do processamento realizado.</td></tr>
+              <tr><td>Relatório de Importação</td><td>Resumo dos resultados do processamento.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <!-- Conclusão -->
+      <section class="gl-chamada gl-chamada--conclusao">
+        <h3><i class="bi bi-flag-fill"></i> Conclusão</h3>
+        <p>As importações são a principal porta de entrada de informações no CRM Actyon. Um layout corretamente configurado, aliado a um processo de validação eficiente, garante que os dados sejam processados com segurança, mantendo a integridade das informações utilizadas pela operação de cobrança. Dominar os conceitos apresentados neste capítulo facilita a análise de inconsistências, reduz retrabalho e torna o suporte técnico mais eficiente.</p>
+      </section>
+
+    </article>
+  </div>
+  <!-- ========================================================== -->
+  <!-- Capítulo 4 – Atendimento                                  -->
+  <div *ngIf="capituloSelecionado === 4">
+    <article class="gl-corpo">
+
+      <header class="gl-corpo__header">
+        <span class="gl-corpo__badge">Capítulo 4</span>
+        <h2>Atendimento</h2>
+      </header>
+
+      <!-- Objetivo -->
+      <section class="gl-chamada">
+        <h3><i class="bi bi-bullseye"></i> Objetivo</h3>
+        <p>O atendimento é a principal atividade operacional realizada dentro do CRM Actyon. É por meio dele que os operadores entram em contato com os devedores, registram informações, negociam dívidas e acompanham toda a jornada de cobrança.</p>
+        <p>Todo atendimento deve ser registrado de forma clara, objetiva e completa, garantindo rastreabilidade e continuidade do trabalho.</p>
+      </section>
+
+      <!-- 4.1 -->
+      <h3 class="gl-secao gl-secao--primeiro"><span class="gl-secao__num">4.1</span> O que é um Atendimento?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-headset"></i> Definição</h4>
+          <p><strong>Atendimento</strong> é toda interação realizada entre um operador e um devedor utilizando qualquer canal de comunicação disponível.</p>
+          <p>Todo atendimento deve gerar um histórico no sistema.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-list-check"></i> Exemplos de canais</h4>
+          <ul>
+            <li>Telefone;</li>
+            <li>WhatsApp;</li>
+            <li>E-mail;</li>
+            <li>SMS;</li>
+            <li>Chat;</li>
+            <li>Atendimento presencial.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 4.2 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.2</span> O que é um Histórico?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-clock-history"></i> Definição</h4>
+          <p><strong>Histórico</strong> é o registro cronológico de todas as ações realizadas durante o relacionamento com o devedor.</p>
+          <p>Ele permite acompanhar tudo o que aconteceu desde a entrada da dívida no sistema.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-list-check"></i> O histórico pode conter</h4>
+          <ul>
+            <li>Ligações realizadas;</li>
+            <li>Mensagens enviadas;</li>
+            <li>Negociações;</li>
+            <li>Emissão de boletos;</li>
+            <li>Promessas de pagamento;</li>
+            <li>Atualizações cadastrais;</li>
+            <li>Observações do operador.</li>
+          </ul>
+        </section>
+        <section class="gl-bloco gl-bloco--importante">
+          <h4><i class="bi bi-exclamation-triangle-fill"></i> Importante</h4>
+          <p>O histórico deve ser objetivo, profissional e conter apenas informações relevantes para a operação.</p>
+        </section>
+      </article>
+
+      <!-- 4.3 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.3</span> O que é uma Ocorrência?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-tags"></i> Definição</h4>
+          <p><strong>Ocorrência</strong> é a classificação utilizada para indicar o resultado de um atendimento.</p>
+          <p>Ela padroniza os registros e alimenta indicadores operacionais e relatórios gerenciais.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+          <ul>
+            <li>Não atendeu;</li>
+            <li>Caixa postal;</li>
+            <li>Número inexistente;</li>
+            <li>Recado deixado;</li>
+            <li>Promessa de pagamento;</li>
+            <li>Acordo realizado;</li>
+            <li>Cliente recusou negociação;</li>
+            <li>Telefone incorreto.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 4.4 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.4</span> O que é uma Observação?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-chat-left-text"></i> Definição</h4>
+          <p><strong>Observação</strong> é um comentário inserido pelo operador para complementar informações que não são representadas apenas pela ocorrência.</p>
+          <p>Ela deve ser utilizada para registrar detalhes importantes do atendimento.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <p>"Cliente informou que realizará o pagamento na próxima sexta-feira e solicitou envio da segunda via do boleto por e-mail."</p>
+        </section>
+      </article>
+
+      <!-- 4.5 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.5</span> O que é uma Agenda?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-calendar-event"></i> Definição</h4>
+          <p><strong>Agenda</strong> é o recurso utilizado para programar um novo contato com o devedor em uma data e horário específicos.</p>
+          <p>É utilizada quando existe necessidade de acompanhamento posterior.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+          <ul>
+            <li>Cliente solicitou retorno amanhã às 14h.</li>
+            <li>Aguardar confirmação de pagamento.</li>
+            <li>Reenviar boleto na próxima semana.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 4.6 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.6</span> O que é uma Promessa de Pagamento?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-hand-thumbs-up"></i> Definição</h4>
+          <p>É o <strong>compromisso</strong> assumido pelo devedor de realizar o pagamento em uma data previamente informada.</p>
+          <p>A promessa não representa a confirmação do pagamento, apenas a intenção do cliente.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--importante">
+          <h4><i class="bi bi-exclamation-triangle-fill"></i> Importante</h4>
+          <p>Uma promessa deve ser acompanhada posteriormente para verificar seu cumprimento.</p>
+        </section>
+      </article>
+
+      <!-- 4.7 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.7</span> Contato Produtivo</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-check-circle"></i> Definição</h4>
+          <p><strong>Contato Produtivo</strong> é quando o operador consegue falar diretamente com o devedor ou responsável pela dívida e obtém alguma evolução no atendimento.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+          <ul>
+            <li>Negociação realizada;</li>
+            <li>Dados atualizados;</li>
+            <li>Promessa registrada;</li>
+            <li>Informações confirmadas.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 4.8 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.8</span> Contato Improdutivo</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-x-circle"></i> Definição</h4>
+          <p><strong>Contato Improdutivo</strong> ocorre quando não é possível avançar no atendimento.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+          <ul>
+            <li>Não atendeu;</li>
+            <li>Telefone desligado;</li>
+            <li>Caixa postal;</li>
+            <li>Número inexistente;</li>
+            <li>Ligação ocupada.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 4.9 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.9</span> Atualização Cadastral</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-person-vcard"></i> Definição</h4>
+          <p>Durante um atendimento o operador poderá atualizar informações do devedor.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+          <ul>
+            <li>Novo telefone;</li>
+            <li>Novo endereço;</li>
+            <li>Novo e-mail;</li>
+            <li>Alteração de nome;</li>
+            <li>Pessoa de contato.</li>
+          </ul>
+          <p>Manter os dados atualizados aumenta a eficiência da cobrança.</p>
+        </section>
+      </article>
+
+      <!-- 4.10 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.10</span> Negociação</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-currency-exchange"></i> Definição</h4>
+          <p><strong>Negociação</strong> é o processo de apresentação e definição das condições para regularização da dívida.</p>
+          <p>Pode envolver:</p>
+          <ul>
+            <li>Descontos;</li>
+            <li>Parcelamentos;</li>
+            <li>Novos vencimentos;</li>
+            <li>Emissão de boletos.</li>
+          </ul>
+          <p>Quando aceita pelo devedor, poderá resultar na criação de um acordo.</p>
+        </section>
+      </article>
+
+      <!-- 4.11 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.11</span> Encerramento do Atendimento</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-flag"></i> Definição</h4>
+          <p>Após concluir o contato, o operador deve registrar todas as informações relevantes antes de finalizar o atendimento.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-list-check"></i> Boas práticas</h4>
+          <ul>
+            <li>Registrar a ocorrência correta;</li>
+            <li>Inserir observações claras;</li>
+            <li>Atualizar dados cadastrais, quando necessário;</li>
+            <li>Gerar boletos ou acordos, se aplicável;</li>
+            <li>Agendar retorno, quando necessário.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 4.12 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.12</span> Boas Práticas no Atendimento</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-lightbulb"></i> Recomendações</h4>
+          <p>Durante o atendimento, recomenda-se:</p>
+          <ul>
+            <li>Confirmar a identidade do devedor antes de fornecer informações;</li>
+            <li>Manter comunicação cordial e profissional;</li>
+            <li>Registrar todas as informações relevantes;</li>
+            <li>Evitar abreviações ou comentários subjetivos;</li>
+            <li>Seguir os procedimentos definidos pela empresa e pelo contratante;</li>
+            <li>Confirmar todas as informações antes de encerrar o atendimento.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 4.13 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">4.13</span> Erros Comuns</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-exclamation-octagon"></i> Situações</h4>
+          <p>Algumas situações podem comprometer a qualidade do atendimento:</p>
+          <ul>
+            <li>Registrar ocorrência incorreta;</li>
+            <li>Não registrar observações importantes;</li>
+            <li>Encerrar o atendimento sem gerar histórico;</li>
+            <li>Não atualizar dados informados pelo cliente;</li>
+            <li>Prometer condições que não estão disponíveis;</li>
+            <li>Não agendar retorno quando solicitado.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- Fluxo Simplificado do Atendimento -->
+      <h3 class="gl-secao"><i class="bi bi-diagram-3 gl-secao__icone"></i> Fluxo Simplificado do Atendimento</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--exemplo">
+          <ol class="gl-fluxo">
+            <li>Recebimento do Contato</li>
+            <li>Identificação do Devedor</li>
+            <li>Análise da Situação Financeira</li>
+            <li>Atendimento ao Cliente</li>
+            <li>Negociação <span class="gl-fluxo__nota">(quando aplicável)</span></li>
+            <li>Registro da Ocorrência</li>
+            <li>Registro das Observações</li>
+            <li>Atualização Cadastral</li>
+            <li>Agendamento de Retorno <span class="gl-fluxo__nota">(se necessário)</span></li>
+            <li>Encerramento do Atendimento</li>
+          </ol>
+        </section>
+      </article>
+
+      <!-- Perguntas Frequentes -->
+      <h3 class="gl-secao"><i class="bi bi-question-circle gl-secao__icone"></i> Perguntas Frequentes</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>Toda ligação deve gerar histórico?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Sim.</strong></p>
+            <p>Toda interação realizada com o devedor deve ser registrada no sistema.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>A ocorrência substitui a observação?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Não.</strong></p>
+            <p>A ocorrência classifica o atendimento.</p>
+            <p>A observação complementa com detalhes importantes.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>Quando devo criar uma agenda?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Sempre que houver necessidade de um novo contato futuro ou acompanhamento de uma promessa de pagamento.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>Posso alterar dados do cliente durante o atendimento?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Sim.</strong></p>
+            <p>Desde que possua permissão e as informações sejam confirmadas pelo devedor.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito gl-conceito--cheio">
+          <h3>A promessa de pagamento garante a baixa do título?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Não.</strong></p>
+            <p>A baixa somente ocorrerá após a confirmação efetiva do pagamento.</p>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- Resumo -->
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Resumo</h3>
+        <div class="gl-tabela">
+          <table>
+            <thead>
+              <tr>
+                <th>Conceito</th>
+                <th>Definição</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Atendimento</td><td>Interação realizada com o devedor.</td></tr>
+              <tr><td>Histórico</td><td>Registro cronológico das ações realizadas.</td></tr>
+              <tr><td>Ocorrência</td><td>Resultado padronizado do atendimento.</td></tr>
+              <tr><td>Observação</td><td>Complemento descritivo do atendimento.</td></tr>
+              <tr><td>Agenda</td><td>Programação de um novo contato.</td></tr>
+              <tr><td>Promessa de Pagamento</td><td>Compromisso informado pelo devedor.</td></tr>
+              <tr><td>Contato Produtivo</td><td>Atendimento com evolução ou resultado.</td></tr>
+              <tr><td>Contato Improdutivo</td><td>Atendimento sem sucesso ou sem evolução.</td></tr>
+              <tr><td>Atualização Cadastral</td><td>Alteração dos dados do devedor.</td></tr>
+              <tr><td>Negociação</td><td>Definição das condições para regularização da dívida.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <!-- Conclusão -->
+      <section class="gl-chamada gl-chamada--conclusao">
+        <h3><i class="bi bi-flag-fill"></i> Conclusão</h3>
+        <p>O atendimento é o ponto de contato entre a operação de cobrança e o devedor. A qualidade dos registros realizados no CRM Actyon impacta diretamente a continuidade das negociações, a análise dos gestores e a eficiência da operação. Um atendimento bem documentado, aliado ao uso correto de ocorrências, históricos e agendas, garante maior controle do processo de cobrança e um suporte mais assertivo.</p>
+      </section>
+
+    </article>
+  </div>
+  <!-- ========================================================== -->
+  <!-- Capítulo 5 – Integrações                                   -->
+  <div *ngIf="capituloSelecionado === 5">
+    <article class="gl-corpo">
+
+      <header class="gl-corpo__header">
+        <span class="gl-corpo__badge">Capítulo 5</span>
+        <h2>Integrações</h2>
+      </header>
+
+      <!-- Objetivo -->
+      <section class="gl-chamada">
+        <h3><i class="bi bi-bullseye"></i> Objetivo</h3>
+        <p>As integrações permitem que o CRM Actyon se comunique com sistemas externos, automatizando processos, reduzindo atividades manuais e garantindo maior agilidade na operação.</p>
+        <p>Por meio delas, é possível integrar bancos, ERPs, discadores, plataformas de mensageria, portais de autoatendimento, serviços de autenticação e diversos outros sistemas utilizados pelos clientes.</p>
+      </section>
+
+      <!-- 5.1 -->
+      <h3 class="gl-secao gl-secao--primeiro"><span class="gl-secao__num">5.1</span> O que é uma Integração?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-plug-fill"></i> Definição</h4>
+          <p><strong>Integração</strong> é a comunicação entre o CRM Actyon e outro sistema, permitindo o envio e o recebimento de informações automaticamente.</p>
+          <p>Essa comunicação elimina a necessidade de processos manuais e reduz a possibilidade de erros.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+          <ul>
+            <li>Registro de boletos em bancos;</li>
+            <li>Recebimento de pagamentos;</li>
+            <li>Integração com discadores;</li>
+            <li>Envio de WhatsApp;</li>
+            <li>Envio de SMS;</li>
+            <li>Consulta de dados em sistemas externos.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 5.2 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.2</span> O que é uma API?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-code-square"></i> Definição</h4>
+          <p><strong>API</strong> (Application Programming Interface) é um conjunto de regras que permite que dois sistemas troquem informações de forma padronizada.</p>
+          <p>No Actyon, as APIs são amplamente utilizadas para integração com bancos, plataformas de cobrança, sistemas de terceiros e aplicações próprias dos clientes.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+          <ul>
+            <li>Registrar um boleto.</li>
+            <li>Consultar um título.</li>
+            <li>Atualizar dados cadastrais.</li>
+            <li>Receber confirmação de pagamento.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 5.3 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.3</span> O que é um Webhook?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-broadcast"></i> Definição</h4>
+          <p><strong>Webhook</strong> é um mecanismo em que um sistema envia informações automaticamente para outro quando determinado evento acontece.</p>
+          <p>Diferentemente da API, não é necessário que o sistema fique consultando constantemente se houve alterações.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <p>Após o pagamento de um boleto, o banco envia automaticamente a informação ao Actyon por meio de um Webhook.</p>
+        </section>
+      </article>
+
+      <!-- 5.4 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.4</span> Autenticação</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-shield-lock-fill"></i> Definição</h4>
+          <p>Antes de utilizar uma integração, normalmente é necessário validar a identidade da aplicação.</p>
+          <p>Essa validação é chamada de <strong>autenticação</strong>.</p>
+          <p>Os métodos mais comuns são:</p>
+          <ul>
+            <li>Token de acesso;</li>
+            <li>Chave de API (API Key);</li>
+            <li>OAuth 2.0;</li>
+            <li>Usuário e senha.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 5.5 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.5</span> Token de Acesso</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-key-fill"></i> Definição</h4>
+          <p><strong>Token de acesso</strong> é um código gerado para autorizar a comunicação entre sistemas.</p>
+          <p>Ele substitui o envio constante de usuário e senha, aumentando a segurança das integrações.</p>
+        </section>
+      </article>
+
+      <!-- 5.6 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.6</span> API Key</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-key"></i> Definição</h4>
+          <p><strong>API Key</strong> é uma chave única utilizada para identificar a aplicação que está realizando uma requisição.</p>
+          <p>Ela normalmente é fornecida pelo sistema responsável pela integração.</p>
+        </section>
+      </article>
+
+      <!-- 5.7 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.7</span> OAuth</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-person-check"></i> Definição</h4>
+          <p><strong>OAuth</strong> é um protocolo utilizado para autenticação segura entre sistemas.</p>
+          <p>Permite conceder acesso sem compartilhar diretamente as credenciais do usuário.</p>
+          <p>É utilizado principalmente por integrações modernas e serviços em nuvem.</p>
+        </section>
+      </article>
+
+      <!-- 5.8 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.8</span> Requisição (Request)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-send"></i> Definição</h4>
+          <p><strong>Requisição</strong> é a solicitação enviada por um sistema para outro.</p>
+          <p>Ela pode solicitar:</p>
+          <ul>
+            <li>Consulta de dados;</li>
+            <li>Inclusão de informações;</li>
+            <li>Alteração de registros;</li>
+            <li>Exclusão de informações.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 5.9 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.9</span> Resposta (Response)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-reply-fill"></i> Definição</h4>
+          <p><strong>Resposta</strong> é o retorno enviado pelo sistema após o processamento da requisição.</p>
+          <p>A resposta pode indicar:</p>
+          <ul>
+            <li>Sucesso;</li>
+            <li>Erro;</li>
+            <li>Dados encontrados;</li>
+            <li>Mensagens de validação.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 5.10 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.10</span> Métodos HTTP</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-ethernet"></i> Definição</h4>
+          <p>As APIs normalmente utilizam métodos HTTP para definir a ação desejada.</p>
+          <p>Os principais são:</p>
+          <ul>
+            <li><strong>GET</strong> — consulta informações.</li>
+            <li><strong>POST</strong> — cria novos registros.</li>
+            <li><strong>PUT</strong> — atualiza registros existentes.</li>
+            <li><strong>DELETE</strong> — remove registros.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 5.11 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.11</span> JSON</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-braces"></i> Definição</h4>
+          <p><strong>JSON</strong> (JavaScript Object Notation) é o formato mais utilizado para troca de informações entre sistemas.</p>
+          <p>É leve, organizado e de fácil leitura.</p>
+          <p>Grande parte das APIs utilizadas pelo Actyon trabalha com esse formato.</p>
+        </section>
+      </article>
+
+      <!-- 5.12 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.12</span> Timeout</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-hourglass-split"></i> Definição</h4>
+          <p><strong>Timeout</strong> ocorre quando um sistema demora mais do que o tempo permitido para responder uma solicitação.</p>
+          <p>As causas mais comuns são:</p>
+          <ul>
+            <li>Lentidão na rede;</li>
+            <li>Serviço indisponível;</li>
+            <li>Problemas no servidor;</li>
+            <li>Sobrecarga no sistema.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 5.13 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.13</span> Logs de Integração</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-journal-text"></i> Definição</h4>
+          <p>Os <strong>logs</strong> registram todas as comunicações realizadas entre o Actyon e sistemas externos.</p>
+          <p>Eles auxiliam na identificação de problemas durante o processo de integração.</p>
+          <p>Podem registrar:</p>
+          <ul>
+            <li>Data e hora;</li>
+            <li>URL utilizada;</li>
+            <li>Dados enviados;</li>
+            <li>Dados recebidos;</li>
+            <li>Código de retorno;</li>
+            <li>Mensagens de erro.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 5.14 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.14</span> Integrações Bancárias</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-bank"></i> Definição</h4>
+          <p>As <strong>integrações bancárias</strong> permitem automatizar diversos processos financeiros.</p>
+          <p>Entre eles:</p>
+          <ul>
+            <li>Registro de boletos;</li>
+            <li>Consulta de boletos;</li>
+            <li>Cancelamento;</li>
+            <li>Alteração de vencimento;</li>
+            <li>Consulta de pagamentos.</li>
+          </ul>
+          <p>Essas integrações podem ocorrer via API ou arquivos CNAB.</p>
+        </section>
+      </article>
+
+      <!-- 5.15 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.15</span> Integrações com Discadores</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-headset"></i> Definição</h4>
+          <p>O Actyon pode integrar-se a plataformas de telefonia para automatizar chamadas e registrar atendimentos.</p>
+          <p>Algumas funcionalidades comuns são:</p>
+          <ul>
+            <li>Clique para ligar (Click-to-Call);</li>
+            <li>Discagem automática;</li>
+            <li>Recebimento de chamadas;</li>
+            <li>Registro de tempo de atendimento;</li>
+            <li>Histórico de ligações.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 5.16 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.16</span> Integrações com Mensageria</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-chat-dots"></i> Definição</h4>
+          <p>O sistema também pode integrar-se a plataformas de comunicação para envio automático de mensagens.</p>
+          <p>Exemplos:</p>
+          <ul>
+            <li>WhatsApp;</li>
+            <li>SMS;</li>
+            <li>E-mail.</li>
+          </ul>
+          <p>Essas integrações são utilizadas para:</p>
+          <ul>
+            <li>Cobranças;</li>
+            <li>Lembretes;</li>
+            <li>Envio de boletos;</li>
+            <li>Confirmações de pagamento;</li>
+            <li>Campanhas.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 5.17 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">5.17</span> Integrações com Outros Sistemas</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-boxes"></i> Definição</h4>
+          <p>Dependendo da necessidade do cliente, o Actyon pode integrar-se a:</p>
+          <ul>
+            <li>ERP;</li>
+            <li>Sistemas financeiros;</li>
+            <li>Portais do cliente;</li>
+            <li>Plataformas de negociação;</li>
+            <li>Sistemas acadêmicos;</li>
+            <li>Sistemas de gestão.</li>
+          </ul>
+          <p>Essas integrações permitem sincronizar informações entre diferentes ambientes.</p>
+        </section>
+      </article>
+
+      <!-- Fluxo Simplificado de uma Integração -->
+      <h3 class="gl-secao"><i class="bi bi-diagram-3 gl-secao__icone"></i> Fluxo Simplificado de uma Integração</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--exemplo">
+          <ol class="gl-fluxo">
+            <li>Operador realiza uma ação</li>
+            <li>CRM Actyon</li>
+            <li>API / Webhook</li>
+            <li>Sistema Externo</li>
+            <li>Processamento</li>
+            <li>Resposta</li>
+            <li>Atualização no Actyon</li>
+          </ol>
+        </section>
+      </article>
+
+      <!-- Perguntas Frequentes -->
+      <h3 class="gl-secao"><i class="bi bi-question-circle gl-secao__icone"></i> Perguntas Frequentes</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>Toda integração utiliza API?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Não.</strong></p>
+            <p>Além de APIs, podem ser utilizados Webhooks, arquivos CNAB, arquivos de importação e outros mecanismos de comunicação.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que acontece quando uma integração falha?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>O sistema normalmente registra a falha em logs para que a equipe responsável possa identificar e corrigir o problema.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>API e Webhook são a mesma coisa?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Não.</strong></p>
+            <p>Na API, o Actyon envia uma solicitação ao sistema externo.</p>
+            <p>No Webhook, o sistema externo envia automaticamente uma notificação ao Actyon quando ocorre um evento.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que significa erro de autenticação?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Significa que o sistema não conseguiu validar as credenciais utilizadas para acessar a integração.</p>
+            <p>As causas podem incluir token expirado, credenciais inválidas ou falta de permissão.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito gl-conceito--cheio">
+          <h3>O que significa Timeout?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Significa que a resposta da integração não foi recebida dentro do tempo esperado.</p>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- Resumo -->
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Resumo</h3>
+        <div class="gl-tabela">
+          <table>
+            <thead>
+              <tr>
+                <th>Conceito</th>
+                <th>Definição</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Integração</td><td>Comunicação entre o Actyon e sistemas externos.</td></tr>
+              <tr><td>API</td><td>Interface utilizada para troca de informações entre sistemas.</td></tr>
+              <tr><td>Webhook</td><td>Envio automático de eventos entre sistemas.</td></tr>
+              <tr><td>Token</td><td>Credencial utilizada para autenticação.</td></tr>
+              <tr><td>API Key</td><td>Chave de identificação da aplicação.</td></tr>
+              <tr><td>OAuth</td><td>Protocolo de autenticação segura.</td></tr>
+              <tr><td>Request</td><td>Solicitação enviada para outro sistema.</td></tr>
+              <tr><td>Response</td><td>Resposta recebida da integração.</td></tr>
+              <tr><td>JSON</td><td>Formato de troca de dados entre sistemas.</td></tr>
+              <tr><td>Timeout</td><td>Tempo máximo de espera por uma resposta.</td></tr>
+              <tr><td>Log de Integração</td><td>Registro das comunicações realizadas.</td></tr>
+              <tr><td>Integração Bancária</td><td>Comunicação com instituições financeiras.</td></tr>
+              <tr><td>Integração com Discador</td><td>Comunicação com plataformas de telefonia.</td></tr>
+              <tr><td>Integração com Mensageria</td><td>Comunicação com plataformas de WhatsApp, SMS e E-mail.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <!-- Conclusão -->
+      <section class="gl-chamada gl-chamada--conclusao">
+        <h3><i class="bi bi-flag-fill"></i> Conclusão</h3>
+        <p>As integrações são fundamentais para o funcionamento do CRM Actyon, permitindo que o sistema se comunique de forma segura e automatizada com bancos, plataformas de telefonia, serviços de mensageria e diversos sistemas externos. O entendimento desses conceitos facilita a análise de chamados, a identificação de falhas e o suporte às operações que dependem dessas comunicações.</p>
+      </section>
+
+    </article>
+  </div>
+  <!-- ========================================================== -->
+  <!-- Capítulo 6 – Banco de Dados                                -->
+  <div *ngIf="capituloSelecionado === 6">
+    <article class="gl-corpo">
+
+      <header class="gl-corpo__header">
+        <span class="gl-corpo__badge">Capítulo 6</span>
+        <h2>Banco de Dados</h2>
+      </header>
+
+      <!-- Objetivo -->
+      <section class="gl-chamada">
+        <h3><i class="bi bi-bullseye"></i> Objetivo</h3>
+        <p>O banco de dados é o componente responsável por armazenar todas as informações utilizadas pelo CRM Actyon. Devedores, títulos, boletos, históricos, usuários, estratégias, importações e configurações são registrados de forma estruturada para garantir segurança, integridade e desempenho.</p>
+        <p>Este capítulo apresenta os principais conceitos de banco de dados utilizados no dia a dia das equipes de Suporte, Implantação e Desenvolvimento.</p>
+      </section>
+
+      <!-- 6.1 -->
+      <h3 class="gl-secao gl-secao--primeiro"><span class="gl-secao__num">6.1</span> O que é um Banco de Dados?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-database-fill"></i> Definição</h4>
+          <p><strong>Banco de dados</strong> é um sistema utilizado para armazenar, organizar e consultar informações.</p>
+          <p>No CRM Actyon, todas as informações operacionais são armazenadas em um banco de dados relacional, permitindo consultas rápidas e seguras.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-list-check"></i> Exemplos de informações armazenadas</h4>
+          <ul>
+            <li>Devedores;</li>
+            <li>Títulos;</li>
+            <li>Boletos;</li>
+            <li>Acordos;</li>
+            <li>Usuários;</li>
+            <li>Históricos;</li>
+            <li>Importações;</li>
+            <li>Configurações do sistema.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 6.2 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.2</span> O que é uma Tabela?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-table"></i> Definição</h4>
+          <p><strong>Tabela</strong> é a estrutura responsável por armazenar um determinado conjunto de informações.</p>
+          <p>Cada tabela possui um objetivo específico.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+          <p><strong>Tabela de Devedores</strong> — armazena informações cadastrais dos devedores.</p>
+          <p><strong>Tabela de Títulos</strong> — armazena todas as dívidas cadastradas.</p>
+          <p><strong>Tabela de Usuários</strong> — armazena os usuários do sistema.</p>
+        </section>
+      </article>
+
+      <!-- 6.3 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.3</span> O que é um Registro?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-list-nested"></i> Definição</h4>
+          <p><strong>Registro</strong> é cada linha existente dentro de uma tabela.</p>
+          <p>Cada registro representa uma informação individual.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <p><strong>Na tabela de devedores:</strong></p>
+          <p>Registro 1 — João Silva</p>
+          <p>Registro 2 — Maria Souza</p>
+          <p>Cada pessoa corresponde a um registro.</p>
+        </section>
+      </article>
+
+      <!-- 6.4 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.4</span> O que é um Campo?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-columns-gap"></i> Definição</h4>
+          <p><strong>Campo</strong> é cada coluna existente em uma tabela.</p>
+          <p>Cada campo armazena um tipo específico de informação.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <p><strong>Tabela de Devedores:</strong></p>
+          <ul>
+            <li>Nome;</li>
+            <li>CPF;</li>
+            <li>Data de Nascimento;</li>
+            <li>Telefone;</li>
+            <li>E-mail.</li>
+          </ul>
+          <p>Cada um representa um campo.</p>
+        </section>
+      </article>
+
+      <!-- 6.5 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.5</span> Chave Primária (Primary Key)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-key-fill"></i> Definição</h4>
+          <p>A <strong>chave primária</strong> é o identificador único de um registro.</p>
+          <p>Ela garante que não existam dois registros iguais na mesma tabela.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <ul>
+            <li>Devedor_ID;</li>
+            <li>Titulo_ID;</li>
+            <li>Usuario_ID.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 6.6 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.6</span> Chave Estrangeira (Foreign Key)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-link-45deg"></i> Definição</h4>
+          <p>A <strong>chave estrangeira</strong> é um campo utilizado para relacionar informações entre diferentes tabelas.</p>
+          <p>Ela cria vínculos entre registros.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <p>Um título possui um <strong>Devedor_ID</strong>.</p>
+          <p>Esse campo liga o título ao cadastro do devedor.</p>
+        </section>
+      </article>
+
+      <!-- 6.7 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.7</span> Relacionamento entre Tabelas</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-diagram-2"></i> Definição</h4>
+          <p>Os <strong>relacionamentos</strong> permitem conectar diferentes informações do sistema.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <ol class="gl-fluxo">
+            <li>Devedor</li>
+            <li>Títulos</li>
+            <li>Boletos</li>
+            <li>Pagamentos</li>
+          </ol>
+          <p>Sem esses relacionamentos seria impossível localizar rapidamente todas as informações de um devedor.</p>
+        </section>
+      </article>
+
+      <!-- 6.8 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.8</span> SQL</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-code-slash"></i> Definição</h4>
+          <p><strong>SQL</strong> (Structured Query Language) é a linguagem utilizada para consultar e manipular informações armazenadas no banco de dados.</p>
+          <p>É amplamente utilizada pelas equipes de Desenvolvimento e Suporte.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-list-check"></i> Operações mais comuns</h4>
+          <ul>
+            <li>Consultar informações;</li>
+            <li>Inserir registros;</li>
+            <li>Atualizar dados;</li>
+            <li>Excluir registros.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 6.9 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.9</span> Consulta (SELECT)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-search"></i> Definição</h4>
+          <p><strong>SELECT</strong> é utilizada para pesquisar informações existentes no banco.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <ul>
+            <li>Consultar um devedor.</li>
+            <li>Consultar um título.</li>
+            <li>Consultar um boleto.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 6.10 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.10</span> Atualização (UPDATE)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-pencil-square"></i> Definição</h4>
+          <p><strong>UPDATE</strong> permite alterar informações já cadastradas.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+          <ul>
+            <li>Alterar telefone.</li>
+            <li>Atualizar vencimento.</li>
+            <li>Modificar status.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 6.11 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.11</span> Inserção (INSERT)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-plus-square"></i> Definição</h4>
+          <p><strong>INSERT</strong> é utilizada para adicionar novos registros.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+          <ul>
+            <li>Cadastrar novo usuário.</li>
+            <li>Inserir novo título.</li>
+            <li>Cadastrar nova ocorrência.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 6.12 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.12</span> Exclusão (DELETE)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-trash"></i> Definição</h4>
+          <p><strong>DELETE</strong> remove registros do banco de dados.</p>
+          <p>Essa operação deve ser realizada com cuidado, pois pode resultar na perda definitiva das informações.</p>
+        </section>
+      </article>
+
+      <!-- 6.13 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.13</span> View</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-eye"></i> Definição</h4>
+          <p><strong>View</strong> é uma consulta previamente criada e armazenada no banco.</p>
+          <p>Ela facilita consultas frequentes sem necessidade de escrever novamente toda a instrução SQL.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <ul>
+            <li>Relatório de títulos em aberto.</li>
+            <li>Relatório de acordos ativos.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 6.14 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.14</span> Procedure (Stored Procedure)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-cpu-fill"></i> Definição</h4>
+          <p><strong>Procedure</strong> é um conjunto de comandos SQL armazenados no banco de dados para executar tarefas específicas.</p>
+          <p>São utilizadas para automatizar processos complexos.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplos</h4>
+          <ul>
+            <li>Processamento financeiro;</li>
+            <li>Importações;</li>
+            <li>Geração de relatórios;</li>
+            <li>Atualizações automáticas.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 6.15 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.15</span> Trigger</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-lightning-charge-fill"></i> Definição</h4>
+          <p><strong>Trigger</strong> é uma rotina executada automaticamente quando ocorre um evento em uma tabela.</p>
+          <p>Pode ser acionada após:</p>
+          <ul>
+            <li>Inclusão;</li>
+            <li>Alteração;</li>
+            <li>Exclusão de registros.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 6.16 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.16</span> Índice (Index)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-speedometer"></i> Definição</h4>
+          <p><strong>Índice</strong> é uma estrutura criada para acelerar consultas no banco de dados.</p>
+          <p>Sem índices, consultas em grandes volumes de dados podem tornar-se lentas.</p>
+        </section>
+      </article>
+
+      <!-- 6.17 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.17</span> Backup</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-save-fill"></i> Definição</h4>
+          <p><strong>Backup</strong> é uma cópia de segurança do banco de dados.</p>
+          <p>Seu objetivo é permitir a recuperação das informações em caso de falhas ou perdas de dados.</p>
+        </section>
+      </article>
+
+      <!-- 6.18 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.18</span> Restore</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-arrow-counterclockwise"></i> Definição</h4>
+          <p><strong>Restore</strong> é o processo de restaurar um banco de dados a partir de um backup.</p>
+          <p>É utilizado em situações como:</p>
+          <ul>
+            <li>Recuperação de falhas;</li>
+            <li>Migração de ambiente;</li>
+            <li>Testes;</li>
+            <li>Recuperação de informações.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 6.19 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.19</span> Transação</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-shuffle"></i> Definição</h4>
+          <p><strong>Transação</strong> é um conjunto de operações executadas como uma única unidade.</p>
+          <p>Caso ocorra algum erro durante o processo, todas as alterações podem ser desfeitas para preservar a integridade dos dados.</p>
+        </section>
+      </article>
+
+      <!-- 6.20 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">6.20</span> Integridade dos Dados</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-shield-check"></i> Definição</h4>
+          <p><strong>Integridade</strong> representa a garantia de que as informações armazenadas permaneçam corretas, completas e consistentes.</p>
+          <p>Ela é mantida através de:</p>
+          <ul>
+            <li>Relacionamentos;</li>
+            <li>Chaves;</li>
+            <li>Validações;</li>
+            <li>Restrições do banco de dados.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- Fluxo Simplificado -->
+      <h3 class="gl-secao"><i class="bi bi-diagram-3 gl-secao__icone"></i> Fluxo Simplificado</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--exemplo">
+          <ol class="gl-fluxo">
+            <li>Operador realiza uma ação</li>
+            <li>CRM Actyon</li>
+            <li>Banco de Dados</li>
+            <li>Consulta ou Alteração</li>
+            <li>Gravação</li>
+            <li>Confirmação da Operação</li>
+          </ol>
+        </section>
+      </article>
+
+      <!-- Perguntas Frequentes -->
+      <h3 class="gl-secao"><i class="bi bi-question-circle gl-secao__icone"></i> Perguntas Frequentes</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>Posso alterar informações diretamente no banco?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Somente quando autorizado e seguindo os procedimentos internos.</p>
+            <p>Alterações diretas podem comprometer a integridade dos dados.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que acontece se um registro for excluído?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Dependendo da operação, a informação poderá ser perdida definitivamente ou impactar registros relacionados.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>Qual a diferença entre tabela e registro?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Tabela é o conjunto de informações.</p>
+            <p>Registro é cada linha armazenada dentro da tabela.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>Para que serve uma Procedure?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Automatizar tarefas complexas e centralizar regras de negócio diretamente no banco de dados.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito gl-conceito--cheio">
+          <h3>O backup substitui o banco de dados?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Não.</strong></p>
+            <p>O backup é apenas uma cópia utilizada para recuperação em caso de necessidade.</p>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- Resumo -->
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Resumo</h3>
+        <div class="gl-tabela">
+          <table>
+            <thead>
+              <tr>
+                <th>Conceito</th>
+                <th>Definição</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Banco de Dados</td><td>Local onde todas as informações do sistema são armazenadas.</td></tr>
+              <tr><td>Tabela</td><td>Estrutura que organiza um conjunto de dados.</td></tr>
+              <tr><td>Registro</td><td>Linha de uma tabela.</td></tr>
+              <tr><td>Campo</td><td>Coluna de uma tabela.</td></tr>
+              <tr><td>Chave Primária</td><td>Identificador único de um registro.</td></tr>
+              <tr><td>Chave Estrangeira</td><td>Campo que relaciona tabelas.</td></tr>
+              <tr><td>SQL</td><td>Linguagem utilizada para consultar e manipular dados.</td></tr>
+              <tr><td>View</td><td>Consulta armazenada no banco.</td></tr>
+              <tr><td>Procedure</td><td>Rotina SQL utilizada para automatizar processos.</td></tr>
+              <tr><td>Trigger</td><td>Rotina executada automaticamente após eventos no banco.</td></tr>
+              <tr><td>Índice</td><td>Estrutura que melhora o desempenho das consultas.</td></tr>
+              <tr><td>Backup</td><td>Cópia de segurança do banco de dados.</td></tr>
+              <tr><td>Restore</td><td>Processo de recuperação a partir de um backup.</td></tr>
+              <tr><td>Transação</td><td>Conjunto de operações executadas como uma única ação.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <!-- Conclusão -->
+      <section class="gl-chamada gl-chamada--conclusao">
+        <h3><i class="bi bi-flag-fill"></i> Conclusão</h3>
+        <p>O banco de dados é a base do CRM Actyon e garante o armazenamento seguro de todas as informações da operação. Compreender conceitos como tabelas, relacionamentos, consultas SQL, procedures, índices e backups é essencial para equipes de Suporte, Implantação e Desenvolvimento, facilitando a análise de problemas, a execução de manutenções e a preservação da integridade dos dados.</p>
+      </section>
+
+    </article>
+  </div>
+  <!-- ========================================================== -->
+  <!-- Capítulo 7 – Infraestrutura                                -->
+  <div *ngIf="capituloSelecionado === 7">
+    <article class="gl-corpo">
+
+      <header class="gl-corpo__header">
+        <span class="gl-corpo__badge">Capítulo 7</span>
+        <h2>Infraestrutura</h2>
+      </header>
+
+      <!-- Objetivo -->
+      <section class="gl-chamada">
+        <h3><i class="bi bi-bullseye"></i> Objetivo</h3>
+        <p>A infraestrutura é o conjunto de recursos tecnológicos que permite o funcionamento do CRM Actyon. Ela engloba servidores, banco de dados, rede, serviços, certificados, ambientes e demais componentes responsáveis por manter o sistema disponível, seguro e com bom desempenho.</p>
+        <p>Este capítulo apresenta os principais conceitos utilizados pelas equipes de Suporte, Implantação, Infraestrutura e Desenvolvimento.</p>
+      </section>
+
+      <!-- 7.1 -->
+      <h3 class="gl-secao gl-secao--primeiro"><span class="gl-secao__num">7.1</span> O que é Infraestrutura?</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-hdd-stack-fill"></i> Definição</h4>
+          <p><strong>Infraestrutura</strong> é o conjunto de equipamentos, softwares e serviços necessários para que o CRM Actyon funcione corretamente.</p>
+          <p>Ela é composta por:</p>
+          <ul>
+            <li>Servidores;</li>
+            <li>Banco de Dados;</li>
+            <li>Rede;</li>
+            <li>Internet;</li>
+            <li>Firewall;</li>
+            <li>Sistemas Operacionais;</li>
+            <li>Certificados Digitais;</li>
+            <li>Serviços de Hospedagem.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 7.2 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.2</span> Servidor</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-server"></i> Definição</h4>
+          <p><strong>Servidor</strong> é o computador responsável por executar o CRM Actyon e disponibilizar seus serviços para os usuários.</p>
+          <p>Dependendo da estrutura do cliente, podem existir servidores separados para:</p>
+          <ul>
+            <li>Aplicação;</li>
+            <li>Banco de Dados;</li>
+            <li>Arquivos;</li>
+            <li>Integrações;</li>
+            <li>Balanceamento de carga.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 7.3 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.3</span> Ambiente de Produção</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-building-fill"></i> Definição</h4>
+          <p>É o <strong>ambiente</strong> utilizado pelos usuários no dia a dia da operação.</p>
+          <p>Todas as informações existentes nesse ambiente são consideradas oficiais.</p>
+          <p>Alterações nesse ambiente devem ser realizadas com cautela.</p>
+        </section>
+      </article>
+
+      <!-- 7.4 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.4</span> Ambiente de Homologação</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-flask"></i> Definição</h4>
+          <p>Ambiente utilizado para <strong>testes</strong> antes da implantação em produção.</p>
+          <p>Permite validar:</p>
+          <ul>
+            <li>Novas funcionalidades;</li>
+            <li>Correções;</li>
+            <li>Integrações;</li>
+            <li>Atualizações do sistema.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 7.5 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.5</span> Ambiente de Desenvolvimento</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-laptop"></i> Definição</h4>
+          <p>Ambiente utilizado pelos <strong>desenvolvedores</strong> para criação e manutenção do sistema.</p>
+          <p>Nesse ambiente são implementadas novas funcionalidades antes de serem disponibilizadas para testes.</p>
+        </section>
+      </article>
+
+      <!-- 7.6 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.6</span> Banco de Dados</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-database-fill"></i> Definição</h4>
+          <p>O <strong>banco de dados</strong> é responsável pelo armazenamento das informações do CRM Actyon.</p>
+          <p>Ele pode estar instalado no mesmo servidor da aplicação ou em um servidor dedicado.</p>
+        </section>
+      </article>
+
+      <!-- 7.7 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.7</span> IIS (Internet Information Services)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-window"></i> Definição</h4>
+          <p>O <strong>IIS</strong> é o servidor web utilizado para publicar aplicações desenvolvidas pela Microsoft.</p>
+          <p>No Actyon Web, ele é responsável por disponibilizar a aplicação para acesso pelos usuários.</p>
+          <p>Entre suas funções estão:</p>
+          <ul>
+            <li>Hospedagem da aplicação;</li>
+            <li>Gerenciamento dos sites;</li>
+            <li>Pools de aplicação;</li>
+            <li>Certificados SSL;</li>
+            <li>Controle de acesso.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 7.8 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.8</span> Serviço (Service)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-gear"></i> Definição</h4>
+          <p><strong>Serviço</strong> é um processo executado em segundo plano pelo sistema operacional.</p>
+          <p>Alguns serviços utilizados pelo Actyon podem ser responsáveis por:</p>
+          <ul>
+            <li>Processamento de importações;</li>
+            <li>Integrações;</li>
+            <li>Atualizações automáticas;</li>
+            <li>Processamentos financeiros;</li>
+            <li>Agendamentos.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 7.9 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.9</span> Rede</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-wifi"></i> Definição</h4>
+          <p><strong>Rede</strong> é a estrutura responsável pela comunicação entre computadores e servidores.</p>
+          <p>Ela permite que os usuários acessem o CRM Actyon e demais recursos necessários para a operação.</p>
+        </section>
+      </article>
+
+      <!-- 7.10 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.10</span> Endereço IP</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-geo-alt"></i> Definição</h4>
+          <p><strong>IP</strong> é o identificador utilizado para localizar um equipamento na rede.</p>
+          <p>Cada servidor possui um endereço IP que permite sua comunicação com outros dispositivos.</p>
+          <p>Pode ser:</p>
+          <ul>
+            <li>IP Privado (rede interna);</li>
+            <li>IP Público (acesso pela Internet).</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 7.11 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.11</span> DNS</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-box-arrow-up-right"></i> Definição</h4>
+          <p><strong>DNS</strong> (Domain Name System) é o serviço responsável por converter nomes de domínio em endereços IP.</p>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <p><strong>Sem DNS:</strong> http://192.168.1.10</p>
+          <p><strong>Com DNS:</strong> https://crm.empresa.com.br</p>
+        </section>
+      </article>
+
+      <!-- 7.12 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.12</span> Porta de Comunicação</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-link"></i> Definição</h4>
+          <p><strong>Porta</strong> é o canal utilizado para comunicação entre aplicações.</p>
+          <p>Algumas portas comuns:</p>
+          <ul>
+            <li><strong>80</strong> &rarr; HTTP</li>
+            <li><strong>443</strong> &rarr; HTTPS</li>
+            <li><strong>1433</strong> &rarr; SQL Server</li>
+          </ul>
+          <p>Cada serviço utiliza uma porta específica para receber conexões.</p>
+        </section>
+      </article>
+
+      <!-- 7.13 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.13</span> Firewall</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-shield-fill"></i> Definição</h4>
+          <p><strong>Firewall</strong> é o mecanismo responsável por controlar quais conexões podem entrar ou sair da rede.</p>
+          <p>Ele protege os servidores contra acessos não autorizados.</p>
+        </section>
+      </article>
+
+      <!-- 7.14 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.14</span> VPN</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-lock-fill"></i> Definição</h4>
+          <p><strong>VPN</strong> (Virtual Private Network) permite acessar a infraestrutura do cliente de forma segura através da Internet.</p>
+          <p>É muito utilizada pelas equipes de Suporte para realizar atendimentos remotos.</p>
+        </section>
+      </article>
+
+      <!-- 7.15 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.15</span> Certificado Digital (SSL/TLS)</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-patch-check-fill"></i> Definição</h4>
+          <p>O <strong>certificado digital</strong> é utilizado para criptografar a comunicação entre o navegador e o servidor.</p>
+          <p>Ele garante:</p>
+          <ul>
+            <li>Segurança;</li>
+            <li>Integridade das informações;</li>
+            <li>Autenticidade do servidor.</li>
+          </ul>
+        </section>
+        <section class="gl-bloco gl-bloco--exemplo">
+          <h4><i class="bi bi-lightbulb-fill"></i> Exemplo</h4>
+          <p>Sites com <strong>HTTPS</strong> utilizam certificados digitais.</p>
+        </section>
+      </article>
+
+      <!-- 7.16 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.16</span> HTTPS</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-lock"></i> Definição</h4>
+          <p><strong>HTTPS</strong> é o protocolo seguro utilizado para acesso às aplicações web.</p>
+          <p>Ele protege as informações transmitidas entre usuário e servidor.</p>
+        </section>
+      </article>
+
+      <!-- 7.17 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.17</span> Backup</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-archive-fill"></i> Definição</h4>
+          <p><strong>Backup</strong> é a cópia de segurança das informações do ambiente.</p>
+          <p>Pode incluir:</p>
+          <ul>
+            <li>Banco de Dados;</li>
+            <li>Arquivos;</li>
+            <li>Configurações;</li>
+            <li>Aplicações.</li>
+          </ul>
+          <p>O backup é essencial para recuperação em caso de falhas.</p>
+        </section>
+      </article>
+
+      <!-- 7.18 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.18</span> Monitoramento</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-activity"></i> Definição</h4>
+          <p><strong>Monitoramento</strong> consiste no acompanhamento contínuo dos servidores e serviços.</p>
+          <p>Permite identificar rapidamente:</p>
+          <ul>
+            <li>Falhas;</li>
+            <li>Lentidão;</li>
+            <li>Consumo elevado de recursos;</li>
+            <li>Indisponibilidade.</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- 7.19 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.19</span> Disponibilidade</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-check2-circle"></i> Definição</h4>
+          <p><strong>Disponibilidade</strong> representa o tempo em que o sistema permanece acessível aos usuários.</p>
+          <p>Quanto maior a disponibilidade, menor o tempo de indisponibilidade da operação.</p>
+        </section>
+      </article>
+
+      <!-- 7.20 -->
+      <h3 class="gl-secao"><span class="gl-secao__num">7.20</span> Logs do Sistema</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--definicao">
+          <h4><i class="bi bi-file-earmark-text"></i> Definição</h4>
+          <p>Os <strong>logs</strong> registram informações importantes sobre o funcionamento da infraestrutura.</p>
+          <p>Podem conter:</p>
+          <ul>
+            <li>Inicialização de serviços;</li>
+            <li>Erros;</li>
+            <li>Exceções;</li>
+            <li>Falhas de comunicação;</li>
+            <li>Tentativas de acesso;</li>
+            <li>Processamentos executados.</li>
+          </ul>
+          <p>São fundamentais para o diagnóstico de problemas.</p>
+        </section>
+      </article>
+
+      <!-- Fluxo Simplificado da Infraestrutura -->
+      <h3 class="gl-secao"><i class="bi bi-diagram-3 gl-secao__icone"></i> Fluxo Simplificado da Infraestrutura</h3>
+      <article class="gl-conceito gl-conceito--cheio">
+        <section class="gl-bloco gl-bloco--exemplo">
+          <ol class="gl-fluxo">
+            <li>Operador</li>
+            <li>Internet ou Rede Interna</li>
+            <li>Firewall</li>
+            <li>Servidor Web (IIS)</li>
+            <li>Aplicação Actyon</li>
+            <li>Banco de Dados</li>
+            <li>Resposta ao Operador</li>
+          </ol>
+        </section>
+      </article>
+
+      <!-- Perguntas Frequentes -->
+      <h3 class="gl-secao"><i class="bi bi-question-circle gl-secao__icone"></i> Perguntas Frequentes</h3>
+      <div class="gl-grid">
+
+        <article class="gl-conceito">
+          <h3>O CRM Actyon funciona apenas na Internet?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p><strong>Não.</strong></p>
+            <p>Dependendo da infraestrutura do cliente, ele pode funcionar apenas na rede interna ou também pela Internet.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>O que acontece se o banco de dados parar?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>A aplicação poderá ficar indisponível ou apresentar falhas ao consultar informações.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>Para que serve um certificado SSL?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Garantir que a comunicação entre usuário e servidor ocorra de forma criptografada e segura.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito">
+          <h3>Qual a diferença entre Produção e Homologação?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Produção é utilizada pelos usuários.</p>
+            <p>Homologação é destinada a testes e validações antes da publicação.</p>
+          </section>
+        </article>
+
+        <article class="gl-conceito gl-conceito--cheio">
+          <h3>Por que os logs são importantes?</h3>
+          <section class="gl-bloco gl-bloco--definicao">
+            <h4><i class="bi bi-question-circle-fill"></i> Resposta</h4>
+            <p>Porque permitem identificar rapidamente a origem de falhas na infraestrutura ou na aplicação.</p>
+          </section>
+        </article>
+
+      </div>
+
+      <!-- Resumo -->
+      <article class="gl-conceito gl-conceito--cheio">
+        <h3>Resumo</h3>
+        <div class="gl-tabela">
+          <table>
+            <thead>
+              <tr>
+                <th>Conceito</th>
+                <th>Definição</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Infraestrutura</td><td>Conjunto de recursos necessários para execução do sistema.</td></tr>
+              <tr><td>Servidor</td><td>Equipamento que hospeda a aplicação.</td></tr>
+              <tr><td>Produção</td><td>Ambiente utilizado pelos usuários.</td></tr>
+              <tr><td>Homologação</td><td>Ambiente destinado a testes.</td></tr>
+              <tr><td>Desenvolvimento</td><td>Ambiente utilizado para criação de novas funcionalidades.</td></tr>
+              <tr><td>IIS</td><td>Servidor web utilizado pelo Actyon Web.</td></tr>
+              <tr><td>Serviço</td><td>Processo executado em segundo plano.</td></tr>
+              <tr><td>Rede</td><td>Estrutura de comunicação entre equipamentos.</td></tr>
+              <tr><td>IP</td><td>Identificador de um equipamento na rede.</td></tr>
+              <tr><td>DNS</td><td>Conversão de nomes em endereços IP.</td></tr>
+              <tr><td>Porta</td><td>Canal utilizado para comunicação entre aplicações.</td></tr>
+              <tr><td>Firewall</td><td>Controle de acesso à rede.</td></tr>
+              <tr><td>VPN</td><td>Acesso remoto seguro à infraestrutura.</td></tr>
+              <tr><td>Certificado SSL/TLS</td><td>Garante comunicação segura entre cliente e servidor.</td></tr>
+              <tr><td>HTTPS</td><td>Protocolo de comunicação criptografada.</td></tr>
+              <tr><td>Backup</td><td>Cópia de segurança dos dados.</td></tr>
+              <tr><td>Monitoramento</td><td>Acompanhamento do funcionamento da infraestrutura.</td></tr>
+              <tr><td>Disponibilidade</td><td>Tempo em que o sistema permanece acessível.</td></tr>
+              <tr><td>Logs</td><td>Registros técnicos utilizados para diagnóstico.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <!-- Conclusão -->
+      <section class="gl-chamada gl-chamada--conclusao">
+        <h3><i class="bi bi-flag-fill"></i> Conclusão</h3>
+        <p>Uma infraestrutura bem configurada é fundamental para garantir o desempenho, a disponibilidade e a segurança do CRM Actyon. O conhecimento dos principais componentes — como servidores, IIS, banco de dados, rede, certificados e monitoramento — permite que as equipes de Suporte, Implantação e Infraestrutura atuem de forma mais eficiente na identificação de problemas e na manutenção do ambiente operacional.</p>
+      </section>
+
+    </article>
+  </div>
+  <!-- Em breve -->
+  <div *ngIf="!capituloDisponivel(capituloSelecionado)" class="gl-embreve">
+    <i class="bi bi-hourglass-split"></i>
+    <h3>Capítulo {{ capituloSelecionado }} – {{ tituloCapituloAtual() }} em construção</h3>
+    <p>O conteúdo deste capítulo será publicado em breve.</p>
+  </div>
+
+</section>

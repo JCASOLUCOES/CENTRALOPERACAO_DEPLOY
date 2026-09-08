@@ -1,0 +1,111 @@
+<div class="modal-header">
+  <h5 class="modal-title">
+    <i class="bi" [ngClass]="eventoEdicao ? 'bi-pencil-square' : 'bi-calendar-plus'"></i>
+    {{ eventoEdicao ? 'Editar evento' : 'Novo evento' }}
+  </h5>
+  <button type="button" class="btn-close" aria-label="Fechar" (click)="fechar()"></button>
+</div>
+<div class="modal-body">
+  <div *ngIf="erroMsg()" class="alert alert-danger py-2">{{ erroMsg() }}</div>
+
+  <div class="mb-3">
+    <label class="form-label">Título <span class="text-danger">*</span></label>
+    <input type="text" class="form-control" maxlength="200" [(ngModel)]="titulo">
+  </div>
+
+  <div class="row">
+    <div class="col-md-7 mb-3">
+      <label class="form-label">Descrição</label>
+      <textarea class="form-control" rows="2" maxlength="2000" [(ngModel)]="descricao"></textarea>
+    </div>
+    <div class="col-md-5 mb-3">
+      <label class="form-label">Local</label>
+      <input type="text" class="form-control" maxlength="200" [(ngModel)]="local">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-4 mb-3">
+      <label class="form-label">Data início <span class="text-danger">*</span></label>
+      <input type="date" class="form-control" [(ngModel)]="dataInicio">
+    </div>
+    <div class="col-md-3 mb-3">
+      <label class="form-label">Hora início</label>
+      <input type="time" class="form-control" [(ngModel)]="horaInicio" [disabled]="diaInteiro">
+    </div>
+    <div class="col-md-4 mb-3">
+      <label class="form-label">Data fim</label>
+      <input type="date" class="form-control" [(ngModel)]="dataFim">
+    </div>
+    <div class="col-md-1 mb-3">
+      <label class="form-label">Hora fim</label>
+      <input type="time" class="form-control" [(ngModel)]="horaFim" [disabled]="diaInteiro || !dataFim">
+    </div>
+  </div>
+
+  <div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" id="diaInteiro" [(ngModel)]="diaInteiro">
+    <label class="form-check-label" for="diaInteiro">Dia inteiro</label>
+  </div>
+
+  <div class="row">
+    <div class="col-md-4 mb-3">
+      <label class="form-label">Cor</label>
+      <input type="color" class="form-control form-control-color" [(ngModel)]="cor">
+    </div>
+    <div class="col-md-8 mb-3">
+      <label class="form-label d-block">Tipo <span class="text-danger">*</span></label>
+      <div class="imp-modal-tipos">
+        <label *ngFor="let t of tipos" class="imp-modal-tipo">
+          <input type="radio" name="tipo" [value]="t.valor" [(ngModel)]="tipo">
+          <span class="imp-modal-tipo__chip" [style.background]="t.cor">
+            <i class="bi" [ngClass]="t.icone"></i> {{ t.rotulo }}
+          </span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label d-block">Visibilidade <span class="text-danger">*</span></label>
+    <div class="imp-modal-vis">
+      <label *ngFor="let v of visibilidades" class="imp-modal-vis-op">
+        <input type="radio" name="vis" [value]="v.valor" [(ngModel)]="visibilidade">
+        <span><i class="bi" [ngClass]="v.icone"></i> {{ v.rotulo }}</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Projeto vinculado</label>
+    <select class="form-select" [(ngModel)]="projetoId">
+      <option [ngValue]="undefined">— Nenhum —</option>
+      <option *ngFor="let p of projetos()" [ngValue]="p.id">{{ p.codigo }} · {{ p.nome }}</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <div class="col-md-4 mb-3">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="recorrente" [(ngModel)]="recorrente">
+        <label class="form-check-label" for="recorrente">Recorrente</label>
+      </div>
+    </div>
+    <div class="col-md-8 mb-3">
+      <label class="form-label">Padrão de recorrência</label>
+      <select class="form-select" [(ngModel)]="padraoRecorrencia" [disabled]="!recorrente">
+        <option *ngFor="let r of recorrencias" [ngValue]="r.valor">{{ r.rotulo }}</option>
+      </select>
+    </div>
+  </div>
+</div>
+<div class="modal-footer">
+  <button *ngIf="eventoEdicao" type="button" class="btn btn-outline-danger me-auto" (click)="excluir()" [disabled]="salvando()">
+    <i class="bi bi-trash"></i> Excluir
+  </button>
+  <button type="button" class="btn btn-light" (click)="fechar()" [disabled]="salvando()">Cancelar</button>
+  <button type="button" class="btn btn-primary" (click)="salvar()" [disabled]="salvando()">
+    <i class="bi bi-check-lg"></i>
+    {{ salvando() ? 'Salvando…' : 'Salvar' }}
+  </button>
+</div>

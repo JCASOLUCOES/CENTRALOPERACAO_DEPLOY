@@ -1,0 +1,257 @@
+/* estilos locais de Projetos - complementar ao design system global .adm-* */
+
+.imp-page {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+.imp-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.imp-header__title {
+  font: 800 1.875rem/1.1 var(--font-display);
+  letter-spacing: -0.02em;
+  color: var(--text-color);
+  margin: 0;
+}
+.imp-eyebrow {
+  font: 600 0.6875rem/1 var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-color);
+  opacity: 0.65;
+  margin: 0 0 0.25rem;
+}
+.imp-header__sub {
+  font: 400 0.875rem/1 var(--font-body);
+  color: var(--text-color);
+  opacity: 0.7;
+  margin: 0.4rem 0 0;
+}
+.imp-header__actions { display: flex; gap: 0.5rem; }
+
+.imp-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.imp-chip {
+  background: var(--surface-main);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font: 600 0.8125rem/1 var(--font-body);
+  color: var(--text-color);
+  opacity: 0.75;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.imp-chip:hover { opacity: 1; border-color: var(--primary-color); }
+.imp-chip--active {
+  background: var(--text-color);
+  border-color: var(--text-color);
+  color: var(--surface-main);
+  opacity: 1;
+}
+.imp-chip--impl.imp-chip--active { background: var(--primary-color); border-color: var(--primary-color); }
+.imp-chip--ciaa.imp-chip--active { background: #7c3aed; border-color: #7c3aed; }
+
+.imp-filtros {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.imp-filtros__search { flex: 1; min-width: 200px; }
+.imp-search {
+  width: 100%;
+  max-width: 360px;
+  padding: 0.6rem 0.9rem;
+  font: 400 0.875rem/1.4 var(--font-body);
+  background: var(--surface-main);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  color: var(--text-color);
+  outline: none;
+}
+.imp-search:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(15, 76, 129, 0.15); }
+.imp-form__select {
+  font: 400 0.875rem/1.4 var(--font-body);
+  color: var(--text-color);
+  background: var(--surface-main);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.75rem;
+}
+.imp-loading {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-color);
+  opacity: 0.6;
+}
+.imp-empty {
+  background: var(--surface-main);
+  border: 2px dashed var(--border-color);
+  border-radius: 0.75rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--text-color);
+  opacity: 0.85;
+}
+.imp-empty__title {
+  font: 700 1.125rem var(--font-display);
+  margin: 0 0 0.5rem;
+}
+.imp-empty__hint { font: 400 0.875rem var(--font-body); margin: 0 0 1rem; opacity: 0.7; }
+.imp-empty__action { display: inline-block; margin-top: 0.5rem; }
+.imp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  font: 600 0.8125rem/1 var(--font-body);
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.imp-btn--primary { background: var(--primary-color); color: #fff; }
+.imp-btn--primary:hover { background: #0a3a66; }
+.imp-btn--ghost { background: transparent; color: var(--text-color); opacity: 0.8; border-color: var(--border-color); }
+.imp-btn--ghost:hover { opacity: 1; border-color: var(--text-color); }
+
+.imp-proj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+.imp-card {
+  background: var(--surface-main);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+.imp-card--clickable {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.imp-card--clickable:hover { box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08); transform: translateY(-2px); }
+.imp-card--impl { border-left: 4px solid var(--primary-color); }
+.imp-card--ciaa { border-left: 4px solid #7c3aed; }
+
+.imp-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font: 700 0.6875rem/1 var(--font-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.imp-team::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.imp-team--impl { background: rgba(15, 76, 129, 0.08); color: var(--primary-color); }
+.imp-team--ciaa { background: rgba(124, 58, 237, 0.08); color: #7c3aed; }
+
+.imp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font: 700 0.6875rem/1 var(--font-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.imp-status::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.imp-status--backlog { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+.imp-status--afazer { background: rgba(37, 99, 235, 0.12); color: #2563eb; }
+.imp-status--em-andamento { background: rgba(217, 119, 6, 0.12); color: #d97706; }
+.imp-status--em-homologacao { background: rgba(124, 58, 237, 0.12); color: #7c3aed; }
+.imp-status--concluida, .imp-status--concluido { background: rgba(22, 163, 74, 0.12); color: #16a34a; }
+.imp-status--bloqueada, .imp-status--bloqueado { background: rgba(220, 38, 38, 0.12); color: #dc2626; }
+.imp-status--cancelada, .imp-status--cancelado { background: rgba(71, 85, 105, 0.12); color: #475569; }
+
+.imp-code {
+  font: 700 0.75rem/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--text-color);
+  background: rgba(15, 23, 42, 0.04);
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border-color);
+}
+
+.imp-proj-card { display: flex; flex-direction: column; gap: 0.875rem; }
+.imp-proj-card__top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.imp-proj-card__title {
+  font: 700 1.0625rem/1.3 var(--font-display);
+  letter-spacing: -0.01em;
+  color: var(--text-color);
+  margin: 0;
+}
+.imp-proj-card__client {
+  font: 500 0.8125rem/1 var(--font-body);
+  color: var(--text-color);
+  opacity: 0.75;
+  margin: 0;
+}
+.imp-proj-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font: 500 0.75rem/1 var(--font-body);
+  color: var(--text-color);
+  opacity: 0.75;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+}
+.imp-proj-card__meta i { opacity: 0.7; }
+
+.imp-progress {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: var(--border-color);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.imp-progress__bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color) 0%, #7c3aed 100%);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.imp-progress__text {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  font: 700 0.6875rem/1 var(--font-mono);
+  color: var(--text-color);
+  opacity: 0.7;
+}

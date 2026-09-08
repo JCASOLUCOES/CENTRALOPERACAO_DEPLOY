@@ -1,0 +1,566 @@
+.glossario {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 0.75rem 0.25rem;
+  color: var(--text-color);
+}
+
+/* ======================== */
+/* Header                   */
+/* ======================== */
+
+.glossario__header {
+  h1 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    margin: 0 0 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-strong, var(--text-color));
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+  }
+}
+
+/* ======================== */
+/* Capítulos                */
+/* ======================== */
+
+.gl-capitulos {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0.1rem 0.5rem;
+  scrollbar-width: thin;
+}
+
+.gl-capitulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.45rem 0.95rem;
+  background: var(--surface-main);
+  border: 1px solid var(--border-primary-soft);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--primary-color);
+  }
+
+  &--ativa {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+
+    .gl-capitulo__num,
+    .gl-capitulo__titulo {
+      color: #fff;
+    }
+  }
+}
+
+.gl-capitulo__num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  background: rgba(15, 76, 129, 0.12);
+  color: var(--primary-color);
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.gl-capitulo__titulo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ======================== */
+/* Corpo do capítulo        */
+/* ======================== */
+
+.gl-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.gl-corpo__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    color: var(--text-strong, var(--text-color));
+  }
+}
+
+.gl-corpo__badge {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  background: var(--surface-primary-soft);
+  color: var(--primary-color);
+  border: 1px solid rgba(15, 76, 129, 0.25);
+  flex-shrink: 0;
+}
+
+/* ======================== */
+/* Chamadas (objetivo/conclusão) */
+/* ======================== */
+
+.gl-chamada {
+  background: linear-gradient(135deg, var(--surface-primary-soft), transparent 70%), var(--surface-main);
+  border: 1px solid var(--border-primary-soft);
+  border-radius: 0.85rem;
+  padding: 1rem 1.2rem;
+
+  h3 {
+    margin: 0 0 0.55rem;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--text-strong, var(--text-color));
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    i {
+      color: var(--primary-color);
+    }
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    color: var(--text-secondary);
+  }
+
+  &--conclusao {
+    border-color: rgba(37, 211, 102, 0.35);
+    background: linear-gradient(135deg, rgba(37, 211, 102, 0.07), transparent 70%), var(--surface-main);
+
+    h3 i {
+      color: #16A34A;
+    }
+  }
+}
+
+/* ======================== */
+/* Grid de conceitos        */
+/* ======================== */
+
+.gl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .gl-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gl-conceito {
+  background: var(--surface-main);
+  border: 1px solid var(--border-primary-soft);
+  border-radius: 0.85rem;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+
+  &--cheio {
+    grid-column: 1 / -1;
+  }
+
+  > h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.02rem;
+    color: var(--text-strong, var(--text-color));
+    padding-bottom: 0.55rem;
+    border-bottom: 1px solid var(--border-primary-soft);
+  }
+}
+
+/* ======================== */
+/* Subseções do capítulo    */
+/* ======================== */
+
+.gl-secao {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 2.2rem 0 1.1rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed var(--border-primary-soft);
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--text-strong, var(--text-color));
+
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-primary-soft);
+  }
+
+  &--primeiro {
+    margin-top: 1.6rem;
+    padding-top: 0;
+    border-top: none;
+  }
+}
+
+.gl-secao__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2rem;
+  height: 2.2rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  border: 1.5px solid rgba(37, 99, 235, 0.35);
+  color: var(--primary-color);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.gl-secao__icone {
+  font-size: 1.1rem;
+  color: var(--primary-color);
+}
+
+/* ======================== */
+/* Blocos internos          */
+/* ======================== */
+
+.gl-bloco {
+  background: var(--surface-secondary-soft);
+  border: 1px solid var(--border-primary-soft);
+  border-radius: 0.6rem;
+  padding: 0.7rem 0.9rem;
+
+  h4 {
+    margin: 0 0 0.45rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-secondary);
+  }
+
+  p {
+    margin: 0 0 0.5rem;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-color);
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    strong {
+      color: var(--text-strong, var(--text-color));
+    }
+  }
+
+  ul {
+    margin: 0 0 0.5rem;
+    padding-left: 1.15rem;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-color);
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &--definicao {
+    h4 {
+      color: var(--primary-color);
+
+      i {
+        color: var(--primary-color);
+      }
+    }
+  }
+
+  &--exemplo {
+    background: rgba(245, 158, 11, 0.06);
+    border-color: rgba(245, 158, 11, 0.3);
+
+    h4 {
+      color: #B45309;
+
+      i {
+        color: #D97706;
+      }
+    }
+  }
+
+  &--importante {
+    background: rgba(34, 197, 94, 0.06);
+    border-color: rgba(34, 197, 94, 0.3);
+
+    h4 {
+      color: #15803D;
+
+      i {
+        color: #16A34A;
+      }
+    }
+  }
+
+  &--nao-confundir {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.3);
+
+    h4 {
+      color: #B91C1C;
+
+      i {
+        color: #DC2626;
+      }
+    }
+  }
+
+  &--observacao {
+    background: rgba(20, 184, 166, 0.06);
+    border-color: rgba(20, 184, 166, 0.3);
+
+    h4 {
+      color: #0F766E;
+
+      i {
+        color: #14B8A6;
+      }
+    }
+  }
+}
+
+[data-theme='dark'] .gl-bloco--exemplo h4 {
+  color: #FBBF24;
+
+  i {
+    color: #F59E0B;
+  }
+}
+
+[data-theme='dark'] .gl-bloco--importante h4 {
+  color: #4ADE80;
+
+  i {
+    color: #22C55E;
+  }
+}
+
+[data-theme='dark'] .gl-bloco--nao-confundir h4 {
+  color: #F87171;
+
+  i {
+    color: #EF4444;
+  }
+}
+
+[data-theme='dark'] .gl-bloco--observacao h4 {
+  color: #5EEAD4;
+
+  i {
+    color: #2DD4BF;
+  }
+}
+
+/* ======================== */
+/* Fluxo da jornada         */
+/* ======================== */
+
+.gl-fluxo {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  max-width: 560px;
+
+  li {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text-strong, var(--text-color));
+    background: var(--surface-main);
+    border: 1.5px solid var(--border-primary-soft);
+    border-radius: 0.6rem;
+    padding: 0.65rem 1.6rem;
+    text-align: center;
+
+    &::after {
+      content: '↓';
+      display: block;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-top: 0.45rem;
+    }
+
+    &:last-child {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: #fff;
+
+      &::after {
+        content: none;
+      }
+
+      .gl-fluxo__nota {
+        color: rgba(255, 255, 255, 0.92);
+      }
+    }
+  }
+}
+
+.gl-fluxo__nota {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.86rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-muted, var(--text-color));
+}
+
+/* ======================== */
+/* Tabela resumo            */
+/* ======================== */
+
+.gl-tabela-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-primary-soft);
+  border-radius: 0.6rem;
+}
+
+.gl-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.6rem 0.95rem;
+    border-bottom: 1px solid var(--border-primary-soft);
+    vertical-align: top;
+  }
+
+  thead th {
+    background: var(--surface-primary-soft);
+    color: var(--text-strong, var(--text-color));
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  tbody tr:nth-child(even) td {
+    background: var(--surface-secondary-soft);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  td:first-child {
+    font-weight: 600;
+    color: var(--text-strong, var(--text-color));
+    white-space: nowrap;
+  }
+
+  td:last-child {
+    color: var(--text-secondary);
+  }
+}
+
+/* ======================== */
+/* Em breve                 */
+/* ======================== */
+
+.gl-embreve {
+  text-align: center;
+  padding: 3.5rem 1.5rem;
+  background: var(--surface-main);
+  border: 1px dashed var(--border-primary-soft);
+  border-radius: 0.85rem;
+
+  > i {
+    font-size: 2.6rem;
+    display: block;
+    margin-bottom: 0.85rem;
+    color: var(--primary-color);
+    opacity: 0.6;
+  }
+
+  h3 {
+    margin: 0 0 0.4rem;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--text-strong, var(--text-color));
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--text-muted, var(--text-secondary));
+  }
+}
+
+/* ======================== */
+/* Responsivo               */
+/* ======================== */
+
+@media (max-width: 768px) {
+  .glossario {
+    padding: 0.6rem 0.1rem;
+  }
+
+  .glossario__header h1 {
+    font-size: 1.35rem;
+  }
+
+  .gl-corpo__header {
+    flex-wrap: wrap;
+  }
+
+  .gl-corpo__header h2 {
+    font-size: 1.15rem;
+  }
+}

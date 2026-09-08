@@ -1,0 +1,265 @@
+.login {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  background: var(--background-color);
+}
+
+/* ============ PAINEL DE MARCA ============ */
+.login__painel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 3.5rem;
+  background:
+    radial-gradient(1200px 500px at -10% -10%, rgba(96, 165, 250, 0.35), transparent 60%),
+    radial-gradient(900px 500px at 110% 110%, rgba(56, 189, 248, 0.25), transparent 60%),
+    var(--header-color);
+  color: var(--text-light);
+  overflow: hidden;
+}
+
+.login__painel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 26px 26px;
+  pointer-events: none;
+}
+
+.login__marca,
+.login__info,
+.login__rodape {
+  position: relative;
+  z-index: 1;
+}
+
+.login__logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.login__marca h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+}
+
+.login__marca p {
+  margin: 0.4rem 0 0;
+  opacity: 0.75;
+  letter-spacing: 0.04em;
+}
+
+.login__info {
+  max-width: 46ch;
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #ffffff;
+  }
+
+  p {
+    opacity: 0.85;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.95rem;
+    opacity: 0.92;
+
+    i {
+      color: #7dd3fc;
+      font-size: 1.05rem;
+    }
+  }
+}
+
+.login__rodape {
+  font-size: 0.8rem;
+  opacity: 0.65;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ============ FORMULÁRIO ============ */
+.login__formulario {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.login__card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--tools-surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: 1.25rem;
+  padding: 2.25rem 2rem;
+  box-shadow: var(--shadow-card-md);
+}
+
+.login__card-cabecalho {
+  margin-bottom: 1.75rem;
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-strong);
+    margin: 0 0 0.35rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+  }
+}
+
+.login__campo {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  > i {
+    position: absolute;
+    left: 0.95rem;
+    color: var(--text-muted);
+    font-size: 1rem;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  input {
+    padding-left: 2.6rem;
+    border-radius: 0.65rem;
+    border: 1px solid var(--border-color);
+    background: var(--surface-subtle);
+    color: var(--text-color);
+
+    &:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 4px rgba(15, 76, 129, 0.12);
+      background: var(--tools-surface-card);
+    }
+  }
+}
+
+.login__olho {
+  position: absolute;
+  right: 0.7rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  cursor: pointer;
+  padding: 0.3rem;
+  line-height: 1;
+  z-index: 2;
+
+  &:hover {
+    color: var(--primary-color);
+  }
+}
+
+.login__opcoes .form-check-label {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.login__erro {
+  display: flex;
+  align-items: center;
+  border-radius: 0.65rem;
+  font-size: 0.88rem;
+}
+
+.login__entrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding-block: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.65rem;
+  transition: background 0.2s ease, transform 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+}
+
+.login__ajuda {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* ============ RESPONSIVO ============ */
+@media (max-width: 992px) {
+  .login {
+    grid-template-columns: 1fr;
+  }
+
+  .login__painel {
+    padding: 2rem;
+  }
+
+  .login__info {
+    display: none;
+  }
+
+  .login__rodape {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .login__painel {
+    padding: 1.5rem;
+  }
+
+  .login__logo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .login__marca h1 {
+    font-size: 1.5rem;
+  }
+
+  .login__card {
+    padding: 1.75rem 1.25rem;
+  }
+}

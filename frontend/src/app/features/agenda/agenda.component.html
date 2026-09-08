@@ -1,0 +1,145 @@
+<section class="agenda-shell">
+  <header class="agenda-header">
+    <div class="agenda-header__titulo">
+      <i class="bi bi-calendar-week-fill"></i>
+      <h1>Agenda</h1>
+    </div>
+    <div class="agenda-header__nav">
+      <button type="button" class="ag-btn ag-btn--icon" (click)="anterior()" aria-label="Anterior">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <button type="button" class="ag-btn ag-btn--ghost" (click)="hoje()">Hoje</button>
+      <button type="button" class="ag-btn ag-btn--icon" (click)="proximo()" aria-label="Próximo">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+      <h2 class="agenda-header__rotulo">{{ rotuloCabecalho() }}</h2>
+    </div>
+    <div class="agenda-header__visao">
+      <button type="button" class="ag-btn ag-btn--ghost"
+        [class.ag-btn--primary]="visao() === 'dia'"
+        (click)="mudarVisao('dia')">Dia</button>
+      <button type="button" class="ag-btn ag-btn--ghost"
+        [class.ag-btn--primary]="visao() === 'semana'"
+        (click)="mudarVisao('semana')">Semana</button>
+      <button type="button" class="ag-btn ag-btn--ghost"
+        [class.ag-btn--primary]="visao() === 'mes'"
+        (click)="mudarVisao('mes')">Mês</button>
+    </div>
+    <div class="agenda-header__acoes">
+      <button type="button" class="ag-btn ag-btn--primary" (click)="abrirModalEvento()">
+        <i class="bi bi-plus-lg"></i> Novo evento
+      </button>
+    </div>
+  </header>
+
+  <div class="agenda-filtros">
+    <div class="agenda-filtros__pessoal">
+      <label class="agenda-toggle">
+        <input type="checkbox" [checked]="pessoalMaisPublico()"
+          (change)="pessoalMaisPublico.set($any($event.target).checked); carregar()">
+        <span>Pessoal + público</span>
+      </label>
+    </div>
+    <div class="agenda-filtros__legenda">
+      <span *ngFor="let t of tiposLegenda" class="agenda-leg-item">
+        <i class="bi" [ngClass]="t.icone" [style.color]="t.cor"></i>
+        {{ t.rotulo }}
+      </span>
+    </div>
+  </div>
+
+  <div class="agenda-calendario" [ngSwitch]="visao()">
+
+    <!-- DIA -->
+    <div *ngSwitchCase="'dia'" class="agenda-dia">
+      <div class="agenda-dia__grade" [style.--minutos-agora]="horaAtualMinutos()">
+        <div class="agenda-dia__dia-inteiro" *ngIf="eventosDiaInteiro(dataReferencia()).length > 0">
+          <span *ngFor="let e of eventosDiaInteiro(dataReferencia())"
+            class="agenda-evento agenda-evento--dia-inteiro"
+            [style.background]="corDoEvento(e)"
+            (click)="abrirEdicao(e)">
+            <i class="bi bi-circle-fill"></i>
+            {{ e.titulo }} · {{ e.operadorNome || e.operadorId }}
+          </span>
+        </div>
+        <div class="agenda-dia__linhas">
+          <div class="agenda-dia__linha-hora" *ngFor="let h of horasDia">
+            <div class="agenda-dia__hora">{{ h }}h</div>
+            <div class="agenda-dia__celula" (click)="abrirModalEvento(dataReferencia(), h)">
+              <span *ngFor="let e of eventosPorHora(dataReferencia(), h)"
+                class="agenda-evento"
+                [style.background]="corDoEvento(e)"
+                (click)="$event.stopPropagation(); abrirEdicao(e)">
+                <strong>{{ e.dataInicio | date:'HH:mm' }}</strong> {{ e.titulo }}
+                <small *ngIf="e.operadorNome || e.operadorId">· {{ e.operadorNome || e.operadorId }}</small>
+              </span>
+            </div>
+          </div>
+          <div class="agenda-dia__linha-agora"
+            [style.top.px]="(horaAtualMinutos() / 60) * 32"
+            *ngIf="ehHoje(dataReferencia())">
+            <span>agora</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEMANA -->
+    <div *ngSwitchCase="'semana'" class="agenda-semana">
+      <div class="agenda-semana__cabecalho">
+        <div class="agenda-semana__cabecalho-cel" *ngFor="let d of diasSemana()"
+          [class.agenda-semana__cabecalho-cel--hoje]="ehHoje(d)">
+          <div class="agenda-semana__dia-curto">{{ diaCurto(d) }}</div>
+          <div class="agenda-semana__dia-num">{{ diaNumero(d) }}</div>
+        </div>
+      </div>
+      <div class="agenda-semana__corpo">
+        <div class="agenda-semana__cel" *ngFor="let d of diasSemana()"
+          [class.agenda-semana__cel--hoje]="ehHoje(d)"
+          (click)="abrirModalEvento(d)">
+          <span *ngFor="let e of eventosDoDia(d)"
+            class="agenda-evento agenda-evento--compacto"
+            [style.background]="corDoEvento(e)"
+            (click)="$event.stopPropagation(); abrirEdicao(e)">
+            <i class="bi bi-circle-fill"></i>
+            <strong *ngIf="!e.diaInteiro">{{ e.dataInicio | date:'HH:mm' }}</strong>
+            {{ e.titulo }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MES -->
+    <div *ngSwitchCase="'mes'" class="agenda-mes">
+      <div class="agenda-mes__grid">
+        <div class="agenda-mes__cabecalho">
+          <div class="agenda-mes__cabecalho-cel" *ngFor="let d of diasSemanaCurto()">{{ d }}</div>
+        </div>
+        <div class="agenda-mes__corpo">
+          <div class="agenda-mes__cel" *ngFor="let d of diasMes()"
+            [class.agenda-mes__cel--hoje]="ehHoje(d)"
+            (click)="abrirModalEvento(d)">
+            <div class="agenda-mes__numero">{{ diaNumero(d) }}</div>
+            <div class="agenda-mes__eventos">
+              <span *ngFor="let e of eventosDoDia(d).slice(0, 3)"
+                class="agenda-evento agenda-evento--mini"
+                [style.background]="corDoEvento(e)"
+                (click)="$event.stopPropagation(); abrirEdicao(e)">
+                {{ e.titulo }}
+              </span>
+              <span class="agenda-mes__mais" *ngIf="eventosDoDia(d).length > 3">
+                +{{ eventosDoDia(d).length - 3 }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div *ngIf="carregando()" class="agenda-loading">Carregando…</div>
+  <div *ngIf="!carregando() && eventos().length === 0" class="agenda-empty">
+    Nenhum evento no período. Clique em <strong>Novo evento</strong> ou em uma célula do calendário.
+  </div>
+</section>

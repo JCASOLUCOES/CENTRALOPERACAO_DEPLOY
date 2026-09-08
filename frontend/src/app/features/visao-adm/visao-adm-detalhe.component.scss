@@ -1,0 +1,87 @@
+.adm-detalhe-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+
+  > .adm-card__icone {
+    width: 56px;
+    height: 56px;
+    font-size: 1.6rem;
+    border-radius: 14px;
+  }
+}
+
+.adm-detalhe-header__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-detalhe-header__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.adm-detalhe-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+
+  i {
+    color: var(--primary-color);
+  }
+}
+
+.adm-detalhe-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.adm-accordion__item--aberta {
+  border-color: var(--primary-color);
+}
+
+.adm-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding-left: 1.25rem;
+
+  li {
+    line-height: 1.55;
+
+    strong {
+      display: block;
+      color: var(--text-strong);
+    }
+
+    span {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+  }
+}
+
+.adm-lista--numerada {
+  padding-left: 1.5rem;
+}
+
+.adm-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--primary-color);
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

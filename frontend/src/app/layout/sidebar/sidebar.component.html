@@ -1,0 +1,64 @@
+<aside class="sidebar" [class.sidebar--collapsed]="collapsed">
+  <section class="section" *ngFor="let section of sections; trackBy: trackByIndex">
+    <header class="section-header">
+      <span class="dot"></span>
+      <div class="section-info" *ngIf="!collapsed">
+        <p class="title">{{ section.title }}</p>
+        <small>{{ section.subtitle }}</small>
+      </div>
+    </header>
+
+    <ul class="section-links" *ngIf="section.links?.length">
+      <li *ngFor="let link of section.links; trackBy: trackByIndex">
+        <a
+          class="link-item"
+          [routerLink]="link.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [title]="link.label"
+        >
+          <i class="bi" [ngClass]="link.icone"></i>
+          <span class="link-label">{{ link.label }}</span>
+          <span class="badge" *ngIf="link.badge && !collapsed">{{ link.badge }}</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="section-groups" *ngIf="section.grupos?.length">
+      <div class="group" *ngFor="let grupo of section.grupos; trackBy: trackByIndex">
+        <button
+          type="button"
+          class="group-toggle"
+          [class.group-toggle--aberto]="isExpandido(grupo.rotulo)"
+          (click)="alternarGrupo(grupo.rotulo)"
+          [title]="grupo.rotulo"
+          [attr.aria-expanded]="isExpandido(grupo.rotulo)"
+        >
+          <i class="bi" [ngClass]="grupo.icone"></i>
+          <span class="link-label">{{ grupo.rotulo }}</span>
+          <span class="badge" *ngIf="grupo.badge && !collapsed">{{ grupo.badge }}</span>
+          <i
+            class="bi bi-chevron-down group-chevron"
+            [class.group-chevron--aberto]="isExpandido(grupo.rotulo)"
+            *ngIf="!collapsed"
+          ></i>
+        </button>
+
+        <ul class="group-children" *ngIf="isExpandido(grupo.rotulo)">
+          <li *ngFor="let child of grupo.itens; trackBy: trackByIndex">
+            <a
+              class="link-item link-item--child"
+              [routerLink]="child.route"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: false }"
+              [title]="child.label"
+            >
+              <i class="bi" [ngClass]="child.icone"></i>
+              <span class="link-label">{{ child.label }}</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</aside>

@@ -1,0 +1,42 @@
+<section class="adm-page db-shell">
+  <header class="adm-header">
+    <div class="adm-header__title">
+      <i class="bi bi-hdd-network-fill"></i>
+      <h1>Banco de Dados</h1>
+    </div>
+    <p class="adm-header__desc">
+      Explorador em tempo real do SQL Server Actyon. Visualize tabelas, colunas, relacionamentos
+      e execute consultas SELECT com segurança. Senhas nunca são expostas; dados somente leitura.
+    </p>
+  </header>
+
+  <div class="db-shell__status" [class.db-shell__status--ok]="status().conectado"
+    [class.db-shell__status--err]="!status().conectado"
+    (click)="irParaConfigSeDesconectado()">
+    <i class="bi" [ngClass]="status().conectado ? 'bi-check-circle-fill' : 'bi-x-octagon-fill'"></i>
+    <span>
+      <strong>{{ status().conectado ? 'CONECTADO' : 'DESCONECTADO' }}</strong>
+      <small *ngIf="status().servidor || status().banco"> · {{ status().servidor || '?' }} / {{ status().banco || '?' }}</small>
+      <small *ngIf="!status().conectado && status().mensagem"> — {{ status().mensagem }}</small>
+    </span>
+    <span class="db-shell__contadores" *ngIf="status().conectado">
+      <span><i class="bi bi-table"></i> {{ contadores().tabelas }} tabelas</span>
+      <span><i class="bi bi-lightning-charge-fill"></i> {{ contadores().procedures }} procs</span>
+      <span><i class="bi bi-eye"></i> {{ contadores().views }} views</span>
+    </span>
+  </div>
+
+  <nav class="db-shell__tabs">
+    <a *ngFor="let t of tabs"
+      class="db-shell__tab"
+      [routerLink]="t.rota"
+      routerLinkActive="db-shell__tab--ativa">
+      <i class="bi" [ngClass]="t.icone"></i>
+      {{ t.rotulo }}
+    </a>
+  </nav>
+
+  <div class="db-shell__content">
+    <router-outlet></router-outlet>
+  </div>
+</section>

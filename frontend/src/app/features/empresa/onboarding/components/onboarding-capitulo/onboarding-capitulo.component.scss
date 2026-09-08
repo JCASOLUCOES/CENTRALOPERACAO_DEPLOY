@@ -1,0 +1,195 @@
+.ob-crumb {
+  margin-bottom: 1.1rem;
+
+  ol {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.86rem;
+    color: var(--text-muted);
+  }
+
+  a {
+    color: var(--primary-color);
+    font-weight: 600;
+
+    &:hover {
+      color: var(--primary-color-hover);
+    }
+  }
+
+  &__sep {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+  }
+}
+
+.ob-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &--primario {
+    background: linear-gradient(120deg, var(--primary-color), var(--secondary-color));
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(15, 76, 129, 0.35);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px rgba(15, 76, 129, 0.45);
+      color: #fff;
+    }
+  }
+}
+
+/* ── Layout geral ───────────────────────── */
+.ob-capitulo {
+  --ob-cor: #2563eb;
+}
+
+/* ── Conteúdo ───────────────────────────── */
+.ob-conteudo {
+  min-width: 0;
+
+  &__hero {
+    display: flex;
+    gap: 1.1rem;
+    align-items: flex-start;
+    background: linear-gradient(120deg, var(--surface-main), var(--surface-hover-primary));
+    border: 1px solid var(--border-primary-soft);
+    border-radius: 1.4rem;
+    padding: 1.6rem;
+    box-shadow: var(--shadow-card-sm);
+  }
+
+  &__icone {
+    width: 3.4rem;
+    height: 3.4rem;
+    flex-shrink: 0;
+    border-radius: 1rem;
+    display: grid;
+    place-items: center;
+    font-size: 1.6rem;
+    background: color-mix(in srgb, var(--ob-cor) 15%, transparent);
+    color: var(--ob-cor);
+  }
+
+  &__hero-info {
+    .ob-conteudo__tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ob-cor);
+      margin-bottom: 0.3rem;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin: 0 0 0.35rem;
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-color);
+      font-size: 0.98rem;
+    }
+  }
+}
+
+/* ── Blocos ─────────────────────────────── */
+.ob-blocos {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+/* ── Navegação inferior ─────────────────── */
+.ob-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-top: 1.4rem;
+  padding: 1rem 1.2rem;
+  background: var(--surface-main);
+  border: 1px solid var(--border-primary-soft);
+  border-radius: 1.1rem;
+  box-shadow: var(--shadow-card-sm);
+  flex-wrap: wrap;
+
+  &__info {
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    color: var(--text-muted);
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 1.25rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+
+    &--voltar {
+      background: var(--surface-hover-primary);
+      color: var(--text-dark);
+
+      &:hover {
+        transform: translateX(-2px);
+      }
+    }
+
+    &--proximo {
+      background: linear-gradient(120deg, var(--ob-cor), var(--secondary-color));
+      color: #fff;
+      box-shadow: 0 8px 20px color-mix(in srgb, var(--ob-cor) 35%, transparent);
+
+      &:hover {
+        transform: translateX(2px);
+      }
+    }
+  }
+}
+
+/* ── Responsivo ─────────────────────────── */
+@media (max-width: 575px) {
+  .ob-conteudo__hero {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .ob-nav {
+    justify-content: center;
+
+    &__info {
+      order: -1;
+      width: 100%;
+      text-align: center;
+    }
+  }
+}

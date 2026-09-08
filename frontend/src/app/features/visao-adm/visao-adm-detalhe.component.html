@@ -1,0 +1,216 @@
+<section class="adm-page" *ngIf="procedimento">
+  <header class="adm-detalhe-header">
+    <span
+      class="adm-card__icone"
+      [style.background]="(setor?.cor ?? '#2563eb') + '1a'"
+      [style.color]="setor?.cor ?? '#2563eb'"
+    >
+      <i class="bi {{ procedimento.icone }}"></i>
+    </span>
+    <div class="adm-detalhe-header__info">
+      <div class="adm-detalhe-header__badges">
+        <span class="adm-badge">
+          <i class="bi {{ setor?.icone }}"></i> {{ setor?.nome }}
+        </span>
+        <span class="adm-badge">v{{ procedimento.versao }}</span>
+        <span class="adm-badge">{{ procedimento.categoria }}</span>
+      </div>
+      <h1 class="adm-header__title">{{ procedimento.titulo }}</h1>
+      <p class="adm-header__desc">{{ procedimento.resumo }}</p>
+      <p class="adm-detalhe-header__meta">
+        <span><i class="bi bi-person-badge"></i> {{ procedimento.responsavel }}</span>
+        <span><i class="bi bi-calendar-check"></i> Atualizado em {{ procedimento.atualizadoEm }}</span>
+      </p>
+    </div>
+  </header>
+
+  <div class="adm-detalhe-acoes">
+    <a class="adm-btn adm-btn--ghost" [routerLink]="['/visao-adm']">
+      <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+    <button type="button" class="adm-btn adm-btn--primary" (click)="imprimir()">
+      <i class="bi bi-printer"></i> Imprimir
+    </button>
+  </div>
+
+  <div class="adm-accordion">
+    <article class="adm-accordion__item" [class.adm-accordion__item--aberta]="secaoAbertaId === 'objetivo'">
+      <button type="button" class="adm-accordion__header" aria-expanded="secaoAbertaId === 'objetivo'" (click)="toggleSecao('objetivo')">
+        <i class="bi bi-bullseye"></i> Objetivo
+        <i class="bi bi-chevron-down adm-accordion__seta"></i>
+      </button>
+      <div class="adm-accordion__body" *ngIf="secaoAbertaId === 'objetivo'">
+        <p>{{ procedimento.objetivo }}</p>
+      </div>
+    </article>
+
+    <article class="adm-accordion__item" [class.adm-accordion__item--aberta]="secaoAbertaId === 'quando'">
+      <button type="button" class="adm-accordion__header" aria-expanded="secaoAbertaId === 'quando'" (click)="toggleSecao('quando')">
+        <i class="bi bi-clock-history"></i> Quando utilizar
+        <i class="bi bi-chevron-down adm-accordion__seta"></i>
+      </button>
+      <div class="adm-accordion__body" *ngIf="secaoAbertaId === 'quando'">
+        <ul class="adm-lista">
+          <li *ngFor="let item of procedimento.quandoUtilizar; trackBy: trackByIndex">{{ item }}</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="adm-accordion__item" [class.adm-accordion__item--aberta]="secaoAbertaId === 'preRequisitos'">
+      <button type="button" class="adm-accordion__header" aria-expanded="secaoAbertaId === 'preRequisitos'" (click)="toggleSecao('preRequisitos')">
+        <i class="bi bi-check2-square"></i> Pré-requisitos
+        <i class="bi bi-chevron-down adm-accordion__seta"></i>
+      </button>
+      <div class="adm-accordion__body" *ngIf="secaoAbertaId === 'preRequisitos'">
+        <ul class="adm-lista">
+          <li *ngFor="let item of procedimento.preRequisitos; trackBy: trackByIndex">{{ item }}</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="adm-accordion__item" [class.adm-accordion__item--aberta]="secaoAbertaId === 'passos'">
+      <button type="button" class="adm-accordion__header" aria-expanded="secaoAbertaId === 'passos'" (click)="toggleSecao('passos')">
+        <i class="bi bi-list-ol"></i> Passos
+        <i class="bi bi-chevron-down adm-accordion__seta"></i>
+      </button>
+      <div class="adm-accordion__body" *ngIf="secaoAbertaId === 'passos'">
+        <ol class="adm-lista adm-lista--numerada">
+          <li *ngFor="let passo of procedimento.passos; trackBy: trackByIndex">
+            <strong>{{ passo.titulo }}</strong>
+            <span *ngIf="passo.detalhe">{{ passo.detalhe }}</span>
+          </li>
+        </ol>
+      </div>
+    </article>
+
+    <article class="adm-accordion__item" [class.adm-accordion__item--aberta]="secaoAbertaId === 'observacoes'">
+      <button type="button" class="adm-accordion__header" aria-expanded="secaoAbertaId === 'observacoes'" (click)="toggleSecao('observacoes')">
+        <i class="bi bi-lightbulb"></i> Observações
+        <i class="bi bi-chevron-down adm-accordion__seta"></i>
+      </button>
+      <div class="adm-accordion__body" *ngIf="secaoAbertaId === 'observacoes'">
+        <ul class="adm-lista">
+          <li *ngFor="let obs of procedimento.observacoes; trackBy: trackByIndex">{{ obs }}</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="adm-accordion__item" [class.adm-accordion__item--aberta]="secaoAbertaId === 'erros'">
+      <button type="button" class="adm-accordion__header" aria-expanded="secaoAbertaId === 'erros'" (click)="toggleSecao('erros')">
+        <i class="bi bi-exclamation-triangle"></i> Erros comuns
+        <i class="bi bi-chevron-down adm-accordion__seta"></i>
+      </button>
+      <div class="adm-accordion__body" *ngIf="secaoAbertaId === 'erros'">
+        <ul class="adm-lista">
+          <li *ngFor="let erro of procedimento.errosComuns; trackBy: trackByIndex">
+            <strong>{{ erro.problema }}</strong>
+            <span>{{ erro.solucao }}</span>
+          </li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="adm-accordion__item" [class.adm-accordion__item--aberta]="secaoAbertaId === 'faq'">
+      <button type="button" class="adm-accordion__header" aria-expanded="secaoAbertaId === 'faq'" (click)="toggleSecao('faq')">
+        <i class="bi bi-question-circle"></i> Perguntas frequentes
+        <i class="bi bi-chevron-down adm-accordion__seta"></i>
+      </button>
+      <div class="adm-accordion__body" *ngIf="secaoAbertaId === 'faq'">
+        <ul class="adm-lista">
+          <li *ngFor="let item of procedimento.faq; trackBy: trackByIndex">
+            <strong>{{ item.pergunta }}</strong>
+            <span>{{ item.resposta }}</span>
+          </li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="adm-accordion__item" [class.adm-accordion__item--aberta]="secaoAbertaId === 'video'">
+      <button type="button" class="adm-accordion__header" aria-expanded="secaoAbertaId === 'video'" (click)="toggleSecao('video')">
+        <i class="bi bi-play-circle"></i> Vídeo de demonstração
+        <i class="bi bi-chevron-down adm-accordion__seta"></i>
+      </button>
+      <div class="adm-accordion__body" *ngIf="secaoAbertaId === 'video'">
+        <p *ngIf="procedimento.video">
+          <a class="adm-link" [href]="procedimento.video.url" target="_blank" rel="noopener">
+            <i class="bi bi-youtube"></i> {{ procedimento.video.titulo }}
+          </a>
+        </p>
+        <p *ngIf="!procedimento.video">Nenhum vídeo cadastrado para este procedimento.</p>
+      </div>
+    </article>
+
+    <article class="adm-accordion__item" [class.adm-accordion__item--aberta]="secaoAbertaId === 'anexos'">
+      <button type="button" class="adm-accordion__header" aria-expanded="secaoAbertaId === 'anexos'" (click)="toggleSecao('anexos')">
+        <i class="bi bi-paperclip"></i> Anexos
+        <i class="bi bi-chevron-down adm-accordion__seta"></i>
+      </button>
+      <div class="adm-accordion__body" *ngIf="secaoAbertaId === 'anexos'">
+        <div class="adm-table-wrap" *ngIf="procedimento.anexos.length > 0">
+          <table class="adm-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Tipo</th>
+                <th>Tamanho</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let anexo of procedimento.anexos; trackBy: trackByIndex">
+                <td><i class="bi bi-file-earmark"></i> {{ anexo.nome }}</td>
+                <td>{{ anexo.tipo }}</td>
+                <td>{{ anexo.tamanho }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p *ngIf="procedimento.anexos.length === 0">Nenhum anexo cadastrado.</p>
+      </div>
+    </article>
+
+    <article class="adm-accordion__item" [class.adm-accordion__item--aberta]="secaoAbertaId === 'historico'">
+      <button type="button" class="adm-accordion__header" aria-expanded="secaoAbertaId === 'historico'" (click)="toggleSecao('historico')">
+        <i class="bi bi-clock"></i> Histórico de alterações
+        <i class="bi bi-chevron-down adm-accordion__seta"></i>
+      </button>
+      <div class="adm-accordion__body" *ngIf="secaoAbertaId === 'historico'">
+        <div class="adm-table-wrap">
+          <table class="adm-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Autor</th>
+                <th>Descrição</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let reg of procedimento.historico; trackBy: trackByIndex">
+                <td>{{ reg.data }}</td>
+                <td>{{ reg.autor }}</td>
+                <td>{{ reg.descricao }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <div class="adm-aviso" *ngIf="procedimento.observacoesInternas">
+      <i class="bi bi-info-circle-fill"></i>
+      <div>
+        <strong>Observações internas</strong>
+        <p>{{ procedimento.observacoesInternas }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="adm-page" *ngIf="naoEncontrado">
+  <div class="adm-empty">
+    <i class="bi bi-file-earmark-x"></i>
+    <p>Procedimento não encontrado.</p>
+    <a class="adm-btn adm-btn--primary" [routerLink]="['/visao-adm']">
+      <i class="bi bi-arrow-left"></i> Voltar para a Visão ADM
+    </a>
+  </div>
+</section>

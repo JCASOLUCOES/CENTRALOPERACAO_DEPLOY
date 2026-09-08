@@ -1,0 +1,340 @@
+<div class="stack-page">
+
+  <!-- ========================= -->
+  <!-- CABEÇALHO DA PÁGINA       -->
+  <!-- ========================= -->
+  <header class="stack-page__header">
+    <span class="stack-page__tag"><i class="bi bi-stack"></i> Arquitetura e Desenvolvimento</span>
+    <h1>Stack de Tecnologias do Ecossistema Actyon</h1>
+    <p class="stack-page__objetivo">
+      Documento que apresenta as stacks utilizadas em cada aplicação do ecossistema Actyon:
+      <strong>ActyonCOB</strong>, <strong>ActyonWEB</strong> e <strong>Central de Operação</strong>.
+    </p>
+    <div class="stack-page__meta">
+      <span><i class="bi bi-tag-fill"></i> Versão 1.0</span>
+      <span><i class="bi bi-people-fill"></i> Área responsável: Arquitetura e Desenvolvimento</span>
+    </div>
+  </header>
+
+  <!-- ========================= -->
+  <!-- RESULTADOS EM NÚMEROS     -->
+  <!-- ========================= -->
+  <div class="stack-page__stats">
+    <article
+      *ngFor="let resumo of resumos; trackBy: trackByIndex"
+      class="stack-page__stat"
+      [style.--stat-cor]="resumo.cor"
+    >
+      <span class="stack-page__stat-icone"><i class="bi {{ resumo.icone }}"></i></span>
+      <div>
+        <strong>{{ resumo.valor }}</strong>
+        <span>{{ resumo.rotulo }}</span>
+      </div>
+    </article>
+  </div>
+
+  <div class="stack-page__secoes">
+
+    <!-- ========================= -->
+    <!-- 1. ACTYONCOB (DESKTOP)    -->
+    <!-- ========================= -->
+    <section class="stack-secao" [class.stack-secao--aberta]="secaoAbertaId === 'actyoncob'">
+      <header
+        class="stack-secao__header"
+        (click)="toggleSecao('actyoncob')"
+        [attr.aria-expanded]="secaoAbertaId === 'actyoncob'"
+      >
+        <div class="stack-secao__titulo">
+          <span class="stack-secao__num stack-secao__num--cob">1</span>
+          <div>
+            <h2>ActyonCOB</h2>
+            <span class="stack-secao__subtitulo">Aplicação Desktop (Delphi)</span>
+          </div>
+        </div>
+        <div class="stack-secao__lado">
+          <span class="stack-secao__chip stack-secao__chip--cob"><i class="bi bi-window"></i> Desktop</span>
+          <button
+            type="button"
+            class="stack-secao__toggle"
+            [attr.aria-label]="secaoAbertaId === 'actyoncob' ? 'Recolher seção' : 'Expandir seção'"
+          >
+            <i class="bi" [ngClass]="secaoAbertaId === 'actyoncob' ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="stack-secao__body" *ngIf="secaoAbertaId === 'actyoncob'">
+        <p class="stack-secao__intro">
+          O <strong>ActyonCOB</strong> é a aplicação desktop principal do ecossistema Actyon,
+          <strong>desenvolvida integralmente em Delphi</strong> (interface VCL e lógica de negócio).
+          Utilizada por operadores, supervisores, coordenadores e equipes de planejamento
+          para execução das atividades práticas de cobrança.
+        </p>
+        <p class="stack-secao__intro">
+          Também é amplamente utilizada por equipes administrativas e de backoffice
+          para criação de filas, importação de arquivos, disparo de campanhas e uso
+          de ferramentas internas que exigem alto desempenho.
+        </p>
+
+        <div class="stack-card">
+          <h3><i class="bi bi-boxes"></i> Stack utilizada</h3>
+          <div class="stack-chips">
+            <span class="stack-chip"><i class="bi bi-braces"></i> Delphi <em>linguagem principal</em></span>
+            <span class="stack-chip"><i class="bi bi-database"></i> FireDAC <em>acesso ao SQL Server</em></span>
+            <span class="stack-chip"><i class="bi bi-puzzle"></i> DLLs internas <em>lógicas legadas</em></span>
+            <span class="stack-chip"><i class="bi bi-code-slash"></i> APIs REST em Delphi (DataSnap) <em>integrações</em></span>
+          </div>
+        </div>
+
+        <div class="stack-card">
+          <h3><i class="bi bi-gear"></i> Funcionamento geral</h3>
+          <p>
+            O ActyonCOB é instalado diretamente nas máquinas dos operadores ou em servidores de
+            <strong>Terminal Service / RDP</strong>, conforme ambiente do cliente.
+          </p>
+          <p>
+            A comunicação com o banco de dados é direta, conectando-se ao SQL Server local ou ao
+            ambiente em nuvem do cliente. Essa conexão direta proporciona alta performance, sendo
+            ideal para ambientes de cobrança com grande volume de ações e necessidade de resposta imediata.
+          </p>
+          <ul class="stack-lista">
+            <li><i class="bi bi-check2-circle"></i> Discagem manual ou integrada a discadores externos</li>
+            <li><i class="bi bi-check2-circle"></i> Registro de ligações, acordos, agendamentos e ações operacionais</li>
+            <li><i class="bi bi-check2-circle"></i> Consulta detalhada de dados do devedor em tempo real</li>
+            <li><i class="bi bi-check2-circle"></i> Acesso aos fluxos operacionais configurados pelo cliente</li>
+            <li><i class="bi bi-check2-circle"></i> Processamento intensivo de dados com alto desempenho</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= -->
+    <!-- 2. ACTYONWEB (WEB)        -->
+    <!-- ========================= -->
+    <section class="stack-secao" [class.stack-secao--aberta]="secaoAbertaId === 'actyonweb'">
+      <header
+        class="stack-secao__header"
+        (click)="toggleSecao('actyonweb')"
+        [attr.aria-expanded]="secaoAbertaId === 'actyonweb'"
+      >
+        <div class="stack-secao__titulo">
+          <span class="stack-secao__num stack-secao__num--web">2</span>
+          <div>
+            <h2>ActyonWEB</h2>
+            <span class="stack-secao__subtitulo">Aplicação Web (Angular + .NET)</span>
+          </div>
+        </div>
+        <div class="stack-secao__lado">
+          <span class="stack-secao__chip stack-secao__chip--web"><i class="bi bi-globe2"></i> Web</span>
+          <button
+            type="button"
+            class="stack-secao__toggle"
+            [attr.aria-label]="secaoAbertaId === 'actyonweb' ? 'Recolher seção' : 'Expandir seção'"
+          >
+            <i class="bi" [ngClass]="secaoAbertaId === 'actyonweb' ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="stack-secao__body" *ngIf="secaoAbertaId === 'actyonweb'">
+        <p class="stack-secao__intro">
+          O <strong>ActyonWEB</strong> é o portal gerencial, administrativo e operacional do ecossistema
+          Actyon. É a solução com maior foco em discagem, registro de ações, consultas detalhadas do
+          devedor e execução dos fluxos operacionais do cliente.
+        </p>
+        <p class="stack-secao__intro">
+          Ele também oferece módulos para supervisores, com dashboards, relatórios, gestão, análises e integrações.
+        </p>
+
+        <div class="stack-card">
+          <h3><i class="bi bi-window-stack"></i> Stack de front-end</h3>
+          <div class="stack-chips">
+            <span class="stack-chip"><i class="bi bi-layers"></i> Angular</span>
+            <span class="stack-chip"><i class="bi bi-bootstrap"></i> NgBootstrap</span>
+            <span class="stack-chip"><i class="bi bi-lightning-charge"></i> SPA</span>
+            <span class="stack-chip"><i class="bi bi-filetype-html"></i> HTML, CSS, TypeScript</span>
+          </div>
+        </div>
+
+        <div class="stack-card">
+          <h3><i class="bi bi-server"></i> Stack de back-end</h3>
+          <div class="stack-chips">
+            <span class="stack-chip"><i class="bi bi-code-slash"></i> C# (.NET / Web API)</span>
+            <span class="stack-chip"><i class="bi bi-diagram-2"></i> CQRS</span>
+            <span class="stack-chip"><i class="bi bi-zap"></i> Dapper</span>
+            <span class="stack-chip"><i class="bi bi-database"></i> SQL Server</span>
+            <span class="stack-chip"><i class="bi bi-hdd-network"></i> IIS</span>
+          </div>
+          <p>
+            As APIs em .NET fazem toda a ponte entre o Angular e o banco SQL Server. O uso do Dapper
+            garante velocidade, baixo consumo e controle preciso das queries — essencial para operações
+            de cobrança com milhões de registros.
+          </p>
+          <p>
+            A adoção da arquitetura CQRS permite maior organização e performance:
+          </p>
+          <ul class="stack-lista">
+            <li><i class="bi bi-eye"></i> <strong>Queries</strong> são totalmente voltadas à leitura e relatórios.</li>
+            <li><i class="bi bi-pencil-square"></i> <strong>Commands</strong> tratam de escritas, ações operacionais e atualizações de dados.</li>
+          </ul>
+          <p>
+            Isso garante maior escalabilidade, manutenção simples e performance otimizada em ambientes
+            com milhões de registros.
+          </p>
+        </div>
+
+        <div class="stack-card">
+          <h3><i class="bi bi-gear"></i> Funcionamento geral</h3>
+          <p>
+            O ActyonWEB é hospedado em um servidor IIS (local do cliente ou em nuvem). A comunicação com
+            o banco SQL Server ocorre via VPN, túnel seguro, rede interna ou conexão direta, conforme a
+            infraestrutura do cliente.
+          </p>
+          <ul class="stack-lista">
+            <li><i class="bi bi-check2-circle"></i> Usabilidade geral do operador de cobrança</li>
+            <li><i class="bi bi-check2-circle"></i> Painéis e dashboards gerenciais</li>
+            <li><i class="bi bi-check2-circle"></i> Monitoramento de operadores e metas</li>
+            <li><i class="bi bi-check2-circle"></i> Configuração de campanhas, equipes e estratégias</li>
+            <li><i class="bi bi-check2-circle"></i> Relatórios operacionais e BI</li>
+            <li><i class="bi bi-check2-circle"></i> Ferramentas de backoffice e administração</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= -->
+    <!-- 3. CENTRAL DE OPERAÇÃO    -->
+    <!-- ========================= -->
+    <section class="stack-secao" [class.stack-secao--aberta]="secaoAbertaId === 'central-conhecimento'">
+      <header
+        class="stack-secao__header"
+        (click)="toggleSecao('central-conhecimento')"
+        [attr.aria-expanded]="secaoAbertaId === 'central-conhecimento'"
+      >
+        <div class="stack-secao__titulo">
+          <span class="stack-secao__num stack-secao__num--wiki">3</span>
+          <div>
+            <h2>Central de Operação</h2>
+            <span class="stack-secao__subtitulo">Wiki interna da JCA</span>
+          </div>
+        </div>
+        <div class="stack-secao__lado">
+          <span class="stack-secao__chip stack-secao__chip--wiki"><i class="bi bi-journal-bookmark-fill"></i> Wiki</span>
+          <button
+            type="button"
+            class="stack-secao__toggle"
+            [attr.aria-label]="secaoAbertaId === 'central-conhecimento' ? 'Recolher seção' : 'Expandir seção'"
+          >
+            <i class="bi" [ngClass]="secaoAbertaId === 'central-conhecimento' ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="stack-secao__body" *ngIf="secaoAbertaId === 'central-conhecimento'">
+        <p class="stack-secao__intro">
+          A <strong>Central de Operação</strong> é a Wiki oficial da JCA, criada para documentar processos,
+          funcionalidades, fluxos internos, integrações e boas práticas do ecossistema Actyon. É a base
+          central de treinamento, consulta e suporte técnico para equipes internas e clientes.
+        </p>
+
+        <div class="stack-card">
+          <h3><i class="bi bi-boxes"></i> Stack utilizada</h3>
+          <div class="stack-chips">
+            <span class="stack-chip"><i class="bi bi-layers"></i> Angular 17+ Standalone</span>
+            <span class="stack-chip"><i class="bi bi-bootstrap"></i> NgBootstrap</span>
+            <span class="stack-chip"><i class="bi bi-code-slash"></i> API .NET</span>
+            <span class="stack-chip"><i class="bi bi-zap"></i> Dapper</span>
+          </div>
+        </div>
+
+        <div class="stack-card">
+          <h3><i class="bi bi-gear"></i> Funcionamento geral</h3>
+          <p>
+            A Wiki funciona como uma aplicação separada do ActyonWEB, mas compartilhando a mesma base
+            tecnológica no back-end. Ela utiliza Angular em sua versão mais moderna, com:
+          </p>
+          <ul class="stack-lista">
+            <li><i class="bi bi-check2-circle"></i> Componentes standalone</li>
+            <li><i class="bi bi-check2-circle"></i> Arquitetura simplificada</li>
+            <li><i class="bi bi-check2-circle"></i> Alta performance</li>
+            <li><i class="bi bi-check2-circle"></i> Facilidade de manutenção</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ========================= -->
+  <!-- COMPARATIVO               -->
+  <!-- ========================= -->
+  <section class="stack-comparativo">
+    <h2><i class="bi bi-table"></i> Comparativo entre as aplicações</h2>
+    <div class="stack-comparativo__wrap">
+      <table class="stack-tabela">
+        <thead>
+          <tr>
+            <th scope="col">Item</th>
+            <th scope="col">
+              <span class="stack-tabela__dot stack-tabela__dot--cob"></span>
+              ActyonCOB
+            </th>
+            <th scope="col">
+              <span class="stack-tabela__dot stack-tabela__dot--web"></span>
+              ActyonWEB
+            </th>
+            <th scope="col">
+              <span class="stack-tabela__dot stack-tabela__dot--wiki"></span>
+              Central de Operação
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Tipo</th>
+            <td>Aplicação desktop</td>
+            <td>Portal web (SPA)</td>
+            <td>Wiki interna</td>
+          </tr>
+          <tr>
+            <th scope="row">Front-end</th>
+            <td>Delphi (VCL)</td>
+            <td>Angular + NgBootstrap</td>
+            <td>Angular 17+ Standalone</td>
+          </tr>
+          <tr>
+            <th scope="row">Back-end</th>
+            <td>Delphi (DataSnap / REST)</td>
+            <td>C# (.NET Web API)</td>
+            <td>API .NET</td>
+          </tr>
+          <tr>
+            <th scope="row">Acesso a dados</th>
+            <td>FireDAC (conexão direta)</td>
+            <td>Dapper</td>
+            <td>Dapper</td>
+          </tr>
+          <tr>
+            <th scope="row">Banco de dados</th>
+            <td>SQL Server</td>
+            <td>SQL Server</td>
+            <td>SQL Server</td>
+          </tr>
+          <tr>
+            <th scope="row">Hospedagem</th>
+            <td>Máquinas / Terminal Server</td>
+            <td>IIS (local ou nuvem)</td>
+            <td>IIS</td>
+          </tr>
+          <tr>
+            <th scope="row">Arquitetura</th>
+            <td>Monolítica (VCL)</td>
+            <td>CQRS</td>
+            <td>Componentes standalone</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
