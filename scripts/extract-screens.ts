@@ -5,7 +5,7 @@
  * Extrai estrutura de rotas, components, services e endpoints backend
  * para gerar o JSON intermediário usado pelo docs-writer na geração de TELAS.md.
  * 
- * Uso: cd frontend && npx tsx scripts/extract-screens.ts
+ * Uso: npx tsx scripts/extract-screens.ts
  * Saída: scripts/screens-data.json
  */
 
@@ -65,7 +65,7 @@ interface ScreensData {
 // ── Frontend Extraction ────────────────────────────────────────────────────
 
 function extractRoutes(): RouteInfo[] {
-  const routesDir = path.join(__dirname, 'frontend', 'src', 'app');
+  const routesDir = path.join(__dirname, '..', 'frontend', 'src', 'app', 'features');
   const routes: RouteInfo[] = [];
 
   function scanDir(dir: string, parentPath: string) {
@@ -108,7 +108,7 @@ function extractRoutes(): RouteInfo[] {
 }
 
 function extractComponents(): ComponentInfo[] {
-  const componentsDir = path.join(__dirname, 'frontend', 'src', 'app');
+  const componentsDir = path.join(__dirname, '..', 'frontend', 'src', 'app', 'features');
   const components: ComponentInfo[] = [];
 
   function scanDir(dir: string) {
@@ -170,7 +170,7 @@ function extractComponents(): ComponentInfo[] {
 // ── Backend Extraction ─────────────────────────────────────────────────────
 
 function extractBackendEndpoints(): EndpointInfo[] {
-  const controllersDir = path.join(__dirname, 'backend', 'src', 'Central_BackEnd', 'Controllers');
+  const controllersDir = path.join(__dirname, '..', 'backend', 'Central_BackEnd', 'Controllers');
   const endpoints: EndpointInfo[] = [];
 
   if (!fs.existsSync(controllersDir)) return endpoints;
@@ -228,7 +228,7 @@ function extractBackendEndpoints(): EndpointInfo[] {
 }
 
 function extractTables(): string[] {
-  const modelsDir = path.join(__dirname, 'backend', 'src', 'Central_BackEnd', 'Models');
+  const modelsDir = path.join(__dirname, '..', 'backend', 'Central_BackEnd', 'Models');
   const tables: string[] = [];
 
   if (!fs.existsSync(modelsDir)) return tables;
@@ -260,7 +260,7 @@ function extractTables(): string[] {
 }
 
 function extractMigrations(): string[] {
-  const migrationsDir = path.join(__dirname, 'backend', 'src', 'Central_BackEnd', 'Migrations');
+  const migrationsDir = path.join(__dirname, '..', 'backend', 'Central_BackEnd', 'Migrations');
   const migrations: string[] = [];
 
   if (!fs.existsSync(migrationsDir)) return migrations;
@@ -295,7 +295,7 @@ function main() {
     }
   };
 
-  const outputPath = path.join(__dirname, 'scripts', 'screens-data.json');
+  const outputPath = path.join(__dirname, 'screens-data.json');
   const outputDir = path.dirname(outputPath);
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
