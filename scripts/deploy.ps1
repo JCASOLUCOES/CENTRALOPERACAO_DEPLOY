@@ -33,7 +33,7 @@ function Invoke-Robocopy {
     if ($code -ge 8)  { Write-Warning "robocopy '$Descricao' concluido com avisos (codigo $code)." }
 }
 
-$raiz = Split-Path -Parent $MyInvocation.MyCommand.Path
+$raiz = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $frontDir = Join-Path $raiz "frontend"
 $backDir  = Join-Path $raiz "backend\Central_BackEnd"
 
