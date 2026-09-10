@@ -54,4 +54,10 @@ public class Operador
     [Column("PERFIL_ID")]
     [MaxLength(1)]
     public string? PerfilId { get; set; }
+
+    [Column("FUNCAO_ID")]
+    public int? FuncaoId { get; set; }
+
+    [ForeignKey("FuncaoId")]
+    public Funcao? Funcao { get; set; }
 }

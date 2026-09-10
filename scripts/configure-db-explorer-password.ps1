@@ -3,14 +3,16 @@
     Configura a variável de ambiente DB_EXPLORER_SENHA no IIS Application Pool "Suporte_Back"
     
 .DESCRIPTION
-    Este script configura a variável de ambiente DB_EXPLORER_SENHA=bsn@2018 
+    Este script configura a variável de ambiente DB_EXPLORER_SENHA 
     no Application Pool "Suporte_Back" do IIS, necessária para o Database Explorer
     conectar ao banco dbActyon_JCA (192.168.2.154).
+    A senha NÃO é hardcoded — deve ser informada via parâmetro ou variável de ambiente.
     
 .INSTRUCTIONS
     1. Copie este arquivo para o servidor 192.168.2.130
     2. Abra PowerShell COMO ADMINISTRADOR
-    3. Execute: .\configure-db-explorer-password.ps1
+    3. Execute: .\configure-db-explorer-password.ps1 -Senha "SUA_SENHA_AQUI"
+       Ou defina a variável de ambiente $env:DB_EXPLORER_SENHA antes de rodar
     4. Teste em: http://192.168.2.130:1010/database -> "Testar conexão"
     
 .REQUIREMENTS
@@ -18,6 +20,11 @@
     - Módulo WebAdministration (padrão no Windows Server com IIS)
     - Application Pool "Suporte_Back" existente no IIS
 #>
+
+param(
+    [Parameter(Mandatory=$false)]
+    [string]$Senha = $(if ($env:DB_EXPLORER_SENHA) { $env:DB_EXPLORER_SENHA } else { Read-Host -AsSecureString "Digite a senha do DB_EXPLORER_SENHA" | ConvertFrom-SecureString })
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -61,12 +68,12 @@ $found = $envVars.Collection | Where-Object { $_.Name -eq "DB_EXPLORER_SENHA" }
 
 if ($found) {
     Write-Host "DB_EXPLORER_SENHA já existe - atualizando valor..." -ForegroundColor Yellow
-    $found.Value = "bsn@2018"
-    Write-Host "  Valor atualizado para: bsn@2018" -ForegroundColor Green
+    $found.Value = $Senha
+    Write-Host "  Valor atualizado" -ForegroundColor Green
 } else {
     Write-Host "Adicionando nova variável DB_EXPLORER_SENHA..." -ForegroundColor Yellow
-    $envVars.Collection.Add(@{ name = "DB_EXPLORER_SENHA"; value = "bsn@2018" })
-    Write-Host "  Variável adicionada com valor: bsn@2018" -ForegroundColor Green
+    $envVars.Collection.Add(@{ name = "DB_EXPLORER_SENHA"; value = $Senha })
+    Write-Host "  Variável adicionada" -ForegroundColor Green
 }
 
 # Salvar alterações

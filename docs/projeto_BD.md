@@ -1,7 +1,8 @@
-192.168.2.154
-banco: dbActyon_JCA
-usuario: bussiness
-senha: bsn@2018
+# Credenciais via variáveis de ambiente (NUNCA hardcoded no git)
+# DB_EXPLORER_SERVIDOR=192.168.2.154
+# DB_EXPLORER_BANCO=dbActyon_JCA
+# DB_EXPLORER_USUARIO=bussiness
+# DB_EXPLORER_SENHA=**** (via env var / user-secrets)
 
 banco de HML que estamos usando.
 

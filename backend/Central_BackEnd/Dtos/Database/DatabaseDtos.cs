@@ -162,3 +162,67 @@ public record ProcedureDetalheDto(
     DateTime? DataAlteracao,
     string? Corpo,                 // corpo completo (definition) - pode ser grande
     List<ProcedureParametroDto> Parametros);
+
+public record TriggerDto(
+    string Schema,
+    string Nome,
+    string Tabela,
+    string Evento,          // INSERT, UPDATE, DELETE
+    string Momento,         // BEFORE, AFTER, INSTEAD OF
+    string Corpo,
+    List<string>? Acoes,
+    List<string>? TabelasAfetadas);
+
+public record DependencyDto(
+    string Tipo,            // Procedure, Trigger, View, ForeignKey, Function
+    string Schema,
+    string Nome,
+    string Descricao);
+
+public record ProcedureAnalysisDto(
+    List<ProcedureParametroDto> Parametros,
+    List<string> TabelasUtilizadas,
+    List<string> ProceduresChamadas,
+    string Explicacao,
+    List<string> FluxoIdentificado);
+
+public record GlobalSearchResultDto(
+    string Tipo,        // Tabela, Coluna, Procedure, Trigger, View
+    string Schema,
+    string Objeto,
+    string? Coluna,
+    string? Detalhe);
+
+// WHERE condition DTO
+public record WhereConditionDto(
+    string Coluna,
+    string Operador,     // =, <>, >, <, >=, <=, LIKE, IN, IS NULL, IS NOT NULL, BETWEEN
+    string? Valor,
+    string? Valor2,      // para BETWEEN
+    string Logica = "AND"); // AND, OR
+
+// ORDER BY DTO
+public record OrderByDto(
+    string Coluna,
+    bool Ascendente = true);
+
+// GROUP BY DTO
+public record GroupByDto(
+    string Coluna,
+    string? Agregacao = null); // COUNT, SUM, AVG, MIN, MAX
+
+// CTE DTO
+public record CteDto(
+    string Nome,
+    string Sql);
+
+// Request atualizado com WHERE, ORDER BY, GROUP BY, CTEs
+public record QueryBuilderAdvancedRequest(
+    List<string> Tabelas,
+    List<string> Colunas,
+    List<RelationshipDto> Relacionamentos,
+    List<WhereConditionDto>? WhereConditions,
+    List<OrderByDto>? OrderBy,
+    List<GroupByDto>? GroupBy,
+    int? Limite,
+    List<CteDto>? Ctes);

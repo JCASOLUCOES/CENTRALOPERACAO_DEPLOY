@@ -20,10 +20,12 @@ public class TarefaService : ITarefaService
 {
     private readonly AppDbContext _db;
     private readonly IAuditoriaImplantacaoService _auditoria;
-    public TarefaService(AppDbContext db, IAuditoriaImplantacaoService auditoria)
+    private readonly IAgendaService _agendaService;
+    public TarefaService(AppDbContext db, IAuditoriaImplantacaoService auditoria, IAgendaService agendaService)
     {
         _db = db;
         _auditoria = auditoria;
+        _agendaService = agendaService;
     }
 
     public async Task<List<TarefaResumo>> ListarAsync(TarefaFiltro f, string? operadorLogado, CancellationToken ct = default)
@@ -159,7 +161,9 @@ public class TarefaService : ITarefaService
 
     public async Task<TarefaDetalhe?> MudarColunaAsync(int id, TarefaMudarColunaRequest req, CancellationToken ct = default)
     {
-        var t = await _db.Tarefas.FirstOrDefaultAsync(x => x.Id == id, ct);
+        var t = await _db.Tarefas
+            .Include(x => x.Projeto)
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
         if (t == null) return null;
         var antes = new { t.ColunaKanbanId, t.Ordem, t.Status };
         if (req.ColunaKanbanId.HasValue && !await _db.ColunasKanban.AnyAsync(c => c.Id == req.ColunaKanbanId, ct))
@@ -176,11 +180,70 @@ public class TarefaService : ITarefaService
                 else if (nome.Contains("ANDAMENTO") || nome.Contains("HOMOLOG")) t.Status = StatusTarefa.EmAndamento;
                 else if (nome.Contains("A FAZER") || nome.Contains("BACKLOG")) t.Status = StatusTarefa.AFazer;
             }
+
+            // Integração com Agenda: se a coluna é do tipo Reunião, Treinamento ou Marco de Entrega
+            await SincronizarAgendaAsync(t, col, ct);
         }
         t.DataAlteracao = DateTime.Now;
         await _db.SaveChangesAsync(ct);
         await _auditoria.RegistrarAsync("Tarefa", id, "UPDATE", antes, new { t.ColunaKanbanId, t.Ordem, t.Status }, "system", "Tarefa movida para outra coluna", ct);
         return await ObterAsync(t.Id, ct);
+    }
+
+    private async Task SincronizarAgendaAsync(Tarefa tarefa, ColunaKanban coluna, CancellationToken ct)
+    {
+        // Determina se a coluna representa um tipo de agenda
+        var nomeColuna = coluna.Nome.ToUpper();
+        AgendaTipo? tipoAgenda = null;
+
+        if (nomeColuna.Contains("REUNIAO") || nomeColuna.Contains("REUNIÃO"))
+            tipoAgenda = AgendaTipo.Reuniao;
+        else if (nomeColuna.Contains("TREINAMENTO") || nomeColuna.Contains("CAPACITACAO"))
+            tipoAgenda = AgendaTipo.Treinamento;
+        else if (nomeColuna.Contains("MARCO") || nomeColuna.Contains("ENTREGA") || nomeColuna.Contains("MILESTONE") || nomeColuna.Contains("MARCO ENTREGA"))
+            tipoAgenda = AgendaTipo.Outro; // Marco de entrega
+
+        if (!tipoAgenda.HasValue) return;
+
+        // Busca evento de agenda existente vinculado a esta tarefa
+        var agendaExistente = await _db.Agenda
+            .FirstOrDefaultAsync(a => a.ProjetoId == tarefa.ProjetoId && a.Titulo.Contains(tarefa.Titulo), ct);
+
+        var dataInicio = tarefa.DataPrevisao ?? DateTime.Now;
+        var dataFim = dataInicio.AddHours(1); // Duração padrão de 1 hora
+
+        if (agendaExistente != null)
+        {
+            // Atualiza evento existente
+            agendaExistente.Titulo = $"{tipoAgenda.Value}: {tarefa.Titulo}";
+            agendaExistente.Descricao = tarefa.Descricao;
+            agendaExistente.DataInicio = dataInicio;
+            agendaExistente.DataFim = dataFim;
+            agendaExistente.Tipo = tipoAgenda.Value;
+            agendaExistente.Visibilidade = AgendaVisibilidade.Equipe;
+            agendaExistente.UsuarioAlteracao = tarefa.UsuarioAlteracao ?? "system";
+            agendaExistente.DataAlteracao = DateTime.Now;
+        }
+        else
+        {
+            // Cria novo evento
+            var novoEvento = new AgendaItem
+            {
+                OperadorId = tarefa.ResponsavelId ?? tarefa.CriadorId,
+                Titulo = $"{tipoAgenda.Value}: {tarefa.Titulo}",
+                Descricao = tarefa.Descricao,
+                DataInicio = dataInicio,
+                DataFim = dataFim,
+                Tipo = tipoAgenda.Value,
+                Visibilidade = AgendaVisibilidade.Equipe,
+                ProjetoId = tarefa.ProjetoId,
+                Recorrente = false,
+                PadraoRecorrencia = AgendaRecorrencia.Nenhuma,
+                UsuarioInclusao = tarefa.CriadorId,
+                DataInclusao = DateTime.Now
+            };
+            _db.Agenda.Add(novoEvento);
+        }
     }
 
     public async Task<bool> ExcluirAsync(int id, CancellationToken ct = default)

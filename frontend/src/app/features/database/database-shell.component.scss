@@ -42,6 +42,17 @@
   gap: 0.3rem;
 }
 
+.db-shell__ambiente {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.35rem;
+  margin-left: 0.5rem;
+}
+
 .db-shell__status small {
   color: inherit;
   opacity: 0.85;
@@ -85,4 +96,8 @@
 
 .db-shell__content {
   min-height: 400px;
+}
+
+.db-shell__search {
+  margin: 0.75rem 0 1rem;
 }

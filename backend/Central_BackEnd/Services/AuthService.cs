@@ -32,6 +32,7 @@ public class AuthService : IAuthService
         }
 
         var operador = await _context.Operadores
+            .Include(o => o.Funcao)
             .FirstOrDefaultAsync(o => o.OperadorId == request.Usuario || o.Email == request.Usuario);
 
         if (operador is null)
@@ -60,7 +61,11 @@ public class AuthService : IAuthService
             Id = operador.OperadorId,
             Nome = operador.Nome,
             Email = operador.Email,
-            Perfil = perfil
+            Perfil = perfil,
+            FuncaoId = operador.FuncaoId,
+            FuncaoDescricao = operador.Funcao?.Descricao,
+            FuncaoClassificacao = operador.Funcao?.Classificacao,
+            EhImplantador = operador.FuncaoId == 1 // Analista de Sistemas = Implantador
         };
 
         var accessToken = GerarJwt(usuario);
@@ -85,6 +90,7 @@ public class AuthService : IAuthService
             return null;
 
         var operador = await _context.Operadores
+            .Include(o => o.Funcao)
             .FirstOrDefaultAsync(o => o.OperadorId == tokenEntity.OperadorId);
 
         if (operador is null || operador.SeAtivo == "N")
@@ -98,7 +104,11 @@ public class AuthService : IAuthService
             Id = operador.OperadorId,
             Nome = operador.Nome,
             Email = operador.Email,
-            Perfil = perfil
+            Perfil = perfil,
+            FuncaoId = operador.FuncaoId,
+            FuncaoDescricao = operador.Funcao?.Descricao,
+            FuncaoClassificacao = operador.Funcao?.Classificacao,
+            EhImplantador = operador.FuncaoId == 1
         };
 
         var newAccessToken = GerarJwt(usuario);
@@ -132,6 +142,7 @@ public class AuthService : IAuthService
     public async Task<UsuarioResponse?> ObterUsuarioAsync(string operadorId)
     {
         var operador = await _context.Operadores
+            .Include(o => o.Funcao)
             .FirstOrDefaultAsync(o => o.OperadorId == operadorId);
 
         if (operador is null || operador.SeAtivo == "N")
@@ -142,7 +153,11 @@ public class AuthService : IAuthService
             Id = operador.OperadorId,
             Nome = operador.Nome,
             Email = operador.Email,
-            Perfil = MapearPerfil(operador)
+            Perfil = MapearPerfil(operador),
+            FuncaoId = operador.FuncaoId,
+            FuncaoDescricao = operador.Funcao?.Descricao,
+            FuncaoClassificacao = operador.Funcao?.Classificacao,
+            EhImplantador = operador.FuncaoId == 1
         };
     }
 
@@ -152,7 +167,7 @@ public class AuthService : IAuthService
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, usuario.Id),
             new Claim(ClaimTypes.Role, usuario.Perfil),
@@ -161,6 +176,15 @@ public class AuthService : IAuthService
             new Claim("perfil", usuario.Perfil),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (usuario.FuncaoId.HasValue)
+            claims.Add(new Claim("funcao_id", usuario.FuncaoId.Value.ToString()));
+        if (!string.IsNullOrEmpty(usuario.FuncaoDescricao))
+            claims.Add(new Claim("funcao_descricao", usuario.FuncaoDescricao));
+        if (!string.IsNullOrEmpty(usuario.FuncaoClassificacao))
+            claims.Add(new Claim("funcao_classificacao", usuario.FuncaoClassificacao));
+        if (usuario.EhImplantador)
+            claims.Add(new Claim("eh_implantador", "true"));
 
         var expires = DateTime.UtcNow.AddMinutes(int.Parse(jwtSettings["AccessTokenMinutes"]!));
 

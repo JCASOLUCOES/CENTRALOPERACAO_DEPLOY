@@ -27,12 +27,14 @@ Central-Conhecimento-developer/
 - **Bootstrap 5 + ng-bootstrap 17**
 - **Lazy Loading** em todas as rotas de features
 - **JWT Auth** (Tokens de 4h em memória, Refresh em cookie HttpOnly)
+- **Angular CDK Drag & Drop** para Kanban interativo
 
 ### Backend
 - **ASP.NET Core 8** (Web API RESTful)
 - **EF Core 8** (InMemory para desenvolvimento, SQL Server para produção)
 - **Google Sheets API** para acervo de empresas
 - **Rate Limiting** e **Brute Force Guard** integrados
+- **Automatic team/role assignment** via Função/Perfil (Operadores)
 
 ---
 
@@ -63,6 +65,30 @@ ng serve
 Porta padrão: `http://localhost:4200`
 
 **Login Padrão (Dev):** `admin` / `admin123`
+
+---
+
+## ✨ Novas Funcionalidades (v0.8.0)
+
+### 🐛 Correção: Erro Visual da Agenda (Overlay/Backdrop)
+**Problema**: Ao navegar para `/agenda`, a tela apresentava tom esbranquiçado/opaco com travamento de cliques (sidebar, header e área de conteúdo).
+**Causa**: Retenção de overlay/backdrop no DOM + falha no ciclo de vida da rota (`ngOnDestroy` não limpava a camada de backdrop do `<body>`).
+**Solução**: 
+- Adicionado `position: relative` ao container `.agenda-shell`
+- Limpeza automática de `.modal-backdrop` e classe `modal-open` do body no `ngOnDestroy`
+
+### 🎯 Kanban Drag & Drop + Integração com Agenda
+- **Drag & Drop**: Alteração de status/coluna/fase das tarefas exclusivamente via arrastar-e-soltar (`@angular/cdk/drag-drop`)
+- **Integração Automática**: Tarefas movidas para colunas "Reunião", "Treinamento" ou "Marco de Entrega" criam/atualizam eventos na Agenda (`IMPL_Agenda`) automaticamente
+- **Backend**: `TarefaService.SincronizarAgendaAsync()` dispara `INSERT/UPDATE` na tabela `IMPL_Agenda` vinculando `ProjetoId` e `TarefaId`
+
+### 👥 Cadastro de Operadores — Atribuição Automática por Função/Perfil
+- **Sem seleção manual de equipe**: A equipe e papel são definidos automaticamente pela Função selecionada
+- **Mapeamento**:
+  - `FUNCAO_ID = 1` (Analista de Sistemas) → **Implantador** (claim `eh_implantador=true` no JWT)
+  - `FUNCAO_ID = 2` (Suporte) → Atendimento operacional
+  - `FUNCAO_ID = 3` (Programador) → Desenvolvimento
+- **Novas migrations**: `AddFuncaoIdToOperador` + `AddFuncaoTableAndRelation` (tabela `tbfuncao` + FK)
 
 ---
 

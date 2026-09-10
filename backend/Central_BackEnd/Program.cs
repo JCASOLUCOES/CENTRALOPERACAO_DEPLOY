@@ -130,6 +130,8 @@ builder.Services.AddScoped<Central_BackEnd.Services.Database.IDatabaseRelationsh
 builder.Services.AddScoped<Central_BackEnd.Services.Database.IDatabaseQueryService, Central_BackEnd.Services.Database.DatabaseQueryService>();
 builder.Services.AddScoped<Central_BackEnd.Services.Database.IDatabaseSearchService, Central_BackEnd.Services.Database.DatabaseSearchService>();
 builder.Services.AddScoped<Central_BackEnd.Services.Database.IDatabaseQueryBuilderService, Central_BackEnd.Services.Database.DatabaseQueryBuilderService>();
+builder.Services.AddScoped<Central_BackEnd.Services.Database.IDatabaseSchemaDiffService, Central_BackEnd.Services.Database.DatabaseSchemaDiffService>();
+builder.Services.AddScoped<Central_BackEnd.Services.Database.IDatabaseSnapshotService, Central_BackEnd.Services.Database.DatabaseSnapshotService>();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -232,6 +234,17 @@ if (app.Environment.IsDevelopment())
                 UsuarioInclusao = "seed",
                 PerfilId = "A"
             });
+            db.SaveChanges();
+        }
+
+        // Seed tbfuncao: Funcoes do sistema
+        if (!db.Funcoes.Any())
+        {
+            db.Funcoes.AddRange(
+                new Central_BackEnd.Models.Funcao { Descricao = "Analista de Sistemas", Classificacao = "Implantador", Ativo = true },
+                new Central_BackEnd.Models.Funcao { Descricao = "Suporte", Classificacao = "Atendimento", Ativo = true },
+                new Central_BackEnd.Models.Funcao { Descricao = "Programador", Classificacao = "Desenvolvimento", Ativo = true }
+            );
             db.SaveChanges();
         }
 

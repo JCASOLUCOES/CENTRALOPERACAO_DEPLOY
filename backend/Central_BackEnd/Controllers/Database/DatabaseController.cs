@@ -20,6 +20,8 @@ public class DatabaseController : ControllerBase
     private readonly IDatabaseSearchService _search;
     private readonly IDatabaseConnectionService _conn;
     private readonly IDatabaseQueryBuilderService _queryBuilder;
+    private readonly IDatabaseSchemaDiffService _diff;
+    private readonly IDatabaseSnapshotService _snapshot;
     private readonly ILogger<DatabaseController> _logger;
 
     public DatabaseController(
@@ -29,6 +31,8 @@ public class DatabaseController : ControllerBase
         IDatabaseSearchService search,
         IDatabaseConnectionService conn,
         IDatabaseQueryBuilderService queryBuilder,
+        IDatabaseSchemaDiffService diff,
+        IDatabaseSnapshotService snapshot,
         ILogger<DatabaseController> logger)
     {
         _meta = meta;
@@ -37,6 +41,8 @@ public class DatabaseController : ControllerBase
         _search = search;
         _conn = conn;
         _queryBuilder = queryBuilder;
+        _diff = diff;
+        _snapshot = snapshot;
         _logger = logger;
     }
 
@@ -164,6 +170,42 @@ public class DatabaseController : ControllerBase
         CancellationToken ct = default)
         => Ok(await _meta.ListarProceduresAsync(null, termo, take, ct));
 
+    [HttpGet("triggers")]
+    public async Task<ActionResult<List<TriggerDto>>> Triggers(
+        [FromQuery] string? schema,
+        [FromQuery] string? tabela,
+        CancellationToken ct = default)
+        => Ok(await _meta.ListarTriggersAsync(schema, tabela, ct));
+
+    [HttpGet("triggers/{schema}/{nome}")]
+    public async Task<ActionResult<TriggerDto>> Trigger(string schema, string nome, CancellationToken ct = default)
+    {
+        var t = await _meta.ObterTriggerAsync(schema, nome, ct);
+        return t == null ? NotFound() : Ok(t);
+    }
+
+    [HttpGet("tables/{schema}/{nome}/dependencies")]
+    public async Task<ActionResult<List<DependencyDto>>> Dependencies(string schema, string nome, CancellationToken ct)
+        => Ok(await _meta.ListarDependenciasAsync(schema, nome, ct));
+
+    [HttpGet("procedures/{schema}/{nome}/analysis")]
+    public async Task<ActionResult<ProcedureAnalysisDto>> ProcedureAnalysis(string schema, string nome, CancellationToken ct)
+    {
+        var a = await _meta.AnalisarProcedureAsync(schema, nome, ct);
+        return a == null ? NotFound() : Ok(a);
+    }
+
+    [HttpGet("search/global")]
+    public async Task<ActionResult<List<GlobalSearchResultDto>>> GlobalSearch(
+        [FromQuery] string termo,
+        [FromQuery] int take = 200,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(termo))
+            return Ok(new List<GlobalSearchResultDto>());
+        return Ok(await _meta.BuscarGlobalAsync(termo, take, ct));
+    }
+
     [HttpPost("query-builder")]
     public async Task<ActionResult<Central_BackEnd.Dtos.Database.DatabaseQueryBuilderResult>> QueryBuilder(
         [FromBody] QueryBuilderRequest req,
@@ -173,6 +215,18 @@ public class DatabaseController : ControllerBase
             return BadRequest(new { mensagem = "Pelo menos uma tabela deve ser selecionada" });
         
         var resultado = await _queryBuilder.MontarConsultaAsync(req.Tabelas, req.Colunas ?? new(), req.Relacionamentos ?? new(), ct);
+        return Ok(resultado);
+    }
+
+    [HttpPost("query-builder-advanced")]
+    public async Task<ActionResult<Central_BackEnd.Dtos.Database.DatabaseQueryBuilderResult>> QueryBuilderAdvanced(
+        [FromBody] QueryBuilderAdvancedRequest req,
+        CancellationToken ct = default)
+    {
+        if (req == null || req.Tabelas == null || req.Tabelas.Count == 0)
+            return BadRequest(new { mensagem = "Pelo menos uma tabela deve ser selecionada" });
+
+        var resultado = await _queryBuilder.MontarConsultaAvancadaAsync(req, ct);
         return Ok(resultado);
     }
 
@@ -202,4 +256,26 @@ public class DatabaseController : ControllerBase
         });
         return NoContent();
     }
+
+    [HttpPost("diff")]
+    public async Task<ActionResult<SchemaDiffDto>> Diff([FromBody] DiffRequest req, CancellationToken ct)
+        => Ok(await _diff.CompararAsync(req.Limite, ct));
+
+    [HttpPost("snapshot")]
+    public async Task<ActionResult<string>> Snapshot([FromBody] SnapshotRequest req, CancellationToken ct)
+    {
+        await _snapshot.SalvarSnapshotAsync(req.Nome, ct);
+        return Ok(req.Nome);
+    }
+
+    [HttpGet("snapshots")]
+    public async Task<ActionResult<List<string>>> Snapshots(CancellationToken ct)
+        => Ok(await _snapshot.ListarSnapshotsAsync(ct));
+
+    [HttpPost("snapshot/comparar")]
+    public async Task<ActionResult<SchemaDiffDto>> CompararSnapshot([FromBody] SnapshotRequest req, CancellationToken ct)
+        => Ok(await _snapshot.CompararSnapshotAsync(req.Nome, ct));
+
+    public record DiffRequest(int Limite);
+    public record SnapshotRequest(string Nome);
 }

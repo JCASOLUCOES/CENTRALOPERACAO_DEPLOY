@@ -63,7 +63,15 @@ const BREADCRUMB_LABELS: Record<string, string> = {
   '/empresa/onboarding/capitulo': 'Capítulo',
   '/empresa/onboarding/concluido': 'Concluído',
   '/politica': 'Política Interna',
-  '/suporte': 'Suporte'
+  '/suporte': 'Suporte',
+  '/database': 'Banco de Dados',
+  '/database/visao-geral': 'Visão Geral',
+  '/database/explorador': 'Explorador',
+  '/database/relacionamentos': 'Relacionamentos',
+  '/database/diagrama': 'Diagrama',
+  '/database/consultas': 'Consultas',
+  '/database/diferencas': 'Diferenças',
+  '/database/configuracao': 'Configuração'
 };
 
 const RESULTADOS_MOCK: ResultadoBusca[] = [
@@ -241,6 +249,21 @@ export class HeaderComponent implements OnInit, OnDestroy {
     if (path === '/') {
       this.breadcrumb = [{ label: 'Início', route: '/' }];
       return;
+    }
+
+    // Handle dynamic database table route
+    if (path.startsWith('/database/tabela/')) {
+      const partes = path.split('/');
+      if (partes.length >= 5) {
+        const schema = partes[3];
+        const tabela = partes[4];
+        this.breadcrumb = [
+          { label: 'Início', route: '/' },
+          { label: 'Banco de Dados', route: '/database' },
+          { label: `${schema}.${tabela}` }
+        ];
+        return;
+      }
     }
 
     const chaves = Object.keys(BREADCRUMB_LABELS).filter((k) => k !== '/');

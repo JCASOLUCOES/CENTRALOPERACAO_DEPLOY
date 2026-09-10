@@ -16,7 +16,7 @@ Continuar a **v1.3.0** do monorepo JCA Central de Operação na branch `projeto-
 ### 1.1 Banco de homolog (referência fixa)
 - **Servidor**: `192.168.2.154`
 - **Usuário**: `bussiness`
-- **Senha**: `bsn@2018`
+- **Senha**: via variável de ambiente `DB_EXPLORER_SENHA` / user-secrets (NUNCA hardcoded)
 - **Banco**: `dbBUSINESS_HML`
 - **Apenas homologação** — produção fica para depois
 
@@ -528,21 +528,21 @@ chamadoLegadoId?: number;
 ## 9. Comandos SQL de referência (homolog)
 
 ```bash
-# Conectar ao banco
+# Conectar ao banco (senha via variável de ambiente)
 "C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\SQLCMD.EXE" ^
-  -S 192.168.2.154 -d dbBUSINESS_HML -U bussiness -P bsn@2018
+  -S 192.168.2.154 -d dbBUSINESS_HML -U bussiness -P "%DB_EXPLORER_SENHA%"
 
 # Aplicar script de migration
 "C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\SQLCMD.EXE" ^
-  -S 192.168.2.154 -d dbBUSINESS_HML -U bussiness -P bsn@2018 ^
+  -S 192.168.2.154 -d dbBUSINESS_HML -U bussiness -P "%DB_EXPLORER_SENHA%" ^
   -i "C:\...\Migrations\Sql\AddAgendaAndPerfis.sql"
 
 # Listar tabelas IMPL_*
-"SQLCMD.EXE" -S 192.168.2.154 -d dbBUSINESS_HML -U bussiness -P bsn@2018 ^
+"SQLCMD.EXE" -S 192.168.2.154 -d dbBUSINESS_HML -U bussiness -P "%DB_EXPLORER_SENHA%" ^
   -Q "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME LIKE 'IMPL_%' ORDER BY TABLE_NAME"
 
 # Contar registros IMPL_Agenda
-"SQLCMD.EXE" -S 192.168.2.154 -d dbBUSINESS_HML -U bussiness -P bsn@2018 ^
+"SQLCMD.EXE" -S 192.168.2.154 -d dbBUSINESS_HML -U bussiness -P "%DB_EXPLORER_SENHA%" ^
   -Q "SELECT COUNT(*) FROM IMPL_Agenda"
 ```
 
@@ -600,7 +600,7 @@ TUDO: contexto, decisões, schema, mapeamento de campos por tela, 24 sub-passos
 numerados, comandos SQL de referência e checklist de validação.
 
 REGRAS OBRIGATÓRIAS:
-1. Banco de homolog: 192.168.2.154 / bussiness / bsn@2018 / dbBUSINESS_HML
+1. Banco de homolog: 192.168.2.154 / bussiness / via DB_EXPLORER_SENHA / dbBUSINESS_HML
 2. SEM deploy automático — o usuário só autoriza deploy manualmente
 3. SEM perguntas entre passos quando ele disser "Efetuar Bloco X" — vá até o fim
 4. SEMPRE carregue a skill `frontend-design` antes de estilizar UI nova

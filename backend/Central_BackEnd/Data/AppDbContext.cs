@@ -11,6 +11,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Operador> Operadores => Set<Operador>();
 
+    public DbSet<Funcao> Funcoes => Set<Funcao>();
+
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AuditoriaAcesso> AuditoriaAcessos => Set<AuditoriaAcesso>();
 
@@ -42,6 +44,18 @@ public class AppDbContext : DbContext
             entity.Property(e => e.UsuarioInclusao).HasMaxLength(15).IsUnicode(false);
             entity.Property(e => e.UsuarioAlteracao).HasMaxLength(15).IsUnicode(false);
             entity.Property(e => e.PerfilId).HasMaxLength(1).IsUnicode(false);
+
+            entity.HasOne(e => e.Funcao)
+                  .WithMany()
+                  .HasForeignKey(e => e.FuncaoId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<Funcao>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Descricao).HasMaxLength(100).IsUnicode(false);
+            entity.Property(e => e.Classificacao).HasMaxLength(50).IsUnicode(false);
         });
 
         modelBuilder.Entity<RefreshToken>(entity =>

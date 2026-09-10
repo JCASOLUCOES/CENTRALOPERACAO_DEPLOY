@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { DatabaseService } from '../services/database.service';
 import { DatabaseRelationship } from '../models/database.model';
 
@@ -55,13 +56,17 @@ import { DatabaseRelationship } from '../models/database.model';
             </span>
           </td>
           <td>
-            <code>{{ r.tabelaOrigem }}.{{ r.colunaOrigem }}</code>
+            <a (click)="$event.preventDefault(); navegarTabela(r.tabelaOrigem, r.colunaOrigem)" style="cursor: pointer;">
+              <code>{{ r.tabelaOrigem }}.{{ r.colunaOrigem }}</code>
+            </a>
           </td>
           <td class="text-center">
             <i class="bi bi-arrow-right"></i>
           </td>
           <td>
-            <code>{{ r.tabelaDestino }}.{{ r.colunaDestino }}</code>
+            <a (click)="$event.preventDefault(); navegarTabela(r.tabelaDestino, r.colunaDestino)" style="cursor: pointer;">
+              <code>{{ r.tabelaDestino }}.{{ r.colunaDestino }}</code>
+            </a>
           </td>
           <td>
             <div class="db-rel__score" [style.--score]="r.score + '%'">
@@ -104,6 +109,7 @@ import { DatabaseRelationship } from '../models/database.model';
 })
 export class DbRelacionamentosComponent implements OnInit {
   private readonly db = inject(DatabaseService);
+  private readonly router = inject(Router);
   readonly lista = signal<DatabaseRelationship[]>([]);
   readonly carregando = signal(false);
   readonly filtro = signal<'todas' | 'confirmadas' | 'possiveis'>('todas');
@@ -135,5 +141,12 @@ export class DbRelacionamentosComponent implements OnInit {
       next: l => { this.lista.set(l); this.carregando.set(false); },
       error: () => this.carregando.set(false)
     });
+  }
+
+  navegarTabela(tabelaCompleta: string, coluna: string): void {
+    const partes = tabelaCompleta.split('.');
+    if (partes.length >= 2) {
+      this.router.navigate(['/database/tabela', partes[0], partes[1]]);
+    }
   }
 }

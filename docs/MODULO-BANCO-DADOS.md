@@ -72,7 +72,8 @@ dotnet user-secrets set "DatabaseExplorer:Servidor" "192.168.2.154"
 dotnet user-secrets set "DatabaseExplorer:Porta" "1433"
 dotnet user-secrets set "DatabaseExplorer:Banco" "dbActyon_JCA"
 dotnet user-secrets set "DatabaseExplorer:Usuario" "bussiness"
-dotnet user-secrets set "DatabaseExplorer:Senha" "bsn@2018"
+# Senha NUNCA hardcoded — usar variável de ambiente ou user-secrets local
+# dotnet user-secrets set "DatabaseExplorer:Senha" "SUA_SENHA_AQUI"
 
 # 2) Rodar backend
 dotnet run
@@ -99,10 +100,20 @@ dotnet run
 | GET | `/database/procedures?schema=&busca=&take=` | Lista procedures (com preview 200 chars do corpo) |
 | GET | `/database/procedures/{schema}/{nome}` | Detalhe: corpo completo + parâmetros (input/output) |
 | GET | `/database/procedures/search?termo=&take=` | Busca textual no nome e preview de procedures |
+| GET | `/database/procedures/{schema}/{nome}/analysis` | Análise automática: tabelas usadas, procs chamadas, ações, fluxo |
+| GET | `/database/triggers?schema=&tabela=` | Lista triggers (filtro por schema/tabela) |
+| GET | `/database/triggers/{schema}/{nome}` | Detalhe trigger: evento, momento, corpo, ações, tabelas afetadas |
+| GET | `/database/tables/{schema}/{nome}/dependencies` | Dependências: procs, triggers, views, FKs, functions que referenciam a tabela |
+| GET | `/database/search/global?termo=&take=` | Busca global unificada (tabelas, colunas, views, procs, functions, triggers) |
 | POST | `/database/query` | Executa SELECT (somente leitura) |
 | POST | `/database/test-connection` | Testa conexão sem persistir |
 | GET | `/database/config` | Lê config (senha mascarada) |
-| PUT | `/database/config` | Atualiza config em memória da sessão |
+| PUT | `/database/config` | Atualiza config em memória da sessão (requer role Admin) |
+| POST | `/database/query-builder` | Query Builder básico (tabelas + colunas + JOINs) |
+| POST | `/database/query-builder-advanced` | Query Builder avançado (WHERE, ORDER BY, GROUP BY, HAVING, CTEs, LIMIT) |
+| POST | `/database/diff` | Comparação schema real vs documentação Markdown |
+| POST | `/database/snapshot` | Salvar snapshot do schema atual |
+| GET | `/database/snapshots` | Listar snapshots salvos |
 
 ## 4.1. Banco fixo: `dbActyon_JCA`
 
@@ -228,7 +239,7 @@ npm start
 - Servidor: `192.168.2.154`
 - Banco: `dbActyon_JCA` (banco principal do Actyon, fixo no `DatabaseConnectionService`)
 - Usuário: `bussiness`
-- Senha: `bsn@2018` (via env var, **NUNCA** em appsettings.json)
+- Senha: via variável de ambiente `DB_EXPLORER_SENHA` (ou user-secrets), **NUNCA** em appsettings.json
 
 ---
 

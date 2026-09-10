@@ -13,6 +13,7 @@ public interface IDatabaseQueryService
 public class DatabaseQueryService : IDatabaseQueryService
 {
     // Bloqueio de comandos destrutivos server-side (regex case-insensitive, com separador de palavra)
+    // R1: Adicionadas OPENROWSET, OPENDATASOURCE, sp_executesql, xp_cmdshell, xp_, sp_, LINKED SERVER, BULK INSERT, INTO #, WAITFOR DELAY, SHUTDOWN, RECONFIGURE
     private static readonly Regex[] ComandosBloqueados = new[]
     {
         new Regex(@"\bINSERT\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
@@ -27,7 +28,20 @@ public class DatabaseQueryService : IDatabaseQueryService
         new Regex(@"\bGRANT\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
         new Regex(@"\bREVOKE\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
         new Regex(@"\bMERGE\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
-        new Regex(@"\bBULK\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)
+        new Regex(@"\bBULK\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        // R1: Palavras proibidas adicionais
+        new Regex(@"\bOPENROWSET\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\bOPENDATASOURCE\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\bsp_executesql\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\bxp_cmdshell\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\bxp_\w+", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\bsp_\w+", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\bLINKED\s+SERVER\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\bBULK\s+INSERT\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\bINTO\s+#", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\bWAITFOR\s+DELAY\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\bSHUTDOWN\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+        new Regex(@"\bRECONFIGURE\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)
     };
 
     private readonly IDatabaseConnectionService _conn;
@@ -45,22 +59,25 @@ public class DatabaseQueryService : IDatabaseQueryService
         if (string.IsNullOrWhiteSpace(sql))
             return new QueryResultDto(false, new(), new(), 0, 0, "Consulta vazia.");
 
-        // So permite SELECT ou WITH (CTE). Comandos perigosos sao bloqueados server-side.
-        if (!ComecaComSelectOuWith(sql))
+        // R8: Remover comentários SQL antes de validar
+        var sqlSemComentarios = RemoverComentariosSql(sql);
+
+        // R7: Validar que o primeiro token real é SELECT ou WITH (após remover comentários e espaços)
+        if (!ComecaComSelectOuWith(sqlSemComentarios))
             return new QueryResultDto(false, new(), new(), 0, 0, "Apenas consultas SELECT (ou CTE comeca com WITH) sao permitidas.");
 
         foreach (var rx in ComandosBloqueados)
         {
             // Permite SELECT com INTO em CTE inicial; checa resto
-            if (rx.IsMatch(sql))
-                return new QueryResultDto(false, new(), new(), 0, 0, $"Comando nao permitido: {rx.Match(sql).Value.ToUpper()}");
+            if (rx.IsMatch(sqlSemComentarios))
+                return new QueryResultDto(false, new(), new(), 0, 0, $"Comando nao permitido: {rx.Match(sqlSemComentarios).Value.ToUpper()}");
         }
 
         var timeoutSeg = Math.Clamp(req.TimeoutSegundos ?? 30, 1, 120);
         var limite = Math.Clamp(req.Limite ?? 500, 1, 5000);
 
-        // Envelopar com TOP para limitar registros
-        var sqlComLimite = EnveloparSelectComTop(sql, limite);
+        // Envelopar com TOP para limitar registros (R5: usar OFFSET/FETCH quando tem ORDER BY)
+        var sqlComLimite = EnveloparSelectComTop(sqlSemComentarios, limite);
 
         await using var c = await _conn.OpenAsync(ct);
         // Garantir transacao read-only e rollback explicito (defesa em profundidade)
@@ -94,23 +111,44 @@ public class DatabaseQueryService : IDatabaseQueryService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Falha ao executar consulta");
-            return new QueryResultDto(false, new(), new(), 0, (int)(DateTime.Now - ini).TotalMilliseconds, ex.Message);
+            // R6: Não vazar detalhes internos ao cliente; logar internamente
+            _logger.LogError(ex, "Falha ao executar consulta: {Error}", ex.Message);
+            return new QueryResultDto(false, new(), new(), 0, (int)(DateTime.Now - ini).TotalMilliseconds, "Erro ao executar consulta.");
         }
     }
 
+    // R7: Validação mais estrita — verifica primeiro token real após remover comentários e espaços
     private static bool ComecaComSelectOuWith(string sql)
     {
-        var norm = sql.TrimStart('(', ' ', '\t', '\n', '\r');
+        // Remover espaços em branco excessivos e normalizar
+        var norm = Regex.Replace(sql.TrimStart('(', ' ', '\t', '\n', '\r'), @"\s+", " ");
         return norm.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase) ||
                norm.StartsWith("WITH", StringComparison.OrdinalIgnoreCase);
     }
 
+    // R8: Remover comentários SQL (-- linha única e /* */ multi-linha)
+    private static string RemoverComentariosSql(string sql)
+    {
+        // Remover comentários de bloco /* ... */
+        var semBloco = Regex.Replace(sql, @"/\*.*?\*/", "", RegexOptions.Singleline);
+        // Remover comentários de linha -- ...
+        var semLinha = Regex.Replace(semBloco, @"--.*$", "", RegexOptions.Multiline);
+        return semLinha.Trim();
+    }
+
+    // R5: Melhorar EnveloparSelectComTop — usar OFFSET/FETCH quando tem ORDER BY
     private static string EnveloparSelectComTop(string sql, int limite)
     {
         // Se ja tem TOP, nao envelopa
         if (Regex.IsMatch(sql, @"\bSELECT\s+TOP\s+\d+", RegexOptions.IgnoreCase))
             return sql;
+        // Se tem ORDER BY, usar OFFSET/FETCH
+        if (Regex.IsMatch(sql, @"\bORDER\s+BY\b", RegexOptions.IgnoreCase))
+        {
+            return Regex.Replace(sql, @"(\bORDER\s+BY\s+.+)$",
+                m => $"{m.Groups[1].Value}\nOFFSET 0 ROWS FETCH NEXT {limite} ROWS ONLY",
+                RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+        }
         // Inserir TOP apos SELECT
         return Regex.Replace(sql, @"\bSELECT\b", $"SELECT TOP {limite}", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
     }

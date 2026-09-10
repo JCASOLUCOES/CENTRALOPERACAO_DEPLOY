@@ -6,7 +6,8 @@ import {
   DatabaseInfo, DatabaseTable, DatabaseColumn, DatabaseIndex,
   DatabaseRelationship, DatabaseSearchResult, DatabaseQueryRequest,
   DatabaseQueryResult, DatabaseStatus, DatabaseConnectionConfig,
-  ProcedureResumo, ProcedureDetalhe
+  ProcedureResumo, ProcedureDetalhe,
+  Trigger, Dependencia, ProcedureAnalysis, GlobalSearchResult
 } from '../models/database.model';
 
 @Injectable({ providedIn: 'root' })
@@ -92,5 +93,53 @@ export class DatabaseService {
     return this.http.get<ProcedureResumo[]>(`${this.baseUrl}/procedures/search`, {
       params: new HttpParams().set('termo', termo).set('take', String(take))
     });
+  }
+
+  listarTriggers(schema?: string, tabela?: string): Observable<Trigger[]> {
+    let params = new HttpParams();
+    if (schema) params = params.set('schema', schema);
+    if (tabela) params = params.set('tabela', tabela);
+    return this.http.get<Trigger[]>(`${this.baseUrl}/triggers`, { params });
+  }
+
+  obterTrigger(schema: string, nome: string): Observable<Trigger> {
+    return this.http.get<Trigger>(`${this.baseUrl}/triggers/${encodeURIComponent(schema)}/${encodeURIComponent(nome)}`);
+  }
+
+  listarDependencias(schema: string, tabela: string): Observable<Dependencia[]> {
+    return this.http.get<Dependencia[]>(`${this.baseUrl}/tables/${encodeURIComponent(schema)}/${encodeURIComponent(tabela)}/dependencies`);
+  }
+
+  analisarProcedure(schema: string, nome: string): Observable<ProcedureAnalysis> {
+    return this.http.get<ProcedureAnalysis>(`${this.baseUrl}/procedures/${encodeURIComponent(schema)}/${encodeURIComponent(nome)}/analysis`);
+  }
+
+  buscarGlobal(termo: string, take = 200): Observable<GlobalSearchResult[]> {
+    return this.http.get<GlobalSearchResult[]>(`${this.baseUrl}/search/global`, {
+      params: new HttpParams().set('termo', termo).set('take', String(take))
+    });
+  }
+
+  // Dif de schema
+  diferencarSchema(limite: number = 100): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/diff`, { limite });
+  }
+
+  // Snapshot
+  salvarSnapshot(nome: string): Observable<string> {
+    return this.http.post<string>(`${this.baseUrl}/snapshot`, { nome });
+  }
+
+  listarSnapshots(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/snapshots`);
+  }
+
+  compararSnapshot(nome: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/snapshot/comparar`, { nome });
+  }
+
+  // Query Builder Avançado
+  executarQueryBuilderAvançado(req: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/query-builder-advanced`, req);
   }
 }

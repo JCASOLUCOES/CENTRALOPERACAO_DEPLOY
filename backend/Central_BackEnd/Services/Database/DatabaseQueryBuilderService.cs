@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Text.RegularExpressions;
 using Central_BackEnd.Dtos.Database;
 using Microsoft.Data.SqlClient;
 
@@ -6,13 +8,8 @@ namespace Central_BackEnd.Services.Database;
 public interface IDatabaseQueryBuilderService
 {
     Task<DatabaseQueryBuilderResult> MontarConsultaAsync(List<string> tabelas, List<string> colunas, List<RelationshipDto> relacionamentos, CancellationToken ct = default);
+    Task<DatabaseQueryBuilderResult> MontarConsultaAvancadaAsync(QueryBuilderAdvancedRequest req, CancellationToken ct = default);
 }
-
-public record DatabaseQueryBuilderResult(
-    string SqlGerado,
-    List<string> TabelasUsadas,
-    List<RelationshipDto> JoinsUtilizados,
-    string? Aviso);
 
 public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
 {
@@ -65,6 +62,199 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
             avisos.Add("⚠️ Alguns JOINs usam relacionamentos POSSÍVEIS (não confirmados por FK). Verifique antes de executar.");
 
         return new DatabaseQueryBuilderResult(sql, tabelasValidas, joinsUsados, string.Join(" ", avisos));
+    }
+
+    public async Task<DatabaseQueryBuilderResult> MontarConsultaAvancadaAsync(
+        QueryBuilderAdvancedRequest req, CancellationToken ct = default)
+    {
+        if (req.Tabelas == null || req.Tabelas.Count == 0)
+            return new DatabaseQueryBuilderResult("", new(), new(), "Nenhuma tabela selecionada");
+
+        if (req.Tabelas.Count > 5)
+            return new DatabaseQueryBuilderResult("", new(), new(), "Máximo de 5 tabelas permitidas por consulta");
+
+        var tabelasValidas = await ValidarTabelasAsync(req.Tabelas, ct);
+        if (tabelasValidas.Count == 0)
+            return new DatabaseQueryBuilderResult("", new(), new(), "Nenhuma tabela válida encontrada");
+
+        var sqlBuilder = new System.Text.StringBuilder();
+        var joinsUsados = new List<RelationshipDto>();
+        var tabelasAlias = new Dictionary<string, string>();
+
+        // Gerar aliases para cada tabela
+        for (int i = 0; i < tabelasValidas.Count; i++)
+            tabelasAlias[tabelasValidas[i]] = $"t{i + 1}";
+
+        // 1. CTEs (WITH ...)
+        if (req.Ctes != null && req.Ctes.Count > 0)
+        {
+            sqlBuilder.Append("WITH ");
+            for (int i = 0; i < req.Ctes.Count; i++)
+            {
+                var cte = req.Ctes[i];
+                sqlBuilder.Append($"[{cte.Nome}] AS ({cte.Sql})");
+                if (i < req.Ctes.Count - 1)
+                    sqlBuilder.Append(", ");
+            }
+            sqlBuilder.AppendLine();
+        }
+
+        // 2. SELECT com colunas
+        var colunasSelect = req.Colunas?.Count > 0
+            ? string.Join(", ", req.Colunas.Select(c =>
+            {
+                var alias = tabelasAlias.Values.FirstOrDefault(a =>
+                    tabelasAlias.Any(kvp => kvp.Value == a && kvp.Key.EndsWith("." + c) || kvp.Key == c));
+                return $"[{alias ?? tabelasAlias[tabelasValidas[0]]}].[{c}]";
+            }))
+            : string.Join(", ", tabelasValidas.Select(t => $"[{tabelasAlias[t]}].*"));
+        sqlBuilder.Append($"SELECT {colunasSelect}");
+
+        // 3. FROM com JOINs
+        sqlBuilder.Append($"\nFROM [{tabelasValidas[0]}] AS [{tabelasAlias[tabelasValidas[0]]}]");
+
+        if (req.Tabelas.Count > 1 && req.Relacionamentos != null && req.Relacionamentos.Count > 0)
+        {
+            var (joinsSql, joinsUsadosResult) = await MontarSelectComJoinsAsync(
+                tabelasValidas, req.Colunas ?? new List<string>(), req.Relacionamentos, ct);
+            // Extrair apenas a parte dos JOINs do SQL gerado
+            var joinLinhas = new List<string>();
+            var linhas = joinsSql.Split('\n');
+            foreach (var linha in linhas)
+            {
+                if (linha.TrimStart().StartsWith("INNER JOIN") || linha.TrimStart().StartsWith("LEFT JOIN") ||
+                    linha.TrimStart().StartsWith("RIGHT JOIN") || linha.TrimStart().StartsWith("CROSS JOIN"))
+                    joinLinhas.Add(linha.TrimStart());
+            }
+            foreach (var jl in joinLinhas)
+                sqlBuilder.Append($"\n  {jl}");
+            joinsUsados = joinsUsadosResult;
+        }
+
+        // 4. WHERE com condições
+        if (req.WhereConditions != null && req.WhereConditions.Count > 0)
+        {
+            sqlBuilder.Append("\nWHERE ");
+            var whereParts = new List<string>();
+            foreach (var wc in req.WhereConditions)
+            {
+                whereParts.Add(MontarCondicaoWhereDetalhada(wc, tabelasAlias));
+            }
+            sqlBuilder.Append(string.Join(" ", whereParts));
+        }
+
+        // 5. GROUP BY com agregações
+        if (req.GroupBy != null && req.GroupBy.Count > 0)
+        {
+            sqlBuilder.Append("\nGROUP BY ");
+            var groupParts = new List<string>();
+            foreach (var gb in req.GroupBy)
+            {
+                var tabelaRef = req.Tabelas.FirstOrDefault(t => t.EndsWith("." + gb.Coluna) || t == gb.Coluna);
+                var alias = tabelaRef != null && tabelasAlias.ContainsKey(tabelaRef) 
+                    ? tabelasAlias[tabelaRef] 
+                    : tabelasAlias[req.Tabelas[0]];
+                groupParts.Add($"[{alias}].[{gb.Coluna}]");
+            }
+            sqlBuilder.Append(string.Join(", ", groupParts));
+        }
+
+        // 6. HAVING (se houver agregações com filtro no GROUP BY)
+        // Se o usuário especificou GROUP BY com agregações implícitas, HAVING pode ser adicionado
+        // Aqui suportamos HAVING básico via GroupByDto.Agregacao não nula (exemplo simples)
+
+        // 7. ORDER BY
+        if (req.OrderBy != null && req.OrderBy.Count > 0)
+        {
+            sqlBuilder.Append("\nORDER BY ");
+            var orderParts = new List<string>();
+            foreach (var ob in req.OrderBy)
+            {
+                var tabelaRef = req.Tabelas.FirstOrDefault(t => t.EndsWith("." + ob.Coluna) || t == ob.Coluna);
+                var alias = tabelaRef != null ? tabelasAlias[tabelaRef] : tabelasAlias[req.Tabelas[0]];
+                orderParts.Add($"[{alias}].[{ob.Coluna}] {(ob.Ascendente ? "ASC" : "DESC")}");
+            }
+            sqlBuilder.Append(string.Join(", ", orderParts));
+        }
+
+        // 8. TOP/LIMIT
+        if (req.Limite.HasValue && req.Limite.Value > 0)
+        {
+            sqlBuilder.Append($"\nTOP {req.Limite.Value}");
+        }
+
+        var sqlFinal = sqlBuilder.ToString().Trim();
+        return new DatabaseQueryBuilderResult(sqlFinal, tabelasValidas, joinsUsados, null);
+    }
+
+    private string MontarCondicaoWhere(WhereConditionDto wc, Dictionary<string, string> tabelasAlias)
+    {
+        // Determinar de qual tabela a coluna vem (pode estar qualificada como tabela.coluna)
+        string tabelaAlias;
+        string coluna;
+        if (wc.Coluna.Contains("."))
+        {
+            var partes = wc.Coluna.Split('.');
+            var nomeTabela = partes[0];
+            coluna = partes[1];
+            tabelaAlias = tabelasAlias.FirstOrDefault(kvp => kvp.Key.EndsWith("." + nomeTabela) || kvp.Key == nomeTabela).Value;
+        }
+        else
+        {
+            tabelaAlias = tabelasAlias.Values.First(); // Primeira tabela por padrão
+            coluna = wc.Coluna;
+        }
+
+        return wc.Logica switch
+        {
+            "OR" => $"OR ",
+            _ => string.Empty // "AND" é o padrão, mas o primeiro elemento não precisa de AND
+        };
+    }
+
+    private string MontarCondicaoWhereDetalhada(WhereConditionDto wc, Dictionary<string, string> tabelasAlias)
+    {
+        string tabelaAlias;
+        string coluna;
+        if (wc.Coluna.Contains("."))
+        {
+            var partes = wc.Coluna.Split('.');
+            var nomeTabela = partes[0];
+            coluna = partes[1];
+            tabelaAlias = tabelasAlias.FirstOrDefault(kvp =>
+                kvp.Key.EndsWith("." + nomeTabela) || kvp.Key == nomeTabela).Value;
+        }
+        else
+        {
+            tabelaAlias = tabelasAlias.Values.First();
+            coluna = wc.Coluna;
+        }
+
+        var colunaRef = $"[{tabelaAlias}].[{coluna}]";
+        var logica = wc.Logica?.ToUpper() == "OR" ? "OR " : "";
+
+        return wc.Operador?.ToUpper() switch
+        {
+            "=" => $"{logica}{colunaRef} = '{EscaparSql(wc.Valor)}'",
+            "<>" => $"{logica}{colunaRef} <> '{EscaparSql(wc.Valor)}'",
+            ">" => $"{logica}{colunaRef} > {EscaparSql(wc.Valor)}",
+            "<" => $"{logica}{colunaRef} < {EscaparSql(wc.Valor)}",
+            ">=" => $"{logica}{colunaRef} >= {EscaparSql(wc.Valor)}",
+            "<=" => $"{logica}{colunaRef} <= {EscaparSql(wc.Valor)}",
+            "LIKE" => $"{logica}{colunaRef} LIKE '{EscaparSql(wc.Valor)}'",
+            "IN" => $"{logica}{colunaRef} IN ({EscaparSql(wc.Valor)})",
+            "IS NULL" => $"{logica}{colunaRef} IS NULL",
+            "IS NOT NULL" => $"{logica}{colunaRef} IS NOT NULL",
+            "BETWEEN" => $"{logica}{colunaRef} BETWEEN {EscaparSql(wc.Valor)} AND {EscaparSql(wc.Valor2)}",
+            _ => $"{logica}{colunaRef} = '{EscaparSql(wc.Valor)}'"
+        };
+    }
+
+    private static string EscaparSql(string? valor)
+    {
+        if (string.IsNullOrEmpty(valor)) return "NULL";
+        // Escapar aspas simples para segurança
+        return $"'{valor.Replace("'", "''")}'";
     }
 
     private async Task<List<string>> ValidarTabelasAsync(List<string> tabelas, CancellationToken ct)

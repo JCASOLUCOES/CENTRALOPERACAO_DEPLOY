@@ -11,8 +11,14 @@ export const databaseRoutes: Routes = [
       { path: 'relacionamentos', loadComponent: () => import('./pages/db-relacionamentos.component').then(m => m.DbRelacionamentosComponent) },
       { path: 'diagrama', loadComponent: () => import('./pages/db-diagrama.component').then(m => m.DbDiagramaComponent) },
       { path: 'consultas', loadComponent: () => import('./pages/db-consultas.component').then(m => m.DbConsultasComponent) },
+      { path: 'query-builder', loadComponent: () => import('./components/db-query-builder.component').then(m => m.DbQueryBuilderComponent) },
       { path: 'diferencas', loadComponent: () => import('./pages/db-diferencas.component').then(m => m.DbDiferencasComponent) },
+      { path: 'ia-chat', loadComponent: () => import('./components/db-ia-chat.component').then(m => m.DbIaChatComponent) },
       { path: 'configuracao', loadComponent: () => import('./pages/db-configuracao.component').then(m => m.DbConfiguracaoComponent) }
     ]
+  },
+  {
+    path: 'tabela/:schema/:tabela',
+    loadComponent: () => import('./pages/table-detail.component').then(m => m.TableDetailComponent)
   }
 ];

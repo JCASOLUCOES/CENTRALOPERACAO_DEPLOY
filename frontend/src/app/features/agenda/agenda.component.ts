@@ -1,7 +1,7 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, OnDestroy, inject, signal, computed, PLATFORM_ID, Inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { AgendaService } from './services/agenda.service';
 import { AgendaItem, AgendaTipo, AgendaVisibilidade, AgendaRecorrencia } from './models/agenda.model';
 import { AuthService } from '@core/services/auth.service';
@@ -15,10 +15,12 @@ type Visao = 'dia' | 'semana' | 'mes';
   templateUrl: './agenda.component.html',
   styleUrl: './agenda.component.scss'
 })
-export class AgendaComponent implements OnInit {
+export class AgendaComponent implements OnInit, OnDestroy {
   private readonly svc = inject(AgendaService);
   private readonly auth = inject(AuthService);
   private readonly modalSvc = inject(NgbModal);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private modalRef?: NgbModalRef;
 
   readonly visao = signal<Visao>('semana');
   readonly dataReferencia = signal<Date>(new Date());
@@ -96,9 +98,24 @@ export class AgendaComponent implements OnInit {
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(inicio);
       d.setDate(d.getDate() + i);
-      return d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+      return this.diaSemanaMaiusculo(d);
     });
   });
+
+  /** Retorna o dia da semana em maiúsculas: DOM, SEG, TER, QUA, QUI, SEX, SÁB */
+  diaSemanaMaiusculo(d: Date): string {
+    const dias = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+    return dias[d.getDay()];
+  }
+
+  /** Retorna o intervalo de datas formatado: DD/MM/YYYY – DD/MM/YYYY */
+  intervaloDatas(): string {
+    const i = this.inicio();
+    const f = new Date(this.fim());
+    f.setDate(f.getDate() - 1); // fim é exclusivo, volta 1 dia
+    const fmt = (d: Date) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return `${fmt(i)} – ${fmt(f)}`;
+  }
 
   readonly horasDia = Array.from({ length: 24 }, (_, i) => i);
 
@@ -211,30 +228,37 @@ export class AgendaComponent implements OnInit {
     return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   }
 
-  diaCurto(d: Date): string {
-    return d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
-  }
-
   diaNumero(d: Date): number { return d.getDate(); }
 
   abrirModalEvento(dia?: Date, hora?: number): void {
     const inicio = dia ? new Date(dia) : new Date();
     if (hora != null) inicio.setHours(hora, 0, 0, 0);
     import('./agenda-evento-modal.component').then(m => {
-      const ref = this.modalSvc.open(m.AgendaEventoModalComponent, { size: 'lg', backdrop: 'static' });
-      ref.componentInstance.inicio.set(inicio);
-      ref.componentInstance.usuarioLogado = this.usuarioLogado();
-      ref.closed.subscribe(() => this.carregar());
+      this.modalRef = this.modalSvc.open(m.AgendaEventoModalComponent, { size: 'lg', backdrop: 'static' });
+      this.modalRef.componentInstance.inicio.set(inicio);
+      this.modalRef.componentInstance.usuarioLogado = this.usuarioLogado();
+      this.modalRef.closed.subscribe(() => this.carregar());
     });
   }
 
   abrirEdicao(evento: AgendaItem): void {
     import('./agenda-evento-modal.component').then(m => {
-      const ref = this.modalSvc.open(m.AgendaEventoModalComponent, { size: 'lg', backdrop: 'static' });
-      ref.componentInstance.inicio.set(new Date(evento.dataInicio));
-      ref.componentInstance.eventoEdicao = evento;
-      ref.componentInstance.usuarioLogado = this.usuarioLogado();
-      ref.closed.subscribe(() => this.carregar());
+      this.modalRef = this.modalSvc.open(m.AgendaEventoModalComponent, { size: 'lg', backdrop: 'static' });
+      this.modalRef.componentInstance.inicio.set(new Date(evento.dataInicio));
+      this.modalRef.componentInstance.eventoEdicao = evento;
+      this.modalRef.componentInstance.usuarioLogado = this.usuarioLogado();
+      this.modalRef.closed.subscribe(() => this.carregar());
     });
+  }
+
+  ngOnDestroy(): void {
+    if (this.modalRef) {
+      this.modalRef.dismiss();
+      this.modalRef = undefined;
+    }
+    if (this.isBrowser) {
+      document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+      document.body.classList.remove('modal-open');
+    }
   }
 }

@@ -1,53 +1,58 @@
 <section class="agenda-shell">
+
+  <!-- Cabeçalho da Agenda -->
   <header class="agenda-header">
     <div class="agenda-header__titulo">
       <i class="bi bi-calendar-week-fill"></i>
       <h1>Agenda</h1>
     </div>
-    <div class="agenda-header__nav">
-      <button type="button" class="ag-btn ag-btn--icon" (click)="anterior()" aria-label="Anterior">
+
+    <div class="agenda-header__navegacao">
+      <button type="button" class="ag-btn ag-btn--icon" (click)="anterior()" aria-label="Período anterior">
         <i class="bi bi-chevron-left"></i>
       </button>
       <button type="button" class="ag-btn ag-btn--ghost" (click)="hoje()">Hoje</button>
-      <button type="button" class="ag-btn ag-btn--icon" (click)="proximo()" aria-label="Próximo">
+      <button type="button" class="ag-btn ag-btn--icon" (click)="proximo()" aria-label="Próximo período">
         <i class="bi bi-chevron-right"></i>
       </button>
-      <h2 class="agenda-header__rotulo">{{ rotuloCabecalho() }}</h2>
+      <div class="agenda-header__intervalo">{{ intervaloDatas() }}</div>
     </div>
-    <div class="agenda-header__visao">
-      <button type="button" class="ag-btn ag-btn--ghost"
-        [class.ag-btn--primary]="visao() === 'dia'"
-        (click)="mudarVisao('dia')">Dia</button>
-      <button type="button" class="ag-btn ag-btn--ghost"
-        [class.ag-btn--primary]="visao() === 'semana'"
-        (click)="mudarVisao('semana')">Semana</button>
-      <button type="button" class="ag-btn ag-btn--ghost"
-        [class.ag-btn--primary]="visao() === 'mes'"
-        (click)="mudarVisao('mes')">Mês</button>
-    </div>
-    <div class="agenda-header__acoes">
-      <button type="button" class="ag-btn ag-btn--primary" (click)="abrirModalEvento()">
-        <i class="bi bi-plus-lg"></i> Novo evento
-      </button>
-    </div>
-  </header>
 
-  <div class="agenda-filtros">
-    <div class="agenda-filtros__pessoal">
+    <div class="agenda-header__filtro-visibilidade">
       <label class="agenda-toggle">
         <input type="checkbox" [checked]="pessoalMaisPublico()"
           (change)="pessoalMaisPublico.set($any($event.target).checked); carregar()">
         <span>Pessoal + público</span>
       </label>
     </div>
-    <div class="agenda-filtros__legenda">
-      <span *ngFor="let t of tiposLegenda" class="agenda-leg-item">
-        <i class="bi" [ngClass]="t.icone" [style.color]="t.cor"></i>
-        {{ t.rotulo }}
-      </span>
+
+    <div class="agenda-header__controles">
+      <div class="agenda-header__visao" role="group" aria-label="Modo de visualização">
+        <button type="button" class="ag-btn ag-btn--ghost"
+          [class.ag-btn--primary]="visao() === 'dia'"
+          (click)="mudarVisao('dia')" aria-pressed="dia">Dia</button>
+        <button type="button" class="ag-btn ag-btn--ghost"
+          [class.ag-btn--primary]="visao() === 'semana'"
+          (click)="mudarVisao('semana')" aria-pressed="semana">Semana</button>
+        <button type="button" class="ag-btn ag-btn--ghost"
+          [class.ag-btn--primary]="visao() === 'mes'"
+          (click)="mudarVisao('mes')" aria-pressed="mes">Mês</button>
+      </div>
+      <button type="button" class="ag-btn ag-btn--primary" (click)="abrirModalEvento()">
+        <i class="bi bi-plus-lg"></i> Novo evento
+      </button>
     </div>
+  </header>
+
+  <!-- Legenda de Categorias -->
+  <div class="agenda-legenda">
+    <span *ngFor="let t of tiposLegenda" class="agenda-legenda__item" [title]="t.rotulo">
+      <i class="bi" [ngClass]="t.icone" [style.color]="t.cor"></i>
+      {{ t.rotulo }}
+    </span>
   </div>
 
+  <!-- Grade do Calendário -->
   <div class="agenda-calendario" [ngSwitch]="visao()">
 
     <!-- DIA -->
@@ -87,9 +92,9 @@
     <!-- SEMANA -->
     <div *ngSwitchCase="'semana'" class="agenda-semana">
       <div class="agenda-semana__cabecalho">
-        <div class="agenda-semana__cabecalho-cel" *ngFor="let d of diasSemana()"
+        <div class="agenda-semana__cabecalho-cel" *ngFor="let d of diasSemana(); let i = index"
           [class.agenda-semana__cabecalho-cel--hoje]="ehHoje(d)">
-          <div class="agenda-semana__dia-curto">{{ diaCurto(d) }}</div>
+          <div class="agenda-semana__dia-curto">{{ diaSemanaMaiusculo(d) }}</div>
           <div class="agenda-semana__dia-num">{{ diaNumero(d) }}</div>
         </div>
       </div>
@@ -109,7 +114,7 @@
       </div>
     </div>
 
-    <!-- MES -->
+    <!-- MÊS -->
     <div *ngSwitchCase="'mes'" class="agenda-mes">
       <div class="agenda-mes__grid">
         <div class="agenda-mes__cabecalho">
@@ -138,6 +143,7 @@
 
   </div>
 
+  <!-- Estados -->
   <div *ngIf="carregando()" class="agenda-loading">Carregando…</div>
   <div *ngIf="!carregando() && eventos().length === 0" class="agenda-empty">
     Nenhum evento no período. Clique em <strong>Novo evento</strong> ou em uma célula do calendário.

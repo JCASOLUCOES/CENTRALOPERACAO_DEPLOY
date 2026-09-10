@@ -1,9 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DatabaseService } from '../services/database.service';
 import { DatabaseTable, DatabaseColumn, DatabaseIndex, ProcedureResumo, ProcedureDetalhe } from '../models/database.model';
+import { of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 type ArvoreTipo = 'tabela' | 'procedure';
 
@@ -75,6 +78,15 @@ type ArvoreTipo = 'tabela' | 'procedure';
           <div><strong>Colunas:</strong> {{ t.quantidadeColunas }}</div>
           <div><strong>Índices:</strong> {{ t.quantidadeIndices }}</div>
           <div><strong>Relacionamentos:</strong> {{ t.quantidadeRelacionamentos }}</div>
+        </div>
+
+        <div class="db-explorador__acoes">
+          <button type="button" class="db-btn db-btn--primary" (click)="investigarTabela(t)">
+            <i class="bi bi-search"></i> Investigar
+          </button>
+          <button type="button" class="db-btn db-btn--secondary" (click)="abrirConsultasTabela(t)">
+            <i class="bi bi-terminal"></i> Consultar
+          </button>
         </div>
 
         <h5><i class="bi bi-list-columns"></i> Colunas</h5>
@@ -204,6 +216,9 @@ type ArvoreTipo = 'tabela' | 'procedure';
       margin: 0.5rem 0 1rem; font-size: 0.85rem; color: #475569;
       padding: 0.5rem 0.75rem; background: #f1f5f9; border-radius: 0.4rem;
     }
+    .db-explorador__acoes {
+      display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
     h5 { margin-top: 1.25rem; font-weight: 600; }
 
     .db-code {
@@ -225,6 +240,8 @@ type ArvoreTipo = 'tabela' | 'procedure';
     }
     .db-btn--primary { background: #0f4c81; color: #fff; border-color: #0f4c81; }
     .db-btn--primary:hover { background: #0c3d68; }
+    .db-btn--secondary { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .db-btn--secondary:hover { background: #e2e8f0; color: #1e293b; }
 
     .adm-empty {
       display: flex; flex-direction: column; align-items: center;
@@ -238,6 +255,7 @@ type ArvoreTipo = 'tabela' | 'procedure';
 export class DbExploradorComponent implements OnInit {
   private readonly db = inject(DatabaseService);
   private readonly modalSvc = inject(NgbModal);
+  private readonly router = inject(Router);
 
   readonly tabelas = signal<DatabaseTable[]>([]);
   readonly procedures = signal<ProcedureResumo[]>([]);
@@ -263,8 +281,8 @@ export class DbExploradorComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.db.listarTabelas().subscribe(l => this.tabelas.set(l));
-    this.db.listarProcedures().subscribe(l => this.procedures.set(l));
+    this.db.listarTabelas().pipe(catchError(() => of([] as DatabaseTable[]))).subscribe(l => this.tabelas.set(l));
+    this.db.listarProcedures().pipe(catchError(() => of([] as ProcedureResumo[]))).subscribe(l => this.procedures.set(l));
   }
 
   onBuscar(): void { /* trigga computed */ }
@@ -281,8 +299,18 @@ export class DbExploradorComponent implements OnInit {
     this.selecionadoTipo.set('tabela');
     this.selecionadoTabela.set(t);
     this.selecionadoProcedure.set(null);
-    this.db.listarColunas(t.schema, t.nome).subscribe(l => this.colunas.set(l));
-    this.db.listarIndices(t.schema, t.nome).subscribe(l => this.indices.set(l));
+    this.db.listarColunas(t.schema, t.nome).pipe(catchError(() => of([] as DatabaseColumn[]))).subscribe(l => this.colunas.set(l));
+    this.db.listarIndices(t.schema, t.nome).pipe(catchError(() => of([] as DatabaseIndex[]))).subscribe(l => this.indices.set(l));
+  }
+
+  investigarTabela(t: DatabaseTable): void {
+    this.router.navigate(['/database/tabela', t.schema, t.nome]);
+  }
+
+  abrirConsultasTabela(t: DatabaseTable): void {
+    const sql = `SELECT TOP 100 * FROM [${t.schema}].[${t.nome}]`;
+    sessionStorage.setItem('db-query-prefill', sql);
+    this.router.navigate(['/database/consultas']);
   }
 
   selecionarProcedure(p: ProcedureResumo): void {

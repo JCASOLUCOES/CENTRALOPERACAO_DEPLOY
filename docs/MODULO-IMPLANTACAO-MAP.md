@@ -214,7 +214,7 @@ em homolog (192.168.2.154 / dbBUSINESS_HML), aplicar manualmente antes:
 
 ```bash
 "C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\SQLCMD.EXE" ^
-  -S 192.168.2.154 -d dbBUSINESS_HML -U bussiness -P bsn@2018 ^
+  -S 192.168.2.154 -d dbBUSINESS_HML -U bussiness -P "%DB_EXPLORER_SENHA%" ^
   -i "C:\...\backend\Central_BackEnd\Migrations\Sql\AddAgendaAndPerfis.sql"
 ```
 

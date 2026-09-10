@@ -51,12 +51,9 @@ public class DatabaseConnectionConfig
         var senha = Environment.GetEnvironmentVariable("DB_EXPLORER_SENHA")
                     ?? config["DatabaseExplorer:Senha"] ?? "";
 
-        // Defaults fixos (ultimo fallback) — sempre em dbActyon_JCA.
-        // Senha NUNCA tem default hardcoded; se nao vier de lugar nenhum,
-        // IsConfigured() retorna false e o backend mostra "Conexao nao configurada".
-        if (string.IsNullOrEmpty(servidor)) servidor = "192.168.2.154";
-        if (string.IsNullOrEmpty(banco)) banco = "dbActyon_JCA";
-        if (string.IsNullOrEmpty(usuario)) usuario = "bussiness";
+        if (string.IsNullOrEmpty(servidor)) servidor = Environment.GetEnvironmentVariable("DB_EXPLORER_SERVIDOR") ?? "";
+        if (string.IsNullOrEmpty(banco)) banco = Environment.GetEnvironmentVariable("DB_EXPLORER_BANCO") ?? "";
+        if (string.IsNullOrEmpty(usuario)) usuario = Environment.GetEnvironmentVariable("DB_EXPLORER_USUARIO") ?? "";
 
         if (!int.TryParse(portaStr, out var porta)) porta = 1433;
 
@@ -69,8 +66,8 @@ public class DatabaseConnectionConfig
             Senha = senha,
             Encrypt = bool.TryParse(Environment.GetEnvironmentVariable("DB_EXPLORER_ENCRYPT")
                                      ?? config["DatabaseExplorer:Encrypt"], out var e) && e,
-            TrustServerCertificate = !bool.TryParse(Environment.GetEnvironmentVariable("DB_EXPLORER_TRUST")
-                                     ?? config["DatabaseExplorer:TrustServerCertificate"], out var t) || t
+            TrustServerCertificate = bool.TryParse(Environment.GetEnvironmentVariable("DB_EXPLORER_TRUST")
+                                      ?? config["DatabaseExplorer:TrustServerCertificate"], out var t) && t
         };
     }
 

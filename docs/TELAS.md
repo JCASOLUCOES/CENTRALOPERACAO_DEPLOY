@@ -613,6 +613,24 @@ Agenda compartilhada (v1.3.0) com 3 visões (Dia/Semana/Mês), linha vermelha "a
 - Lazy loading (implantacao.routes.ts)
 - Migration `AddAgendaAndPerfis` ainda não aplicada em homolog
 
+### Fluxo de Persistência e Comunicação com o Banco de Dados
+
+1. **Consulta e Renderização Inicial (SELECT)**
+   - Ao acessar a tela, o frontend faz uma chamada GET à API `/api/v1/implantacao/agenda`.
+   - O backend executa consultas SQL (`SELECT`) com os JOINs necessários na tabela `IMPL_Agenda` e `IMPL_MembroEquipe` para buscar a lista de eventos e renderizar o estado inicial da página, aplicando regras de visibilidade (Público, Equipe, Privado).
+
+2. **Criação e Registro de Novos Dados (INSERT)**
+   - O operador preenche os campos requeridos na interface e aciona a ação de confirmação.
+   - A aplicação envia os dados via POST para `/api/v1/implantacao/agenda`.
+   - O banco grava os dados na tabela `IMPL_Agenda` (`INSERT INTO ...`) e associa as chaves estrangeiras (`ProjetoId`, `OperadorId`) necessárias para vincular os relacionamentos.
+
+3. **Atualização e Alterações (UPDATE)**
+   - Alterações de campos, movimentação de itens ou mudanças de status disparam uma requisição PUT/PATCH ao servidor.
+   - É executado um comando `UPDATE` na tabela `IMPL_Agenda`, atualizando os campos modificados e atualizando os campos de controle (`DataAlteracao`, `UsuarioAlteracao`).
+
+4. **Remoção ou Inativação (DELETE / Soft Delete)**
+   - Ao remover um item, a aplicação executa um `DELETE` na tabela `IMPL_Agenda` (remoção física), preservando o histórico via tabela de auditoria `IMPL_AuditoriaImplantacao`.
+
 ---
 
 ## 10. Fraseologia
@@ -840,6 +858,35 @@ View Kanban (v1.1.0) com drag-and-drop (`@angular/cdk`), colunas configuráveis 
 ### Observações Técnicas
 - Lazy loading em `implantacao.routes.ts:10`
 - Colunas com `padrao = true` não podem ser excluídas
+
+### Fluxo de Persistência e Comunicação com o Banco de Dados
+
+1. **Consulta e Renderização Inicial (SELECT)**
+   - Ao acessar a tela, o frontend faz uma chamada GET à API `/api/v1/implantacao/tarefas`.
+   - O backend executa consultas SQL (`SELECT`) com JOINs nas tabelas `IMPL_Tarefa`, `IMPL_Projeto`, `IMPL_ColunaKanban`, `IMPL_Etapa` para buscar as tarefas organizadas por coluna e renderizar o estado inicial do Kanban.
+
+2. **Criação e Registro de Novos Dados (INSERT)**
+   - O operador cria uma nova tarefa preenchendo os campos e aciona a confirmação.
+   - A aplicação envia os dados via POST para `/api/v1/implantacao/tarefas`.
+   - O banco grava os dados na tabela `IMPL_Tarefa` (`INSERT INTO ...`) com chaves estrangeiras para `ProjetoId`, `EtapaId`, `ColunaKanbanId`, `ResponsavelId`.
+
+3. **Atualização e Alterações (UPDATE) — Drag & Drop**
+   - A alteração do status, coluna ou fase das tarefas é realizada **exclusivamente arrastando e soltando os cards** na interface.
+   - Ao soltar um card em uma nova coluna, o frontend dispara uma requisição PATCH para `/api/v1/implantacao/tarefas/{id}/coluna`.
+   - O banco executa um `UPDATE` na tabela `IMPL_Tarefa`, atualizando as colunas `ColunaKanbanId`, `Ordem`, `Status` e `DataAlteracao`.
+
+4. **Remoção ou Inativação (DELETE / Soft Delete)**
+   - Ao remover uma tarefa, a aplicação executa um `DELETE` na tabela `IMPL_Tarefa` (remoção física), preservando o histórico via tabela de auditoria `IMPL_AuditoriaImplantacao`.
+
+### Integração com a Agenda
+
+- **Necessidade**: Reuniões, treinamentos e entregas (marcos) do projeto não ocorrem em uma tela isolada no Kanban; elas precisam estar centralizadas na Agenda da equipe.
+- **Relação entre Entidades**:
+  - Toda tarefa do Kanban classificada como *"Reunião"*, *"Treinamento"* ou *"Marco de Entrega"* (baseado no nome da coluna Kanban) gera/atualiza um registro correspondente na tabela da **Agenda** (`IMPL_Agenda`).
+  - O registro do evento contém a chave estrangeira `ProjetoId` e referência à tarefa.
+- **Funcionamento do Fluxo**:
+  1. Ao criar ou mover uma tarefa/reunião dentro do Kanban de um Projeto para uma coluna do tipo "Reunião", "Treinamento" ou "Marco", o serviço grava/atualiza a tarefa (`IMPL_Tarefa`) e insere (`INSERT`) ou atualiza (`UPDATE`) o evento na Agenda (`IMPL_Agenda`).
+  2. Ao acessar a tela de **Agenda**, o sistema realiza a leitura dos eventos que possuem vínculo com o projeto, apresentando o compromisso de forma unificada.
 
 ---
 
@@ -1442,7 +1489,7 @@ Gestão de acessos de empresas via Google Sheets (listagem, validação de senha
 **Controller:** `Controllers/Database/DatabaseController.cs`
 
 ### O que faz
-API do Database Explorer — metadados, relacionamentos, execução de queries, configuração de conexão, procedimentos armazenados.
+API do Database Explorer — metadados, relacionamentos, execução de queries, configuração de conexão, procedimentos armazenados, triggers, dependências, análise de procedures, diff de schema e snapshots.
 
 ### Endpoints
 | Método | Rota | Descrição | Service |
@@ -1453,17 +1500,27 @@ API do Database Explorer — metadados, relacionamentos, execução de queries, 
 | GET | `/api/v1/database/tables/{schema}/{name}` | Detalhe tabela | `DatabaseMetadataService` |
 | GET | `/api/v1/database/tables/{schema}/{name}/columns` | Colunas | `DatabaseMetadataService` |
 | GET | `/api/v1/database/tables/{schema}/{name}/indexes` | Índices | `DatabaseMetadataService` |
+| GET | `/api/v1/database/tables/{schema}/{name}/dependencies` | Dependências da tabela | `DatabaseMetadataService` |
 | GET | `/api/v1/database/relationships` | Relacionamentos | `DatabaseRelationshipInferenceService` |
 | GET | `/api/v1/database/graph` | Grafo BFS | `DatabaseRelationshipInferenceService` |
 | GET | `/api/v1/database/column-usage` | Uso de coluna | `DatabaseRelationshipInferenceService` |
 | GET | `/api/v1/database/search` | Busca global | `DatabaseSearchService` |
+| GET | `/api/v1/database/search/global` | Busca global unificada | `DatabaseMetadataService` |
 | GET | `/api/v1/database/procedures` | Lista procedures | `DatabaseMetadataService` |
 | GET | `/api/v1/database/procedures/{schema}/{name}` | Detalhe procedure | `DatabaseMetadataService` |
 | GET | `/api/v1/database/procedures/search` | Busca procedures | `DatabaseSearchService` |
+| GET | `/api/v1/database/procedures/{schema}/{name}/analysis` | Análise procedure | `DatabaseMetadataService` |
+| GET | `/api/v1/database/triggers` | Lista triggers | `DatabaseMetadataService` |
+| GET | `/api/v1/database/triggers/{schema}/{name}` | Detalhe trigger | `DatabaseMetadataService` |
 | POST | `/api/v1/database/query` | Executa query SELECT | `DatabaseQueryService` |
 | POST | `/api/v1/database/test-connection` | Testa conexão | `DatabaseConnectionService` |
 | GET | `/api/v1/database/config` | Configuração | `DatabaseConnectionService` |
-| PUT | `/api/v1/database/config` | Salva configuração | `DatabaseConnectionService` |
+| PUT | `/api/v1/database/config` | Salva configuração (requer role Admin) | `DatabaseConnectionService` |
+| POST | `/api/v1/database/query-builder` | Query Builder básico | `DatabaseQueryBuilderService` |
+| POST | `/api/v1/database/query-builder-advanced` | Query Builder avançado (WHERE, ORDER BY, GROUP BY, CTEs) | `DatabaseQueryBuilderService` |
+| POST | `/api/v1/database/diff` | Diff schema vs Markdown | `DatabaseSchemaDiffService` |
+| POST | `/api/v1/database/snapshot` | Salvar snapshot | `DatabaseSnapshotService` |
+| GET | `/api/v1/database/snapshots` | Listar snapshots | `DatabaseSnapshotService` |
 
 ### Banco de Dados
 - `dbActyon_JCA` (SQL Server 192.168.2.154)
@@ -1472,15 +1529,18 @@ API do Database Explorer — metadados, relacionamentos, execução de queries, 
 - Procedures para execução
 
 ### Segurança
-- SELECT-only (regex bloqueia DML/DDL)
+- SELECT-only (regex bloqueia DML/DDL + OPENROWSET/OPENDATASOURCE/xp_cmdshell/sp_/xp_/WAITFOR DELAY/SHUTDOWN/RECONFIGURE)
 - Senha via env var `DB_EXPLORER_SENHA`
 - Transação ReadUncommitted + ROLLBACK explícito
 - Timeout 1-120s, Limite 1-5000
 - User-secrets em Development
+- `PUT /config` protegido com role Admin
+- `TrustServerCertificate=false` como default em produção
 
 ### Observações Técnicas
 - `AppDbContextDesignTimeFactory` para EF Core migrations com SQL Server
 - Configuração via `DatabaseConnectionConfig`
+- Novos services: `DatabaseSchemaDiffService`, `DatabaseSnapshotService`, `DatabaseQueryBuilderService` (avançado)
 
 ---
 
@@ -1522,7 +1582,51 @@ Endpoints read-only para consulta de dados legados do `dbBUSINESS_HML`. Popula d
 |--------|-----------|-------|
 | `RefreshTokens` | Refresh tokens hasheados (SHA-256), rotativos | `RefreshToken.cs` |
 | `AuditoriaAcessos` | Auditoria de login/logout/visualização | `AuditoriaAcesso.cs` |
-| `TBOPERADOR` | Usuários legados (texto puro, sem hash) | — |
+| `TBOPERADOR` | Operadores do sistema (login, perfil, função) | `Operador.cs` |
+
+### 18.1.1 Cadastro de Operadores — Atribuição Automática por Perfil e Função
+
+**Regra de Negócio**: No cadastro de operadores, **não há campo de seleção manual de equipe**. A equipe e o papel do operador são atribuídos automaticamente a partir do vínculo da **Função** e do **Perfil**.
+
+#### Mapeamento das Tabelas e Regras
+
+##### Tabela: `TBOPERADOR`
+- A coluna `PERFIL_ID` estabelece o nível de acesso do operador.
+- A coluna `FUNCAO_ID` (FK para `tbfuncao`) define a função e papel automático.
+
+##### Tabela: `tbfuncao`
+| FUNCAO_ID | DESCRICAO | Classificação / Regra de Negócio |
+| :--- | :--- | :--- |
+| **1** | Analista de Sistemas | **Implantador** (Definido automaticamente como responsável por projetos de implantação) |
+| **2** | Suporte | Atendimento operacional e resolução de chamados |
+| **3** | Programador | Desenvolvimento e engenharia de software |
+
+#### Regra de Processamento
+- Ao selecionar a função do operador no cadastro:
+  - Caso `FUNCAO_ID = 1` (Analista de Sistemas), a aplicação seta internamente o papel do usuário como **Implantador**, vinculando-o diretamente aos fluxos e projetos do módulo de Implantação.
+  - O banco de dados grava o registro na `TBOPERADOR` com a relação de `PERFIL_ID` e `FUNCAO_ID` sem necessidade de escolha manual de equipe.
+  - O claim `eh_implantador` é adicionado ao JWT quando `FUNCAO_ID = 1`.
+
+### Fluxo de Persistência e Comunicação com o Banco de Dados (Cadastro de Operador)
+
+1. **Consulta e Renderização Inicial (SELECT)**
+   - Ao acessar o cadastro, o backend consulta `tbfuncao` para popular o dropdown de funções disponíveis.
+
+2. **Criação e Registro de Novos Dados (INSERT)**
+   - O administrador preenche os dados do operador e seleciona a Função.
+   - A aplicação envia os dados via POST.
+   - O banco grava os dados na tabela `TBOPERADOR` (`INSERT INTO ...`) com `PERFIL_ID` e `FUNCAO_ID`.
+   - Se `FUNCAO_ID = 1`, o claim `eh_implantador=true` é incluído no JWT gerado no login.
+
+3. **Atualização e Alterações (UPDATE)**
+   - Alterações de função ou perfil disparam uma requisição PUT.
+   - É executado um comando `UPDATE` na tabela `TBOPERADOR`, atualizando `FUNCAO_ID`, `PERFIL_ID` e `DataAlteracao`.
+   - O claim `eh_implantador` no JWT é recalculado no próximo login/refresh.
+
+4. **Remoção ou Inativação (DELETE / Soft Delete)**
+   - Ao inativar um operador, a aplicação executa um `UPDATE` alterando `SE_ATIVO = 'N'` para preservar o histórico.
+
+---
 
 ### 18.2 Tabelas do Módulo IMPLANTAÇÃO (v1.1.0)
 
@@ -1537,7 +1641,7 @@ Endpoints read-only para consulta de dados legados do `dbBUSINESS_HML`. Popula d
 | `IMPL_Projeto` | `PRJ_` | Projeto principal (codigo, equipe, tipo, cliente opcional) | `Projeto.cs` |
 | `IMPL_Tarefa` | `TRF_` | Tarefas (titulo, projeto, etapa, coluna Kanban, responsavel, status) | `Tarefa.cs` |
 | `IMPL_ComentarioTarefa` | `CMT_` | Comentários / histórico da tarefa | `ComentarioTarefa.cs` |
-| `IMPL_Agenda` | `AGE_` | Eventos compartilhados (v1.3.0) | `AgendaItem.cs` |
+| `IMPL_Agenda` | `AGD_` | Eventos compartilhados (v1.3.0) | `AgendaItem.cs` |
 | `IMPL_MembroPerfil` | `MBP_` | Diretório de equipe (v1.3.0) | — |
 
 ### 18.3 Migrations EF Core
@@ -1548,6 +1652,8 @@ Endpoints read-only para consulta de dados legados do `dbBUSINESS_HML`. Popula d
 | `20260905195554_AddLegadoLinks` | 2026-09-05 | FKs lógicas para `tbcliente` e `tbchamado` (v1.2.0) |
 | `20260905203422_AddAgendaAndPerfis` | 2026-09-05 | `IMPL_Agenda`, `IMPL_MembroPerfil` (v1.3.0) |
 | `20260906033406_AddAuditoriaImplantacao` | 2026-09-06 | Auditoria do módulo IMPLANTAÇÃO |
+| `20260910131252_AddFuncaoIdToOperador` | 2026-09-10 | Adiciona `FUNCAO_ID` em `TBOPERADOR` |
+| `20260910133335_AddFuncaoTableAndRelation` | 2026-09-10 | Cria tabela `tbfuncao` + FK em `TBOPERADOR` |
 
 ### 18.4 Serviços Principais do Backend
 

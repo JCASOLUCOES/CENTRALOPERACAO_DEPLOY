@@ -19,11 +19,23 @@
       <small *ngIf="status().servidor || status().banco"> · {{ status().servidor || '?' }} / {{ status().banco || '?' }}</small>
       <small *ngIf="!status().conectado && status().mensagem"> — {{ status().mensagem }}</small>
     </span>
+
+    <!-- Ambiente Badge -->
+    <span *ngIf="status().conectado" class="db-shell__ambiente badge" [class]="ambienteBadgeClass()">
+      <i class="bi" [ngClass]="ambienteIcon()"></i> {{ ambiente() }}
+    </span>
+
     <span class="db-shell__contadores" *ngIf="status().conectado">
       <span><i class="bi bi-table"></i> {{ contadores().tabelas }} tabelas</span>
       <span><i class="bi bi-lightning-charge-fill"></i> {{ contadores().procedures }} procs</span>
       <span><i class="bi bi-eye"></i> {{ contadores().views }} views</span>
+      <span *ngIf="conexaoInfo().usuario" class="ms-2"><i class="bi bi-person"></i> {{ conexaoInfo().usuario }}</span>
     </span>
+  </div>
+
+  <!-- Busca Global -->
+  <div class="db-shell__search">
+    <app-db-global-search></app-db-global-search>
   </div>
 
   <nav class="db-shell__tabs">

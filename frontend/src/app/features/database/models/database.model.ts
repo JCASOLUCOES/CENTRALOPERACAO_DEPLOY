@@ -104,6 +104,7 @@ export interface DatabaseStatus {
   mensagem?: string;
   ultimaConsulta: string;
   duracaoMs: number;
+  usuario?: string;
 }
 
 export interface DatabaseConnectionConfig {
@@ -145,4 +146,99 @@ export interface ProcedureDetalhe {
   dataAlteracao?: string;
   corpo?: string;
   parametros: ProcedureParametro[];
+}
+
+export interface Trigger {
+  schema: string;
+  nome: string;
+  tabela: string;
+  evento: string;
+  momento: string;
+  corpo: string;
+  acoes?: string[];
+  tabelasAfetadas?: string[];
+}
+
+export interface Dependencia {
+  tipo: string;
+  schema: string;
+  nome: string;
+  descricao: string;
+}
+
+export interface ProcedureAnalysis {
+  parametros: ProcedureParametro[];
+  tabelasUtilizadas: string[];
+  proceduresChamadas: string[];
+  explicacao: string;
+  fluxoIdentificado: string[];
+}
+
+export interface GlobalSearchResult {
+  tipo: string;
+  schema: string;
+  objeto: string;
+  coluna?: string;
+  detalhe?: string;
+}
+
+// WHERE Condition
+export interface WhereCondition {
+  coluna: string;
+  operador: string;
+  valor?: string;
+  valor2?: string;
+  logica: 'AND' | 'OR';
+}
+
+// ORDER BY Condition
+export interface OrderByCondition {
+  coluna: string;
+  ascendente: boolean;
+}
+
+// GROUP BY Condition
+export interface GroupByCondition {
+  coluna: string;
+  agregacao?: string; // COUNT, SUM, AVG, MIN, MAX
+}
+
+// CTE
+export interface CteDefinition {
+  nome: string;
+  sql: string;
+}
+
+// Query Builder Advanced Request
+export interface QueryBuilderAdvancedRequest {
+  tabelas: string[];
+  colunas: string[];
+  relacionamentos: any[];
+  whereConditions?: WhereCondition[];
+  orderBy?: OrderByCondition[];
+  groupBy?: GroupByCondition[];
+  limite?: number;
+  ctes?: CteDefinition[];
+}
+
+// Diff Result
+export interface DiffResult {
+  tabelasIguais: number;
+  tabelasNovas: number;
+  tabelasRemovidas: number;
+  colunasNovas: number;
+  colunasRemovidas: number;
+  colunasAlteradas: number;
+  fksNovas: number;
+  fksRemovidas: number;
+  itens: DiffItem[];
+}
+
+export interface DiffItem {
+  tipo: 'Tabela' | 'Coluna' | 'TipoAlterado' | 'Fk';
+  objeto: string;
+  coluna?: string;
+  status: 'Nova' | 'Removida' | 'Alterada' | 'Atualizado';
+  detalhe?: string;
+  badge: '🟢' | '🟡' | '🔴';
 }

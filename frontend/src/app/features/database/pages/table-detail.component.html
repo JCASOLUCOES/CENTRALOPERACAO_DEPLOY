@@ -1,0 +1,355 @@
+<section class="table-detail">
+
+  <!-- Erro -->
+  <div *ngIf="erro()" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill"></i> {{ erro() }}
+    <button class="btn btn-sm btn-outline-danger ms-3" (click)="router.navigate(['/database'])">
+      Voltar
+    </button>
+  </div>
+
+  <!-- Breadcrumb -->
+  <nav class="table-detail__breadcrumb" *ngIf="!erro()" aria-label="Navegação">
+    <ol class="breadcrumb mb-0">
+      <li *ngFor="let b of breadcrumbs(); let last = last" class="breadcrumb-item"
+        [class.active]="last">
+        <a *ngIf="!last && b.rota" [routerLink]="b.rota">{{ b.label }}</a>
+        <a *ngIf="!last && b.schema && b.tabela"
+          [routerLink]="['/database/tabela', b.schema, b.tabela]">{{ b.label }}</a>
+        <span *ngIf="last">{{ b.label }}</span>
+      </li>
+    </ol>
+  </nav>
+
+  <div *ngIf="!erro()" class="table-detail__header">
+    <div class="table-detail__titulo">
+      <i class="bi bi-table"></i>
+      <div>
+        <h2>{{ tabela() }}</h2>
+        <small class="text-muted">{{ schema() }}</small>
+      </div>
+    </div>
+    <div class="table-detail__meta" *ngIf="tableInfo() as ti">
+      <span class="badge bg-secondary">{{ ti.quantidadeRegistros | number }} registros</span>
+      <span class="badge bg-info">{{ ti.quantidadeColunas }} colunas</span>
+      <span class="badge bg-warning text-dark">{{ ti.quantidadeIndices }} índices</span>
+      <span class="badge bg-primary">{{ ti.quantidadeRelacionamentos }} FKs</span>
+    </div>
+    <div class="table-detail__acoes">
+      <button class="btn btn-outline-primary btn-sm" (click)="abrirConsultas()">
+        <i class="bi bi-terminal"></i> Consultar dados
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" (click)="abrirQueryBuilder()">
+        <i class="bi bi-diagram-3"></i> Query Builder
+      </button>
+    </div>
+  </div>
+
+  <!-- Sub-abas -->
+  <nav class="table-detail__tabs" *ngIf="!erro()" role="tablist">
+    <button *ngFor="let aba of subAbas()"
+      class="table-detail__tab"
+      [class.active]="subAbaAtiva() === aba.id"
+      (click)="setSubAba(aba.id)"
+      role="tab"
+      [attr.aria-selected]="subAbaAtiva() === aba.id">
+      <i class="bi" [ngClass]="aba.icone"></i>
+      {{ aba.rotulo }}
+      <span *ngIf="aba.contador" class="table-detail__tab-count">{{ aba.contador() }}</span>
+    </button>
+  </nav>
+
+  <div *ngIf="!erro()" class="table-detail__content">
+
+    <!-- Carregando -->
+    <div *ngIf="carregando()" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-muted">Carregando...</p>
+    </div>
+
+    <!-- ABA: ESTRUTURA -->
+    <div *ngIf="subAbaAtiva() === 'estrutura' && !carregando()" class="table-detail__panel">
+      <div class="table-detail__section">
+        <h5><i class="bi bi-list-columns"></i> Colunas</h5>
+        <div class="table-responsive" *ngIf="colunas().length > 0; else semColunas">
+          <table class="table table-sm table-hover align-middle">
+            <thead>
+              <tr>
+                <th>#</th><th>Coluna</th><th>Tipo</th><th>Nulo</th>
+                <th>PK</th><th>FK</th><th>Identity</th><th>Default</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of colunas(); trackBy: trackByColuna">
+                <td>{{ c.ordem }}</td>
+                <td><strong>{{ c.coluna }}</strong></td>
+                <td><code>{{ c.tipo }}{{ c.tamanho ? '(' + c.tamanho + ')' : '' }}</code></td>
+                <td><span class="badge" [class.bg-success]="c.nulo" [class.bg-danger]="!c.nulo">{{ c.nulo ? 'Sim' : 'Não' }}</span></td>
+                <td><i *ngIf="c.isPrimaryKey" class="bi bi-key-fill text-primary" title="PK"></i></td>
+                <td><i *ngIf="c.isForeignKey" class="bi bi-link-45deg text-info" title="FK"></i></td>
+                <td><i *ngIf="c.isIdentity" class="bi bi-arrow-repeat text-warning" title="Identity"></i></td>
+                <td><code *ngIf="c.valorDefault">{{ c.valorDefault }}</code><span *ngIf="!c.valorDefault" class="text-muted">—</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #semColunas>
+          <div class="text-muted text-center py-3">Nenhuma coluna encontrada</div>
+        </ng-template>
+      </div>
+
+      <div class="table-detail__section" *ngIf="indices().length > 0">
+        <h5><i class="bi bi-bookmark-star"></i> Índices</h5>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle">
+            <thead><tr><th>Nome</th><th>Tipo</th><th>Único</th><th>Colunas</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let i of indices(); trackBy: trackByIndice">
+                <td>{{ i.nome }}</td>
+                <td>{{ i.tipo }}</td>
+                <td><span class="badge" [class.bg-success]="i.unique" [class.bg-secondary]="!i.unique">{{ i.unique ? 'Sim' : 'Não' }}</span></td>
+                <td><code>{{ i.colunas.join(', ') }}</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA: RELACIONAMENTOS -->
+    <div *ngIf="subAbaAtiva() === 'relacionamentos' && !carregando()" class="table-detail__panel">
+      <div class="table-detail__section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5><i class="bi bi-share"></i> Relacionamentos</h5>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="incluirInferidas" [(ngModel)]="incluirInferidas" (change)="recarregarRelacionamentos()">
+            <label class="form-check-label small" for="incluirInferidas">Incluir inferidas</label>
+          </div>
+        </div>
+
+        <div *ngIf="fks().length > 0; else semRelacionamentos" class="table-responsive">
+          <table class="table table-sm table-hover align-middle">
+<thead>
+               <tr>
+                 <th>Tipo</th>
+                 <th>Origem</th>
+                 <th></th>
+                 <th>Destino</th>
+                 <th *ngIf="incluirInferidas">Score</th>
+                 <th *ngIf="incluirInferidas">Motivos</th>
+               </tr>
+             </thead>
+             <tbody>
+               <tr *ngFor="let fk of fks(); trackBy: trackByFk">
+                 <td>
+                   <span class="badge" [class]="fkBadgeClass(fk)" [title]="fkTooltip(fk)">
+                     <i class="bi" [ngClass]="fkIcon(fk)"></i>
+                     {{ fk.tipo }}
+                   </span>
+                 </td>
+                 <td><code>{{ fk.tabelaOrigem }}.{{ fk.colunaOrigem }}</code></td>
+                 <td class="text-center"><i class="bi bi-arrow-right"></i></td>
+                 <td>
+                   <a (click)="$event.preventDefault(); navegarParaTabela(extrairSchema(fk.tabelaDestino), extrairTabela(fk.tabelaDestino))"
+                     style="cursor: pointer;">
+                     <code>{{ fk.tabelaDestino }}.{{ fk.colunaDestino }}</code>
+                   </a>
+                 </td>
+                 <td *ngIf="incluirInferidas">
+                   <div class="progress" style="width: 80px; height: 6px;">
+                     <div class="progress-bar" [style.width.%]="fkScore(fk)"
+                       [class.bg-success]="fkScore(fk) >= 80"
+                       [class.bg-warning]="fkScore(fk) >= 50 && fkScore(fk) < 80"
+                       [class.bg-secondary]="fkScore(fk) < 50"></div>
+                   </div>
+                   <small>{{ fkScore(fk) }}%</small>
+                 </td>
+                 <td *ngIf="incluirInferidas"><small>{{ fk.motivos.join(', ') }}</small></td>
+               </tr>
+             </tbody>
+          </table>
+        </div>
+        <ng-template #semRelacionamentos>
+          <div class="text-muted text-center py-3">Nenhum relacionamento encontrado</div>
+        </ng-template>
+      </div>
+
+      <div class="table-detail__section mt-3" *ngIf="fks().length > 0">
+        <h5><i class="bi bi-diagram-3"></i> Diagrama</h5>
+        <button class="btn btn-sm btn-outline-primary" (click)="abrirDiagrama()">
+          <i class="bi bi-graph-up"></i> Ver diagrama de relacionamentos
+        </button>
+      </div>
+    </div>
+
+    <!-- ABA: TRIGGERS -->
+    <div *ngIf="subAbaAtiva() === 'triggers' && !carregando()" class="table-detail__panel">
+      <div class="table-detail__section">
+        <h5><i class="bi bi-lightning-charge-fill"></i> Triggers</h5>
+        <div *ngIf="triggers().length > 0; else semTriggers">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+              <thead><tr><th>Nome</th><th>Evento</th><th>Momento</th><th>Ações</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let t of triggers(); trackBy: trackByTrigger" (click)="abrirTrigger(t)" style="cursor: pointer;">
+                  <td><strong>{{ t.nome }}</strong></td>
+                  <td><span class="badge bg-info">{{ t.evento }}</span></td>
+                  <td><span class="badge bg-secondary">{{ t.momento }}</span></td>
+                  <td>
+                    <span *ngIf="t.acoes && t.acoes.length > 0" class="badge bg-light text-dark">{{ t.acoes.length }} ação(ões)</span>
+                    <span *ngIf="!t.acoes || t.acoes.length === 0" class="text-muted">Clique para ver</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <ng-template #semTriggers>
+          <div class="text-muted text-center py-3">Nenhuma trigger associada a esta tabela</div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- ABA: PROCEDURES -->
+    <div *ngIf="subAbaAtiva() === 'procedures' && !carregando()" class="table-detail__panel">
+      <div class="table-detail__section">
+        <h5><i class="bi bi-gear-fill"></i> Procedures relacionadas</h5>
+        <div *ngIf="procedures().length > 0; else semProcedures">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+              <thead><tr><th>Nome</th><th>Tipo</th><th>Parâmetros</th><th>Criada em</th><th></th></tr></thead>
+              <tbody>
+                <tr *ngFor="let p of procedures(); trackBy: trackByProc">
+                  <td><code>{{ p.nome }}</code></td>
+                  <td><span class="badge bg-secondary">{{ p.tipo }}</span></td>
+                  <td><span class="badge bg-info">{{ p.quantidadeParametros }}</span></td>
+                  <td *ngIf="p.dataCriacao">{{ p.dataCriacao | date:'dd/MM/yyyy' }}</td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-primary" (click)="abrirProcedure(p)">
+                      <i class="bi bi-eye"></i> Ver
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <ng-template #semProcedures>
+          <div class="text-muted text-center py-3">Nenhuma procedure encontrada referenciando esta tabela</div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- ABA: DEPENDÊNCIAS -->
+    <div *ngIf="subAbaAtiva() === 'dependencias' && !carregando()" class="table-detail__panel">
+      <div class="table-detail__section">
+        <h5><i class="bi bi-diagram-3-fill"></i> Dependências e Impacto</h5>
+        <div *ngIf="dependencias().length > 0; else semDependencias">
+          <div class="row g-3">
+            <div *ngFor="let d of dependencias(); trackBy: trackByDep" class="col-md-6">
+              <div class="card h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi" [ngClass]="iconeDependencia(d.tipo)" [style.color]="corDependencia(d.tipo)"></i>
+                    <span class="badge" [ngClass]="classeDependencia(d.tipo)">{{ d.tipo }}</span>
+                  </div>
+                  <h6 class="card-title mb-1">{{ d.nome }}</h6>
+                  <p class="card-text small text-muted mb-0">{{ d.descricao }}</p>
+                  <div class="mt-2" *ngIf="d.tipo === 'Procedure' || d.tipo === 'View' || d.tipo === 'Function' || d.tipo === 'Trigger'">
+                    <button class="btn btn-sm btn-outline-primary" (click)="navegarDependencia(d)">
+                      <i class="bi bi-box-arrow-up-right"></i> Abrir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ng-template #semDependencias>
+          <div class="text-muted text-center py-3">Nenhuma dependência encontrada</div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- ABA: CONSULTAR -->
+    <div *ngIf="subAbaAtiva() === 'consultar' && !carregando()" class="table-detail__panel">
+      <div class="table-detail__section">
+        <h5><i class="bi bi-terminal"></i> Consulta Rápida</h5>
+        <p class="text-muted small">Selecione as colunas e gere um SELECT para a aba Consultas.</p>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label small">Colunas</label>
+            <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+              <div class="form-check" *ngFor="let c of colunas()">
+                <input class="form-check-input" type="checkbox" [id]="'col-' + c.coluna"
+                  [checked]="colunasSelecionadas().includes(c.coluna)"
+                  (change)="toggleColuna(c.coluna)">
+                <label class="form-check-label small" [for]="'col-' + c.coluna">
+                  <code>{{ c.coluna }}</code> <span class="text-muted">({{ c.tipo }})</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small">Filtros (WHERE)</label>
+            <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+              <div class="form-check" *ngFor="let c of colunas()">
+                <input class="form-check-input" type="checkbox" [id]="'filtro-' + c.coluna"
+                  [checked]="filtrosSelecionados().includes(c.coluna)"
+                  (change)="toggleFiltro(c.coluna)">
+                <label class="form-check-label small" [for]="'filtro-' + c.coluna">
+                  <code>{{ c.coluna }}</code>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small">Limite</label>
+          <select class="form-select form-select-sm w-auto" [(ngModel)]="limiteConsulta">
+            <option [ngValue]="50">50</option>
+            <option [ngValue]="100">100</option>
+            <option [ngValue]="500">500</option>
+            <option [ngValue]="1000">1000</option>
+          </select>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary" (click)="gerarEConsultar()">
+            <i class="bi bi-play-fill"></i> Executar
+          </button>
+          <button class="btn btn-outline-secondary" (click)="copiarSQL()">
+            <i class="bi bi-clipboard"></i> Copiar SQL
+          </button>
+        </div>
+
+        <pre *ngIf="sqlGerado()" class="mt-3 p-3 bg-dark text-light rounded small" style="max-height: 200px; overflow: auto;">
+{{ sqlGerado() }}
+        </pre>
+      </div>
+    </div>
+
+  <!-- Histórico de Navegação -->
+    <div *ngIf="historicoNavegacao().length > 0 && !carregando()" class="table-detail__historico">
+      <div class="table-detail__section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5><i class="bi bi-clock-history"></i> Histórico de Navegação</h5>
+          <button class="btn btn-sm btn-outline-secondary" (click)="limparHistorico()">
+            <i class="bi bi-trash"></i> Limpar
+          </button>
+        </div>
+        <div class="table-detail__historico-lista">
+          <button *ngFor="let h of historicoNavegacao()" class="table-detail__historico-item" (click)="navegarHistorico(h)">
+            <i class="bi bi-table"></i>
+            <strong>{{ h.nomeCompleto }}</strong>
+            <small class="text-muted ms-2">{{ h.timestamp | date:'dd/MM HH:mm' }}</small>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</section>

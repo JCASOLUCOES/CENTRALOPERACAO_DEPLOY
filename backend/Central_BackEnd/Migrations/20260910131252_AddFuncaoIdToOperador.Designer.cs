@@ -4,6 +4,7 @@ using Central_BackEnd.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Central_BackEnd.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260910131252_AddFuncaoIdToOperador")]
+    partial class AddFuncaoIdToOperador
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -76,37 +79,6 @@ namespace Central_BackEnd.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AuditoriaAcessos");
-                });
-
-            modelBuilder.Entity("Central_BackEnd.Models.Funcao", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("FUNCAO_ID");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Ativo")
-                        .HasColumnType("bit")
-                        .HasColumnName("ATIVO");
-
-                    b.Property<string>("Classificacao")
-                        .HasMaxLength(50)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("CLASSIFICACAO");
-
-                    b.Property<string>("Descricao")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("DESCRICAO");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("tbfuncao");
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.AgendaItem", b =>
@@ -929,8 +901,6 @@ namespace Central_BackEnd.Migrations
 
                     b.HasKey("OperadorId");
 
-                    b.HasIndex("FuncaoId");
-
                     b.ToTable("TBOPERADOR");
                 });
 
@@ -1088,16 +1058,6 @@ namespace Central_BackEnd.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Equipe");
-                });
-
-            modelBuilder.Entity("Central_BackEnd.Models.Operador", b =>
-                {
-                    b.HasOne("Central_BackEnd.Models.Funcao", "Funcao")
-                        .WithMany()
-                        .HasForeignKey("FuncaoId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Funcao");
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.RefreshToken", b =>
