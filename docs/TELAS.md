@@ -1592,9 +1592,10 @@ Endpoints read-only para consulta de dados legados do `dbBUSINESS_HML`. Popula d
 
 ##### Tabela: `TBOPERADOR`
 - A coluna `PERFIL_ID` estabelece o nível de acesso do operador.
-- A coluna `FUNCAO_ID` (FK para `tbfuncao`) define a função e papel automático.
+- A coluna `FUNCAO_ID` (FK para `CC_Funcao`) define a função e papel automático.
 
-##### Tabela: `tbfuncao`
+##### Tabela: `CC_Funcao`
+> ⚠️ Não confundir com a tabela legada `tbfuncao` (schema incompatível: `FUNCAO_ID smallint`, sem `CLASSIFICACAO`/`ATIVO`) — o sistema usa exclusivamente `CC_Funcao`.
 | FUNCAO_ID | DESCRICAO | Classificação / Regra de Negócio |
 | :--- | :--- | :--- |
 | **1** | Analista de Sistemas | **Implantador** (Definido automaticamente como responsável por projetos de implantação) |
@@ -1610,7 +1611,7 @@ Endpoints read-only para consulta de dados legados do `dbBUSINESS_HML`. Popula d
 ### Fluxo de Persistência e Comunicação com o Banco de Dados (Cadastro de Operador)
 
 1. **Consulta e Renderização Inicial (SELECT)**
-   - Ao acessar o cadastro, o backend consulta `tbfuncao` para popular o dropdown de funções disponíveis.
+   - Ao acessar o cadastro, o backend consulta `CC_Funcao` para popular o dropdown de funções disponíveis.
 
 2. **Criação e Registro de Novos Dados (INSERT)**
    - O administrador preenche os dados do operador e seleciona a Função.
@@ -1652,8 +1653,7 @@ Endpoints read-only para consulta de dados legados do `dbBUSINESS_HML`. Popula d
 | `20260905195554_AddLegadoLinks` | 2026-09-05 | FKs lógicas para `tbcliente` e `tbchamado` (v1.2.0) |
 | `20260905203422_AddAgendaAndPerfis` | 2026-09-05 | `IMPL_Agenda`, `IMPL_MembroPerfil` (v1.3.0) |
 | `20260906033406_AddAuditoriaImplantacao` | 2026-09-06 | Auditoria do módulo IMPLANTAÇÃO |
-| `20260910131252_AddFuncaoIdToOperador` | 2026-09-10 | Adiciona `FUNCAO_ID` em `TBOPERADOR` |
-| `20260910133335_AddFuncaoTableAndRelation` | 2026-09-10 | Cria tabela `tbfuncao` + FK em `TBOPERADOR` |
+| `20260910163216_AddFuncao` | 2026-09-10 | Adiciona `FUNCAO_ID` em `TBOPERADOR` + cria `CC_Funcao` + FK (substitui as migrations `AddFuncaoIdToOperador`/`AddFuncaoTableAndRelation`, nunca aplicadas — a `tbfuncao` legada foi preservada). Script: `Migrations/Sql/AddFuncao.sql` — **aplicado em produção em 2026-09-10** |
 
 ### 18.4 Serviços Principais do Backend
 

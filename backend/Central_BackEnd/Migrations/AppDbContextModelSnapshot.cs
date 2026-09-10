@@ -106,7 +106,7 @@ namespace Central_BackEnd.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("tbfuncao");
+                    b.ToTable("CC_Funcao");
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.AgendaItem", b =>

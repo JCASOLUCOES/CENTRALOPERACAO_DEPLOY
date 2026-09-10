@@ -1,0 +1,58 @@
+﻿BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260910163216_AddFuncao'
+)
+BEGIN
+    ALTER TABLE [TBOPERADOR] ADD [FUNCAO_ID] int NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260910163216_AddFuncao'
+)
+BEGIN
+    CREATE TABLE [CC_Funcao] (
+        [FUNCAO_ID] int NOT NULL IDENTITY,
+        [DESCRICAO] varchar(100) NOT NULL,
+        [CLASSIFICACAO] varchar(50) NULL,
+        [ATIVO] bit NOT NULL,
+        CONSTRAINT [PK_CC_Funcao] PRIMARY KEY ([FUNCAO_ID])
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260910163216_AddFuncao'
+)
+BEGIN
+    CREATE INDEX [IX_TBOPERADOR_FUNCAO_ID] ON [TBOPERADOR] ([FUNCAO_ID]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260910163216_AddFuncao'
+)
+BEGIN
+    ALTER TABLE [TBOPERADOR] ADD CONSTRAINT [FK_TBOPERADOR_CC_Funcao_FUNCAO_ID] FOREIGN KEY ([FUNCAO_ID]) REFERENCES [CC_Funcao] ([FUNCAO_ID]) ON DELETE SET NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260910163216_AddFuncao'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260910163216_AddFuncao', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+

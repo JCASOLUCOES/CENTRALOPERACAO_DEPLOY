@@ -237,7 +237,7 @@ if (app.Environment.IsDevelopment())
             db.SaveChanges();
         }
 
-        // Seed tbfuncao: Funcoes do sistema
+        // Seed CC_Funcao: Funcoes do sistema
         if (!db.Funcoes.Any())
         {
             db.Funcoes.AddRange(

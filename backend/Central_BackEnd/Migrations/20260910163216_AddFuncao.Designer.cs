@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Central_BackEnd.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260910133335_AddFuncaoTableAndRelation")]
-    partial class AddFuncaoTableAndRelation
+    [Migration("20260910163216_AddFuncao")]
+    partial class AddFuncao
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -109,7 +109,7 @@ namespace Central_BackEnd.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("tbfuncao");
+                    b.ToTable("CC_Funcao");
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.AgendaItem", b =>

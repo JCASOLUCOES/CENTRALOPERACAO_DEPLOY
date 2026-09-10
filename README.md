@@ -88,7 +88,7 @@ Porta padrão: `http://localhost:4200`
   - `FUNCAO_ID = 1` (Analista de Sistemas) → **Implantador** (claim `eh_implantador=true` no JWT)
   - `FUNCAO_ID = 2` (Suporte) → Atendimento operacional
   - `FUNCAO_ID = 3` (Programador) → Desenvolvimento
-- **Novas migrations**: `AddFuncaoIdToOperador` + `AddFuncaoTableAndRelation` (tabela `tbfuncao` + FK)
+- **Nova migration**: `AddFuncao` (tabela `CC_Funcao` + `FUNCAO_ID` em `TBOPERADOR` + FK; script em `Migrations/Sql/AddFuncao.sql` — aplicado em produção em 2026-09-10)
 
 ---
 
