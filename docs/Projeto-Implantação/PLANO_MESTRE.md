@@ -1,13 +1,15 @@
-# 📋 PLANO MESTRE — Módulo IMPLANTAÇÃO/PROJETOS + Agenda + Equipe (v1.3.0)
+# 📋 PLANO MESTRE — Módulo IMPLANTAÇÃO/PROJETOS + Equipe (v1.3.0)
 
 > **Documento único e auto-contido para retomar o trabalho do zero em qualquer sessão.**
 > Contém: contexto, decisões, schema, mapeamento campo-a-campo, fases com sub-passos numerados, e um **prompt de continuação** no final.
+>
+> ⚠️ **IMPORTANTE**: A **Agenda foi removida no rollback de 10/09/2026** (commit `8956c57`). Este documento descreve o plano original da v1.3.0 que incluía Agenda. Para o estado atual (sem Agenda), ver `docs/DOCUMENTACAO-COMPLETA.md` § 6.5.9 e `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação futura.
 
 ---
 
 ## 0. Resumo executivo (1 parágrafo)
 
-Continuar a **v1.3.0** do monorepo JCA Central de Operação na branch `projeto-implantacao`. A v1.1.0 (Dashboard redesenhado + Kanban drag-drop + seed) já foi deployada em homolog. A v1.2.0 (legados TB* via FK lógica) estava em andamento. A v1.3.0 **adiciona Agenda compartilhada + Diretório de Equipe** além de terminar a v1.2.0 (dropdowns de legado no form de Projeto). **Não há deploy automático** — o trabalho vai sendo commitado em `projeto-implantacao` e só vai para o IIS 192.168.2.130 quando você disser "pode fazer deploy".
+Continuar a **v1.3.0** do monorepo JCA Central de Operação na branch `projeto-implantacao`. A v1.1.0 (Dashboard redesenhado + Kanban drag-drop + seed) já foi deployada em homolog. A v1.2.0 (legados TB* via FK lógica) estava em andamento. A v1.3.0 **adiciona Diretório de Equipe** além de terminar a v1.2.0 (dropdowns de legado no form de Projeto). **Agenda compartilhada foi removida no rollback `8956c57`** — ver `docs/AGENDA-REIMPLEMENTACAO.md`. **Não há deploy automático** — o trabalho vai sendo commitado em `projeto-implantacao` e só vai para o IIS 192.168.2.130 quando você disser "pode fazer deploy".
 
 ---
 
@@ -39,7 +41,7 @@ Central-Conhecimento-developer/  <- repo CENTRALOPERACAO_DEPLOY (master + projet
 
 ### 1.3 Tag atual e estratégia de tag
 - Última tag deployada: `v1.1.0` (3 repos)
-- Próxima tag (ao final do Bloco H): `v1.3.0-rc1` (rc1 = "release candidate", pois só vai pro IIS quando você autorizar)
+- **Próxima tag (estado atual, sem Agenda):** `v1.3.0-rc1` será apenas Diretório de Equipe + dropdowns legado
 - Branch ativa: `projeto-implantacao` (em todos os 3 repos)
 - Sincronizar com `main` + `developer` + `master` (monorepo) após cada bloco
 
@@ -120,14 +122,12 @@ Adicionou:
 - Kanban: mover tarefa **infere status** pela coluna (CONCLUIDO → Status=Concluida, EM ANDAMENTO/HOMOLOGACAO → EmAndamento, A FAZER/BACKLOG → AFazer)
 
 ### 3.5 Integração com Google Calendar (Roadmap, NÃO nesta versão)
-- **v1.3.0**: agenda 100% própria (sem Google)
+- **v1.3.0**: ~~agenda 100% própria (sem Google)~~ — **Agenda removida no rollback `8956c57`**
 - **v2.x**: export ICS + (futuramente) OAuth com Google Calendar
 - **Integração Service Account** (domínio): também roadmap
 
-### 3.6 Visibilidade da Agenda
-- `PUBLICO`: todos veem
-- `EQUIPE`: só a mesma equipe vê
-- `PRIVADO`: só o próprio dono vê (mesmo admins veem apenas metadados)
+### 3.6 ~~Visibilidade da Agenda~~ (removida)
+> Seção removida — Agenda foi removida no rollback `8956c57`. Ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano futuro.
 
 ### 3.7 Perfil de Equipe (lista simples)
 - Sem foto, sem contador de projetos, sem agenda
@@ -138,34 +138,15 @@ Adicionou:
 
 ## 4. Schema de banco (novo + existente)
 
-### 4.1 Tabelas novas (v1.3.0)
-```sql
--- 4.1.1 Agenda
-CREATE TABLE IMPL_Agenda (
-  AGD_Id                 int IDENTITY PRIMARY KEY,
-  AGD_OperadorId         varchar(15) NOT NULL,           -- dono do evento
-  AGD_Titulo             nvarchar(200) NOT NULL,
-  AGD_Descricao          nvarchar(2000) NULL,
-  AGD_Local              nvarchar(200) NULL,
-  AGD_DataInicio         datetime2 NOT NULL,
-  AGD_DataFim            datetime2 NULL,
-  AGD_DiaInteiro         bit NOT NULL DEFAULT 0,
-  AGD_Cor                nvarchar(20) NULL,              -- hex color (#xxxxxx)
-  AGD_Tipo               varchar(20) NOT NULL,           -- REUNIAO | TREINAMENTO | ATENDIMENTO | PESSOAL | OUTRO
-  AGD_Visibilidade       varchar(20) NOT NULL DEFAULT 'PUBLICO',  -- PUBLICO | EQUIPE | PRIVADO
-  AGD_ProjetoId          int NULL,                        -- FK para IMPL_Projeto
-  AGD_Recorrente         bit NOT NULL DEFAULT 0,
-  AGD_PadraoRecorrencia  varchar(20) NULL,               -- DIARIO | SEMANAL | MENSAL
-  AGD_UsuarioInclusao    varchar(15) NULL,
-  AGD_DataInclusao       datetime2 NOT NULL DEFAULT GETDATE(),
-  AGD_UsuarioAlteracao   varchar(15) NULL,
-  AGD_DataAlteracao      datetime2 NULL
-);
-CREATE INDEX IX_IMPL_Agenda_OperadorId ON IMPL_Agenda (AGD_OperadorId);
-CREATE INDEX IX_IMPL_Agenda_DataInicio ON IMPL_Agenda (AGD_DataInicio);
-CREATE INDEX IX_IMPL_Agenda_ProjetoId  ON IMPL_Agenda (AGD_ProjetoId);
+### 4.1 Tabelas novas (v1.3.0 — **Agenda removida no rollback `8956c57`**)
 
--- 4.1.2 Perfil estendido
+> ⚠️ **A tabela `IMPL_Agenda` e `IMPL_MembroPerfil` foram criadas pela migration `AddAgendaAndPerfis` (já aplicada em produção), mas a feature Agenda foi removida.** As tabelas permanecem órfãs no banco. Ver `docs/AGENDA-REIMPLEMENTACAO.md`.
+
+```sql
+-- 4.1.1 ~~Agenda~~ (REMOVIDA - tabelas órfãs mantidas no banco)
+-- CREATE TABLE IMPL_Agenda (...);
+
+-- 4.1.2 Perfil estendido (mantido para Diretório de Equipe)
 CREATE TABLE IMPL_MembroPerfil (
   MPF_FuncionarioId     int PRIMARY KEY,                 -- FK conceitual para tbfuncionario.FUNCIONARIO_ID
   MPF_Descricao         nvarchar(2000) NULL,
@@ -255,39 +236,9 @@ GET    /api/v1/implantacao/legacy/indicacoes
 GET    /api/v1/implantacao/legacy/funcionarios?buscar=X&take=N
 ```
 
-### 5.3 Novos (v1.3.0 — Agenda)
-```csharp
-// AgendaController
-[Route("api/v{version:apiVersion}/implantacao/agenda")]
-[Authorize]
-public class AgendaController : ControllerBase
-{
-    [HttpGet]                          // lista por intervalo + filtros
-    public Task<List<AgendaResumo>> Listar(
-        [FromQuery] DateTime? inicio,
-        [FromQuery] DateTime? fim,
-        [FromQuery] string? operadorId,        // filtro por pessoa
-        [FromQuery] string? visibilidade,      // PUBLICO | EQUIPE | PRIVADO
-        [FromQuery] int? projetoId,
-        [FromQuery] int? take = 200);
+### 5.3 ~~Novos (v1.3.0 — Agenda)~~ — **REMOVIDO no rollback `8956c57`**
 
-    [HttpGet("{id:int}")]
-    public Task<AgendaDetalhe?> Obter(int id);
-
-    [HttpPost]
-    public Task<ActionResult<AgendaDetalhe>> Criar(AgendaCriarRequest req);
-
-    [HttpPut("{id:int}")]
-    public Task<ActionResult<AgendaDetalhe?>> Atualizar(int id, AgendaAtualizarRequest req);
-
-    [HttpDelete("{id:int}")]
-    public Task<ActionResult> Excluir(int id);
-
-    [HttpGet("ics/{operadorId}")]
-    public IActionResult ExportarIcs(string operadorId);
-        // retorna File(ContentType="text/calendar")
-}
-```
+> A `AgendaController` e seus endpoints foram removidos. Ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação futura.
 
 ### 5.4 Novos (v1.3.0 — Equipe/Diretório)
 ```csharp
@@ -349,22 +300,9 @@ public class EquipeController : ControllerBase
 | 9 | Data previsão | date | não | `TRF_DataPrevisao` | IMPL_Tarefa | datetime2 |
 | 10 | Horas estimadas | number | não | `TRF_HorasEstimadas` | IMPL_Tarefa | int |
 
-### 6.3 Tela: Formulário de **Novo Evento** da Agenda (`/implantacao/agenda` modal)
+### 6.3 ~~Tela: Formulário de **Novo Evento** da Agenda (`/implantacao/agenda` modal)~~ — **REMOVIDO**
 
-| # | Campo no form | Tipo | Obrigatório | Coluna SQL | Tabela | Regra |
-|---|---|---|---|---|---|---|
-| 1 | Título | text | sim | `AGD_Titulo` | IMPL_Agenda | 1-200 chars |
-| 2 | Descrição | textarea | não | `AGD_Descricao` | IMPL_Agenda | até 2000 chars |
-| 3 | Local | text | não | `AGD_Local` | IMPL_Agenda | até 200 chars |
-| 4 | Data início | datetime-local | sim | `AGD_DataInicio` | IMPL_Agenda | datetime2 |
-| 5 | Data fim | datetime-local | não | `AGD_DataFim` | IMPL_Agenda | datetime2 (vazio = dia inteiro) |
-| 6 | Dia inteiro | checkbox | não | `AGD_DiaInteiro` | IMPL_Agenda | bit (default false) |
-| 7 | Cor | color picker | não | `AGD_Cor` | IMPL_Agenda | hex #xxxxxx |
-| 8 | Tipo | radio | sim | `AGD_Tipo` | IMPL_Agenda | enum: REUNIAO, TREINAMENTO, ATENDIMENTO, PESSOAL, OUTRO |
-| 9 | Visibilidade | radio | sim | `AGD_Visibilidade` | IMPL_Agenda | enum: PUBLICO, EQUIPE, PRIVADO |
-| 10 | Projeto vinculado | select | não | `AGD_ProjetoId` → `PRJ_Id` | IMPL_Projeto | só projetos ativos do próprio usuário |
-| 11 | Recorrente | checkbox | não | `AGD_Recorrente` | IMPL_Agenda | bit |
-| 12 | Padrão de recorrência | select | condicional | `AGD_PadraoRecorrencia` | IMPL_Agenda | se recorrente: DIARIO | SEMANAL | MENSAL |
+> Tela de Agenda removida no rollback `8956c57`.
 
 ### 6.4 Tela: Diretório de **Equipe** (`/implantacao/equipe`)
 
@@ -382,49 +320,9 @@ Cards read-only por padrão. Botão "Editar perfil" só aparece se o card é do 
 
 ## 7. Modelos TypeScript (frontend)
 
-### 7.1 `agenda.model.ts` (novo)
-```typescript
-export type AgendaTipo = 'REUNIAO' | 'TREINAMENTO' | 'ATENDIMENTO' | 'PESSOAL' | 'OUTRO';
-export type AgendaVisibilidade = 'PUBLICO' | 'EQUIPE' | 'PRIVADO';
-export type AgendaRecorrencia = 'DIARIO' | 'SEMANAL' | 'MENSAL';
+### 7.1 ~~`agenda.model.ts`~~ — **REMOVIDO no rollback `8956c57`**
 
-export interface AgendaItem {
-  id: number;
-  operadorId: string;
-  titulo: string;
-  descricao?: string;
-  local?: string;
-  dataInicio: string;          // ISO 8601
-  dataFim?: string;
-  diaInteiro: boolean;
-  cor?: string;
-  tipo: AgendaTipo;
-  visibilidade: AgendaVisibilidade;
-  projetoId?: number;
-  projetoCodigo?: string;      // join
-  recorrente: boolean;
-  padraoRecorrencia?: AgendaRecorrencia;
-  usuarioInclusao?: string;
-  dataInclusao: string;
-}
-
-export interface AgendaCriarRequest {
-  titulo: string;
-  descricao?: string;
-  local?: string;
-  dataInicio: string;
-  dataFim?: string;
-  diaInteiro: boolean;
-  cor?: string;
-  tipo: AgendaTipo;
-  visibilidade: AgendaVisibilidade;
-  projetoId?: number;
-  recorrente: boolean;
-  padraoRecorrencia?: AgendaRecorrencia;
-}
-
-export type AgendaAtualizarRequest = AgendaCriarRequest;
-```
+> Modelos TypeScript da Agenda foram removidos. Ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação futura.
 
 ### 7.2 `equipe.model.ts` (novo)
 ```typescript
@@ -475,49 +373,45 @@ chamadoLegadoId?: number;
 > **Cada sub-passo = 1 commit local (push só no H1).**
 > **Antes de começar cada Bloco, você diz "Efetuar Bloco X" e eu sigo sozinho.**
 
-### Bloco A — Backend Agenda + Equipe (8 sub-passos, ~25 min)
+### Bloco A — Backend Equipe (4 sub-passos, ~15 min) — **Agenda removida**
 
-- **A1.** Criar `Models/Implantacao/AgendaItem.cs` + `Models/Implantacao/MembroPerfil.cs`
-- **A2.** Atualizar `Data/AppDbContext.cs` — adicionar 2 DbSets + índices no `OnModelCreating`
-- **A3.** Criar `Dtos/Implantacao/AgendaDtos.cs` (AgendaResumo, AgendaDetalhe, AgendaCriarRequest, AgendaAtualizarRequest)
-- **A4.** Criar `Services/Implantacao/AgendaService.cs` (CRUD + regras de visibilidade + ICS export)
+- **A1.** ~~Criar `Models/Implantacao/AgendaItem.cs`~~ + `Models/Implantacao/MembroPerfil.cs`
+- **A2.** Atualizar `Data/AppDbContext.cs` — adicionar 1 DbSet (`MembroPerfil`) + índices no `OnModelCreating`
+- **A3.** ~~Criar `Dtos/Implantacao/AgendaDtos.cs`~~
+- **A4.** ~~Criar `Services/Implantacao/AgendaService.cs`~~
 - **A5.** Criar `Services/Implantacao/EquipePerfilService.cs` (CRUD do perfil)
-- **A6.** Criar `Controllers/Implantacao/AgendaController.cs` + `Controllers/Implantacao/EquipeController.cs`
-- **A7.** Atualizar `Program.cs` (registrar IAgendaService, IEquipePerfilService) + Migration `dotnet ef migrations add AddAgendaAndPerfis`
-- **A8.** `dotnet ef migrations script --idempotent -o Migrations/Sql/AddAgendaAndPerfis.sql` + buildar
+- **A6.** ~~Criar `Controllers/Implantacao/AgendaController.cs`~~ + `Controllers/Implantacao/EquipeController.cs`
+- **A7.** Atualizar `Program.cs` (registrar IEquipePerfilService) — **Migration `AddAgendaAndPerfis` já aplicada em produção**
+- **A8.** `dotnet ef migrations script --idempotent -o Migrations/Sql/AddAgendaAndPerfis.sql` + buildar (já existe)
 
-### Bloco B — Frontend tipos + services (3 sub-passos, ~5 min)
+### Bloco B — Frontend tipos + services (2 sub-passos, ~3 min) — **Agenda removida**
 
-- **B1.** Criar `agenda.model.ts` + `equipe.model.ts` + atualizar `projeto.model.ts` e `tarefa.model.ts`
-- **B2.** Criar `agenda.service.ts` + `equipe.service.ts`
+- **B1.** ~~Criar `agenda.model.ts`~~ + `equipe.model.ts` + atualizar `projeto.model.ts` e `tarefa.model.ts`
+- **B2.** ~~Criar `agenda.service.ts`~~ + `equipe.service.ts`
 - **B3.** Atualizar `projetos.service.ts` e `tarefas.service.ts` com métodos legados (injetar LegacyService via componente, ou criar novo service wrapper)
 
-### Bloco C — Rotas + sidebar (2 sub-passos, ~2 min)
+### Bloco C — Rotas + sidebar (1 sub-passo, ~1 min) — **Agenda removida**
 
-- **C1.** Atualizar `implantacao.routes.ts` com `/implantacao/agenda` e `/implantacao/equipe` (lazy load)
-- **C2.** Atualizar `sidebar.component.ts` — adicionar 2 links na seção Implantação (entre Tarefas e Clientes)
+- **C1.** Atualizar `implantacao.routes.ts` com `/implantacao/equipe` (lazy load) — **`/implantacao/agenda` removida**
+- **C2.** Atualizar `sidebar.component.ts` — adicionar 1 link na seção Implantação (Equipe, entre Tarefas e Clientes)
 
-### Bloco D — Frontend Agenda (5 sub-passos, ~25 min)
+### Bloco D — ~~Frontend Agenda~~ **REMOVIDO no rollback `8956c57`**
 
-- **D1.** Criar `pages/agenda/agenda.component.ts` (shell) + `agenda.component.scss` — 3 visualizações (dia/semana/mês) com toggle de botões
-- **D2.** Implementar **modo DIA** — coluna vertical com blocos de tempo, cards coloridos por tipo, **linha vermelha** marcando "agora", click em horário vago abre modal
-- **D3.** Implementar **modo SEMANA** — grid 7 colunas (Dom-Sáb), cards menores, click em célula abre modal
-- **D4.** Implementar **modo MÊS** — grid 7x5 com navegação ‹ ›, cada dia mostra contagem de eventos
-- **D5.** Adicionar **filtros** (chips "Todas / Só minhas / Operador X" + "Todas equipes / IMPL / CIAA") + **modal de criar/editar evento** com formulário completo (12 campos) + validações
+> Toda a implementação do frontend da Agenda (Bloco D) foi removida. Ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação futura.
 
 ### Bloco E — Frontend Equipe (2 sub-passos, ~8 min)
 
 - **E1.** Criar `pages/equipe/equipe.component.ts` — grid de cards (nome, função, chips de equipe) + filtro por equipe
 - **E2.** Adicionar **drawer lateral** de detalhes (click no card) + botão "Editar perfil" (só se o card é do próprio usuário)
 
-### Bloco F — Documentação (2 sub-passos, ~8 min)
+### Bloco F — Documentação (2 sub-passos, ~5 min) — **Agenda removida**
 
-- **F1.** Criar `MODULO-IMPLANTACAO-MAP.md` na raiz do monorepo (cobre Projetos + Agenda + Equipe + relações TB*)
-- **F2.** Atualizar `frontend/docs/DOCUMENTACAO-COMPLETA.md` § 6.5 — adicionar subseções 6.5.7 (Agenda) e 6.5.8 (Equipe)
+- **F1.** Atualizar `MODULO-IMPLANTACAO-MAP.md` na raiz do monorepo (cobre Projetos + Equipe + relações TB* — **Agenda removida**)
+- **F2.** Atualizar `frontend/docs/DOCUMENTACAO-COMPLETA.md` § 6.5 — adicionar subseção 6.5.8 (Equipe) — **6.5.7 Agenda removida**
 
-### Bloco G — Teste local (1 sub-passo, ~1 min)
+### Bloco G — Teste local (1 sub-passo, ~1 min) — **Agenda removida**
 
-- **G1.** Subir interno (skill `subir interno`) e avisar você com o link `http://localhost:4200/implantacao/agenda` e `/implantacao/equipe`
+- **G1.** Subir interno (skill `subir interno`) e avisar você com o link `http://localhost:4200/implantacao/equipe` — **`/implantacao/agenda` removida**
 
 ### Bloco H — Commit + push (1 sub-passo, ~1 min)
 
@@ -548,20 +442,20 @@ chamadoLegadoId?: number;
 
 ---
 
-## 10. Padrão de commit
+## 10. Padrão de commit (estado atual — **Agenda removida**)
 
 ```
-feat(backend): módulo agenda + equipe
-- Models: IMPL_Agenda, IMPL_MembroPerfil
-- Migration: AddAgendaAndPerfis
-- Services: IAgendaService, IEquipePerfilService
-- Controllers: AgendaController, EquipeController
+feat(backend): equipe + dropdowns de legado
+- Models: IMPL_MembroPerfil (IMPL_Agenda órfã no banco)
+- Migration: AddAgendaAndPerfis (já aplicada, feature removida)
+- Services: IEquipePerfilService
+- Controllers: EquipeController
 - Reusa LegacyDataService para join com tbfuncionario
 
-feat(frontend): agenda + equipe + dropdowns de legado
-- Models: agenda.model.ts, equipe.model.ts
-- Services: AgendaService, EquipeService
-- Páginas: AgendaComponent (3 visualizações), EquipeComponent (grid)
+feat(frontend): equipe + dropdowns de legado
+- Models: equipe.model.ts (agenda.model.ts removido)
+- Services: EquipeService (AgendaService removido)
+- Páginas: EquipeComponent (grid) — AgendaComponent removido
 - Form de novo projeto: dropdown de cliente legado (tbcliente)
 - Form de nova tarefa: dropdown de chamado legado (tbchamado)
 - Estilo seguindo skill frontend-design
@@ -570,14 +464,14 @@ feat(frontend): agenda + equipe + dropdowns de legado
 
 ---
 
-## 11. Checklist de validação (teste local após Bloco G)
+## 11. Checklist de validação (teste local após Bloco G) — **Agenda removida**
 
 Abra no navegador e verifique:
-- [ ] `/implantacao/agenda` carrega sem erro
-- [ ] Modo DIA mostra o horário atual com **linha vermelha**
-- [ ] Clicar em horário vago abre modal de criar evento
-- [ ] Criar evento com tipo REUNIAO → card fica **azul**; TREINAMENTO → **verde**; PESSOAL → **cinza**
-- [ ] Filtro "Só minhas" mostra só eventos do `admin`
+- [ ] ~~`/implantacao/agenda` carrega sem erro~~ — **REMOVIDA**
+- [ ] ~~Modo DIA mostra o horário atual com **linha vermelha**~~
+- [ ] ~~Clicar em horário vago abre modal de criar evento~~
+- [ ] ~~Criar evento com tipo REUNIAO → card fica **azul**; TREINAMENTO → **verde**; PESSOAL → **cinza**~~
+- [ ] ~~Filtro "Só minhas" mostra só eventos do `admin`~~
 - [ ] `/implantacao/equipe` lista todos os funcionários
 - [ ] Filtro "Implantação" filtra por equipe
 - [ ] Click no próprio card → botão "Editar perfil" aparece
@@ -588,7 +482,7 @@ Abra no navegador e verifique:
 
 ---
 
-## 12. PROMPT DE CONTINUAÇÃO (copie e cole na nova sessão)
+## 12. PROMPT DE CONTINUAÇÃO (copie e cole na nova sessão) — **Estado: Agenda removida, apenas Equipe + dropdowns legado**
 
 ```
 Você é o assistente continuando a v1.3.0 do projeto Central de Operação (JCA Soluções)
@@ -596,8 +490,13 @@ na branch `projeto-implantacao` do monorepo em
 C:\Users\JCA-SUP05\Documents\Projetos\Intranet\Central-Conhecimento-developer.
 
 LEIA PRIMEIRO o arquivo PLANO_MESTRE.md na raiz do monorepo — ele contém
-TUDO: contexto, decisões, schema, mapeamento de campos por tela, 24 sub-passos
+TUDO: contexto, decisões, schema, mapeamento de campos por tela, sub-passos
 numerados, comandos SQL de referência e checklist de validação.
+
+⚠️ **IMPORTANTE**: A **Agenda foi removida no rollback `8956c57`**. Este plano
+original incluía Agenda. O trabalho restante é apenas:
+- Backend: EquipeController + EquipePerfilService (MembroPerfil)
+- Frontend: EquipeComponent + dropdowns de legado (cliente/chamado)
 
 REGRAS OBRIGATÓRIAS:
 1. Banco de homolog: 192.168.2.154 / bussiness / via DB_EXPLORER_SENHA / dbBUSINESS_HML
@@ -605,12 +504,10 @@ REGRAS OBRIGATÓRIAS:
 3. SEM perguntas entre passos quando ele disser "Efetuar Bloco X" — vá até o fim
 4. SEMPRE carregue a skill `frontend-design` antes de estilizar UI nova
 5. SEMPRE reusar classes `.adm-*` do `src/styles.scss` global
-6. SEMPRE use tag `v1.3.0-rc1` ao final (Bloco H) em todos os 3 repos
-7. Cada sub-passo = 1 commit local (push só no H1)
-8. Cores das equipes: IMPL=#0f4c81 (azul), CIAA=#7c3aed (violeta)
-9. Para cada Bloco, comece do passo N do PLANO_MESTRE.md
+6. SEMPRE use tag `v1.3.0-rc1` ao final em todos os 3 repos
+7. Cores das equipes: IMPL=#0f4c81 (azul), CIAA=#7c3aed (violeta)
 
-EXECUTE o Bloco A (passos A1 a A8) e me avise ao final.
+EXECUTE o Bloco A (passos A1 a A8 — ajustados para sem Agenda) e me avise ao final.
 ```
 
 ---

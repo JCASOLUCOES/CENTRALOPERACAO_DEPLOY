@@ -15,16 +15,15 @@
 6. [Cursos](#6-cursos)
 7. [Trilhas](#7-trilhas)
 8. [Stack](#8-stack)
-9. [Agenda](#9-agenda)
-10. [Fraseologia](#10-fraseologia)
-11. [Modelo de Chamados](#11-modelo-de-chamados)
-12. [Política](#12-política)
-13. [Visão ADM](#13-visão-adm)
-14. [Implantação / Projetos](#14-implantação--projetos)
-15. [Database Explorer](#15-database-explorer)
-16. [Empresa / Onboarding](#16-empresa--onboarding)
-17. [Backend — Endpoints por Controller](#17-backend--endpoints-por-controller)
-18. [Backend — Entidades & Banco de Dados](#18-backend--entidades--banco-de-dados)
+9. [Fraseologia](#9-fraseologia)
+10. [Modelo de Chamados](#10-modelo-de-chamados)
+11. [Política](#11-política)
+12. [Visão ADM](#12-visão-adm)
+13. [Implantação / Projetos](#13-implantação--projetos)
+14. [Database Explorer](#14-database-explorer)
+15. [Empresa / Onboarding](#15-empresa--onboarding)
+16. [Backend — Endpoints por Controller](#16-backend--endpoints-por-controller)
+17. [Backend — Entidades & Banco de Dados](#17-backend--entidades--banco-de-dados)
 
 ---
 
@@ -573,67 +572,7 @@ Página que exibe a stack tecnológica do sistema (Angular 18, Bootstrap 5, .NET
 
 ---
 
-## 9. Agenda
-
-### 9.1 `AgendaComponent`
-
-**Componente:** `src/app/wiki/pages/agenda/agenda.component.ts`
-
-### O que faz
-Agenda compartilhada (v1.3.0) com 3 visões (Dia/Semana/Mês), linha vermelha "agora", filtros chips (Todas/Só minhas + por operador), modal de criar/editar com 12 campos.
-
-### Services Injetados
-| Service | Métodos Usados | Finalidade |
-|---------|----------------|------------|
-| `AgendaService` | `listar()`, `criar()`, `atualizar()`, `excluir()` | CRUD eventos |
-| `AgendaEventoModalComponent` | — | Modal de criação/edição |
-
-### API Endpoints Consumidos
-| Método | Rota (v1) | Service | Descrição |
-|--------|-----------|---------|-----------|
-| GET | `/api/v1/implantacao/agenda?inicio=&fim=&operadorId=&visibilidade=&projetoId=&take=` | `AgendaService.listar()` | Lista eventos |
-| GET | `/api/v1/implantacao/agenda/{id}` | `AgendaService.obter()` | Detalhe evento |
-| POST | `/api/v1/implantacao/agenda` | `AgendaService.criar()` | Cria evento |
-| PUT | `/api/v1/implantacao/agenda/{id}` | `AgendaService.atualizar()` | Atualiza evento |
-| DELETE | `/api/v1/implantacao/agenda/{id}` | `AgendaService.excluir()` | Exclui evento |
-| GET | `/api/v1/implantacao/agenda/ics/{operadorId}?inicio=&fim=` | `AgendaService.exportarICS()` | Exporta ICS (RFC 5545) |
-
-### Banco de Dados
-- **Conecta:** ✅ Sim — tabela `IMPL_Agenda` no SQL Server
-- **Tabelas:** `IMPL_Agenda` (eventos), `IMPL_MembroEquipe` (para permissões)
-
-### Dependências Externas
-- `NgbModal` (ng-bootstrap) — modal de criação/edição
-- `AgendaEventoModalComponent` (modal embutido)
-- Tipos de evento com cores institucionais por equipe
-
-### Observações Técnicas
-- Visibilidade: `Publico` (todos veem), `Equipe` (mesma equipe), `Privado` (só dono/admin)
-- Export ICS disponível
-- Lazy loading (implantacao.routes.ts)
-- Migration `AddAgendaAndPerfis` ainda não aplicada em homolog
-
-### Fluxo de Persistência e Comunicação com o Banco de Dados
-
-1. **Consulta e Renderização Inicial (SELECT)**
-   - Ao acessar a tela, o frontend faz uma chamada GET à API `/api/v1/implantacao/agenda`.
-   - O backend executa consultas SQL (`SELECT`) com os JOINs necessários na tabela `IMPL_Agenda` e `IMPL_MembroEquipe` para buscar a lista de eventos e renderizar o estado inicial da página, aplicando regras de visibilidade (Público, Equipe, Privado).
-
-2. **Criação e Registro de Novos Dados (INSERT)**
-   - O operador preenche os campos requeridos na interface e aciona a ação de confirmação.
-   - A aplicação envia os dados via POST para `/api/v1/implantacao/agenda`.
-   - O banco grava os dados na tabela `IMPL_Agenda` (`INSERT INTO ...`) e associa as chaves estrangeiras (`ProjetoId`, `OperadorId`) necessárias para vincular os relacionamentos.
-
-3. **Atualização e Alterações (UPDATE)**
-   - Alterações de campos, movimentação de itens ou mudanças de status disparam uma requisição PUT/PATCH ao servidor.
-   - É executado um comando `UPDATE` na tabela `IMPL_Agenda`, atualizando os campos modificados e atualizando os campos de controle (`DataAlteracao`, `UsuarioAlteracao`).
-
-4. **Remoção ou Inativação (DELETE / Soft Delete)**
-   - Ao remover um item, a aplicação executa um `DELETE` na tabela `IMPL_Agenda` (remoção física), preservando o histórico via tabela de auditoria `IMPL_AuditoriaImplantacao`.
-
----
-
-## 10. Fraseologia
+## 9. Fraseologia
 
 ### 10.1 `FraseologiaComponent`
 
@@ -877,16 +816,6 @@ View Kanban (v1.1.0) com drag-and-drop (`@angular/cdk`), colunas configuráveis 
 
 4. **Remoção ou Inativação (DELETE / Soft Delete)**
    - Ao remover uma tarefa, a aplicação executa um `DELETE` na tabela `IMPL_Tarefa` (remoção física), preservando o histórico via tabela de auditoria `IMPL_AuditoriaImplantacao`.
-
-### Integração com a Agenda
-
-- **Necessidade**: Reuniões, treinamentos e entregas (marcos) do projeto não ocorrem em uma tela isolada no Kanban; elas precisam estar centralizadas na Agenda da equipe.
-- **Relação entre Entidades**:
-  - Toda tarefa do Kanban classificada como *"Reunião"*, *"Treinamento"* ou *"Marco de Entrega"* (baseado no nome da coluna Kanban) gera/atualiza um registro correspondente na tabela da **Agenda** (`IMPL_Agenda`).
-  - O registro do evento contém a chave estrangeira `ProjetoId` e referência à tarefa.
-- **Funcionamento do Fluxo**:
-  1. Ao criar ou mover uma tarefa/reunião dentro do Kanban de um Projeto para uma coluna do tipo "Reunião", "Treinamento" ou "Marco", o serviço grava/atualiza a tarefa (`IMPL_Tarefa`) e insere (`INSERT`) ou atualiza (`UPDATE`) o evento na Agenda (`IMPL_Agenda`).
-  2. Ao acessar a tela de **Agenda**, o sistema realiza a leitura dos eventos que possuem vínculo com o projeto, apresentando o compromisso de forma unificada.
 
 ---
 
@@ -1449,9 +1378,10 @@ Gestão de acessos de empresas via Google Sheets (listagem, validação de senha
 | `ProjetosController` | `/implantacao/projetos` | `Projeto` | `IMPL_Projeto` |
 | `TarefasController` | `/implantacao/tarefas` | `Tarefa`, `ComentarioTarefa` | `IMPL_Tarefa`, `IMPL_ComentarioTarefa` |
 | `DashboardController` | `/implantacao/dashboard` | KPIs agregados | `IMPL_Projeto`, `IMPL_Tarefa` |
-| `AgendaController` | `/implantacao/agenda` | `AgendaItem` | `IMPL_Agenda` |
 | `EquipesController` (legado) | `/implantacao/equipe` | MembroPerfil | `IMPL_MembroEquipe`, `tbfuncionario` |
 | `LegacyController` | `/implantacao/legacy` | Legado | `tbcliente`, `tbchamado`, `tbfuncionario`, `tbfuncao` |
+
+> **Nota:** `AgendaController` (`/implantacao/agenda`) foi removido no rollback de 10/09/2026 (commit `8956c57`). Ver `docs/AGENDA-REIMPLEMENTACAO.md`.
 
 ### Endpoints por Controller (resumido)
 
@@ -1465,7 +1395,6 @@ Gestão de acessos de empresas via Google Sheets (listagem, validação de senha
 | Projetos | ✅ | ✅ | ✅ | ✅ | GET `/proximo-codigo`, PATCH `/{id}/status` |
 | Tarefas | ✅ | ✅ | ✅ | ✅ | PATCH `/{id}/coluna`, POST `/{id}/comentarios` |
 | Dashboard | ✅ | — | — | — | — |
-| Agenda | ✅ | ✅ | ✅ | ✅ | GET `/ics/{operadorId}` |
 | Equipe | ✅ | — | ✅ | — | GET `/diretorio`, GET `/perfil/{id}`, PUT `/perfil/{id}` |
 | Legacy | ✅ | — | — | — | GET `/clientes`, `/chamados`, `/indicacoes`, `/funcionarios` |
 
@@ -1642,8 +1571,11 @@ Endpoints read-only para consulta de dados legados do `dbBUSINESS_HML`. Popula d
 | `IMPL_Projeto` | `PRJ_` | Projeto principal (codigo, equipe, tipo, cliente opcional) | `Projeto.cs` |
 | `IMPL_Tarefa` | `TRF_` | Tarefas (titulo, projeto, etapa, coluna Kanban, responsavel, status) | `Tarefa.cs` |
 | `IMPL_ComentarioTarefa` | `CMT_` | Comentários / histórico da tarefa | `ComentarioTarefa.cs` |
-| `IMPL_Agenda` | `AGD_` | Eventos compartilhados (v1.3.0) | `AgendaItem.cs` |
-| `IMPL_MembroPerfil` | `MBP_` | Diretório de equipe (v1.3.0) | — |
+
+> **Tabelas órfãs (migrations aplicadas, feature removida no rollback `8956c57`):**
+> - `IMPL_Agenda` (AGD_) — migration `AddAgendaAndPerfis`
+> - `IMPL_MembroPerfil` (MBP_) — migration `AddAgendaAndPerfis`
+> Ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação.
 
 ### 18.3 Migrations EF Core
 
@@ -1651,7 +1583,7 @@ Endpoints read-only para consulta de dados legados do `dbBUSINESS_HML`. Popula d
 |-----------|------|-----------|
 | `20260904194350_ImplantacaoInit` | 2026-09-04 | Criação das 9 tabelas `IMPL_*` (v1.0.0) |
 | `20260905195554_AddLegadoLinks` | 2026-09-05 | FKs lógicas para `tbcliente` e `tbchamado` (v1.2.0) |
-| `20260905203422_AddAgendaAndPerfis` | 2026-09-05 | `IMPL_Agenda`, `IMPL_MembroPerfil` (v1.3.0) |
+| `20260905203422_AddAgendaAndPerfis` | 2026-09-05 | `IMPL_Agenda`, `IMPL_MembroPerfil` (v1.3.0) — **feature removida no rollback `8956c57`, tabelas órfãs mantidas** |
 | `20260906033406_AddAuditoriaImplantacao` | 2026-09-06 | Auditoria do módulo IMPLANTAÇÃO |
 | `20260910163216_AddFuncao` | 2026-09-10 | Adiciona `FUNCAO_ID` em `TBOPERADOR` + cria `CC_Funcao` + FK (substitui as migrations `AddFuncaoIdToOperador`/`AddFuncaoTableAndRelation`, nunca aplicadas — a `tbfuncao` legada foi preservada). Script: `Migrations/Sql/AddFuncao.sql` — **aplicado em produção em 2026-09-10** |
 

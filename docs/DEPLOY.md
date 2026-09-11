@@ -256,20 +256,21 @@ que a versão que está no servidor bate com a tag apropriada.**
 
 ### 7.2. Branches
 
-| Branch | Onde | Quem pode dar push |
-|---|---|---|
-| `main` (produção) | front, back, deploy | via PR de `developer` (1 aprovação) |
-| `developer` (dev) | front, back, deploy | JCASOLUCOES direto |
-| `sara` | front, back, deploy | direto |
-| `samuel` | front, back, deploy | direto |
-| `projeto-implantacao` | front, back, deploy | direto (quando existir) |
+| Branch | Onde | Quem pode dar push | Estado atual |
+|---|---|---|---|
+| `main` (produção) | front, back, deploy | via PR de `developer` (1 aprovação) | `8956c57` |
+| `developer` (dev) | front, back, deploy | JCASOLUCOES direto | `8956c57` |
+| `sara` | front, back, deploy | direto | — |
+| `samuel` | front, back, deploy | direto | — |
+| `projeto-implantacao` | front, back, deploy | direto (quando existir) | — |
 
 ### 7.3. Tags
 
 | Tag | Significado |
 |---|---|
 | `v0.7.0` | Release atual (estado do IIS 130 em 04/09/2026) |
-| `v0.7.1`, `v0.8.0`, ... | Releases futuras |
+| `v0.8.0` | **Rollback Agenda** — Login 500 fixado, Agenda removida (master/developer alinhados em `8956c57`) |
+| `v0.8.1`, `v0.9.0`, ... | Releases futuras |
 
 Tags são **imutáveis** (não se mexe depois de criar) e servem como
 "branch backup" — se algo der errado, basta `git checkout v0.7.0` e

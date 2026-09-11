@@ -1,9 +1,9 @@
 # Módulo IMPLANTAÇÃO / PROJETOS — Mapa (v1.3.0)
 
-> Documento vivo do módulo. Cobre **Projetos + Agenda + Equipe** e como cada um
-> se relaciona com as tabelas legadas `TB*` do `dbBUSINESS_HML`.
+> Documento vivo do módulo. Cobre **Projetos + Equipe** (Agenda removida no rollback `8956c57`).
 > Para o passo-a-passo de retomada, ver `PLANO_MESTRE.md` na raiz do monorepo.
 > Para a documentação completa, ver `frontend/docs/DOCUMENTACAO-COMPLETA.md` § 6.5.
+> Para plano de reimplementação da Agenda, ver `docs/AGENDA-REIMPLEMENTACAO.md`.
 
 ---
 
@@ -11,18 +11,19 @@
 
 | Conceito | Onde mora | Quem usa |
 |---|---|---|
-| Equipes (`IMPL_Equipe`, `IMPL_MembroEquipe`) | Backend | Projetos, Agenda, Equipe |
+| Equipes (`IMPL_Equipe`, `IMPL_MembroEquipe`) | Backend | Projetos, Equipe |
 | Tipos de projeto (`IMPL_TipoProjeto`) | Backend | Projetos (filtros) |
 | Etapas (`IMPL_Etapa`) | Backend | Tarefas (Kanban) |
 | Colunas Kanban (`IMPL_ColunaKanban`) | Backend | Projetos, Tarefas |
 | Clientes internos (`IMPL_Cliente`) | Backend | Projetos |
 | Projetos (`IMPL_Projeto`) | Backend + Frontend | Tudo |
 | Tarefas (`IMPL_Tarefa`) + Comentários | Backend + Frontend | Projetos |
-| **Agenda compartilhada** (`IMPL_Agenda`) | Backend + Frontend | Tela `/implantacao/agenda` |
 | **Diretório de equipe** (`IMPL_MembroPerfil` + `tbfuncionario`) | Backend + Frontend | Tela `/implantacao/equipe` |
 | Clientes legados (`tbcliente`) | dbBUSINESS_HML (somente leitura) | Dropdown em Projeto |
 | Chamados legados (`tbchamado`) | dbBUSINESS_HML (somente leitura) | Dropdown em Tarefa |
 | Funcionários legados (`tbfuncionario`) | dbBUSINESS_HML (somente leitura) | Diretório de Equipe |
+
+> **Nota:** `IMPL_Agenda` (Agenda compartilhada) foi removida no rollback `8956c57`. Tabelas órfãs mantidas no banco. Ver `docs/AGENDA-REIMPLEMENTACAO.md`.
 
 ---
 
@@ -64,73 +65,21 @@ Regras:
 
 ---
 
-## 4. Agenda compartilhada (v1.3.0 — NOVO)
+## 4. ~~Agenda compartilhada (v1.3.0 — REMOVIDA)~~
 
-### 4.1 Tabela `IMPL_Agenda`
-
-| Coluna SQL | Tipo | Descrição |
-|---|---|---|
-| `AGD_Id` | int IDENTITY | PK |
-| `AGD_OperadorId` | varchar(15) NOT NULL | dono do evento (`tboperador.OPERADOR_ID`) |
-| `AGD_Titulo` | nvarchar(200) NOT NULL | |
-| `AGD_Descricao` | nvarchar(2000) | |
-| `AGD_Local` | nvarchar(200) | |
-| `AGD_DataInicio` | datetime2 NOT NULL | |
-| `AGD_DataFim` | datetime2 | se vazio e `AGD_DiaInteiro=0`, fica só como "lembrete" |
-| `AGD_DiaInteiro` | bit | |
-| `AGD_Cor` | nvarchar(20) | hex `#xxxxxx` opcional — sobrescreve cor do tipo |
-| `AGD_Tipo` | varchar(20) | `Reuniao` \| `Treinamento` \| `Atendimento` \| `Pessoal` \| `Outro` |
-| `AGD_Visibilidade` | varchar(20) | `Publico` \| `Equipe` \| `Privado` |
-| `AGD_ProjetoId` | int NULL | FK para `IMPL_Projeto` (opcional) |
-| `AGD_Recorrente` | bit | |
-| `AGD_PadraoRecorrencia` | varchar(20) | `Nenhuma` \| `Diario` \| `Semanal` \| `Mensal` |
-| `AGD_UsuarioInclusao` / `DataInclusao` | | auditoria |
-| `AGD_UsuarioAlteracao` / `DataAlteracao` | | auditoria |
-
-### 4.2 Regras de visibilidade (CORE)
-
-| Visibilidade | Quem vê |
-|---|---|
-| `Publico` | todos os autenticados |
-| `Equipe` | apenas quem está em **pelo menos uma equipe em comum** com o autor |
-| `Privado` | apenas o próprio dono (admin vê metadata, mas não o conteúdo) |
-
-### 4.3 Cores por tipo
-
-| Tipo | Cor | Ícone |
-|---|---|---|
-| Reunião | `#0f4c81` | `bi-people-fill` |
-| Treinamento | `#16a34a` | `bi-mortarboard-fill` |
-| Atendimento | `#d97706` | `bi-headset` |
-| Pessoal | `#94a3b8` | `bi-person-fill` |
-| Outro | `#7c3aed` | `bi-three-dots` |
-
-### 4.4 Endpoints (`/api/v1/implantacao/agenda`)
-
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/agenda?inicio=&fim=&operadorId=&visibilidade=&projetoId=&take=` | Lista filtrada (respeita visibilidade) |
-| GET | `/agenda/{id}` | Detalhe (respeita visibilidade) |
-| POST | `/agenda` | Criar |
-| PUT | `/agenda/{id}` | Atualizar (somente dono ou admin) |
-| DELETE | `/agenda/{id}` | Excluir (somente dono ou admin) |
-| GET | `/agenda/ics/{operadorId}?inicio=&fim=` | Exporta ICS (RFC 5545) |
-
-### 4.5 UI (frontend)
-
-Rota: `/implantacao/agenda`. Três visões:
-- **Dia** — coluna vertical 24h com **linha vermelha marcando "agora"** quando é hoje
-- **Semana** — grid 7 colunas (Dom-Sáb), eventos compactos com cor por tipo
-- **Mês** — grid 7×N, contador de eventos por dia (3 visíveis + `+N`)
-
-Filtros (chips):
-- `Todas` / `Só minhas` (do operador logado)
-- Input textual para filtrar por operador
-- Modal de criar/editar com 12 campos (ver § 6.3 do `PLANO_MESTRE.md`)
+> ⚠️ **Feature removida no rollback de 10/09/2026** (commit `8956c57`).
+> 
+> A Agenda V1 (`IMPL_Agenda`, `IMPL_MembroPerfil`, migration `AddAgendaAndPerfis`) foi removida por conflitos sistêmicos (CSS/JS, z-index, dark mode, performance). As tabelas permanecem no banco como órfãs.
+> 
+> **Endpoints removidos:** `/api/v1/implantacao/agenda` (GET/POST/PUT/DELETE/ICS)
+> **Rota frontend removida:** `/implantacao/agenda`
+> **Branch de backup:** `backup-master-pre-agenda-rollback` (commit `c3fec9c`)
+> 
+> Ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação segura.
 
 ---
 
-## 5. Diretório de Equipe (v1.3.0 — NOVO)
+## 5. Diretório de Equipe (v1.3.0)
 
 ### 5.1 Tabelas
 
@@ -191,7 +140,7 @@ Drawer lateral de detalhes (ao clicar no card):
 | `tbchamado` | `IMPL_Tarefa.TRF_ChamadoLegadoId` | FK lógica (sem constraint) |
 | `tbindicacao` | (uso futuro) | — |
 | `tbfuncionario` | join em `IMPL_MembroEquipe.OPERADOR_ID` | join lógico |
-| `tboperador` | `IMPL_Agenda.AGD_OperadorId` | FK conceitual (sem constraint — operador pode sair do sistema) |
+| `tboperador` | ~~`IMPL_Agenda.AGD_OperadorId`~~ (feature removida) | FK conceitual (sem constraint — operador pode sair do sistema) |
 
 **Por que FKs lógicas e não constraints?**
 - Permite o módulo IMPL funcionar mesmo se a tabela legada tiver registros
@@ -207,18 +156,9 @@ Drawer lateral de detalhes (ao clicar no card):
 |---|---|---|---|
 | (v1.1.0) | `ImplantacaoInit` | 9 tabelas IMPL_* iniciais | ✅ sim |
 | (v1.2.0) | `AddLegadoLinks` | `PRJ_ClienteLegadoId`, `TRF_ChamadoLegadoId` | ✅ sim |
-| **v1.3.0** | `AddAgendaAndPerfis` | `IMPL_Agenda`, `IMPL_MembroPerfil` | ❌ **pendente** |
+| **v1.3.0** | `AddAgendaAndPerfis` | `IMPL_Agenda`, `IMPL_MembroPerfil` | ✅ **aplicada em produção** (feature removida, tabelas órfãs mantidas) |
 
-**Atenção homolog**: o `deploy.ps1` **não aplica migrations**. Para subir a v1.3.0
-em homolog (192.168.2.154 / dbBUSINESS_HML), aplicar manualmente antes:
-
-```bash
-"C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\SQLCMD.EXE" ^
-  -S 192.168.2.154 -d dbBUSINESS_HML -U bussiness -P "%DB_EXPLORER_SENHA%" ^
-  -i "C:\...\backend\Central_BackEnd\Migrations\Sql\AddAgendaAndPerfis.sql"
-```
-
-Script idempotente — pode ser rodado múltiplas vezes sem erro.
+> **Nota:** A migration `AddAgendaAndPerfis` já foi aplicada em produção. A feature Agenda foi removida no rollback `8956c57`, mas as tabelas permanecem no banco. Ver `docs/AGENDA-REIMPLEMENTACAO.md`.
 
 ---
 

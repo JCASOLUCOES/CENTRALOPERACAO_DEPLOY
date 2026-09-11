@@ -65,14 +65,14 @@ Os 3 repositórios (`JCASOLUCOES/CENTRALOPERACAO_DEPLOY`,
 `JCASOLUCOES/Central-Conhecimento`, `JCASOLUCOES/CCBAckend`) compartilham
 a mesma convenção:
 
-| Branch / Tag | Propósito | Onde |
-|---|---|---|
-| `main` | **Produção** — espelho do que está rodando no IIS 192.168.2.130. Recebe merges via PR de `developer` (com aprovação). Branch padrão no GitHub. | front, back, deploy |
-| `developer` | **Desenvolvimento** — onde o JCASOLUCOES mexe no dia-a-dia. Sem proteção. | front, back, deploy |
-| `sara` | Branch pessoal da Sara (baseada em `developer`). Sem proteção. | front, back, deploy |
-| `samuel` | Branch pessoal do Samuel (baseada em `developer`). Sem proteção. | front, back, deploy |
-| `projeto-implantacao` | Branch **ativa** com o módulo IMPLANTAÇÃO/PROJETOS (v1.1.0). | front, back, deploy |
-| `v0.7.0`, `v1.1.0`, ... | **Tags** que marcam versões estáveis já em produção (substituem a ideia de "branch backup"). | front, back, deploy |
+| Branch / Tag | Propósito | Onde | Estado atual |
+|---|---|---|---|
+| `main` | **Produção** — espelho do que está rodando no IIS 192.168.2.130. Recebe merges via PR de `developer` (com aprovação). Branch padrão no GitHub. | front, back, deploy | `8956c57` |
+| `developer` | **Desenvolvimento** — onde o JCASOLUCOES mexe no dia-a-dia. Sem proteção. | front, back, deploy | `8956c57` |
+| `sara` | Branch pessoal da Sara (baseada em `developer`). Sem proteção. | front, back, deploy | — |
+| `samuel` | Branch pessoal do Samuel (baseada em `developer`). Sem proteção. | front, back, deploy | — |
+| `projeto-implantacao` | Branch **ativa** com o módulo IMPLANTAÇÃO/PROJETOS (v1.1.0). | front, back, deploy | — |
+| `v0.7.0`, `v0.8.0`, ... | **Tags** que marcam versões estáveis já em produção (substituem a ideia de "branch backup"). | front, back, deploy | — |
 
 **Proteção recomendada de `main`** (configurar via `Settings → Branches → Add rule`):
 
@@ -548,7 +548,6 @@ para escrita. Padrão: `api/v{version:apiVersion}/...` com versionamento.
 | `/implantacao/projetos` | `ProjetosComponent` | Lista em grid de cards (borda lateral colorida pela equipe), busca, filtros (equipe/status), código em mono, progresso com gradiente IMPL↔CIAA, meta com responsável e prazo |
 | `/implantacao/projetos/:id` | `ProjetoDetalheComponent` | Hero com gradiente (azul para IMPLANTACAO, violeta→magenta para CIAA), breadcrumb back, abas (Visão/Tarefas/Histórico), grid 2 colunas com detalhes e KPIs de tarefas |
 | `/implantacao/tarefas` | `TarefasComponent` | Tabela com ID mono (T123), atalhos (Todas/Atrasadas/Em andamento/Concluídas), filtros (equipe/projeto), prioridade colorida por nível |
-| `/implantacao/agenda` | `AgendaComponent` | **v1.3.0** — 3 visões (Dia/Semana/Mês), linha vermelha "agora", filtros chips (Todas/Só minhas + por operador), modal de criar/editar com 12 campos |
 | `/implantacao/equipe` | `EquipeComponent` | **v1.3.0** — Grid de cards + drawer lateral de detalhes, edição do perfil apenas do próprio usuário |
 | `/implantacao/clientes` | `ClientesComponent` | Formulário inline com máscara de CNPJ, tabela com badge de status Ativo/Inativo |
 | `/implantacao/cadastros` | `CadastrosComponent` | 4 abas (Equipes/Tipos/Etapas/Colunas) com formulários inline e tabelas com team badges coloridos |
@@ -599,24 +598,15 @@ Esses dados ficam em memória (InMemory) e somem ao reiniciar o backend.
 Em produção (SQL Server), as tabelas precisam ser criadas via
 `Migrations/Sql/ImplantacaoInit.sql` — ver § 6.5.2.
 
-### 6.5.7. Agenda compartilhada (v1.3.0)
+### 6.5.7. ~~Agenda compartilhada (v1.3.0 — REMOVIDA)~~
 
-Tabela nova `IMPL_Agenda` com eventos compartilhados pelas equipes. Tipos: `Reuniao`,
-`Treinamento`, `Atendimento`, `Pessoal`, `Outro` (cada um com cor institucional).
-Visibilidade: `Publico` (todos veem), `Equipe` (mesma equipe do autor), `Privado`
-(só o dono, admin vê metadata).
-
-Endpoints (`/api/v1/implantacao/agenda`):
-- `GET /agenda?inicio=&fim=&operadorId=&visibilidade=&projetoId=&take=`
-- `GET /agenda/{id}`
-- `POST /agenda`
-- `PUT /agenda/{id}` (somente dono ou admin)
-- `DELETE /agenda/{id}` (somente dono ou admin)
-- `GET /agenda/ics/{operadorId}?inicio=&fim=` — export ICS (RFC 5545)
-
-UI: `/implantacao/agenda` com 3 visões (Dia / Semana / Mês), linha vermelha
-marcando "agora" no modo Dia, filtros chips, modal com 12 campos. Mapa detalhado
-em `MODULO-IMPLANTACAO-MAP.md` § 4.
+> ⚠️ **Feature removida no rollback de 10/09/2026** (commit `8956c57`).
+> 
+> A Agenda V1 (`IMPL_Agenda`, `IMPL_MembroPerfil`, migrations `AddAgendaAndPerfis`/`AddAuditoria`) foi removida por conflitos sistêmicos (CSS/JS, z-index, dark mode, performance). As tabelas `CC_Agenda`, `CC_AgendaParticipante`, `CC_Perfil`, `CC_Auditoria` permanecem no banco como órfãs (ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação segura).
+> 
+> **Endpoints removidos:** `/api/v1/implantacao/agenda` (GET/POST/PUT/DELETE/ICS)
+> **Rota frontend removida:** `/implantacao/agenda`
+> **Branch de backup:** `backup-master-pre-agenda-rollback` (commit `c3fec9c`)
 
 ### 6.5.8. Diretório de Equipe (v1.3.0)
 
@@ -638,7 +628,7 @@ só aparece se o card é do próprio usuário (match por `tbfuncionario.OPERADOR
 - **v1.0.0 (entregue)**: Dashboard, Projetos, Tarefas, Clientes, Cadastros.
 - **v1.1.0 (entregue, tag)** — Kanban UI com `@angular/cdk` drag-drop, seed de 2 projetos fakes.
 - **v1.2.0 (entregue, backend)** — Legacy data service + FKs lógicas para `tbcliente` e `tbchamado`.
-- **v1.3.0 (em desenvolvimento)** — **Agenda compartilhada** + **Diretório de Equipe** + dropdowns de legado. Migration `AddAgendaAndPerfis` ainda não aplicada em homolog.
+- **v1.3.0 (planejada)** — **Diretório de Equipe** + dropdowns de legado. Migration `AddAgendaAndPerfis` já aplicada em produção (tabelas órfãs mantidas). **Agenda movida para reimplementação futura** — ver `docs/AGENDA-REIMPLEMENTACAO.md`.
 - **v2.x (futuro)**: integração com Google Calendar (OAuth + ICS), recorrência funcional com expansão de eventos, MCP server para Agente IA.
 
 ### 6.5.10. Branch `projeto-implantacao`
