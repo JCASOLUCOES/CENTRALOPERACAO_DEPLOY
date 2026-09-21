@@ -1,0 +1,18 @@
+<div class="dp-wrapper">
+  <input 
+    type="text" 
+    class="form-control dp-input"
+    [placeholder]="placeholder"
+    [(ngModel)]="dataStr"
+    (ngModelChange)="onChange($event)"
+    ngbDatepicker 
+    #dp="ngbDatepicker"
+    [outsideDays]="'hidden'"
+    container="body"
+    placement="bottom-left"
+    (dateSelect)="onDateSelect($event)"
+  >
+  <button type="button" class="btn btn-outline-secondary dp-btn" (click)="dp.toggle()" aria-label="Abrir calendário">
+    <i class="bi bi-calendar3"></i>
+  </button>
+</div>

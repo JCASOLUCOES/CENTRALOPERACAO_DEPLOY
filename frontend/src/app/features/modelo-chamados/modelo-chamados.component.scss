@@ -8,7 +8,7 @@
   flex-direction: column;
   gap: 1rem;
   color: var(--text-color);
-  max-width: 1280px;
+  max-width: 80rem;
   width: 100%;
 }
 
@@ -23,20 +23,10 @@
   .mc-chamado-grid {
     height: auto;
     flex: 1;
-    min-height: 320px;
+    min-height: 20rem;
   }
 
-  .mc-topo {
-    padding: 0.7rem 1rem;
 
-    h1 {
-      margin-bottom: 0.15rem;
-    }
-
-    .mc-topo__tag {
-      margin-bottom: 0.25rem;
-    }
-  }
 
   .mc-abas {
     padding: 0.25rem;
@@ -44,13 +34,13 @@
 
   .mc-chamado-grid__form .mc-input--area,
   .mc-whatsapp-campo .mc-input--area {
-    height: 110px;
+    height: 6.875rem;
     overflow-y: auto;
     resize: none;
   }
 
   .mc-whatsapp-campo .mc-input--area {
-    height: 120px;
+    height: 7.5rem;
   }
 
   .mc-bloco--whatsapp {
@@ -61,42 +51,6 @@
 /* ======================== */
 /* Topo                     */
 /* ======================== */
-
-.mc-topo {
-  background: var(--surface-main);
-  border: 1px solid var(--border-primary-soft);
-  border-radius: 0.75rem;
-  padding: 1.1rem 1.25rem;
-}
-
-.mc-topo__tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  background: var(--surface-primary-soft, rgba(15, 76, 129, 0.1));
-  color: var(--primary-color);
-  margin-bottom: 0.45rem;
-}
-
-.mc-topo h1 {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  margin: 0 0 0.3rem;
-  color: var(--text-strong, var(--text-color));
-}
-
-.mc-topo p {
-  margin: 0;
-  font-size: 0.88rem;
-  color: var(--text-secondary);
-}
 
 /* ======================== */
 /* Abas                      */
@@ -208,8 +162,8 @@
 }
 
 .mc-bloco__icone {
-  width: 30px;
-  height: 30px;
+  width: 1.875rem;
+  height: 1.875rem;
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
@@ -232,7 +186,7 @@
 
 .mc-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(11.875rem, 1fr));
   gap: 0.7rem;
 }
 
@@ -289,7 +243,7 @@
 
   &--area {
     resize: vertical;
-    min-height: 70px;
+    min-height: 4.375rem;
     line-height: 1.5;
   }
 }
@@ -327,8 +281,8 @@
 }
 
 .mc-checkbox__marca {
-  width: 18px;
-  height: 18px;
+  width: 1.125rem;
+  height: 1.125rem;
   border: 1px solid var(--border-primary-soft);
   border-radius: 0.25rem;
   background: var(--surface-secondary-soft);
@@ -368,8 +322,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
-  height: 600px;
-  height: clamp(420px, calc(100dvh - 22rem), 700px);
+  height: 37.5rem;
+  height: clamp(26.25rem, calc(100dvh - 22rem), 43.75rem);
 }
 
 .mc-chamado-grid__form {

@@ -1,58 +1,133 @@
 <section class="agenda-shell">
 
-  <!-- Cabeçalho da Agenda -->
+  <!-- Cabeçalho da Agenda: 3 zonas (esquerda / centro / direita) -->
   <header class="agenda-header">
-    <div class="agenda-header__titulo">
-      <i class="bi bi-calendar-week-fill"></i>
-      <h1>Agenda</h1>
+    <!-- ESQUERDA: título + navegação de data + intervalo clicável -->
+    <div class="agenda-header__zona agenda-header__zona--esquerda">
+      <div class="agenda-header__titulo">
+        <i class="bi bi-calendar-week-fill" aria-hidden="true"></i>
+        <h1>Agenda</h1>
+      </div>
+
+      <div class="ag-date-nav" role="group" aria-label="Navegação de período">
+        <button type="button" class="ag-btn ag-date-nav__btn" (click)="anterior()" aria-label="Período anterior">
+          <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="ag-btn ag-date-nav__btn ag-date-nav__btn--hoje" (click)="hoje()">Hoje</button>
+        <button type="button" class="ag-btn ag-date-nav__btn" (click)="proximo()" aria-label="Próximo período">
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div class="ag-date-range">
+        <button type="button" class="ag-btn ag-date-range__btn" (click)="alternarDatePicker()"
+          [attr.aria-expanded]="mostrarDatePicker()" aria-haspopup="dialog" title="Escolher data">
+          <i class="bi bi-calendar3" aria-hidden="true"></i>
+          <span>{{ intervaloDatas() }}</span>
+        </button>
+        @if (mostrarDatePicker()) {
+          <div class="ag-date-range__popup" role="dialog" aria-label="Escolher data">
+            <ngb-datepicker [ngModel]="dataPickerModel()" (dateSelect)="aoSelecionarData($event)"></ngb-datepicker>
+          </div>
+        }
+      </div>
     </div>
 
-    <div class="agenda-header__navegacao">
-      <button type="button" class="ag-btn ag-btn--icon" (click)="anterior()" aria-label="Período anterior">
-        <i class="bi bi-chevron-left"></i>
-      </button>
-      <button type="button" class="ag-btn ag-btn--ghost" (click)="hoje()">Hoje</button>
-      <button type="button" class="ag-btn ag-btn--icon" (click)="proximo()" aria-label="Próximo período">
-        <i class="bi bi-chevron-right"></i>
-      </button>
-      <div class="agenda-header__intervalo">{{ intervaloDatas() }}</div>
-    </div>
-
-    <div class="agenda-header__filtro-visibilidade">
-      <label class="agenda-toggle">
-        <input type="checkbox" [checked]="pessoalMaisPublico()"
-          (change)="pessoalMaisPublico.set($any($event.target).checked); carregar()">
-        <span>Pessoal + público</span>
+    <!-- CENTRO: escopo + filtros de contexto -->
+    <div class="agenda-header__zona agenda-header__zona--centro">
+      <div class="ag-scope-toggle" role="group" aria-label="Escopo de visualização">
+        <button type="button" class="ag-scope-toggle__btn"
+          [class.ag-scope-toggle__btn--ativo]="escopo() === 'meus'"
+          [attr.aria-pressed]="escopo() === 'meus'"
+          (click)="alternarEscopo('meus')">Meus</button>
+        <button type="button" class="ag-scope-toggle__btn"
+          [class.ag-scope-toggle__btn--ativo]="escopo() === 'todos'"
+          [attr.aria-pressed]="escopo() === 'todos'"
+          (click)="alternarEscopo('todos')">Geral</button>
+      </div>
+      <label class="ag-filter">
+        <span class="ag-filter__label" id="filtro-responsavel-label">Responsável</span>
+        <select [(ngModel)]="operadorFiltro" (ngModelChange)="filtrarPorResponsavel($event)"
+          class="ag-filter__select" aria-labelledby="filtro-responsavel-label">
+          <option [ngValue]="''">Todos</option>
+          <option *ngFor="let o of operadores()" [ngValue]="o.id">{{ o.nome }}</option>
+        </select>
+        <button *ngIf="operadorFiltro" type="button" class="ag-btn ag-btn--icon ag-filter__clear"
+          (click)="limparFiltroResponsavel()" aria-label="Limpar filtro de responsável">
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+      </label>
+      <label class="ag-filter">
+        <span class="ag-filter__label" id="filtro-funcao-label">Função</span>
+        <select [(ngModel)]="funcaoFiltro" (ngModelChange)="filtrarPorFuncao($event)"
+          class="ag-filter__select" aria-labelledby="filtro-funcao-label">
+          <option [ngValue]="null">Todas</option>
+          <option *ngFor="let f of funcoes()" [ngValue]="f.id">{{ formatarFuncao(f) }}</option>
+        </select>
+        <button *ngIf="funcaoFiltro != null" type="button" class="ag-btn ag-btn--icon ag-filter__clear"
+          (click)="limparFiltroFuncao()" aria-label="Limpar filtro de função">
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
       </label>
     </div>
 
-    <div class="agenda-header__controles">
-      <div class="agenda-header__visao" role="group" aria-label="Modo de visualização">
-        <button type="button" class="ag-btn ag-btn--ghost"
-          [class.ag-btn--primary]="visao() === 'dia'"
-          (click)="mudarVisao('dia')" aria-pressed="dia">Dia</button>
-        <button type="button" class="ag-btn ag-btn--ghost"
-          [class.ag-btn--primary]="visao() === 'semana'"
-          (click)="mudarVisao('semana')" aria-pressed="semana">Semana</button>
-        <button type="button" class="ag-btn ag-btn--ghost"
-          [class.ag-btn--primary]="visao() === 'mes'"
-          (click)="mudarVisao('mes')" aria-pressed="mes">Mês</button>
+    <!-- DIREITA: visão + ação principal -->
+    <div class="agenda-header__zona agenda-header__zona--direita">
+      <div class="ag-segmented" role="group" aria-label="Modo de visualização">
+        <button type="button" class="ag-segmented__btn"
+          [class.ag-segmented__btn--ativo]="visao() === 'dia'"
+          [attr.aria-pressed]="visao() === 'dia'"
+          (click)="mudarVisao('dia')">Dia</button>
+        <button type="button" class="ag-segmented__btn"
+          [class.ag-segmented__btn--ativo]="visao() === 'semana'"
+          [attr.aria-pressed]="visao() === 'semana'"
+          (click)="mudarVisao('semana')">Semana</button>
+        <button type="button" class="ag-segmented__btn"
+          [class.ag-segmented__btn--ativo]="visao() === 'mes'"
+          [attr.aria-pressed]="visao() === 'mes'"
+          (click)="mudarVisao('mes')">Mês</button>
       </div>
+      <button type="button" class="ag-btn ag-btn--operacional"
+        [class.ag-btn--operacional-ativo]="visao() === 'operacional'"
+        [attr.aria-pressed]="visao() === 'operacional'"
+        (click)="mudarVisao('operacional')" title="Janela operacional de 48 horas">
+        <i class="bi bi-lightning-charge-fill" aria-hidden="true"></i> 48h
+      </button>
       <button type="button" class="ag-btn ag-btn--primary" (click)="abrirModalEvento()">
-        <i class="bi bi-plus-lg"></i> Novo evento
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> Novo evento
       </button>
     </div>
   </header>
 
-  <!-- Legenda de Categorias -->
-  <div class="agenda-legenda">
-    <span *ngFor="let t of tiposLegenda" class="agenda-legenda__item" [title]="t.rotulo">
-      <i class="bi" [ngClass]="t.icone" [style.color]="t.cor"></i>
-      {{ t.rotulo }}
+  <!-- Legenda de Categorias: tags neutras com status dot -->
+  <div class="agenda-legenda" aria-label="Legenda de categorias">
+    <span *ngFor="let t of tipos()" class="agenda-legenda__item" [title]="t.nome">
+      <span class="agenda-legenda__dot" [style.--dot-color]="t.cor" aria-hidden="true"></span>
+      {{ t.nome }}
     </span>
   </div>
 
-  <!-- Grade do Calendário -->
+  <!-- Filtros ativos (explícito: escopo Geral + dropdown Responsável/Função) -->
+  <div *ngIf="operadorFiltro || funcaoFiltro != null" class="ag-filtros-ativos" role="status" aria-label="Filtros ativos">
+    <span class="ag-filtros-ativos__rotulo">Filtrando:</span>
+    <button *ngIf="operadorFiltro" type="button" class="ag-filtros-ativos__chip" (click)="limparFiltroResponsavel()"
+      title="Limpar filtro de responsável">
+      <i class="bi bi-person-fill" aria-hidden="true"></i> {{ nomeOperadorFiltro() }}
+      <i class="bi bi-x-lg" aria-hidden="true"></i>
+    </button>
+    <button *ngIf="funcaoFiltro != null" type="button" class="ag-filtros-ativos__chip" (click)="limparFiltroFuncao()"
+      title="Limpar filtro de função">
+      <i class="bi bi-briefcase-fill" aria-hidden="true"></i> {{ nomeFuncaoFiltro() }}
+      <i class="bi bi-x-lg" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <!-- Aviso de período sem eventos (inline, não bloqueia a grade) -->
+  <div *ngIf="!carregando() && eventos().length === 0" class="agenda-empty-inline" role="status">
+    Nenhum evento no período. Clique em <strong>Novo evento</strong> ou em uma célula do calendário.
+  </div>
+
+  <!-- Grade do Calendário (sempre renderizada, mesmo com []) -->
   <div class="agenda-calendario" [ngSwitch]="visao()">
 
     <!-- DIA -->
@@ -62,7 +137,9 @@
           <span *ngFor="let e of eventosDiaInteiro(dataReferencia())"
             class="agenda-evento agenda-evento--dia-inteiro"
             [style.background]="corDoEvento(e)"
-            (click)="abrirEdicao(e)">
+            [class.agenda-evento--somente-leitura]="!podeEditar(e)"
+            (click)="podeEditar(e) && abrirEdicao(e)"
+            [attr.title]="!podeEditar(e) ? 'Somente o responsável pode editar' : null">
             <i class="bi bi-circle-fill"></i>
             {{ e.titulo }} · {{ e.operadorNome || e.operadorId }}
           </span>
@@ -72,16 +149,21 @@
             <div class="agenda-dia__hora">{{ h }}h</div>
             <div class="agenda-dia__celula" (click)="abrirModalEvento(dataReferencia(), h)">
               <span *ngFor="let e of eventosPorHora(dataReferencia(), h)"
-                class="agenda-evento"
+                class="agenda-evento agenda-evento--expandido"
+                [ngClass]="'agenda-evento--' + prioridadeEfetiva(e)"
                 [style.background]="corDoEvento(e)"
-                (click)="$event.stopPropagation(); abrirEdicao(e)">
-                <strong>{{ e.dataInicio | date:'HH:mm' }}</strong> {{ e.titulo }}
-                <small *ngIf="e.operadorNome || e.operadorId">· {{ e.operadorNome || e.operadorId }}</small>
+                [class.agenda-evento--somente-leitura]="!podeEditar(e)"
+                (click)="$event.stopPropagation(); podeEditar(e) && abrirEdicao(e)"
+                [attr.title]="!podeEditar(e) ? 'Somente o responsável pode editar' : null">
+                <i *ngIf="iconePrioridade(e)" class="bi agenda-evento__icone" [ngClass]="iconePrioridade(e)"></i>
+                <strong>{{ formatarHoraLocal(e.dataInicio) }}{{ e.dataFim ? (' - ' + formatarHoraLocal(e.dataFim)) : '' }}</strong> {{ e.titulo }}
+                <small *ngIf="e.operadorNome || e.operadorId"><i class="bi bi-person-fill"></i> {{ e.operadorNome || e.operadorId }}</small>
+                <small *ngIf="slaRestanteTexto(e)"><i class="bi bi-stopwatch"></i> {{ slaRestanteTexto(e) }}</small>
               </span>
             </div>
           </div>
           <div class="agenda-dia__linha-agora"
-            [style.top.px]="(horaAtualMinutos() / 60) * 32"
+            [style.top.px]="(horaAtualMinutos() / 60) * alturaLinhaHoraPx()"
             *ngIf="ehHoje(dataReferencia())">
             <span>agora</span>
           </div>
@@ -104,12 +186,44 @@
           (click)="abrirModalEvento(d)">
           <span *ngFor="let e of eventosDoDia(d)"
             class="agenda-evento agenda-evento--compacto"
+            [ngClass]="'agenda-evento--' + prioridadeEfetiva(e)"
             [style.background]="corDoEvento(e)"
-            (click)="$event.stopPropagation(); abrirEdicao(e)">
-            <i class="bi bi-circle-fill"></i>
-            <strong *ngIf="!e.diaInteiro">{{ e.dataInicio | date:'HH:mm' }}</strong>
+            [class.agenda-evento--somente-leitura]="!podeEditar(e)"
+            (click)="$event.stopPropagation(); podeEditar(e) && abrirEdicao(e)"
+            [attr.title]="!podeEditar(e) ? 'Somente o responsável pode editar' : null">
+            <i class="bi bi-circle-fill agenda-evento__dot" aria-hidden="true"></i>
+            <strong *ngIf="!e.diaInteiro">{{ formatarHoraLocal(e.dataInicio) }}{{ e.dataFim ? (' - ' + formatarHoraLocal(e.dataFim)) : '' }}</strong>
             {{ e.titulo }}
+            <small *ngIf="e.operadorNome || e.operadorId" class="agenda-evento__resp"><i class="bi bi-person-fill" aria-hidden="true"></i> {{ e.operadorNome || e.operadorId }}</small>
           </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPERACIONAL 48H -->
+    <div *ngSwitchCase="'operacional'" class="agenda-operacional">
+      <div class="agenda-operacional__col" *ngFor="let d of diasOperacionais(); let ci = index">
+        <div class="agenda-operacional__col-titulo" [class.agenda-operacional__col-titulo--hoje]="ci === 0">
+          {{ d | date:'EEE dd/MM' }}
+        </div>
+        <div class="agenda-operacional__linhas">
+          <div class="agenda-dia__linha-hora" *ngFor="let h of horasDia">
+            <div class="agenda-dia__hora">{{ h }}h</div>
+            <div class="agenda-dia__celula" (click)="abrirModalEvento(d, h)">
+              <span *ngFor="let e of eventosPorHora(d, h)"
+                class="agenda-evento agenda-evento--expandido"
+                [ngClass]="'agenda-evento--' + prioridadeEfetiva(e)"
+                [style.background]="corDoEvento(e)"
+                [class.agenda-evento--somente-leitura]="!podeEditar(e)"
+                (click)="$event.stopPropagation(); podeEditar(e) && abrirEdicao(e)"
+                [attr.title]="!podeEditar(e) ? 'Somente o responsável pode editar' : null">
+                <i *ngIf="iconePrioridade(e)" class="bi agenda-evento__icone" [ngClass]="iconePrioridade(e)"></i>
+                <strong>{{ formatarHoraLocal(e.dataInicio) }}{{ e.dataFim ? (' - ' + formatarHoraLocal(e.dataFim)) : '' }}</strong> {{ e.titulo }}
+                <small *ngIf="e.operadorNome || e.operadorId"><i class="bi bi-person-fill"></i> {{ e.operadorNome || e.operadorId }}</small>
+                <small *ngIf="slaRestanteTexto(e)"><i class="bi bi-stopwatch"></i> {{ slaRestanteTexto(e) }}</small>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -129,7 +243,11 @@
               <span *ngFor="let e of eventosDoDia(d).slice(0, 3)"
                 class="agenda-evento agenda-evento--mini"
                 [style.background]="corDoEvento(e)"
-                (click)="$event.stopPropagation(); abrirEdicao(e)">
+                [class.agenda-evento--somente-leitura]="!podeEditar(e)"
+                [title]="formatarHoraLocal(e.dataInicio) + (e.dataFim ? (' - ' + formatarHoraLocal(e.dataFim)) : '') + ' · ' + e.titulo + ((e.operadorNome || e.operadorId) ? (' · ' + (e.operadorNome || e.operadorId)) : '') + (!podeEditar(e) ? ' · Somente leitura' : '')"
+                (click)="$event.stopPropagation(); podeEditar(e) && abrirEdicao(e)">
+                <span *ngIf="!e.diaInteiro && e.dataFim">{{ formatarHoraLocal(e.dataInicio) }} - {{ formatarHoraLocal(e.dataFim) }} </span>
+                <span *ngIf="!e.diaInteiro && !e.dataFim">{{ formatarHoraLocal(e.dataInicio) }} </span>
                 {{ e.titulo }}
               </span>
               <span class="agenda-mes__mais" *ngIf="eventosDoDia(d).length > 3">
@@ -143,9 +261,6 @@
 
   </div>
 
-  <!-- Estados -->
+  <!-- Estado de carregamento (overlay transitório) -->
   <div *ngIf="carregando()" class="agenda-loading">Carregando…</div>
-  <div *ngIf="!carregando() && eventos().length === 0" class="agenda-empty">
-    Nenhum evento no período. Clique em <strong>Novo evento</strong> ou em uma célula do calendário.
-  </div>
 </section>

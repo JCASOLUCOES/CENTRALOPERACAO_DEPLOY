@@ -1,5 +1,9 @@
 # Central de Operação — Documentação Completa
 
+> ⚠️ **Cópia espelho (pode estar desatualizada).** A fonte canônica é
+> [`docs/DOCUMENTACAO-COMPLETA.md`](../../docs/DOCUMENTACAO-COMPLETA.md) na raiz
+> do monorepo — consulte-a antes de documentar ou validar qualquer fato.
+>
 > Documentação abrangente do sistema interno **Central de Operação** (anteriormente
 > "Central de Conhecimento") da JCA Soluções.
 > Front-end e back-end, autenticação, integração com Google Sheets, banco de dados, deploy e melhorias sugeridas.
@@ -672,11 +676,49 @@ segura de conexão.
 | `/database/explorador` | `DbExploradorComponent` | Árvore de tabelas + painel de detalhe (colunas + índices) + busca global |
 | `/database/relacionamentos` | `DbRelacionamentosComponent` | Confirmados (linha azul contínua) × Possíveis (linha violeta tracejada) com score e motivos + busca por coluna |
 | `/database/diagrama` | `DbDiagramaComponent` | SVG próprio, layout BFS, profundidade 1-5, setas: azul contínua / violeta tracejada |
-| `/database/consultas` | `DbConsultasComponent` | Editor SQL (SELECT/WITH), paginação 25/50/100/500, timeout 5/15/30/60s |
+| `/database/consultas` | `DbConsultasComponent` | 2 abas: editor SQL (SELECT/WITH) + **Criador de Consultas** (wizard em 7 etapas, ver § 6.6.1); paginação 25/50/100/500, timeout 5/15/30/60s |
 | `/database/diferencas` | `DbDiferencasComponent` | Resumo + lista de divergências SQL × Markdown (placeholder, v2.x) |
 | `/database/configuracao` | `DbConfiguracaoComponent` | Form de conexão (servidor/porta/banco/usuário/senha mascarada) + Testar conexão + Salvar |
 
 **Endpoints backend (`/api/v1/database`)** — 14 endpoints, ver `MODULO-BANCO-DADOS.md` § 4.
+Inclui `POST /api/v1/database/query-builder-advanced` (montagem do SQL do Criador de Consultas)
+e `POST /api/v1/database/query` (execução SELECT-only).
+
+#### 6.6.1. Criador de Consultas / Query Builder (`app-db-query-builder`)
+
+Wizard guiado em **7 etapas** (componente `frontend/src/app/features/database/components/db-query-builder.component.ts`,
+selector `app-db-query-builder`, embutido na aba "Criador de Consultas" de `DbConsultasComponent`):
+
+1. **Tabela** — tabela principal (busca + contadores de colunas/relacionamentos).
+2. **Campos** — colunas da principal (busca, Todos/Limpar, badges PK/FK).
+3. **Relacionamentos** — árvore da montagem + botão "Adicionar tabela" (modal com distinção
+   **Confirmada** (FK no SQL Server, badge verde) × **Sugerida** (inferida, badge amarela + confiança %)
+   + prévia `origem.coluna = destino.coluna` + "Ver evidências" (motivos + score + tipo)). JOIN aplicado sozinho.
+4. **Filtros** — operadores em linguagem simples (`igual a`, `diferente de`, `contém`, `começa com`,
+   `termina com`, `maior que`, `menor que`, `maior ou igual`, `menor ou igual`, `entre`, `está preenchido`,
+   `está vazio`) → WHERE gerado sozinho. Tipo do input adaptado ao tipo da coluna (date/datetime-local/number/text).
+5. **Ordenação** — crescente (A–Z, 0–9) / decrescente (Z–A, 9–0) → ORDER BY.
+6. **Resumo** — tabela principal, nº de tabelas/campos/filtros/ordenações + limites (25/50/100/500,
+   timeout 5/15/30/60s) + "Opções avançadas (agrupar e CTE)" colapsada (GROUP BY por checkbox + HAVING livre).
+7. **SQL e resultado** — SQL gerado + Copiar + Executar + grade de resultado (registros + duração ms).
+   Somente leitura — escrita bloqueada. CTEs e JOIN manual saíram da visão padrão.
+
+**Detalhes confirmados no código:**
+- **Aliases amigáveis e determinísticos**: frontend (`gerarAlias`) e backend (`GerarAliases`/`GetAlias`
+  em `DatabaseQueryBuilderService.cs`) geram os mesmos aliases (ex.: TBCHAMADO→C, TBCLIENTE→CL).
+  Exibidos ao usuário como `nome (ALIAS)` e usados no SELECT/JOIN/WHERE/ORDER BY.
+- **SQL via backend com fallback local**: `DatabaseService.executarQueryBuilderAvançado()` →
+  `POST /api/v1/database/query-builder-advanced`; em falha, fallback local (`montarSQLLocal()`)
+  com aviso "Serviço de montagem indisponível — SQL gerado localmente."
+- **Backend**: `TOP n` injetado após o SELECT (`SELECT TOP n ...`, antes era anexado no fim — SQL inválido);
+  `ResolverColunaSelecao` aceita colunas qualificadas `"Tabela.Coluna"` (formato enviado pelo wizard)
+  ou nome simples (compatibilidade: primeira tabela). Execução continua read-only via `DatabaseQueryService` (sem mudanças).
+- **Pré-preenchimento**: `TableDetailComponent` tem botão "Criar consulta" (abre o builder com
+  `?tabela=schema.tabela`) e, em cada linha da aba Relacionamentos, botão "Criar consulta"
+  (abre com `?caminho=origem,destino` pré-configurado). O builder também aceita `?tabelas=`,
+  `?origem=`/`?destino=` (e `?rel=` como alias de destino) além do legado
+  `sessionStorage['db-query-builder-tables']`. Limite de 5 tabelas por consulta.
+- **Não existe IA Chat** neste módulo.
 
 **Segurança**: senha nunca é logada, retornada pela API ou commitada. Leitura via
 env var (`DB_EXPLORER_*`) em produção, user-secrets em Development. SELECT-only com

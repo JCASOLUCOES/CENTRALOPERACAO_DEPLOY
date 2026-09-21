@@ -3,11 +3,12 @@ import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FerramentasService } from '../services/ferramentas.service';
 import { Ferramenta, FerramentaCategoria } from './ferramentas.data';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-ferramentas',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PageHeaderComponent],
   templateUrl: './ferramentas.component.html',
   styleUrl: './ferramentas.component.scss'
 })

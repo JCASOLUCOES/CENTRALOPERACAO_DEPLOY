@@ -13,30 +13,32 @@ de acesso é Administrador e o `LocalAccountTokenFilterPolicy` está liberado).
 
 ## Localização
 
-- Script: `deploy.ps1` (raiz do repositório, ao lado das pastas `frontend/` e `backend/`).
+- Script: `scripts/deploy/deploy.ps1` (NÃO mais na raiz).
 - Frontend: `frontend/` (Angular 18 SSR).
 - Backend: `backend/Central_BackEnd/` (ASP.NET Core 8, .NET 8).
 - Saída local: `deploy/backend/` e `deploy/frontend/`.
 - Publica direto em:
   - Backend → `C:\inetpub\wwwroot\Suporte_Back`
   - Frontend → `C:\inetpub\wwwroot\Suporte_Front`
-- Backup automático do IIS atual em: `C:\Users\JCASRV-SUP\Documents\Backup_IIS\<timestamp>`
+- Backup do IIS (opcional, `-Backup:$true`) em: `C:\Users\JCASRV-SUP\Documents\Backup_IIS\<timestamp>`
 
 ## Passos
 
 1. **Pré-requisitos**: confirmar Node/npm e SDK do .NET 8 instalados e que não
    há build pendurado em `dist/` ou `bin/Release`.
-2. **Executar o script** do diretório raiz (o working directory):
+2. **Executar o script** do diretório raiz (o working directory). `-BuildFrontend`,
+   `-BuildBackend` e `-Backup` são `Nullable[bool]` — via `powershell -File`/`-Command`
+   o `$true` chega como string e o bind falha; usar `-Command` com `$` escapado:
    ```powershell
-   powershell -ExecutionPolicy Bypass -File .\deploy.ps1
+   powershell -ExecutionPolicy Bypass -Command "& '.\scripts\deploy\deploy.ps1' -BuildFrontend `$true -BuildBackend `$true -Backup `$true"
    ```
    O script:
    - roda `npm run build` em `frontend/`;
    - roda `dotnet publish -c Release` em `backend/Central_BackEnd/`;
    - regenera `deploy/backend` e `deploy/frontend`;
-   - **pede a senha** do usuário `JCASRV-SUP` (padrão pré-preenchido);
+   - usa a senha padrão `jca@1532` do usuário `JCASRV-SUP` (embutida, sem prompt);
    - autentica no servidor e conecta em `\\192.168.2.130\c$`;
-   - **faz backup do IIS atual** em `Backup_IIS\<timestamp>`;
+   - com `-Backup:$true`, faz backup do IIS atual em `Backup_IIS\<timestamp>`;
    - publica o backend em `Suporte_Back` usando `app_offline.htm` para liberar o
      lock do worker e **NUNCA toca em `appsettings*.json`** do servidor;
    - publica `deploy\frontend\browser` em `Suporte_Front`;
@@ -53,26 +55,16 @@ de acesso é Administrador e o `LocalAccountTokenFilterPolicy` está liberado).
 |---|---|---|
 | `-Publicar` | `$true` | `false` = só empacota em `deploy/` sem publicar |
 | `-ServidorRemoto` | `192.168.2.130` | IP do servidor IIS |
-| `-UsuarioRemoto` | `JCASRV-SUP` | Usuário pré-preenchido (confirma com Enter) |
-| `-SenhaRemota` | (obrigatória) | Senha pedida interativamente (não é salva) |
+| `-UsuarioRemoto` | `JCASRV-SUP` | Conta de acesso |
+| `-SenhaRemota` | `jca@1532` (padrão embutido) | Sem prompt na prática |
+| `-BuildFrontend`/`-BuildBackend` | pergunta se omitido | `Nullable[bool]` — passar explícito em automação |
+| `-Backup` | `$false` | `$true` = backup do IIS antes de publicar |
 | `-DestinoBackendRel` | `inetpub\wwwroot\Suporte_Back` | Caminho relativo do backend no IIS |
 | `-DestinoFrontRel` | `inetpub\wwwroot\Suporte_Front` | Caminho relativo do frontend no IIS |
 | `-BackupBaseRel` | `Users\JCASRV-SUP\Documents\Backup_IIS` | Pasta de backups |
+| `-EsperaOffline` | `3` | Segundos após `app_offline.htm` antes do mirror |
 
-**Modo interativo (recomendado):**
-```powershell
-.\deploy.ps1
-# Usuario: JCASRV-SUP (padrao, basta Enter)
-# Senha: ******** (digitada pelo usuario)
-```
-
-**Modo automatizado (CI/CD):**
-```powershell
-$senha = ConvertTo-SecureString 'senha_aqui' -AsPlainText -Force
-.\deploy.ps1 -UsuarioRemoto 'JCASRV-SUP' -SenhaRemota $senha
-```
-
-Para só empacotar: `powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -Publicar:$false`
+Para só empacotar: `powershell -ExecutionPolicy Bypass -Command "& '.\scripts\deploy\deploy.ps1' -BuildFrontend `$true -BuildBackend `$true -Publicar `$false"`
 
 ## Observações
 
@@ -85,3 +77,7 @@ Para só empacotar: `powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -Publ
   fica guardada só no servidor.
 - Rollback: copiar `Backup_IIS\<timestamp>\backend` e `\frontend` de volta para
   `Suporte_Back` / `Suporte_Front` (sem mexer nos `appsettings*.json`).
+- **Lock da DLL:** se o mirror do backend falhar com robocopy código 11, a espera
+  de 3 s foi insuficiente — aguarde 1–2 min (o `app_offline.htm` é mantido) e repita
+  só o mirror: `robocopy deploy\backend \\192.168.2.130\c$\inetpub\wwwroot\Suporte_Back /MIR /XF appsettings*.json app_offline.htm /MT:8 /R:4 /W:5`
+  (código 3 = OK). Depois remova o `app_offline.htm` e publique o frontend.

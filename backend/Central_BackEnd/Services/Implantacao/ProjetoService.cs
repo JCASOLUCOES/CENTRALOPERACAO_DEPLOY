@@ -13,33 +13,30 @@ public interface IProjetoService
     Task<ProjetoDetalhe?> AtualizarAsync(int id, ProjetoAtualizarRequest req, CancellationToken ct = default);
     Task<ProjetoDetalhe?> MudarStatusAsync(int id, ProjetoMudarStatusRequest req, CancellationToken ct = default);
     Task<bool> ExcluirAsync(int id, CancellationToken ct = default);
-    Task<string> ProximoCodigoAsync(int equipeId, CancellationToken ct = default);
+    Task<string> ProximoCodigoAsync(CancellationToken ct = default);
+    Task<List<ClienteResumo>> ListarClientesAsync(CancellationToken ct = default);
 }
 
 public class ProjetoService : IProjetoService
 {
     private readonly AppDbContext _db;
-    private readonly ILegacyDataService legacyService;
     private readonly IAuditoriaImplantacaoService _auditoria;
-    public ProjetoService(AppDbContext db, ILegacyDataService legacy, IAuditoriaImplantacaoService auditoria)
+
+    public ProjetoService(AppDbContext db, IAuditoriaImplantacaoService auditoria)
     {
         _db = db;
-        legacyService = legacy;
         _auditoria = auditoria;
     }
 
     public async Task<List<ProjetoResumo>> ListarAsync(ProjetoFiltro f, CancellationToken ct = default)
     {
         var q = _db.Projetos.AsNoTracking()
-            .Include(p => p.Equipe)
             .Include(p => p.TipoProjeto)
             .Include(p => p.Cliente)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(f.Buscar))
             q = q.Where(p => EF.Functions.Like(p.Nome, $"%{f.Buscar}%") || EF.Functions.Like(p.Codigo, $"%{f.Buscar}%"));
-        if (!string.IsNullOrWhiteSpace(f.Equipe))
-            q = q.Where(p => p.Equipe != null && p.Equipe.Nome == f.Equipe);
         if (!string.IsNullOrWhiteSpace(f.Tipo))
             q = q.Where(p => p.TipoProjeto != null && p.TipoProjeto.Codigo == f.Tipo);
         if (f.ClienteId.HasValue) q = q.Where(p => p.ClienteId == f.ClienteId);
@@ -47,16 +44,21 @@ public class ProjetoService : IProjetoService
             q = q.Where(p => p.ResponsavelId == f.ResponsavelId);
         if (!string.IsNullOrWhiteSpace(f.Status) && Enum.TryParse<StatusProjeto>(f.Status, out var st))
             q = q.Where(p => p.Status == st);
+        if (!string.IsNullOrWhiteSpace(f.PerfilId))
+        {
+            var perfilId = f.PerfilId;
+            // Compatibilidade SQL 2008 (compat 100): EXISTS correlacionado em vez de Contains em lista.
+            q = q.Where(p => p.ResponsavelId != null && _db.Operadores.Any(o => o.OperadorId == p.ResponsavelId && o.PerfilId == perfilId));
+        }
 
         return await q
             .OrderByDescending(p => p.DataInclusao)
             .Take(500)
             .Select(p => new ProjetoResumo(
                 p.Id, p.Codigo, p.Nome,
-                p.Equipe != null ? p.Equipe.Nome : "",
                 p.TipoProjeto != null ? p.TipoProjeto.Nome : "",
-                p.ClienteId, p.Cliente != null ? p.Cliente.Nome : null,
-                p.ClienteLegadoId, null,   // ClienteLegadoId e Nome (preenchidos no ObterAsync via SQL)
+                p.ClienteId, p.Cliente != null ? p.Cliente.Fantasia : null,
+                p.ClienteLegadoId, null,
                 p.Status.ToString(), (int)p.Prioridade, p.Progresso,
                 p.ResponsavelId,
                 _db.Operadores.Where(o => o.OperadorId == p.ResponsavelId).Select(o => o.Nome).FirstOrDefault(),
@@ -67,7 +69,7 @@ public class ProjetoService : IProjetoService
     public async Task<ProjetoDetalhe?> ObterAsync(int id, CancellationToken ct = default)
     {
         var p = await _db.Projetos.AsNoTracking()
-            .Include(x => x.Equipe).Include(x => x.TipoProjeto).Include(x => x.Cliente)
+            .Include(x => x.TipoProjeto).Include(x => x.Cliente)
             .Include(x => x.ColunaKanban)
             .FirstOrDefaultAsync(x => x.Id == id, ct);
         if (p == null) return null;
@@ -82,25 +84,11 @@ public class ProjetoService : IProjetoService
             t.ProjetoId == id && t.Status != StatusTarefa.Concluida && t.Status != StatusTarefa.Cancelada &&
             t.DataPrevisao != null && t.DataPrevisao.Value.Date < hoje, ct);
 
-        // Busca dados do cliente legado (dbBUSINESS_HML) se houver
-        string? clienteLegadoNome = null;
-        string? clienteLegadoCnpj = null;
-        if (p.ClienteLegadoId.HasValue)
-        {
-            var leg = await legacyService.ObterClienteAsync(p.ClienteLegadoId.Value, ct);
-            if (leg != null)
-            {
-                clienteLegadoNome = string.IsNullOrWhiteSpace(leg.Fantasia) ? leg.RazaoSocial : leg.Fantasia;
-                clienteLegadoCnpj = leg.Cnpj;
-            }
-        }
-
         return new ProjetoDetalhe(
             p.Id, p.Codigo, p.Nome, p.Descricao,
-            p.EquipeId, p.Equipe?.Nome ?? "",
             p.TipoProjetoId, p.TipoProjeto?.Nome ?? "",
-            p.ClienteId, p.Cliente?.Nome,
-            p.ClienteLegadoId, clienteLegadoNome, clienteLegadoCnpj,
+            p.ClienteId, p.Cliente?.Fantasia,
+            p.ClienteLegadoId, null, null,
             p.ResponsavelId, responsavelNome,
             p.CriadorId, criadorNome ?? "",
             p.Status.ToString(),
@@ -115,13 +103,18 @@ public class ProjetoService : IProjetoService
 
     public async Task<ProjetoDetalhe> CriarAsync(ProjetoCriarRequest req, CancellationToken ct = default)
     {
-        await ValidarAsync(req.EquipeId, req.TipoProjetoId, req.ClienteId, ct);
+        if (!Enum.IsDefined(typeof(PrioridadeProjeto), req.Prioridade))
+            throw new ArgumentException("Prioridade inválida");
+        if (!await _db.TiposProjeto.AnyAsync(t => t.Id == req.TipoProjetoId && t.Ativo, ct))
+            throw new ArgumentException("TipoProjeto inexistente ou inativo");
+        if (req.ClienteId.HasValue && !await _db.ClientesLegado.AnyAsync(c => c.Id == req.ClienteId.Value && c.Ativo == "S", ct))
+            throw new ArgumentException("Cliente inexistente ou inativo");
+
         var p = new Projeto
         {
-            Codigo = await ProximoCodigoAsync(req.EquipeId, ct),
+            Codigo = await ProximoCodigoAsync(ct),
             Nome = req.Nome.Trim(),
             Descricao = req.Descricao,
-            EquipeId = req.EquipeId,
             TipoProjetoId = req.TipoProjetoId,
             ClienteId = req.ClienteId,
             ClienteLegadoId = req.ClienteLegadoId,
@@ -149,30 +142,36 @@ public class ProjetoService : IProjetoService
     {
         var p = await _db.Projetos.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (p == null) return null;
-        await ValidarAsync(req.EquipeId, req.TipoProjetoId, req.ClienteId, ct);
-        var antes = new { p.Nome, p.Descricao, p.EquipeId, p.TipoProjetoId, p.ClienteId, p.ClienteLegadoId, p.ResponsavelId, p.ColunaKanbanId, p.Prioridade, p.Progresso, p.DataInicio, p.DataPrevisao, p.DataConclusao, p.DataGoLivePrevista, p.DataGoLiveReal, p.HorasPlanejadas, p.HorasRealizadas, p.Observacao, p.Status };
-        p.Nome = req.Nome.Trim();
+        if (req.TipoProjetoId.HasValue && !await _db.TiposProjeto.AnyAsync(t => t.Id == req.TipoProjetoId.Value && t.Ativo, ct))
+            throw new ArgumentException("TipoProjeto inexistente");
+        if (req.ClienteId.HasValue && !await _db.ClientesLegado.AnyAsync(c => c.Id == req.ClienteId.Value && c.Ativo == "S", ct))
+            throw new ArgumentException("Cliente inexistente");
+        if (req.Prioridade.HasValue && !Enum.IsDefined(typeof(PrioridadeProjeto), req.Prioridade.Value))
+            throw new ArgumentException("Prioridade inválida");
+
+        var antes = new { p.Nome, p.Descricao, p.TipoProjetoId, p.ClienteId, p.ClienteLegadoId, p.ResponsavelId, p.ColunaKanbanId, p.Prioridade, p.Progresso, p.DataInicio, p.DataPrevisao, p.DataConclusao, p.DataGoLivePrevista, p.DataGoLiveReal, p.HorasPlanejadas, p.HorasRealizadas, p.Observacao, p.Status };
+        if (req.Nome != null) p.Nome = req.Nome.Trim();
         p.Descricao = req.Descricao;
-        p.EquipeId = req.EquipeId;
-        p.TipoProjetoId = req.TipoProjetoId;
-        p.ClienteId = req.ClienteId;
-        p.ClienteLegadoId = req.ClienteLegadoId;
-        p.ResponsavelId = req.ResponsavelId;
+        if (req.TipoProjetoId.HasValue) p.TipoProjetoId = req.TipoProjetoId.Value;
+        if (req.ClienteId.HasValue) p.ClienteId = req.ClienteId.Value;
+        if (req.ClienteLegadoId.HasValue) p.ClienteLegadoId = req.ClienteLegadoId.Value;
+        if (req.ResponsavelId != null) p.ResponsavelId = req.ResponsavelId;
         p.ColunaKanbanId = req.ColunaKanbanId;
-        p.Prioridade = (PrioridadeProjeto)req.Prioridade;
-        p.Progresso = req.Progresso;
-        p.DataInicio = req.DataInicio;
-        p.DataPrevisao = req.DataPrevisao;
-        p.DataConclusao = req.DataConclusao;
-        p.DataGoLivePrevista = req.DataGoLivePrevista;
-        p.DataGoLiveReal = req.DataGoLiveReal;
-        p.HorasPlanejadas = req.HorasPlanejadas;
-        p.HorasRealizadas = req.HorasRealizadas;
-        p.Observacao = req.Observacao;
+        if (req.Prioridade.HasValue) p.Prioridade = (PrioridadeProjeto)req.Prioridade.Value;
+        if (req.Progresso.HasValue) p.Progresso = req.Progresso.Value;
+        if (req.DataInicio.HasValue) p.DataInicio = req.DataInicio.Value;
+        if (req.DataPrevisao.HasValue) p.DataPrevisao = req.DataPrevisao.Value;
+        if (req.DataConclusao.HasValue) p.DataConclusao = req.DataConclusao.Value;
+        if (req.DataGoLivePrevista.HasValue) p.DataGoLivePrevista = req.DataGoLivePrevista.Value;
+        if (req.DataGoLiveReal.HasValue) p.DataGoLiveReal = req.DataGoLiveReal.Value;
+        if (req.HorasPlanejadas.HasValue) p.HorasPlanejadas = req.HorasPlanejadas.Value;
+        if (req.HorasRealizadas.HasValue) p.HorasRealizadas = req.HorasRealizadas.Value;
+        if (req.Observacao != null) p.Observacao = req.Observacao;
+        if (req.Status != null && Enum.TryParse<StatusProjeto>(req.Status, out var novoStatusReq)) p.Status = novoStatusReq;
         p.UsuarioAlteracao = req.UsuarioAlteracao;
         p.DataAlteracao = DateTime.Now;
         await _db.SaveChangesAsync(ct);
-        await _auditoria.RegistrarAsync("Projeto", id, "UPDATE", antes, p, req.UsuarioAlteracao, "Projeto atualizado", ct);
+        await _auditoria.RegistrarAsync("Projeto", id, "UPDATE", null, p, req.UsuarioAlteracao, "Projeto atualizado", ct);
         return await ObterAsync(p.Id, ct);
     }
 
@@ -201,17 +200,30 @@ public class ProjetoService : IProjetoService
     {
         var p = await _db.Projetos.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (p == null) return false;
-        var antes = new { p.Codigo, p.Nome, p.EquipeId, p.TipoProjetoId, p.ClienteId, p.ClienteLegadoId, p.Status };
+        var antes = new { p.Codigo, p.Nome, p.TipoProjetoId, p.ClienteId, p.ClienteLegadoId, p.Status };
         _db.Projetos.Remove(p);
         await _db.SaveChangesAsync(ct);
         await _auditoria.RegistrarAsync("Projeto", id, "DELETE", antes, null, "system", "Projeto excluído", ct);
         return true;
     }
 
-    public async Task<string> ProximoCodigoAsync(int equipeId, CancellationToken ct = default)
+    public async Task<List<ClienteResumo>> ListarClientesAsync(CancellationToken ct = default)
     {
-        var equipe = await _db.Equipes.FirstOrDefaultAsync(e => e.Id == equipeId, ct);
-        var prefixo = equipe?.PrefixoCodigo ?? "PRJ";
+        // Fonte única: tbcliente (legada, somente leitura). Exibe FANTASIA em ordem alfabética.
+        return await _db.ClientesLegado.AsNoTracking()
+            .Where(c => c.Ativo == "S")
+            .OrderBy(c => c.Fantasia)
+            .Select(c => new ClienteResumo(
+                c.Id,
+                c.Fantasia ?? c.RazaoSocial ?? string.Empty,
+                c.Cnpj,
+                c.Ativo == "S"))
+            .ToListAsync(ct);
+    }
+
+    public async Task<string> ProximoCodigoAsync(CancellationToken ct = default)
+    {
+        var prefixo = "PRJ";
         var ultimosCodigos = await _db.Projetos
             .Where(p => p.Codigo.StartsWith(prefixo + "-"))
             .Select(p => p.Codigo)
@@ -223,19 +235,5 @@ public class ProjetoService : IProjetoService
             if (int.TryParse(parte, out var n) && n > max) max = n;
         }
         return $"{prefixo}-{(max + 1):D4}";
-    }
-
-    private async Task ValidarAsync(int equipeId, int tipoProjetoId, int? clienteId, CancellationToken ct)
-    {
-        var tipo = await _db.TiposProjeto.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tipoProjetoId, ct);
-        if (tipo == null) throw new ArgumentException("TipoProjeto inexistente");
-        if (!await _db.Equipes.AnyAsync(e => e.Id == equipeId, ct))
-            throw new ArgumentException("Equipe inexistente");
-        if (tipo.ClienteObrigatorio)
-        {
-            if (clienteId == null) throw new ArgumentException($"Tipo {tipo.Codigo} exige cliente");
-            if (!await _db.Clientes.AnyAsync(c => c.Id == clienteId, ct))
-                throw new ArgumentException("Cliente inexistente");
-        }
     }
 }

@@ -1,11 +1,11 @@
 <section class="mc" [class.mc--chamado]="abaAtiva === 'chamado'">
 
   <!-- ============ Topo ============ -->
-  <header class="mc-topo">
-    <span class="mc-topo__tag"><i class="bi bi-file-earmark-text-fill"></i> Modelos de Chamados</span>
-    <h1>Documentar chamados e atendimentos</h1>
-    <p>Escolha o tipo de registro abaixo e copie o conteúdo formatado para colar no sistema interno.</p>
-  </header>
+  <app-page-header
+    titulo="Documentar chamados e atendimentos"
+    descricao="Escolha o tipo de registro abaixo e copie o conteúdo formatado para colar no sistema interno."
+    icone="bi-file-earmark-text-fill">
+  </app-page-header>
 
   <!-- ============ Abas ============ -->
   <nav class="mc-abas">

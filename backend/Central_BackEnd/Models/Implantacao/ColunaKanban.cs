@@ -38,4 +38,11 @@ public class ColunaKanban
 
     [Column("CLK_DataInclusao")]
     public DateTime DataInclusao { get; set; } = DateTime.Now;
+
+    [MaxLength(50)]
+    [Column("CLK_UsuarioAlteracao")]
+    public string? UsuarioAlteracao { get; set; }
+
+    [Column("CLK_DataAlteracao")]
+    public DateTime? DataAlteracao { get; set; }
 }

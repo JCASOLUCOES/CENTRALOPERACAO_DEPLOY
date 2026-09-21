@@ -1,0 +1,50 @@
+<div class="usr-dd" (clickOutside)="fechar()">
+  <button type="button" class="usr-dd__trigger" (click)="toggleAberto()">
+    <div class="usr-dd__chips">
+      @for (opId of selecionados; track opId) {
+        <span class="usr-dd__chip">
+          {{ getOperadorNome(opId) }}
+          <button type="button" class="usr-dd__chip-remove" (click)="toggle(opId); $event.stopPropagation()">
+            <i class="bi bi-x"></i>
+          </button>
+        </span>
+      }
+      @if (!selecionados.length) {
+        <span class="usr-dd__placeholder">Selecionar responsáveis...</span>
+      }
+    </div>
+    <i class="bi bi-chevron-down" [class.rotated]="aberto()"></i>
+  </button>
+
+  @if (aberto()) {
+    <div class="usr-dd__panel">
+      <input 
+        type="text" 
+        class="usr-dd__search" 
+        placeholder="Buscar operador..."
+        [(ngModel)]="busca"
+        (input)="$event.stopPropagation()"
+        (keydown.esc)="fechar()"
+        autofocus
+      >
+      <div class="usr-dd__list">
+        @for (op of filtrados(); track op.id) {
+          <label class="usr-dd__item" (click)="$event.stopPropagation()">
+            <input 
+              type="checkbox" 
+              [checked]="isSelecionado(op.id)" 
+              (change)="toggle(op.id)"
+            >
+            <span>{{ op.nome }}</span>
+          </label>
+        }
+        @if (!filtrados().length && !carregando()) {
+          <div class="usr-dd__empty">Nenhum operador encontrado</div>
+        }
+        @if (carregando()) {
+          <div class="usr-dd__loading"><i class="bi bi-arrow-clockwise spin"></i> Carregando...</div>
+        }
+      </div>
+    </div>
+  }
+</div>

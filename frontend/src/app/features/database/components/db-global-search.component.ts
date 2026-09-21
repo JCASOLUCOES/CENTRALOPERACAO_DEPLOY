@@ -79,28 +79,11 @@ interface SearchResultItem {
       </div>
     </div>
 
-    <!-- Estado vazio -->
+    <!-- Estado vazio (somente após buscar) -->
     <div *ngIf="!carregando() && termo().trim() && resultadosFiltrados().length === 0" class="db-search__vazio">
       <i class="bi bi-search"></i>
       <p>Nenhum resultado para "<strong>{{ termo() }}</strong>"</p>
       <small class="text-muted">Tente termos mais genéricos ou verifique a ortografia</small>
-    </div>
-
-    <!-- Estado inicial -->
-    <div *ngIf="!termo().trim()" class="db-search__inicial">
-      <div class="db-search__dica">
-        <i class="bi bi-lightbulb"></i>
-        <span>Digite para buscar em tabelas, colunas, procedures, triggers, views e funções</span>
-      </div>
-      <div class="db-search__exemplos">
-        <span class="db-search__exemplo" (click)="termo.set('IDDEVEDOR'); buscar()">IDDEVEDOR</span>
-        <span class="db-search__exemplo" (click)="termo.set('TBTITULO'); buscar()">TBTITULO</span>
-        <span class="db-search__exemplo" (click)="termo.set('PRC_'); buscar()">PRC_</span>
-        <span class="db-search__exemplo" (click)="termo.set('TR_'); buscar()">TR_</span>
-      </div>
-      <div class="db-search__atalhos">
-        <kbd>Enter</kbd> busca &nbsp;|&nbsp; <kbd>Esc</kbd> limpa
-      </div>
     </div>
   </div>
   `,
@@ -109,12 +92,11 @@ interface SearchResultItem {
       background: var(--adm-card-bg, #fff);
       border: 1px solid var(--adm-border, #e2e8f0);
       border-radius: 0.5rem;
-      padding: 1rem;
+      padding: 0.6rem 0.75rem;
     }
 
     .db-search__input-wrap {
       position: relative;
-      margin-bottom: 0.75rem;
     }
 
     .db-search__icone {
@@ -174,6 +156,7 @@ interface SearchResultItem {
       display: flex;
       flex-wrap: wrap;
       gap: 0.35rem;
+      margin-top: 0.6rem;
       margin-bottom: 0.75rem;
       padding-bottom: 0.5rem;
       border-bottom: 1px solid var(--adm-border, #e2e8f0);
@@ -301,77 +284,24 @@ interface SearchResultItem {
       padding-left: 1.75rem;
     }
 
-    .db-search__vazio,
-    .db-search__inicial {
+    .db-search__vazio {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 0.5rem;
-      padding: 2rem 1rem;
+      padding: 1.25rem 1rem 0.5rem;
       color: var(--adm-text-muted, #6c757d);
       text-align: center;
     }
 
-    .db-search__vazio i,
-    .db-search__inicial i {
-      font-size: 2rem;
+    .db-search__vazio i {
+      font-size: 1.5rem;
       color: var(--adm-border, #e2e8f0);
     }
 
     .db-search__vazio p {
       margin: 0;
       font-size: 0.85rem;
-    }
-
-    .db-search__dica {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.85rem;
-      color: var(--adm-text-muted, #6c757d);
-    }
-
-    .db-search__dica i {
-      color: #f59e0b;
-    }
-
-    .db-search__exemplos {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.35rem;
-    }
-
-    .db-search__exemplo {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.2rem 0.5rem;
-      font-size: 0.72rem;
-      font-family: 'IBM Plex Mono', monospace;
-      background: var(--adm-code-bg, #f1f5f9);
-      color: var(--adm-primary, #3b82f6);
-      border-radius: 0.25rem;
-      cursor: pointer;
-      transition: all 0.15s;
-      border: 1px solid transparent;
-    }
-
-    .db-search__exemplo:hover {
-      background: var(--adm-primary, #3b82f6);
-      color: #fff;
-    }
-
-    .db-search__atalhos {
-      font-size: 0.7rem;
-      color: var(--adm-text-muted, #6c757d);
-    }
-
-    .db-search__atalhos kbd {
-      background: var(--adm-code-bg, #f1f5f9);
-      padding: 0.1rem 0.35rem;
-      border-radius: 0.2rem;
-      font-family: inherit;
-      font-size: 0.65rem;
     }
 
     @media (max-width: 768px) {

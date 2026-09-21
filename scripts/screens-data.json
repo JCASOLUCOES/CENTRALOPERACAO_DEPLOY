@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-08T19:09:07.885Z",
+  "generatedAt": "2026-09-21T13:18:38.263Z",
   "frontend": {
     "routes": [
       {
@@ -21,19 +21,13 @@
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
       },
       {
-        "path": "diagrama",
-        "component": "./pages/db-diagrama.component",
-        "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
-      },
-      {
         "path": "consultas",
         "component": "./pages/db-consultas.component",
         "lazy": true,
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
       },
       {
-        "path": "diferencas",
+        "path": "query-builder",
         "component": "./pages/db-diferencas.component",
         "lazy": true,
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
@@ -43,6 +37,24 @@
         "component": "./pages/db-configuracao.component",
         "lazy": true,
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
+      },
+      {
+        "path": "tabela/:schema/:tabela",
+        "component": "./pages/table-detail.component",
+        "lazy": true,
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
+      },
+      {
+        "path": "visao-geral",
+        "component": "consultas",
+        "lazy": false,
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
+      },
+      {
+        "path": "dashboard",
+        "component": "./pages/executivo-dashboard/executivo-dashboard.component",
+        "lazy": true,
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/executivo/executivo.routes.ts"
       },
       {
         "path": "dashboard",
@@ -63,6 +75,18 @@
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
+        "path": "projetos/novo",
+        "component": "./pages/projetos/projeto-form.component",
+        "lazy": true,
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+      },
+      {
+        "path": "projetos/:id/editar",
+        "component": "./pages/projetos/projeto-form.component",
+        "lazy": true,
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+      },
+      {
         "path": "projetos/:id",
         "component": "./pages/projetos/projeto-detalhe.component",
         "lazy": true,
@@ -75,13 +99,25 @@
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
-        "path": "agenda",
-        "component": "./pages/cadastros/cadastros.component",
+        "path": "tarefas/novo",
+        "component": "./pages/tarefas/tarefa-form.component",
+        "lazy": true,
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+      },
+      {
+        "path": "tarefas/:id/editar",
+        "component": "./pages/tarefas/tarefa-form.component",
         "lazy": true,
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
         "path": "dashboard",
+        "component": "dashboard",
+        "lazy": false,
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+      },
+      {
+        "path": "agenda",
         "component": "/agenda",
         "lazy": false,
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
@@ -116,6 +152,46 @@
         "routes": []
       },
       {
+        "name": "AdminLayout",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/admin/layout/admin-layout.component.ts",
+        "services": [
+          {
+            "name": "auth.service",
+            "file": "@core/services/auth.service",
+            "methods": [],
+            "httpCalls": []
+          }
+        ],
+        "routes": []
+      },
+      {
+        "name": "AdminDashboard",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/admin/pages/dashboard/admin-dashboard.component.ts",
+        "services": [
+          {
+            "name": "auth.service",
+            "file": "@core/services/auth.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "admin-dashboard.service",
+            "file": "../../services/admin-dashboard.service",
+            "methods": [
+              "service"
+            ],
+            "httpCalls": [
+              {
+                "method": "GET",
+                "url": "/service",
+                "serviceMethod": "service"
+              }
+            ]
+          }
+        ],
+        "routes": []
+      },
+      {
         "name": "AgendaEventoModal",
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/agenda/agenda-evento-modal.component.ts",
         "services": [
@@ -126,48 +202,10 @@
             "httpCalls": []
           },
           {
-            "name": "projetos.service",
-            "file": "../implantacao/services/projetos.service",
+            "name": "operadores.service",
+            "file": "@core/services/operadores.service",
             "methods": [],
             "httpCalls": []
-          },
-          {
-            "name": "legacy.service",
-            "file": "../implantacao/services/legacy.service",
-            "methods": [
-              "projetosSvc",
-              "agendaSvc",
-              "agendaSvc",
-              "agendaSvc",
-              "agendaSvc"
-            ],
-            "httpCalls": [
-              {
-                "method": "GET",
-                "url": "/projetosSvc",
-                "serviceMethod": "projetosSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/agendaSvc",
-                "serviceMethod": "agendaSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/agendaSvc",
-                "serviceMethod": "agendaSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/agendaSvc",
-                "serviceMethod": "agendaSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/agendaSvc",
-                "serviceMethod": "agendaSvc"
-              }
-            ]
           }
         ],
         "routes": []
@@ -183,16 +221,22 @@
             "httpCalls": []
           },
           {
+            "name": "operadores.service",
+            "file": "@core/services/operadores.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
             "name": "auth.service",
             "file": "@core/services/auth.service",
             "methods": [
-              "svc"
+              "operadoresSvc"
             ],
             "httpCalls": [
               {
                 "method": "GET",
-                "url": "/svc",
-                "serviceMethod": "svc"
+                "url": "/operadoresSvc",
+                "serviceMethod": "operadoresSvc"
               }
             ]
           }
@@ -210,6 +254,18 @@
             "httpCalls": []
           }
         ],
+        "routes": []
+      },
+      {
+        "name": "JotaWidget",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/chat/jota-widget/jota-widget.component.ts",
+        "services": [],
+        "routes": []
+      },
+      {
+        "name": "ConhecimentoSetor",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/conhecimento/conhecimento-setor.component.ts",
+        "services": [],
         "routes": []
       },
       {
@@ -240,6 +296,40 @@
           {
             "name": "cursos.service",
             "file": "../services/cursos.service",
+            "methods": [],
+            "httpCalls": []
+          }
+        ],
+        "routes": []
+      },
+      {
+        "name": "DbGlobalSearch",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/components/db-global-search.component.ts",
+        "services": [
+          {
+            "name": "database.service",
+            "file": "../services/database.service",
+            "methods": [
+              "db"
+            ],
+            "httpCalls": [
+              {
+                "method": "GET",
+                "url": "/db",
+                "serviceMethod": "db"
+              }
+            ]
+          }
+        ],
+        "routes": []
+      },
+      {
+        "name": "DbQueryBuilder",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/components/db-query-builder.component.ts",
+        "services": [
+          {
+            "name": "database.service",
+            "file": "../services/database.service",
             "methods": [],
             "httpCalls": []
           }
@@ -281,19 +371,26 @@
             "file": "../services/database.service",
             "methods": [],
             "httpCalls": []
-          }
-        ],
-        "routes": []
-      },
-      {
-        "name": "DbDiagrama",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/db-diagrama.component.ts",
-        "services": [
+          },
           {
-            "name": "database.service",
-            "file": "../services/database.service",
-            "methods": [],
-            "httpCalls": []
+            "name": "database-favoritos.service",
+            "file": "../services/database-favoritos.service",
+            "methods": [
+              "favoritosSvc",
+              "favoritosSvc"
+            ],
+            "httpCalls": [
+              {
+                "method": "GET",
+                "url": "/favoritosSvc",
+                "serviceMethod": "favoritosSvc"
+              },
+              {
+                "method": "GET",
+                "url": "/favoritosSvc",
+                "serviceMethod": "favoritosSvc"
+              }
+            ]
           }
         ],
         "routes": []
@@ -344,8 +441,27 @@
         "routes": []
       },
       {
+        "name": "DbTriggerModal",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/db-trigger-modal.component.ts",
+        "services": [],
+        "routes": []
+      },
+      {
         "name": "DbVisaoGeral",
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/db-visao-geral.component.ts",
+        "services": [
+          {
+            "name": "database.service",
+            "file": "../services/database.service",
+            "methods": [],
+            "httpCalls": []
+          }
+        ],
+        "routes": []
+      },
+      {
+        "name": "TableDetail",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/table-detail.component.ts",
         "services": [
           {
             "name": "database.service",
@@ -372,6 +488,27 @@
         "name": "OnboardingSection",
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/empresa/onboarding/components/onboarding-section/onboarding-section.component.ts",
         "services": [],
+        "routes": []
+      },
+      {
+        "name": "ExecutivoDashboard",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/executivo/pages/executivo-dashboard/executivo-dashboard.component.ts",
+        "services": [
+          {
+            "name": "executivo-dashboard.service",
+            "file": "../../services/executivo-dashboard.service",
+            "methods": [
+              "svc"
+            ],
+            "httpCalls": [
+              {
+                "method": "GET",
+                "url": "/svc",
+                "serviceMethod": "svc"
+              }
+            ]
+          }
+        ],
         "routes": []
       },
       {
@@ -423,82 +560,57 @@
       {
         "name": "Home",
         "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/home/home.component.ts",
+        "services": [
+          {
+            "name": "auth.service",
+            "file": "@core/services/auth.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "busca.service",
+            "file": "@core/services/busca.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "agenda.service",
+            "file": "@features/agenda/services/agenda.service",
+            "methods": [],
+            "httpCalls": []
+          }
+        ],
+        "routes": []
+      },
+      {
+        "name": "ProjetoCard",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/components/projeto-card/projeto-card.component.ts",
         "services": [],
         "routes": []
       },
       {
-        "name": "Cadastros",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/pages/cadastros/cadastros.component.ts",
+        "name": "ProjetoEtapaCard",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/components/projeto-etapa-card/projeto-etapa-card.component.ts",
+        "services": [],
+        "routes": []
+      },
+      {
+        "name": "ProjetoEtapaModal",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/components/projeto-etapa-modal/projeto-etapa-modal.component.ts",
         "services": [
           {
-            "name": "equipes.service",
-            "file": "../../services/equipes.service",
+            "name": "projetos.service",
+            "file": "../../services/projetos.service",
             "methods": [],
             "httpCalls": []
-          },
-          {
-            "name": "cadastros.service",
-            "file": "../../services/cadastros.service",
-            "methods": [],
-            "httpCalls": []
-          },
-          {
-            "name": "auth.service",
-            "file": "@core/services/auth.service",
-            "methods": [
-              "eqSvc",
-              "tiposSvc",
-              "etapasSvc",
-              "colSvc",
-              "eqSvc",
-              "tiposSvc",
-              "etapasSvc",
-              "colSvc"
-            ],
-            "httpCalls": [
-              {
-                "method": "GET",
-                "url": "/eqSvc",
-                "serviceMethod": "eqSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/tiposSvc",
-                "serviceMethod": "tiposSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/etapasSvc",
-                "serviceMethod": "etapasSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/colSvc",
-                "serviceMethod": "colSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/eqSvc",
-                "serviceMethod": "eqSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/tiposSvc",
-                "serviceMethod": "tiposSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/etapasSvc",
-                "serviceMethod": "etapasSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/colSvc",
-                "serviceMethod": "colSvc"
-              }
-            ]
           }
         ],
+        "routes": []
+      },
+      {
+        "name": "ProjetoRetornoDialog",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/components/projeto-retorno-dialog/projeto-retorno-dialog.component.ts",
+        "services": [],
         "routes": []
       },
       {
@@ -508,14 +620,26 @@
           {
             "name": "dashboard.service",
             "file": "../../services/dashboard.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "tarefas.service",
+            "file": "../../services/tarefas.service",
             "methods": [
-              "svc"
+              "svc",
+              "tarSvc"
             ],
             "httpCalls": [
               {
                 "method": "GET",
                 "url": "/svc",
                 "serviceMethod": "svc"
+              },
+              {
+                "method": "GET",
+                "url": "/tarSvc",
+                "serviceMethod": "tarSvc"
               }
             ]
           }
@@ -541,9 +665,25 @@
           {
             "name": "cadastros.service",
             "file": "../../services/cadastros.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "auth.service",
+            "file": "@core/services/auth.service",
             "methods": [
               "colunasService",
               "projetosService",
+              "tarefasService",
+              "tarefasService",
+              "tarefasService",
+              "projetosService",
+              "tarefasService",
+              "tarefasService",
+              "tarefasService",
+              "tarefasService",
+              "tarefasService",
+              "tarefasService",
               "tarefasService"
             ],
             "httpCalls": [
@@ -556,6 +696,56 @@
                 "method": "GET",
                 "url": "/projetosService",
                 "serviceMethod": "projetosService"
+              },
+              {
+                "method": "GET",
+                "url": "/tarefasService",
+                "serviceMethod": "tarefasService"
+              },
+              {
+                "method": "GET",
+                "url": "/tarefasService",
+                "serviceMethod": "tarefasService"
+              },
+              {
+                "method": "GET",
+                "url": "/tarefasService",
+                "serviceMethod": "tarefasService"
+              },
+              {
+                "method": "GET",
+                "url": "/projetosService",
+                "serviceMethod": "projetosService"
+              },
+              {
+                "method": "GET",
+                "url": "/tarefasService",
+                "serviceMethod": "tarefasService"
+              },
+              {
+                "method": "GET",
+                "url": "/tarefasService",
+                "serviceMethod": "tarefasService"
+              },
+              {
+                "method": "GET",
+                "url": "/tarefasService",
+                "serviceMethod": "tarefasService"
+              },
+              {
+                "method": "GET",
+                "url": "/tarefasService",
+                "serviceMethod": "tarefasService"
+              },
+              {
+                "method": "GET",
+                "url": "/tarefasService",
+                "serviceMethod": "tarefasService"
+              },
+              {
+                "method": "GET",
+                "url": "/tarefasService",
+                "serviceMethod": "tarefasService"
               },
               {
                 "method": "GET",
@@ -582,6 +772,7 @@
             "file": "../../services/tarefas.service",
             "methods": [
               "projSvc",
+              "projSvc",
               "tarSvc"
             ],
             "httpCalls": [
@@ -592,8 +783,58 @@
               },
               {
                 "method": "GET",
+                "url": "/projSvc",
+                "serviceMethod": "projSvc"
+              },
+              {
+                "method": "GET",
                 "url": "/tarSvc",
                 "serviceMethod": "tarSvc"
+              }
+            ]
+          }
+        ],
+        "routes": []
+      },
+      {
+        "name": "ProjetoForm",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/pages/projetos/projeto-form.component.ts",
+        "services": [
+          {
+            "name": "projetos.service",
+            "file": "../../services/projetos.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "operadores.service",
+            "file": "@core/services/operadores.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "auth.service",
+            "file": "@core/services/auth.service",
+            "methods": [
+              "projSvc",
+              "projSvc",
+              "projSvc"
+            ],
+            "httpCalls": [
+              {
+                "method": "GET",
+                "url": "/projSvc",
+                "serviceMethod": "projSvc"
+              },
+              {
+                "method": "GET",
+                "url": "/projSvc",
+                "serviceMethod": "projSvc"
+              },
+              {
+                "method": "GET",
+                "url": "/projSvc",
+                "serviceMethod": "projSvc"
               }
             ]
           }
@@ -611,16 +852,77 @@
             "httpCalls": []
           },
           {
-            "name": "equipes.service",
-            "file": "../../services/equipes.service",
+            "name": "auth.service",
+            "file": "@core/services/auth.service",
+            "methods": [],
+            "httpCalls": []
+          }
+        ],
+        "routes": []
+      },
+      {
+        "name": "TarefaForm",
+        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/pages/tarefas/tarefa-form.component.ts",
+        "services": [
+          {
+            "name": "tarefas.service",
+            "file": "../../services/tarefas.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "projetos.service",
+            "file": "../../services/projetos.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "cadastros.service",
+            "file": "../../services/cadastros.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "auth.service",
+            "file": "@core/services/auth.service",
             "methods": [
-              "projSvc"
+              "projSvc",
+              "colSvc",
+              "projSvc",
+              "tarSvc",
+              "tarSvc",
+              "tarSvc"
             ],
             "httpCalls": [
               {
                 "method": "GET",
                 "url": "/projSvc",
                 "serviceMethod": "projSvc"
+              },
+              {
+                "method": "GET",
+                "url": "/colSvc",
+                "serviceMethod": "colSvc"
+              },
+              {
+                "method": "GET",
+                "url": "/projSvc",
+                "serviceMethod": "projSvc"
+              },
+              {
+                "method": "GET",
+                "url": "/tarSvc",
+                "serviceMethod": "tarSvc"
+              },
+              {
+                "method": "GET",
+                "url": "/tarSvc",
+                "serviceMethod": "tarSvc"
+              },
+              {
+                "method": "GET",
+                "url": "/tarSvc",
+                "serviceMethod": "tarSvc"
               }
             ]
           }
@@ -640,27 +942,21 @@
           {
             "name": "projetos.service",
             "file": "../../services/projetos.service",
-            "methods": [],
-            "httpCalls": []
-          },
-          {
-            "name": "equipes.service",
-            "file": "../../services/equipes.service",
             "methods": [
-              "eqSvc",
               "projSvc",
+              "tarSvc",
               "tarSvc"
             ],
             "httpCalls": [
               {
                 "method": "GET",
-                "url": "/eqSvc",
-                "serviceMethod": "eqSvc"
+                "url": "/projSvc",
+                "serviceMethod": "projSvc"
               },
               {
                 "method": "GET",
-                "url": "/projSvc",
-                "serviceMethod": "projSvc"
+                "url": "/tarSvc",
+                "serviceMethod": "tarSvc"
               },
               {
                 "method": "GET",
@@ -745,6 +1041,76 @@
         "description": "VisualizarEmpresa returning EmpresaDetalheResponse>"
       },
       {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/agenda/eventos",
+        "controller": "Agenda",
+        "service": "",
+        "description": "ListarEventos returning List<AgendaResumo>>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/agenda/eventos/{id:int}",
+        "controller": "Agenda",
+        "service": "",
+        "description": "ObterEvento returning AgendaDetalhe>"
+      },
+      {
+        "method": "POST",
+        "route": "api/v{version:apiVersion}/agenda/eventos",
+        "controller": "Agenda",
+        "service": "",
+        "description": "CriarEvento returning AgendaDetalhe>"
+      },
+      {
+        "method": "POST",
+        "route": "api/v{version:apiVersion}/agenda/eventos/lote",
+        "controller": "Agenda",
+        "service": "",
+        "description": "CriarEventosLote returning AgendaLoteResponse>"
+      },
+      {
+        "method": "PUT",
+        "route": "api/v{version:apiVersion}/agenda/eventos/{id:int}",
+        "controller": "Agenda",
+        "service": "",
+        "description": "AtualizarEvento returning AgendaDetalhe>"
+      },
+      {
+        "method": "DELETE",
+        "route": "api/v{version:apiVersion}/agenda/eventos/{id:int}",
+        "controller": "Agenda",
+        "service": "",
+        "description": "ExcluirEvento returning ActionResult"
+      },
+      {
+        "method": "PATCH",
+        "route": "api/v{version:apiVersion}/agenda/eventos/{id:int}/mover",
+        "controller": "Agenda",
+        "service": "",
+        "description": "MoverEvento returning AgendaDetalhe>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/agenda/tipos",
+        "controller": "Agenda",
+        "service": "",
+        "description": "ListarTipos returning List<TipoEventoResponse>>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/agenda/funcoes",
+        "controller": "Agenda",
+        "service": "",
+        "description": "ListarFuncoes returning List<FuncaoResumo>>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/agenda/operadores",
+        "controller": "Agenda",
+        "service": "",
+        "description": "ListarOperadores returning List<OperadorResumo>>"
+      },
+      {
         "method": "POST",
         "route": "api/v{version:apiVersion}/auth/login",
         "controller": "Auth",
@@ -777,63 +1143,63 @@
         "route": "api/v{version:apiVersion}/database/status",
         "controller": "Database",
         "service": "",
-        "description": "Status returning DatabaseStatusDto>"
+        "description": "GetStatus returning DatabaseStatusDto>"
       },
       {
         "method": "GET",
         "route": "api/v{version:apiVersion}/database/info",
         "controller": "Database",
         "service": "",
-        "description": "Info returning DatabaseInfoDto>"
+        "description": "GetInfo returning DatabaseInfoDto>"
       },
       {
         "method": "GET",
         "route": "api/v{version:apiVersion}/database/tables",
         "controller": "Database",
         "service": "",
-        "description": "Tables returning List<TableDto>>"
+        "description": "GetTables returning List<TableDto>>"
       },
       {
         "method": "GET",
         "route": "api/v{version:apiVersion}/database/tables/{schema}/{nome}",
         "controller": "Database",
         "service": "",
-        "description": "Table returning TableDto>"
+        "description": "GetTable returning TableDto>"
       },
       {
         "method": "GET",
         "route": "api/v{version:apiVersion}/database/tables/{schema}/{nome}/columns",
         "controller": "Database",
         "service": "",
-        "description": "Columns returning List<ColumnDto>>"
+        "description": "GetColumns returning List<ColumnDto>>"
       },
       {
         "method": "GET",
         "route": "api/v{version:apiVersion}/database/tables/{schema}/{nome}/indexes",
         "controller": "Database",
         "service": "",
-        "description": "Indexes returning List<IndexDto>>"
+        "description": "GetIndexes returning List<IndexDto>>"
       },
       {
         "method": "GET",
         "route": "api/v{version:apiVersion}/database/relationships",
         "controller": "Database",
         "service": "",
-        "description": "Relationships returning List<RelationshipDto>>"
-      },
-      {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/database/column-usage",
-        "controller": "Database",
-        "service": "",
-        "description": "ColumnUsage returning List<RelationshipDto>>"
+        "description": "GetRelationships returning List<RelationshipDto>>"
       },
       {
         "method": "GET",
         "route": "api/v{version:apiVersion}/database/graph",
         "controller": "Database",
         "service": "",
-        "description": "Graph returning List<RelationshipDto>>"
+        "description": "GetGraph returning List<RelationshipDto>>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/database/column-usage",
+        "controller": "Database",
+        "service": "",
+        "description": "GetColumnUsage returning List<RelationshipDto>>"
       },
       {
         "method": "GET",
@@ -847,91 +1213,112 @@
         "route": "api/v{version:apiVersion}/database/query",
         "controller": "Database",
         "service": "",
-        "description": "Query returning QueryResultDto>"
-      },
-      {
-        "method": "POST",
-        "route": "api/v{version:apiVersion}/database/test-connection",
-        "controller": "Database",
-        "service": "",
-        "description": "TestConnection returning DatabaseStatusDto>"
+        "description": "ExecuteQuery returning QueryResultDto>"
       },
       {
         "method": "GET",
         "route": "api/v{version:apiVersion}/database/procedures",
         "controller": "Database",
         "service": "",
-        "description": "Procedures returning List<ProcedureResumoDto>>"
-      },
-      {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/database/procedures/{schema}/{nome}",
-        "controller": "Database",
-        "service": "",
-        "description": "Procedure returning ProcedureDetalheDto>"
+        "description": "GetProcedures returning List<ProcedureResumoDto>>"
       },
       {
         "method": "GET",
         "route": "api/v{version:apiVersion}/database/procedures/search",
         "controller": "Database",
         "service": "",
-        "description": "ProceduresSearch returning List<ProcedureResumoDto>>"
+        "description": "SearchProcedures returning List<ProcedureResumoDto>>"
       },
       {
-        "method": "POST",
-        "route": "api/v{version:apiVersion}/database/query-builder",
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/database/procedures/{schema}/{nome}",
         "controller": "Database",
         "service": "",
-        "description": "QueryBuilder returning Central_BackEnd.Dtos.Database.DatabaseQueryBuilderResult>"
+        "description": "GetProcedure returning ProcedureDetalheDto>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/database/triggers",
+        "controller": "Database",
+        "service": "",
+        "description": "GetTriggers returning List<TriggerDto>>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/database/triggers/{schema}/{nome}",
+        "controller": "Database",
+        "service": "",
+        "description": "GetTrigger returning TriggerDto>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/database/tables/{schema}/{nome}/dependencies",
+        "controller": "Database",
+        "service": "",
+        "description": "GetDependencies returning List<DependencyDto>>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/database/procedures/{schema}/{nome}/analysis",
+        "controller": "Database",
+        "service": "",
+        "description": "GetProcedureAnalysis returning ProcedureAnalysisDto>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/database/search/global",
+        "controller": "Database",
+        "service": "",
+        "description": "GlobalSearch returning List<GlobalSearchResultDto>>"
       },
       {
         "method": "POST",
-        "route": "api/v{version:apiVersion}/implantacao/admin/seed-exemplo",
-        "controller": "AdminSeed",
+        "route": "api/v{version:apiVersion}/database/query-builder-advanced",
+        "controller": "Database",
         "service": "",
-        "description": "SeedExemplo returning SeedResult>"
+        "description": "QueryBuilderAdvanced returning Central_BackEnd.Dtos.Database.DatabaseQueryBuilderResult>"
       },
       {
         "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/agenda",
-        "controller": "Agenda",
+        "route": "api/v{version:apiVersion}/database/config",
+        "controller": "Database",
         "service": "",
-        "description": "Listar returning List<AgendaResumo>>"
-      },
-      {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/agenda/{id:int}",
-        "controller": "Agenda",
-        "service": "",
-        "description": "Obter returning AgendaDetalhe>"
+        "description": "TestConnection returning DatabaseStatusDto>"
       },
       {
         "method": "POST",
-        "route": "api/v{version:apiVersion}/implantacao/agenda",
-        "controller": "Agenda",
+        "route": "api/v{version:apiVersion}/database/diff",
+        "controller": "Database",
         "service": "",
-        "description": "Criar returning AgendaDetalhe>"
+        "description": "Diff returning SchemaDiffDto>"
       },
       {
-        "method": "PUT",
-        "route": "api/v{version:apiVersion}/implantacao/agenda/{id:int}",
-        "controller": "Agenda",
+        "method": "POST",
+        "route": "api/v{version:apiVersion}/database/snapshot",
+        "controller": "Database",
         "service": "",
-        "description": "Atualizar returning AgendaDetalhe>"
-      },
-      {
-        "method": "DELETE",
-        "route": "api/v{version:apiVersion}/implantacao/agenda/{id:int}",
-        "controller": "Agenda",
-        "service": "",
-        "description": "Excluir returning ActionResult"
+        "description": "SaveSnapshot returning string>"
       },
       {
         "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/agenda/ics/{operadorId}",
-        "controller": "Agenda",
+        "route": "api/v{version:apiVersion}/database/snapshots",
+        "controller": "Database",
         "service": "",
-        "description": "ExportarIcs returning IActionResult"
+        "description": "ListSnapshots returning List<string>>"
+      },
+      {
+        "method": "POST",
+        "route": "api/v{version:apiVersion}/database/snapshot/comparar",
+        "controller": "Database",
+        "service": "",
+        "description": "CompareSnapshot returning SchemaDiffDto>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/admin/dashboard",
+        "controller": "AdminDashboard",
+        "service": "",
+        "description": "Obter returning AdminDashboardDto>"
       },
       {
         "method": "GET",
@@ -970,48 +1357,6 @@
       },
       {
         "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/equipes",
-        "controller": "Equipes",
-        "service": "",
-        "description": "Listar returning List<EquipeResumo>>"
-      },
-      {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/equipes/{id:int}",
-        "controller": "Equipes",
-        "service": "",
-        "description": "Obter returning EquipeDetalhe>"
-      },
-      {
-        "method": "POST",
-        "route": "api/v{version:apiVersion}/implantacao/equipes",
-        "controller": "Equipes",
-        "service": "",
-        "description": "Criar returning EquipeDetalhe>"
-      },
-      {
-        "method": "PUT",
-        "route": "api/v{version:apiVersion}/implantacao/equipes/{id:int}",
-        "controller": "Equipes",
-        "service": "",
-        "description": "Atualizar returning EquipeDetalhe>"
-      },
-      {
-        "method": "POST",
-        "route": "api/v{version:apiVersion}/implantacao/equipes/{id:int}/membros",
-        "controller": "Equipes",
-        "service": "",
-        "description": "AdicionarMembro returning ActionResult"
-      },
-      {
-        "method": "DELETE",
-        "route": "api/v{version:apiVersion}/implantacao/equipes/{id:int}/membros/{membroId:int}",
-        "controller": "Equipes",
-        "service": "",
-        "description": "RemoverMembro returning ActionResult"
-      },
-      {
-        "method": "GET",
         "route": "api/v{version:apiVersion}/implantacao/etapas",
         "controller": "Etapas",
         "service": "",
@@ -1040,45 +1385,17 @@
       },
       {
         "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/legacy/clientes",
-        "controller": "Legacy",
-        "service": "",
-        "description": "ListarClientes returning List<ClienteLegadoResumo>>"
-      },
-      {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/legacy/clientes/{id:int}",
-        "controller": "Legacy",
-        "service": "",
-        "description": "ObterCliente returning ClienteLegadoResumo>"
-      },
-      {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/legacy/chamados",
-        "controller": "Legacy",
-        "service": "",
-        "description": "ListarChamados returning List<ChamadoLegadoResumo>>"
-      },
-      {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/legacy/indicacoes",
-        "controller": "Legacy",
-        "service": "",
-        "description": "ListarIndicacoes returning List<IndicacaoLegadoResumo>>"
-      },
-      {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/legacy/funcionarios",
-        "controller": "Legacy",
-        "service": "",
-        "description": "ListarFuncionarios returning List<FuncionarioLegadoResumo>>"
-      },
-      {
-        "method": "GET",
         "route": "api/v{version:apiVersion}/implantacao/projetos",
         "controller": "Projetos",
         "service": "",
         "description": "Listar returning List<ProjetoResumo>>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/com-etapas",
+        "controller": "Projetos",
+        "service": "",
+        "description": "ListarComEtapas returning List<ProjetoComEtapasResumo>>"
       },
       {
         "method": "GET",
@@ -1089,10 +1406,38 @@
       },
       {
         "method": "GET",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/jornada",
+        "controller": "Projetos",
+        "service": "",
+        "description": "Jornada returning ProjetoJornada>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/etapas",
+        "controller": "Projetos",
+        "service": "",
+        "description": "ObterEtapas returning List<ProjetoEtapaResumo>>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/etapas/{ordem:int}",
+        "controller": "Projetos",
+        "service": "",
+        "description": "ObterEtapaDetalhe returning ProjetoEtapaDetalhe>"
+      },
+      {
+        "method": "GET",
         "route": "api/v{version:apiVersion}/implantacao/projetos/proximo-codigo",
         "controller": "Projetos",
         "service": "",
         "description": "ProximoCodigo returning object>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/clientes",
+        "controller": "Projetos",
+        "service": "",
+        "description": "ListarClientes returning List<ClienteResumo>>"
       },
       {
         "method": "POST",
@@ -1107,6 +1452,48 @@
         "controller": "Projetos",
         "service": "",
         "description": "Atualizar returning ProjetoDetalhe>"
+      },
+      {
+        "method": "PUT",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/etapas/{ordem:int}",
+        "controller": "Projetos",
+        "service": "",
+        "description": "AtualizarEtapa returning ProjetoEtapaDetalhe>"
+      },
+      {
+        "method": "POST",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/etapas/retornar",
+        "controller": "Projetos",
+        "service": "",
+        "description": "RetornarEtapa returning ProjetoEtapaDetalhe>"
+      },
+      {
+        "method": "POST",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/etapas/inicializar",
+        "controller": "Projetos",
+        "service": "",
+        "description": "InicializarEtapas returning ActionResult"
+      },
+      {
+        "method": "POST",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/etapas/{ordem:int}/checklist",
+        "controller": "Projetos",
+        "service": "",
+        "description": "AdicionarChecklistItem returning ProjetoEtapaDetalhe>"
+      },
+      {
+        "method": "POST",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/etapas/{ordem:int}/documentos",
+        "controller": "Projetos",
+        "service": "",
+        "description": "AdicionarDocumento returning ProjetoEtapaDetalhe>"
+      },
+      {
+        "method": "POST",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/etapas/{ordem:int}/comentarios",
+        "controller": "Projetos",
+        "service": "",
+        "description": "AdicionarComentario returning ProjetoEtapaDetalhe>"
       },
       {
         "method": "PATCH",
@@ -1158,6 +1545,20 @@
         "description": "MudarColuna returning TarefaDetalhe>"
       },
       {
+        "method": "PATCH",
+        "route": "api/v{version:apiVersion}/implantacao/tarefas/{id:int}/arquivar",
+        "controller": "Tarefas",
+        "service": "",
+        "description": "Arquivar returning TarefaDetalhe>"
+      },
+      {
+        "method": "PATCH",
+        "route": "api/v{version:apiVersion}/implantacao/tarefas/{id:int}/desarquivar",
+        "controller": "Tarefas",
+        "service": "",
+        "description": "Desarquivar returning TarefaDetalhe>"
+      },
+      {
         "method": "DELETE",
         "route": "api/v{version:apiVersion}/implantacao/tarefas/{id:int}",
         "controller": "Tarefas",
@@ -1170,6 +1571,55 @@
         "controller": "Tarefas",
         "service": "",
         "description": "AdicionarComentario returning ComentarioTarefaResumo>"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/implantacao/tarefas/chamados/busca",
+        "controller": "Tarefas",
+        "service": "",
+        "description": "BuscarChamados returning List<ChamadoLegadoResumo>>"
+      },
+      {
+        "method": "POST",
+        "route": "api/v{version:apiVersion}/implantacao/tarefas/{id:int}/chamados",
+        "controller": "Tarefas",
+        "service": "",
+        "description": "VincularChamado returning TarefaDetalhe>"
+      },
+      {
+        "method": "DELETE",
+        "route": "api/v{version:apiVersion}/implantacao/tarefas/{id:int}/chamados/{chamadoId:int}",
+        "controller": "Tarefas",
+        "service": "",
+        "description": "DesvincularChamado returning TarefaDetalhe>"
+      },
+      {
+        "method": "POST",
+        "route": "api/v{version:apiVersion}/implantacao/tarefas/{id:int}/apontamentos",
+        "controller": "Tarefas",
+        "service": "",
+        "description": "AdicionarApontamento returning ApontamentoResumo>"
+      },
+      {
+        "method": "PUT",
+        "route": "api/v{version:apiVersion}/implantacao/tarefas/apontamentos/{apontamentoId:int}",
+        "controller": "Tarefas",
+        "service": "",
+        "description": "AtualizarApontamento returning ApontamentoResumo>"
+      },
+      {
+        "method": "DELETE",
+        "route": "api/v{version:apiVersion}/implantacao/tarefas/apontamentos/{apontamentoId:int}",
+        "controller": "Tarefas",
+        "service": "",
+        "description": "ExcluirApontamento returning ActionResult"
+      },
+      {
+        "method": "GET",
+        "route": "api/v{version:apiVersion}/implantacao/tarefas/{id:int}/historico",
+        "controller": "Tarefas",
+        "service": "",
+        "description": "Historico returning List<HistoricoMovimentacao>>"
       },
       {
         "method": "GET",
@@ -1212,18 +1662,34 @@
         "controller": "TiposProjeto",
         "service": "",
         "description": "Excluir returning ActionResult"
+      },
+      {
+        "method": "POST",
+        "route": "api/rag-proxy/chat",
+        "controller": "RagProxy",
+        "service": "",
+        "description": "Chat returning RagChatResponse>"
       }
     ],
     "tables": [
       "AuditoriaAcessos",
+      "CC_Funcao",
       "IMPL_Agenda",
+      "CC_AgendaParticipante",
       "IMPL_Auditoria",
+      "tbchamado",
       "IMPL_Cliente",
+      "tbcliente",
       "IMPL_ColunaKanban",
-      "IMPL_Equipe",
       "IMPL_Etapa",
+      "tbfuncionario",
       "IMPL_Projeto",
+      "tbprojetoEtapa",
       "IMPL_Tarefa",
+      "IMPL_TarefaApontamento",
+      "IMPL_TarefaChamado",
+      "IMPL_TarefaResponsavel",
+      "CC_TipoEvento",
       "IMPL_TipoProjeto",
       "TBOPERADOR",
       "RefreshTokens"
@@ -1244,6 +1710,50 @@
       {
         "file": "20260906033406_AddAuditoriaImplantacao.cs",
         "description": "20260906033406_AddAuditoriaImplantacao.cs"
+      },
+      {
+        "file": "20260910163216_AddFuncao.cs",
+        "description": "20260910163216_AddFuncao.cs"
+      },
+      {
+        "file": "20260911215943_AgendaV2_Ajuste.cs",
+        "description": "20260911215943_AgendaV2_Ajuste.cs"
+      },
+      {
+        "file": "20260912173928_RemoveEquipes.cs",
+        "description": "20260912173928_RemoveEquipes.cs"
+      },
+      {
+        "file": "20260914144751_AgendaConflitoHorarios.cs",
+        "description": "20260914144751_AgendaConflitoHorarios.cs"
+      },
+      {
+        "file": "20260915132751_ClienteApontaTbCliente.cs",
+        "description": "20260915132751_ClienteApontaTbCliente.cs"
+      },
+      {
+        "file": "20260915134729_AgendaPrioridadeSLA.cs",
+        "description": "20260915134729_AgendaPrioridadeSLA.cs"
+      },
+      {
+        "file": "20260916001540_KanbanCustomizavelEArquivamento.cs",
+        "description": "20260916001540_KanbanCustomizavelEArquivamento.cs"
+      },
+      {
+        "file": "20260917170249_TarefaEvolucaoResponsaveisChamadosHoras.cs",
+        "description": "20260917170249_TarefaEvolucaoResponsaveisChamadosHoras.cs"
+      },
+      {
+        "file": "20260917202045_TarefaProjetoOpcional.cs",
+        "description": "20260917202045_TarefaProjetoOpcional.cs"
+      },
+      {
+        "file": "20260918211919_AddProjetoEtapas.cs",
+        "description": "20260918211919_AddProjetoEtapas.cs"
+      },
+      {
+        "file": "20260920185734_TarefaProjetoEtapaId.cs",
+        "description": "20260920185734_TarefaProjetoEtapaId.cs"
       }
     ]
   }

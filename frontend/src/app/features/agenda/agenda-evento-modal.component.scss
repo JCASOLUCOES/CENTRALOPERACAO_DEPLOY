@@ -28,6 +28,22 @@
   box-shadow: 0 0 0 2px #1e293b;
 }
 
+/* Linha data/hora: evita que o campo de hora seja esmagado. */
+.agenda-datetime-row .form-label {
+  white-space: nowrap;
+}
+
+.agenda-datetime-row input[type="date"],
+.agenda-datetime-row input[type="time"] {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Garante área clicável/legível do seletor de hora nativo. */
+.agenda-datetime-row input[type="time"] {
+  min-width: 8.75rem;
+}
+
 .imp-modal-vis {
   display: flex;
   gap: 1rem;

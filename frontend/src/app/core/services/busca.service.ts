@@ -12,6 +12,10 @@ export class BuscaService {
     this.buscaAbertaSubject.next(false);
   }
 
+  abrirBusca(): void {
+    this.buscaAbertaSubject.next(true);
+  }
+
   get buscaAberta(): boolean {
     return this.buscaAbertaSubject.value;
   }

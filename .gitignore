@@ -48,3 +48,7 @@ deploy/
 deploy.local.bat
 deploy.local.ps1
 deploy.run.ps1
+
+# Publish artifacts locais (gerados pelo deploy, nunca commitar)
+publish/
+**/publish_output/

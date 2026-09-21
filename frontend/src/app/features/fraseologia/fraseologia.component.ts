@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 
 type CategoriaAtendimento =
   | 'duvida'
@@ -24,7 +25,7 @@ interface VariavelEdicao {
 @Component({
   selector: 'app-fraseologia',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderComponent],
   templateUrl: './fraseologia.component.html',
   styleUrl: './fraseologia.component.scss'
 })

@@ -1,0 +1,54 @@
+<div class="jota-widget">
+  <section class="jota-painel" *ngIf="aberto()" aria-label="Conversar com o JOTA">
+    <header class="jota-painel__topo">
+      <span class="jota-painel__avatar"><i class="bi bi-robot"></i></span>
+      <div>
+        <strong>JOTA</strong>
+        <small>Assistente da Central</small>
+      </div>
+      <a class="jota-painel__expandir" [routerLink]="['/chat']" (click)="alternar()" title="Abrir página do JOTA">
+        <i class="bi bi-arrow-up-right"></i>
+      </a>
+      <button type="button" class="jota-painel__fechar" (click)="alternar()" aria-label="Fechar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </header>
+
+    <div class="jota-contexto" *ngIf="ctx.contexto() as c">
+      <i class="bi bi-chat-left-text"></i>
+      <span title="{{ c.titulo }}">Falando sobre: T{{ c.tarefaId }} · {{ c.titulo }}</span>
+      <button type="button" (click)="limparContexto()" title="Voltar à conversa geral" aria-label="Limpar contexto">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+
+    <div class="jota-painel__lista" #lista>
+      <div *ngFor="let m of mensagens()" class="jota-msg" [class.jota-msg--voce]="m.papel === 'voce'">
+        <p>{{ m.texto }}</p>
+        <small *ngIf="m.docs?.length">Fontes: {{ (m.docs ?? []).join(', ') }}</small>
+      </div>
+      <div class="jota-msg" *ngIf="enviando()">
+        <p class="jota-digitando"><span></span><span></span><span></span></p>
+      </div>
+    </div>
+
+    <p class="jota-erro" *ngIf="erro()">{{ erro() }}</p>
+
+    <footer class="jota-painel__envio">
+      <input
+        type="text"
+        [(ngModel)]="texto"
+        (keydown.enter)="enviar()"
+        placeholder="Pergunte sobre procedimentos..."
+        aria-label="Mensagem para o JOTA"
+      />
+      <button type="button" (click)="enviar()" [disabled]="enviando() || !texto().trim()" aria-label="Enviar">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </footer>
+  </section>
+
+  <button type="button" class="jota-fab" (click)="alternar()" [attr.aria-label]="aberto() ? 'Fechar JOTA' : 'Abrir JOTA'">
+    <i class="bi" [ngClass]="aberto() ? 'bi-x-lg' : 'bi-robot'"></i>
+  </button>
+</div>

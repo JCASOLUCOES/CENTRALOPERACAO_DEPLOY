@@ -2,7 +2,7 @@ namespace Central_BackEnd.Dtos.Implantacao;
 
 public record TarefaResumo(
     int Id,
-    int ProjetoId,
+    int? ProjetoId,
     string ProjetoCodigo,
     string ProjetoNome,
     string Titulo,
@@ -14,20 +14,31 @@ public record TarefaResumo(
     int? ChamadoLegadoId,
     int Ordem,
     DateTime? DataPrevisao,
+    DateTime? DataEntrega,
+    int Tipo,
     DateTime? DataConclusao,
     bool Bloqueada,
     string? BloqueadaMotivo,
     int? HorasEstimadas,
     int? HorasRealizadas,
-    DateTime DataInclusao);
+    List<ResponsavelResumo> Responsaveis,
+    DateTime DataInclusao,
+    bool Arquivada,
+    int? EtapaId = null,
+    string? EtapaNome = null,
+    int? ProjetoEtapaId = null,
+    string? ProjetoEtapaNome = null);
 
 public record TarefaDetalhe(
     int Id,
-    int ProjetoId,
+    int? ProjetoId,
     string ProjetoCodigo,
     string ProjetoNome,
+    int? ChamadoLegadoId,
     int? EtapaId,
     string? EtapaNome,
+    int? ProjetoEtapaId,
+    string? ProjetoEtapaNome,
     int? ColunaKanbanId,
     string? ColunaKanbanNome,
     string Titulo,
@@ -40,11 +51,17 @@ public record TarefaDetalhe(
     int Prioridade,
     int Ordem,
     DateTime? DataPrevisao,
+    DateTime? DataEntrega,
+    int Tipo,
     DateTime? DataConclusao,
     int? HorasEstimadas,
     int? HorasRealizadas,
     bool Bloqueada,
     string? MotivoBloqueio,
+    bool Arquivada,
+    List<ResponsavelResumo> Responsaveis,
+    List<ChamadoResumo> Chamados,
+    List<ApontamentoResumo> Apontamentos,
     List<ComentarioTarefaResumo> Comentarios,
     DateTime DataInclusao,
     string UsuarioInclusao,
@@ -52,29 +69,38 @@ public record TarefaDetalhe(
     string? UsuarioAlteracao);
 
 public record TarefaCriarRequest(
-    int ProjetoId,
+    int? ProjetoId,
     int? EtapaId,
+    int? ProjetoEtapaId,
     int? ColunaKanbanId,
     int? ChamadoLegadoId,
     string Titulo,
     string? Descricao,
     string? ResponsavelId,
+    List<string>? ResponsavelIds,
     string CriadorId,
     int Prioridade,
+    int Tipo,
     int Ordem,
     DateTime? DataPrevisao,
+    DateTime? DataEntrega,
     int? HorasEstimadas);
 
 public record TarefaAtualizarRequest(
     int? EtapaId,
+    int? ProjetoEtapaId,
     int? ColunaKanbanId,
     int? ChamadoLegadoId,
     string Titulo,
     string? Descricao,
     string? ResponsavelId,
+    List<string>? ResponsavelIds,
+    string? Status,
     int Prioridade,
+    int Tipo,
     int Ordem,
     DateTime? DataPrevisao,
+    DateTime? DataEntrega,
     DateTime? DataConclusao,
     int? HorasEstimadas,
     int? HorasRealizadas,
@@ -84,7 +110,8 @@ public record TarefaAtualizarRequest(
 
 public record TarefaMudarColunaRequest(
     int? ColunaKanbanId,
-    int NovaOrdem);
+    int NovaOrdem,
+    string? MotivoBloqueio = null);
 
 public record ComentarioTarefaResumo(
     int Id,
@@ -103,7 +130,60 @@ public record TarefaFiltro(
     string? ResponsavelId,
     string? Status,
     int? Prioridade,
+    int? Tipo,
     string? Buscar,
     bool? ApenasAtrasadas = null,
     bool? ApenasEmAndamento = null,
-    bool? ApenasConcluidas = null);
+    bool? ApenasConcluidas = null,
+    bool? ApenasVenceHoje = null,
+    bool? IncluirArquivadas = null,
+    int? FuncaoId = null,
+    string? FuncaoClassificacao = null,
+    string? PerfilId = null,
+    int? EtapaId = null);
+
+public record ResponsavelResumo(
+    string OperadorId,
+    string Nome);
+
+public record ChamadoResumo(
+    int ChamadoId,
+    string? Titulo,
+    string? Status);
+
+public record ChamadoLegadoResumo(
+    int ChamadoId,
+    string? Titulo,
+    string? Status,
+    DateTime? DataPrevisao);
+
+public record ApontamentoResumo(
+    int Id,
+    string OperadorId,
+    string OperadorNome,
+    DateTime Data,
+    decimal Horas,
+    string? Observacao);
+
+public record ApontamentoCriarRequest(
+    string OperadorId,
+    DateTime Data,
+    decimal Horas,
+    string? Observacao);
+
+public record ApontamentoAtualizarRequest(
+    DateTime Data,
+    decimal Horas,
+    string? Observacao,
+    string UsuarioAlteracao);
+
+public record TarefaChamadoRequest(
+    int ChamadoId);
+
+public record HistoricoMovimentacao(
+    int TarefaId,
+    string? StatusAnterior,
+    string? StatusNovo,
+    string? Usuario,
+    DateTime Data,
+    string? Observacao);

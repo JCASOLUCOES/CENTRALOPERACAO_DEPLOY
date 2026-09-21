@@ -8,6 +8,15 @@ export interface DashboardKpis {
   totalClientes: number;
   horasApontadas: number;
   horasPlanejadas: number;
+  
+  // Novos KPIs Fase 3
+  tarefasFeatures: number;
+  tarefasBugs: number;
+  horasFeatures: number;
+  horasBugs: number;
+  percentualRetrabalho: number;
+  leadTimeMedioDias: number;
+  cycleTimeMedioDias: number;
 }
 
 export interface DashboardPorEquipe {
@@ -46,6 +55,21 @@ export interface DashboardTarefasPorStatus {
   total: number;
 }
 
+export interface DashboardTarefasPorTipo {
+  tipo: string;
+  total: number;
+  horasEstimadas: number;
+  horasRealizadas: number;
+}
+
+export interface DashboardHorasPorResponsavel {
+  responsavelId: string;
+  responsavelNome: string;
+  horasEstimadas: number;
+  horasRealizadas: number;
+  totalTarefas: number;
+}
+
 export interface DashboardGeral {
   kpis: DashboardKpis;
   porEquipe: DashboardPorEquipe[];
@@ -53,5 +77,7 @@ export interface DashboardGeral {
   ciaa?: DashboardCiaa;
   projetosPorResponsavel: DashboardProjetosPorResponsavel[];
   tarefasPorStatus: DashboardTarefasPorStatus[];
+  tarefasPorTipo: DashboardTarefasPorTipo[];
+  horasPorResponsavel: DashboardHorasPorResponsavel[];
   proximosPrazo: import('./projeto.model').ProjetoResumo[];
 }

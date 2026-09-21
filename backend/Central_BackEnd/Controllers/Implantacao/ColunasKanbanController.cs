@@ -19,7 +19,9 @@ public class ColunasKanbanController : ControllerBase
     public async Task<ActionResult<List<ColunaKanbanResumo>>> Listar([FromQuery] bool apenasAtivas = true, CancellationToken ct = default)
         => Ok(await _service.ListarAsync(apenasAtivas, ct));
 
+    // Colunas do Kanban são FIXAS (7 colunas via seed). Escrita restrita a Administrador.
     [HttpPost]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult<ColunaKanbanResumo>> Criar([FromBody] ColunaKanbanCriarRequest req, CancellationToken ct = default)
     {
         try { return Ok(await _service.CriarAsync(req, ct)); }
@@ -28,6 +30,7 @@ public class ColunasKanbanController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult<ColunaKanbanResumo>> Atualizar(int id, [FromBody] ColunaKanbanAtualizarRequest req, CancellationToken ct = default)
     {
         try
@@ -39,6 +42,7 @@ public class ColunasKanbanController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult> Excluir(int id, CancellationToken ct = default)
     {
         try
@@ -50,9 +54,10 @@ public class ColunasKanbanController : ControllerBase
     }
 
     [HttpPost("reordenar")]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult> Reordenar([FromBody] ColunaKanbanReordenarRequest req, CancellationToken ct = default)
     {
-        var ok = await _service.ReordenarAsync(req, ct);
-        return ok ? NoContent() : BadRequest(new { mensagem = "Limite maximo de 8 colunas excedido" });
+        await _service.ReordenarAsync(req, ct);
+        return NoContent();
     }
 }

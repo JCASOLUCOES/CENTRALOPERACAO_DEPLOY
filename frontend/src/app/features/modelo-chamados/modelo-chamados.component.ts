@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-modelo-chamados',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderComponent],
   templateUrl: './modelo-chamados.component.html',
   styleUrl: './modelo-chamados.component.scss'
 })

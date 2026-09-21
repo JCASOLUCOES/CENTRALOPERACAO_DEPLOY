@@ -1,0 +1,240 @@
+.jota-widget {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.jota-fab {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  border: 0;
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-card-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+
+  &:hover {
+    transform: scale(1.06);
+  }
+}
+
+.jota-painel {
+  width: min(23.75rem, calc(100vw - 2.5rem));
+  height: min(32.5rem, calc(100vh - 8rem));
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card-md);
+  overflow: hidden;
+}
+
+.jota-painel__topo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--primary-color);
+  color: #fff;
+
+  div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+
+    small {
+      opacity: 0.8;
+      font-size: 0.72rem;
+    }
+  }
+}
+
+.jota-painel__avatar {
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.jota-painel__expandir,
+.jota-painel__fechar {
+  background: transparent;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.25rem;
+  text-decoration: none;
+}
+
+.jota-painel__lista {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* Corretor #1: indicador de contexto da tarefa */
+.jota-contexto {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0.9rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--primary-color);
+  background: var(--surface-primary-soft);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+
+  i { flex-shrink: 0; }
+
+  span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  button {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    padding: 0.1rem;
+    font-size: 0.9rem;
+  }
+}
+
+.jota-msg {
+  max-width: 85%;
+  align-self: flex-start;
+  background: var(--background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.2rem 0.75rem 0.75rem 0.75rem;
+  padding: 0.55rem 0.75rem;
+
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  small {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+}
+
+.jota-msg--voce {
+  align-self: flex-end;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+  border-radius: 0.75rem 0.2rem 0.75rem 0.75rem;
+}
+
+.jota-digitando {
+  display: inline-flex;
+  gap: 0.25rem;
+
+  span {
+    width: 0.4375rem;
+    height: 0.4375rem;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: jota-pisca 1s infinite;
+  }
+
+  span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes jota-pisca {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.jota-erro {
+  margin: 0 0.9rem;
+  font-size: 0.75rem;
+  color: var(--color-error);
+}
+
+.jota-painel__envio {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border-top: 1px solid var(--border-color);
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.75rem;
+    background: var(--surface-main);
+    color: var(--text-color);
+    font-size: 0.85rem;
+    outline: 0;
+
+    &:focus {
+      border-color: var(--primary-color);
+    }
+  }
+
+  button {
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--primary-color);
+    color: #fff;
+    padding: 0 0.8rem;
+    cursor: pointer;
+    font-size: 1rem;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jota-fab,
+  .jota-msg span {
+    animation: none;
+    transition: none;
+  }
+}

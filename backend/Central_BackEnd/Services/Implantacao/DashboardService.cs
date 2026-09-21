@@ -7,118 +7,162 @@ namespace Central_BackEnd.Services.Implantacao;
 
 public interface IDashboardService
 {
-    Task<DashboardGeral> ObterGeralAsync(string? equipe, CancellationToken ct = default);
+    Task<DashboardGeral> ObterAsync(string? equipe = null, CancellationToken ct = default);
 }
 
 public class DashboardService : IDashboardService
 {
     private readonly AppDbContext _db;
-    public DashboardService(AppDbContext db) { _db = db; }
 
-    public async Task<DashboardGeral> ObterGeralAsync(string? equipe, CancellationToken ct = default)
+    public DashboardService(AppDbContext db)
     {
-        var hoje = DateTime.Today;
-        var projQuery = _db.Projetos.AsNoTracking().Include(p => p.Equipe).AsQueryable();
-        var tarQuery = _db.Tarefas.AsNoTracking().AsQueryable();
-        if (!string.IsNullOrWhiteSpace(equipe) && equipe != "Todas")
-            projQuery = projQuery.Where(p => p.Equipe != null && p.Equipe.Nome == equipe);
-        if (!string.IsNullOrWhiteSpace(equipe) && equipe != "Todas")
-            tarQuery = tarQuery.Where(t => t.Projeto != null && t.Projeto.Equipe != null && t.Projeto.Equipe.Nome == equipe);
+        _db = db;
+    }
 
-        var ativos = await projQuery.CountAsync(p => p.Status != StatusProjeto.Concluido && p.Status != StatusProjeto.Cancelado, ct);
-        var concluidos = await projQuery.CountAsync(p => p.Status == StatusProjeto.Concluido, ct);
-        var bloqueados = await projQuery.CountAsync(p => p.Status == StatusProjeto.Bloqueado, ct);
-        var atrasados = await projQuery.CountAsync(p =>
-            p.Status != StatusProjeto.Concluido && p.Status != StatusProjeto.Cancelado &&
-            p.DataPrevisao != null && p.DataPrevisao.Value.Date < hoje, ct);
+    public async Task<DashboardGeral> ObterAsync(string? equipe = null, CancellationToken ct = default)
+    {
+        var q = _db.Projetos.AsNoTracking()
+            .Include(p => p.TipoProjeto)
+            .Include(p => p.Cliente)
+            .Include(p => p.ColunaKanban)
+            .Where(p => p.Status != StatusProjeto.Cancelado);
 
-        var tarefasAbertas = await tarQuery.CountAsync(t => t.Status != StatusTarefa.Concluida && t.Status != StatusTarefa.Cancelada, ct);
-        var tarefasAtrasadas = await tarQuery.CountAsync(t =>
-            t.Status != StatusTarefa.Concluida && t.Status != StatusTarefa.Cancelada &&
-            t.DataPrevisao != null && t.DataPrevisao.Value.Date < hoje, ct);
+        var projetos = await q.ToListAsync(ct);
 
-        // Horas: soma das horas das tarefas (estimadas vs realizadas)
-        var horasApontadas = await tarQuery.SumAsync(t => (int?)t.HorasRealizadas ?? 0, ct);
-        var horasPlanejadas = await tarQuery.SumAsync(t => (int?)t.HorasEstimadas ?? 0, ct);
+        // Base queries para tarefas
+        var tarefasBase = _db.Tarefas.AsNoTracking()
+            .Where(t => t.Status != StatusTarefa.Cancelada);
 
-        var totalClientes = await _db.Clientes.CountAsync(c => c.Ativo, ct);
-
-        // Por equipe
-        var porEquipe = await _db.Equipes.AsNoTracking()
-            .Where(e => e.Ativa)
-            .OrderBy(e => e.Nome)
-            .Select(e => new DashboardPorEquipe(
-                e.Nome,
-                _db.Projetos.Count(p => p.EquipeId == e.Id &&
-                    p.Status != StatusProjeto.Concluido && p.Status != StatusProjeto.Cancelado),
-                _db.Projetos.Count(p => p.EquipeId == e.Id && p.Status == StatusProjeto.Concluido),
-                _db.Projetos.Count(p => p.EquipeId == e.Id && p.Status == StatusProjeto.Bloqueado),
-                _db.Projetos.Count(p => p.EquipeId == e.Id &&
-                    p.Status != StatusProjeto.Concluido && p.Status != StatusProjeto.Cancelado &&
-                    p.DataPrevisao != null && p.DataPrevisao.Value.Date < hoje)))
+        var tarefasConcluidas = await _db.Tarefas.AsNoTracking()
+            .Where(t => t.Status == StatusTarefa.Concluida && t.DataConclusao.HasValue)
             .ToListAsync(ct);
 
-        // Detalhes por tipo de projeto
-        DashboardImplantacao? impl = null;
-        if (string.IsNullOrEmpty(equipe) || equipe == "Todas" || equipe == "IMPLANTACAO")
-        {
-            impl = new DashboardImplantacao(
-                await _db.Projetos.CountAsync(p => p.TipoProjeto != null && p.TipoProjeto.Codigo == "CLIENTE" && p.Status != StatusProjeto.Concluido, ct),
-                await _db.Projetos.CountAsync(p => p.TipoProjeto != null && p.TipoProjeto.Codigo == "CARTEIRA" && p.Status != StatusProjeto.Concluido, ct),
-                await _db.Projetos.CountAsync(p => p.TipoProjeto != null && p.TipoProjeto.Codigo == "INTEGRACAO" && p.Status != StatusProjeto.Concluido, ct),
-                await _db.Projetos.CountAsync(p => p.TipoProjeto != null && p.TipoProjeto.Codigo == "CARTEIRA" && p.Status == StatusProjeto.Concluido, ct),
-                await _db.Projetos.CountAsync(p => p.TipoProjeto != null && p.TipoProjeto.Codigo == "INTEGRACAO" && p.Status == StatusProjeto.Concluido, ct));
-        }
-
-        DashboardCiaa? ciaa = null;
-        if (string.IsNullOrEmpty(equipe) || equipe == "Todas" || equipe == "CIAA")
-        {
-            ciaa = new DashboardCiaa(
-                await _db.Projetos.CountAsync(p => p.TipoProjeto != null && p.TipoProjeto.Codigo == "PROJETO_CIAA" && p.Status != StatusProjeto.Concluido, ct),
-                await _db.Projetos.CountAsync(p => p.TipoProjeto != null && p.TipoProjeto.Codigo == "PROJETO_CIAA" && p.Status == StatusProjeto.Concluido, ct),
-                await _db.Projetos.CountAsync(p => p.TipoProjeto != null && p.TipoProjeto.Codigo == "PROJETO_CIAA" && p.Status == StatusProjeto.Bloqueado, ct),
-                await _db.Tarefas.CountAsync(t => t.Projeto != null && t.Projeto.TipoProjeto != null && t.Projeto.TipoProjeto.Codigo == "PROJETO_CIAA" && t.Status != StatusTarefa.Concluida && t.Status != StatusTarefa.Cancelada, ct),
-                await _db.Tarefas.CountAsync(t => t.Projeto != null && t.Projeto.TipoProjeto != null && t.Projeto.TipoProjeto.Codigo == "PROJETO_CIAA" && t.Status != StatusTarefa.Concluida && t.Status != StatusTarefa.Cancelada && t.DataPrevisao != null && t.DataPrevisao.Value.Date < hoje, ct));
-        }
-
-        var projPorResp = await _db.Projetos.AsNoTracking()
-            .Where(p => p.ResponsavelId != null && p.Status != StatusProjeto.Cancelado)
-            .GroupBy(p => p.ResponsavelId)
-            .Select(g => new
-            {
-                ResponsavelId = g.Key!,
-                TotalProjetos = g.Count(),
-                Atrasados = g.Count(p => p.Status != StatusProjeto.Concluido && p.DataPrevisao != null && p.DataPrevisao.Value.Date < hoje)
-            })
-            .OrderByDescending(x => x.TotalProjetos).Take(10)
-            .Join(_db.Operadores, x => x.ResponsavelId, o => o.OperadorId, (x, o) =>
-                new DashboardProjetosPorResponsavel(o.OperadorId, o.Nome, x.TotalProjetos, x.Atrasados))
+        var tarefasComHoras = await _db.Tarefas.AsNoTracking()
+            .Where(t => t.HorasRealizadas.HasValue && t.HorasRealizadas > 0)
             .ToListAsync(ct);
 
-        var tarPorStatus = await _db.Tarefas.AsNoTracking()
+        // KPIs básicos
+        var kpis = new DashboardKpis
+        {
+            ProjetosAtivos = projetos.Count(p => p.Status != StatusProjeto.Concluido && p.Status != StatusProjeto.Cancelado),
+            ProjetosAtrasados = projetos.Count(p => p.DataPrevisao.HasValue && p.DataPrevisao < DateTime.Today && p.Status != StatusProjeto.Concluido && p.Status != StatusProjeto.Cancelado),
+            ProjetosConcluidos = projetos.Count(p => p.Status == StatusProjeto.Concluido),
+            TarefasAbertas = await tarefasBase.CountAsync(t => t.Status != StatusTarefa.Concluida, ct),
+            TarefasAtrasadas = await tarefasBase.CountAsync(t => (t.DataEntrega ?? t.DataPrevisao).HasValue && (t.DataEntrega ?? t.DataPrevisao)!.Value.Date < DateTime.Today && t.Status != StatusTarefa.Concluida, ct),
+            TarefasConcluidas = await tarefasBase.CountAsync(t => t.Status == StatusTarefa.Concluida, ct),
+            HorasApontadas = await _db.Tarefas.Where(t => t.HorasRealizadas.HasValue).SumAsync(t => t.HorasRealizadas ?? 0, ct),
+            
+            // Novos KPIs Fase 3
+            TarefasFeatures = await tarefasBase.CountAsync(t => t.Tipo == TipoTarefa.Feature, ct),
+            TarefasBugs = await tarefasBase.CountAsync(t => t.Tipo == TipoTarefa.Bug, ct),
+            HorasFeatures = tarefasComHoras.Where(t => t.Tipo == TipoTarefa.Feature).Sum(t => t.HorasRealizadas ?? 0),
+            HorasBugs = tarefasComHoras.Where(t => t.Tipo == TipoTarefa.Bug).Sum(t => t.HorasRealizadas ?? 0),
+        };
+
+        // Calcular % Retrabalho
+        var totalHoras = kpis.HorasFeatures + kpis.HorasBugs;
+        kpis.PercentualRetrabalho = totalHoras > 0 ? Math.Round((double)kpis.HorasBugs / totalHoras * 100, 1) : 0;
+
+        // Lead Time médio (Criação -> Conclusão)
+        if (tarefasConcluidas.Count > 0)
+        {
+            kpis.LeadTimeMedioDias = Math.Round(tarefasConcluidas
+                .Where(t => t.DataConclusao.HasValue)
+                .Average(t => (t.DataConclusao!.Value - t.DataInclusao).TotalDays), 1);
+        }
+
+        // Cycle Time médio (AFazer -> Concluída) - aproximado: tempo desde primeira movimentação para "Em Andamento" até conclusão
+        // Como não temos histórico de status por data exata, usamos DataInclusao -> DataConclusao como proxy
+        kpis.CycleTimeMedioDias = kpis.LeadTimeMedioDias;
+
+        // Tarefas por Status
+        var tarefasPorStatus = await tarefasBase
             .GroupBy(t => t.Status)
-            .Select(g => new DashboardTarefasPorStatus(g.Key.ToString(), g.Count()))
+            .Select(g => new TarefasPorStatus { Status = g.Key.ToString(), Total = g.Count() })
             .ToListAsync(ct);
 
-        var prox = await _db.Projetos.AsNoTracking()
-            .Where(p => p.Status != StatusProjeto.Concluido && p.Status != StatusProjeto.Cancelado &&
-                        p.DataPrevisao != null && p.DataPrevisao.Value.Date >= hoje)
+        // Tarefas por Tipo (Feature/Bug) com horas
+        var tarefasPorTipo = await tarefasBase
+            .GroupBy(t => t.Tipo)
+            .Select(g => new TarefasPorTipo
+            {
+                Tipo = g.Key.ToString(),
+                Total = g.Count(),
+                HorasEstimadas = g.Sum(t => t.HorasEstimadas ?? 0),
+                HorasRealizadas = g.Sum(t => t.HorasRealizadas ?? 0)
+            })
+            .ToListAsync(ct);
+
+        // Horas por Responsável (considera múltiplos responsáveis via IMPL_TarefaResponsavel)
+        var apontamentos = await _db.TarefaApontamentos.AsNoTracking()
+            .Include(a => a.Tarefa)
+            .Where(a => a.Tarefa != null)
+            .ToListAsync(ct);
+
+        var responsavelIds = new HashSet<string>(apontamentos.Select(a => a.OperadorId).Distinct());
+        // Compatibilidade SQL 2008 (compat 100): sem Contains em lista capturada (OPENJSON).
+        var operadoresMap = (await _db.Operadores.AsNoTracking()
+            .Select(o => new { o.OperadorId, o.Nome })
+            .ToListAsync(ct))
+            .Where(o => responsavelIds.Contains(o.OperadorId))
+            .ToDictionary(o => o.OperadorId, o => o.Nome);
+
+        var horasPorResponsavel = apontamentos
+            .GroupBy(a => a.OperadorId)
+            .Select(g => new HorasPorResponsavel
+            {
+                ResponsavelId = g.Key,
+                ResponsavelNome = operadoresMap.TryGetValue(g.Key, out var nome) ? nome : g.Key,
+                HorasRealizadas = (int)Math.Ceiling(g.Sum(a => a.Horas)),
+                TotalTarefas = g.Select(a => a.TarefaId).Distinct().Count()
+            })
+            .OrderByDescending(h => h.HorasRealizadas)
+            .Take(20)
+            .ToList();
+
+        // Adicionar horas estimadas por responsável (baseado nas tarefas onde é responsável principal ou na lista)
+        var tarefasResponsaveis = await _db.TarefaResponsaveis.AsNoTracking()
+            .Include(tr => tr.Tarefa)
+            .Where(tr => tr.Tarefa != null)
+            .ToListAsync(ct);
+
+        var estimadasPorResp = tarefasResponsaveis
+            .GroupBy(tr => tr.OperadorId)
+            .ToDictionary(g => g.Key, g => g.Sum(tr => tr.Tarefa?.HorasEstimadas ?? 0));
+
+        foreach (var h in horasPorResponsavel)
+        {
+            h.HorasEstimadas = estimadasPorResp.TryGetValue(h.ResponsavelId, out var est) ? est : 0;
+        }
+
+        var porEquipe = new List<DashboardPorEquipe>
+        {
+            new DashboardPorEquipe { Equipe = "Geral", Ativos = 0, Concluidos = 0, Bloqueados = 0, Atrasados = 0 }
+        };
+
+        var proximosPrazo = await _db.Projetos
+            .Where(p => p.DataPrevisao.HasValue && p.DataPrevisao > DateTime.Today && p.Status != StatusProjeto.Concluido && p.Status != StatusProjeto.Cancelado)
             .OrderBy(p => p.DataPrevisao)
             .Take(10)
-            .Select(p => new ProjetoResumo(
-                p.Id, p.Codigo, p.Nome,
-                p.Equipe != null ? p.Equipe.Nome : "",
-                p.TipoProjeto != null ? p.TipoProjeto.Nome : "",
-                p.ClienteId, p.Cliente != null ? p.Cliente.Nome : null,
-                p.ClienteLegadoId, null,
-                p.Status.ToString(), (int)p.Prioridade, p.Progresso,
-                p.ResponsavelId,
-                _db.Operadores.Where(o => o.OperadorId == p.ResponsavelId).Select(o => o.Nome).FirstOrDefault(),
-                p.DataPrevisao, p.DataConclusao, p.DataInclusao))
+            .Select(p => new ProjetoProximoPrazo
+            {
+                Id = p.Id,
+                Codigo = p.Codigo,
+                Nome = p.Nome,
+                EquipeNome = "Geral",
+                ClienteNome = p.Cliente != null ? p.Cliente.Fantasia : null,
+                DataPrevisao = p.DataPrevisao
+            })
             .ToListAsync(ct);
 
-        return new DashboardGeral(
-            new DashboardKpis(ativos, concluidos, bloqueados, atrasados, tarefasAbertas, tarefasAtrasadas, totalClientes, horasApontadas, horasPlanejadas),
-            porEquipe, impl, ciaa, projPorResp, tarPorStatus, prox);
+        return new DashboardGeral
+        {
+            Kpis = kpis,
+            TarefasPorStatus = tarefasPorStatus,
+            TarefasPorTipo = tarefasPorTipo,
+            HorasPorResponsavel = horasPorResponsavel,
+            PorEquipe = porEquipe,
+            ProximosPrazo = proximosPrazo
+        };
     }
 }

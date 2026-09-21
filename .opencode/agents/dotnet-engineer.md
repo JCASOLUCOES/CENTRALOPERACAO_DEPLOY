@@ -15,6 +15,9 @@ Trabalhe em `backend/Central_BackEnd/` seguindo os padrões atuais do projeto:
 - DI via construtor; serviços registrados em `Program.cs`.
 - Consultas EF Core **sempre parametrizadas** (sem SQL interpolado).
 - Projeto em .NET 8 (`Central_BackEnd.csproj`).
+- DTOs `*Detalhe` (Resumo + auditoria) em obter/criar/atualizar de TipoProjeto, Etapa e ColunaKanban (`TipoProjetoEtapaColunaDtos.cs`).
+- Tabelas legadas (`tbchamado`, `tbfuncionario`, `tbcliente`) via entities somente-leitura com `ExcludeFromMigrations` — nunca escrever.
+- Módulo Database: 8 services (`Connection`, `Metadata`, `RelationshipInference`, `Query`, `Search`, `QueryBuilder`, `SchemaDiff`, `Snapshot`); rotas do `DatabaseController` espelham o `database.service.ts` do frontend.
 
 Respeite as restrições de segurança já implementadas:
 - Comparação de senha via `SegurancaHelper.SenhasIguais` (tempo constante).

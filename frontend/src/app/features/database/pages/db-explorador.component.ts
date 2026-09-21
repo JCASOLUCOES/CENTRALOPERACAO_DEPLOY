@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DatabaseService } from '../services/database.service';
-import { DatabaseTable, DatabaseColumn, DatabaseIndex, ProcedureResumo, ProcedureDetalhe } from '../models/database.model';
+import { DatabaseTable, DatabaseColumn, DatabaseIndex, ProcedureResumo, ProcedureDetalhe, Trigger } from '../models/database.model';
 import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -17,7 +17,7 @@ type ArvoreTipo = 'tabela' | 'procedure';
   template: `
   <div class="adm-search db-explorador__busca">
     <i class="bi bi-search adm-search__icone"></i>
-    <input type="text" class="adm-search__input" placeholder="Buscar tabela, coluna ou procedure…"
+    <input type="text" class="adm-search__input" placeholder="Buscar tabela, procedure ou trigger…"
       [(ngModel)]="busca" (ngModelChange)="onBuscar()">
   </div>
 
@@ -54,6 +54,20 @@ type ArvoreTipo = 'tabela' | 'procedure';
           </li>
         </ul>
       </div>
+      <div class="db-explorador__grupo">
+        <div class="db-explorador__grupo-titulo" (click)="toggleGrupo('triggers')">
+          <i class="bi" [ngClass]="grupoAberto('triggers') ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+          <i class="bi bi-exclamation-triangle-fill"></i> Triggers
+          <span class="db-explorador__count">{{ triggersFiltradas().length }}</span>
+        </div>
+        <ul *ngIf="grupoAberto('triggers')">
+          <li *ngFor="let g of triggersFiltradas()" (click)="selecionarTrigger(g)" [title]="g.tabela + ' · ' + g.evento">
+            <i class="bi bi-lightning-charge"></i>
+            <span class="db-explorador__mono">{{ g.nome }}</span>
+            <span class="db-explorador__schema">{{ g.evento }}</span>
+          </li>
+        </ul>
+      </div>
     </aside>
 
     <main class="db-explorador__detalhe">
@@ -61,7 +75,7 @@ type ArvoreTipo = 'tabela' | 'procedure';
       <!-- Estado vazio -->
       <div *ngIf="!selecionadoTipo()" class="adm-empty">
         <i class="bi bi-arrow-left-circle"></i>
-        <p>Selecione uma tabela ou procedure na árvore à esquerda para ver detalhes.</p>
+        <p>Selecione uma tabela, procedure ou trigger na árvore à esquerda para ver detalhes.</p>
       </div>
 
       <!-- Detalhe de TABELA -->
@@ -204,7 +218,7 @@ type ArvoreTipo = 'tabela' | 'procedure';
 
     .db-explorador__detalhe {
       background: #fff; border: 1px solid #e2e8f0; border-radius: 0.5rem;
-      padding: 1rem 1.25rem; min-height: 400px;
+      padding: 1rem 1.25rem; min-height: 25rem;
     }
     .db-explorador__detalhe-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -226,11 +240,11 @@ type ArvoreTipo = 'tabela' | 'procedure';
       padding: 0.75rem 1rem; border-radius: 0.4rem;
       font-family: 'IBM Plex Mono', 'Cascadia Code', monospace;
       font-size: 0.8rem; line-height: 1.4;
-      overflow-x: auto; max-height: 240px;
+      overflow-x: auto; max-height: 15rem;
       white-space: pre-wrap; word-break: break-word;
       margin: 0.5rem 0 0;
     }
-    .db-code--preview { max-height: 160px; }
+    .db-code--preview { max-height: 10rem; }
 
     .db-btn {
       display: inline-flex; align-items: center; gap: 0.35rem;
@@ -259,6 +273,7 @@ export class DbExploradorComponent implements OnInit {
 
   readonly tabelas = signal<DatabaseTable[]>([]);
   readonly procedures = signal<ProcedureResumo[]>([]);
+  readonly triggers = signal<Trigger[]>([]);
   readonly colunas = signal<DatabaseColumn[]>([]);
   readonly indices = signal<DatabaseIndex[]>([]);
   readonly carregandoProcedure = signal(false);
@@ -273,6 +288,7 @@ export class DbExploradorComponent implements OnInit {
 
   readonly tabelasFiltradas = computed(() => this.filtrar(this.tabelas(), t => t.nome, t => t.nomeCompleto));
   readonly proceduresFiltradas = computed(() => this.filtrar(this.procedures(), p => p.nome, p => p.nomeCompleto));
+  readonly triggersFiltradas = computed(() => this.filtrar(this.triggers(), g => g.nome, g => g.schema + '.' + g.nome));
 
   private filtrar<T>(lista: T[], getNome: (x: T) => string, getFull: (x: T) => string): T[] {
     const q = (this.busca || '').toLowerCase();
@@ -283,6 +299,7 @@ export class DbExploradorComponent implements OnInit {
   ngOnInit(): void {
     this.db.listarTabelas().pipe(catchError(() => of([] as DatabaseTable[]))).subscribe(l => this.tabelas.set(l));
     this.db.listarProcedures().pipe(catchError(() => of([] as ProcedureResumo[]))).subscribe(l => this.procedures.set(l));
+    this.db.listarTriggers().pipe(catchError(() => of([] as Trigger[]))).subscribe(l => this.triggers.set(l));
   }
 
   onBuscar(): void { /* trigga computed */ }
@@ -337,5 +354,18 @@ export class DbExploradorComponent implements OnInit {
     // Navega para a aba de consultas com o nome da procedure pré-preenchido
     sessionStorage.setItem('db-procedure-prefill', p.nomeCompleto);
     location.assign('/database/consultas');
+  }
+
+  selecionarTrigger(g: Trigger): void {
+    // Abre o modal com o corpo completo da trigger (dados reais do backend)
+    this.db.obterTrigger(g.schema, g.nome).subscribe({
+      next: d => {
+        import('./db-trigger-modal.component').then(m => {
+          const ref = this.modalSvc.open(m.DbTriggerModalComponent, { size: 'xl', scrollable: true });
+          ref.componentInstance.trigger = d;
+        });
+      },
+      error: () => {}
+    });
   }
 }

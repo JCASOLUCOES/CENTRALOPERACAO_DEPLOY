@@ -15,10 +15,11 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbDropdown, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, Subject, filter, takeUntil } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import { BuscaService } from '@core/services/busca.service';
+import { BuscaIndexService, ResultadoBusca } from '@core/services/busca-index.service';
 import { Usuario } from '@core/models/auth.model';
 import { APP_VERSION } from '@shared/meta/app-version';
 
@@ -34,17 +35,10 @@ interface BreadcrumbItem {
   route?: string;
 }
 
-interface ResultadoBusca {
-  titulo: string;
-  tipo: string;
-  rota: string;
-  icone: string;
-}
-
 const BREADCRUMB_LABELS: Record<string, string> = {
   '/': 'Início',
   '/stack': 'Stack',
-  '/fraseologia': 'Fluxo Atendimento e Fraseologias',
+  '/fraseologia': 'Fraseologias',
   '/ferramentas': 'Ferramentas',
   '/ferramentas/acessos': 'Acessos',
   '/ferramentas/faq': 'FAQ',
@@ -58,6 +52,17 @@ const BREADCRUMB_LABELS: Record<string, string> = {
   '/trilhas/infra': 'Dicas de Infra',
   '/visao-adm': 'Visão ADM',
   '/visao-adm/detalhe': 'Detalhe do Procedimento',
+  '/executivo': 'Central Executiva',
+  '/executivo/dashboard': 'Painel do Diretor',
+  '/agenda': 'Agenda',
+  '/chat': 'JOTA',
+  '/implantacao': 'Implantação',
+  '/implantacao/dashboard': 'Visão geral',
+  '/implantacao/kanban': 'Kanban',
+  '/implantacao/projetos': 'Projetos',
+  '/implantacao/tarefas': 'Tarefas',
+  '/admin': 'Administração',
+  '/admin/dashboard': 'Gestão da Central',
   '/empresa': 'Empresa',
   '/empresa/onboarding': 'Onboarding Corporativo',
   '/empresa/onboarding/capitulo': 'Capítulo',
@@ -68,24 +73,10 @@ const BREADCRUMB_LABELS: Record<string, string> = {
   '/database/visao-geral': 'Visão Geral',
   '/database/explorador': 'Explorador',
   '/database/relacionamentos': 'Relacionamentos',
-  '/database/diagrama': 'Diagrama',
   '/database/consultas': 'Consultas',
   '/database/diferencas': 'Diferenças',
   '/database/configuracao': 'Configuração'
 };
-
-const RESULTADOS_MOCK: ResultadoBusca[] = [
-  { titulo: 'Como criar um chamado de cobrança?', tipo: 'FAQ', rota: '/ferramentas/faq', icone: 'bi-question-circle' },
-  { titulo: 'Ferramentas de acesso e rotina', tipo: 'Ferramentas', rota: '/ferramentas', icone: 'bi-tools' },
-  { titulo: 'Acessos e senhas de sistemas', tipo: 'Acessos', rota: '/ferramentas/acessos', icone: 'bi-building-lock' },
-  { titulo: 'Fraseologias de atendimento', tipo: 'Fluxo', rota: '/fraseologia', icone: 'bi-diagram-3' },
-  { titulo: 'Modelo de chamado de atendimento', tipo: 'Modelos', rota: '/modelo-chamados', icone: 'bi-file-earmark-text' },
-  { titulo: 'Trilha: Como resolver esse problema?', tipo: 'Trilhas', rota: '/trilhas/resolver', icone: 'bi-compass' },
-  { titulo: 'Dicas de SQL', tipo: 'Trilhas', rota: '/trilhas/sql', icone: 'bi-code-slash' },
-  { titulo: 'Curso de ativação de serviços', tipo: 'Cursos', rota: '/cursos', icone: 'bi-mortarboard' },
-  { titulo: 'Stack de tecnologias da JCA', tipo: 'Stack', rota: '/stack', icone: 'bi-stack' },
-  { titulo: 'Procedimentos administrativos (Visão ADM)', tipo: 'Visão ADM', rota: '/visao-adm', icone: 'bi-clipboard-data' }
-];
 
 @Component({
   selector: 'app-header',
@@ -112,7 +103,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   navItems: HeaderNavItem[] = [
     { label: 'Início', route: '/', icone: 'bi-house-fill', exact: true },
-    { label: 'Fluxo Atendimento e Fraseologias', route: '/fraseologia', icone: 'bi-diagram-3-fill' },
+    { label: 'Fraseologias', route: '/fraseologia', icone: 'bi-diagram-3-fill' },
     { label: 'Ferramentas', route: '/ferramentas', icone: 'bi-tools' },
     { label: 'Acessos', route: '/ferramentas/acessos', icone: 'bi-building' },
     { label: 'Cursos', route: '/cursos', icone: 'bi-mortarboard-fill' }
@@ -122,11 +113,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   termoBusca = '';
   buscaAberta = false;
-  resultadosBusca: ResultadoBusca[] = RESULTADOS_MOCK;
+  resultadosBusca: ResultadoBusca[] = [];
 
   constructor(
     private readonly authService: AuthService,
     private readonly buscaService: BuscaService,
+    private readonly indiceBusca: BuscaIndexService,
     private readonly router: Router,
     private readonly cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) platformId: Object
@@ -197,7 +189,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   abrirBusca(): void {
-    this.buscaService['buscaAbertaSubject'].next(true);
+    this.buscaService.abrirBusca();
+    this.resultadosBusca = this.indiceBusca.buscar(this.termoBusca);
     if (this.buscaCloseTimer) {
       clearTimeout(this.buscaCloseTimer);
       this.buscaCloseTimer = null;
@@ -209,13 +202,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   onBuscaInput(): void {
-    this.buscaService['buscaAbertaSubject'].next(true);
-    const termo = this.termoBusca.trim().toLowerCase();
-    this.resultadosBusca = termo
-      ? RESULTADOS_MOCK.filter(
-          (r) => r.titulo.toLowerCase().includes(termo) || r.tipo.toLowerCase().includes(termo)
-        )
-      : RESULTADOS_MOCK;
+    this.buscaService.abrirBusca();
+    this.resultadosBusca = this.indiceBusca.buscar(this.termoBusca);
     this.cdr.markForCheck();
   }
 
@@ -227,7 +215,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   fecharBusca(): void {
-    this.buscaService['buscaAbertaSubject'].next(false);
+    this.buscaService.fecharBusca();
     if (this.buscaCloseTimer) {
       clearTimeout(this.buscaCloseTimer);
       this.buscaCloseTimer = null;
@@ -292,6 +280,29 @@ export class HeaderComponent implements OnInit, OnDestroy {
     const savedTheme = localStorage.getItem('theme') ?? 'light';
     this.isDark = savedTheme === 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
+  }
+
+  @ViewChild('userDropdownEl') userDropdownElement?: ElementRef<HTMLElement>;
+  @ViewChild('userDropdown') userDropdown?: NgbDropdown;
+
+  isOpen = false;
+
+  toggleUserMenu(event: MouseEvent): void {
+    event.stopPropagation();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.isOpen) return;
+    const target = event.target as Node;
+    if (this.userDropdownElement && !this.userDropdownElement.nativeElement.contains(target)) {
+      this.closeUserMenu();
+    }
+  }
+
+  closeUserMenu(): void {
+    this.isOpen = false;
+    this.userDropdown?.close();
   }
 
   trackByIndex(index: number): number {

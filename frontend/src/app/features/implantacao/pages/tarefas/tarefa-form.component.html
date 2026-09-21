@@ -1,0 +1,349 @@
+<div class="imp-tarefa-form-page">
+  <app-page-header
+    [titulo]="tituloPagina()"
+    [descricao]="isEdit() ? 'Atualize as informações da tarefa' : 'Preencha os dados para criar uma nova tarefa'"
+    icone="bi-file-earmark-text">
+    <div actions class="imp-form-header-actions">
+      <button type="button" class="imp-btn imp-btn--ghost" (click)="cancelar()">
+        <i class="bi bi-x-lg"></i> Cancelar
+      </button>
+    </div>
+  </app-page-header>
+
+  <div *ngIf="toastMessage()" class="imp-toast" [class.imp-toast--success]="toastType() === 'success'" [class.imp-toast--error]="toastType() === 'error'" role="alert">
+    <i class="bi" [ngClass]="toastType() === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'"></i>
+    <span>{{ toastMessage() }}</span>
+  </div>
+
+  <div *ngIf="error()" class="imp-alert imp-alert--error">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span>{{ error() }}</span>
+  </div>
+
+  <div *ngIf="loading() && isEdit()" class="imp-loading">Carregando tarefa…</div>
+
+  <div class="imp-form-wrapper" *ngIf="!loading() || !isEdit()">
+    <form (ngSubmit)="onSubmit()" class="imp-form" novalidate>
+      <!-- ===== SEÇÃO 1: OBRIGATÓRIOS ===== -->
+      <div class="imp-form__section">
+        <h3 class="imp-form__section-title">Informações Obrigatórias</h3>
+
+        <div class="imp-form__grid">
+          <div class="imp-form__field imp-form__field--full">
+            <label for="titulo" class="imp-form__label">Título <span class="imp-required">*</span></label>
+            <input
+              type="text"
+              id="titulo"
+              class="imp-form__input"
+              [ngModel]="titulo()"
+              (ngModelChange)="titulo.set($event ?? '')"
+              name="titulo"
+              required
+              maxlength="300"
+              placeholder="Título da tarefa"
+              (blur)="error.set(null)"
+            />
+          </div>
+
+          <div class="imp-form__field imp-form__field--full">
+            <label for="descricao" class="imp-form__label">Descrição</label>
+            <textarea
+              id="descricao"
+              class="imp-form__textarea"
+              [ngModel]="descricao()"
+              (ngModelChange)="descricao.set($event ?? '')"
+              name="descricao"
+              rows="3"
+              placeholder="Descreva a tarefa, passos, detalhes técnicos..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="imp-form__grid">
+          <div class="imp-form__field">
+            <label for="tipo" class="imp-form__label">Tipo <span class="imp-required">*</span></label>
+            <select
+              id="tipo"
+              class="imp-form__select"
+              [ngModel]="tipo()"
+              (ngModelChange)="tipo.set(Number($event))"
+              name="tipo"
+              required
+            >
+              <option [value]="0">Feature</option>
+              <option [value]="1">Bug</option>
+            </select>
+          </div>
+
+          <div class="imp-form__field">
+            <label for="dataEntrega" class="imp-form__label">Data de Entrega <span class="imp-required">*</span></label>
+            <input
+              type="date"
+              id="dataEntrega"
+              class="imp-form__input"
+              [ngModel]="dataEntrega()"
+              (ngModelChange)="dataEntrega.set($event ?? '')"
+              name="dataEntrega"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="imp-form__field imp-form__field--full">
+          <label class="imp-form__label">Responsável <span class="imp-required">*</span></label>
+          <app-usuario-dropdown
+            [selecionados]="responsavelIds()"
+            (selecaoChange)="responsavelIds.set($event)">
+          </app-usuario-dropdown>
+        </div>
+      </div>
+
+      <!-- ===== SEÇÃO 2: OPCIONAIS ===== -->
+      <div class="imp-form__section">
+        <h3 class="imp-form__section-title">Informações Opcionais</h3>
+
+        <div class="imp-form__grid">
+          <div class="imp-form__field">
+            <label for="projeto" class="imp-form__label">Projeto <span class="imp-optional">(opcional)</span></label>
+            <select
+              id="projeto"
+              class="imp-form__select"
+              [ngModel]="projetoId()"
+              (ngModelChange)="aoMudarProjeto($event)"
+              name="projetoId"
+            >
+              <option [value]="null">Selecione o projeto... (opcional)</option>
+              <option value="sem-projeto">Sem projeto</option>
+              <option *ngFor="let p of projetos()" [value]="p.id">{{ p.codigo }} — {{ p.nome }}</option>
+            </select>
+          </div>
+
+          <div class="imp-form__field">
+            <label for="prioridade" class="imp-form__label">Prioridade <span class="imp-required">*</span></label>
+            <select
+              id="prioridade"
+              class="imp-form__select"
+              [ngModel]="prioridade()"
+              (ngModelChange)="prioridade.set(Number($event))"
+              name="prioridade"
+              required
+            >
+              <option [value]="0">Baixa</option>
+              <option [value]="1">Média</option>
+              <option [value]="2">Alta</option>
+              <option [value]="3">Urgente</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="imp-form__grid">
+          <div class="imp-form__field" *ngIf="temProjeto()">
+            <label for="etapa" class="imp-form__label">Etapa <span class="imp-required">*</span></label>
+            <select
+              id="etapa"
+              class="imp-form__select"
+              [ngModel]="etapaId()"
+              (ngModelChange)="etapaId.set($event === null || $event === '' ? null : Number($event))"
+              name="etapaId"
+              required
+            >
+              <option [value]="null">Selecione a etapa... (obrigatória)</option>
+              <option *ngFor="let e of etapas()" [value]="e.id">{{ e.nome }}</option>
+            </select>
+          </div>
+
+          <div class="imp-form__field" *ngIf="temProjeto()">
+            <label for="etapaFixa" class="imp-form__label">Etapa do projeto (card)</label>
+            <select
+              id="etapaFixa"
+              class="imp-form__select"
+              [ngModel]="projetoEtapaId()"
+              (ngModelChange)="projetoEtapaId.set($event === null || $event === '' ? null : Number($event))"
+              name="projetoEtapaId"
+            >
+              <option [value]="null">Sem card (só totais)</option>
+              <option *ngFor="let e of etapasFixas()" [value]="e.id">{{ e.ordem }} — {{ e.nome }}</option>
+            </select>
+          </div>
+
+          <div class="imp-form__field">
+            <label for="colunaKanban" class="imp-form__label">Coluna Kanban</label>
+            <select
+              id="colunaKanban"
+              class="imp-form__select"
+              [ngModel]="colunaKanbanId()"
+              (ngModelChange)="colunaKanbanId.set($event === null || $event === '' ? null : Number($event))"
+              name="colunaKanbanId"
+            >
+              <option [value]="null">Sem coluna inicial</option>
+              <option *ngFor="let c of colunasKanban()" [value]="c.id">{{ c.nome }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="imp-form__field imp-form__field--full">
+          <label class="imp-form__label">Chamados Relacionados</label>
+          <app-chamado-dropdown
+            [selecionados]="chamadoIds()"
+            (selecaoChange)="chamadoIds.set($event)"
+            placeholder="Buscar chamados por ID ou título...">
+          </app-chamado-dropdown>
+        </div>
+      </div>
+
+      <!-- ===== SEÇÃO 3: MAIS OPÇÕES (só aparece no EDIT ou colapsada) ===== -->
+      <div class="imp-form__section imp-form__section--collapsible" *ngIf="isEdit() || maisOpcoesAbertas()">
+        <h3 class="imp-form__section-title">
+          <button type="button" class="imp-form__collapsible-toggle" (click)="maisOpcoesAbertas.set(!maisOpcoesAbertas())">
+            <i class="bi" [ngClass]="maisOpcoesAbertas() ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            Mais opções
+          </button>
+        </h3>
+
+        @if (maisOpcoesAbertas()) {
+          <div class="imp-form__grid">
+            <div class="imp-form__field">
+              <label for="dataPrevisao" class="imp-form__label">Previsão de Conclusão</label>
+              <input
+                type="date"
+                id="dataPrevisao"
+                class="imp-form__input"
+                [ngModel]="dataPrevisao()"
+                (ngModelChange)="dataPrevisao.set($event ?? '')"
+                name="dataPrevisao"
+              />
+            </div>
+
+            <div class="imp-form__field">
+              <label for="horasEstimadas" class="imp-form__label">Horas Estimadas</label>
+              <input
+                type="number"
+                id="horasEstimadas"
+                class="imp-form__input"
+                [ngModel]="horasEstimadas()"
+                (ngModelChange)="horasEstimadas.set($event === null || $event === '' ? null : Number($event))"
+                name="horasEstimadas"
+                min="0"
+                step="1"
+                placeholder="Ex: 8"
+              />
+            </div>
+          </div>
+
+          <div class="imp-form__grid" *ngIf="isEdit()">
+            <div class="imp-form__field">
+              <label for="status" class="imp-form__label">Status</label>
+              <select
+                id="status"
+                class="imp-form__select"
+                [ngModel]="status()"
+                (ngModelChange)="status.set($event ?? '')"
+                name="status"
+              >
+                <option [value]="">Manter atual</option>
+                <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
+              </select>
+            </div>
+
+            <div class="imp-form__field">
+              <label for="dataConclusao" class="imp-form__label">Data de Conclusão Real</label>
+              <input
+                type="date"
+                id="dataConclusao"
+                class="imp-form__input"
+                [ngModel]="dataConclusao()"
+                (ngModelChange)="dataConclusao.set($event ?? '')"
+                name="dataConclusao"
+              />
+            </div>
+          </div>
+
+          <div class="imp-form__grid" *ngIf="isEdit()">
+            <div class="imp-form__field">
+              <label for="horasRealizadas" class="imp-form__label">Horas Realizadas</label>
+              <input
+                type="number"
+                id="horasRealizadas"
+                class="imp-form__input"
+                [ngModel]="horasRealizadas()"
+                (ngModelChange)="horasRealizadas.set($event === null || $event === '' ? null : Number($event))"
+                name="horasRealizadas"
+                min="0"
+                step="1"
+                placeholder="Ex: 4"
+              />
+            </div>
+
+            <div class="imp-form__field">
+              <label for="ordem" class="imp-form__label">Ordem</label>
+              <input
+                type="number"
+                id="ordem"
+                class="imp-form__input"
+                [ngModel]="ordem()"
+                (ngModelChange)="ordem.set($event === null || $event === '' ? 0 : Number($event))"
+                name="ordem"
+                min="0"
+                step="1"
+              />
+            </div>
+          </div>
+
+          <div class="imp-form__grid" *ngIf="isEdit()">
+            <div class="imp-form__field">
+              <label class="imp-form__label imp-form__label--checkbox">
+                <input
+                  type="checkbox"
+                  [ngModel]="bloqueada()"
+                  (ngModelChange)="bloqueada.set(!!$event)"
+                  name="bloqueada"
+                >
+                <span>Bloqueada</span>
+              </label>
+            </div>
+
+            <div class="imp-form__field">
+              <label for="motivoBloqueio" class="imp-form__label">Motivo do Bloqueio</label>
+              <input
+                type="text"
+                id="motivoBloqueio"
+                class="imp-form__input"
+                [ngModel]="motivoBloqueio()"
+                (ngModelChange)="motivoBloqueio.set($event ?? '')"
+                name="motivoBloqueio"
+                placeholder="Motivo do bloqueio..."
+              />
+            </div>
+          </div>
+
+          <div class="imp-form__field imp-form__field--full">
+            <label for="chamadoLegadoId" class="imp-form__label">Chamado Legado (ID)</label>
+            <input
+              type="number"
+              id="chamadoLegadoId"
+              class="imp-form__input"
+              [ngModel]="chamadoLegadoId()"
+              (ngModelChange)="chamadoLegadoId.set($event === null || $event === '' ? null : Number($event))"
+              name="chamadoLegadoId"
+              min="1"
+              step="1"
+              placeholder="ID do chamado no sistema legado"
+            />
+          </div>
+        }
+      </div>
+
+      <!-- ===== AÇÕES ===== -->
+      <div class="imp-form__actions">
+        <button type="button" class="imp-btn imp-btn--ghost" (click)="cancelar()">
+          <i class="bi bi-x-lg"></i> Cancelar
+        </button>
+        <button type="submit" class="imp-btn imp-btn--primary" [disabled]="loading() || saving() || !podeSalvar()">
+          <i class="bi" [ngClass]="saving() ? 'bi-hourglass-split' : (isEdit() ? 'bi-pencil-square' : 'bi-plus-lg')"></i>
+          <span *ngIf="saving()">Salvando...</span>
+          <span *ngIf="!saving()">{{ isEdit() ? 'Atualizar' : 'Criar' }} Tarefa</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

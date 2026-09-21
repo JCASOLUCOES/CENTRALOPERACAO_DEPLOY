@@ -52,7 +52,7 @@ import { DiffResult, DiffItem } from '../models/database.model';
           <span class="db-diff__chip">{{ i.tipo }}</span>
           <strong>{{ i.objeto }}<span *ngIf="i.coluna">.{{ i.coluna }}</span></strong>
           <span class="db-diff__status">{{ getStatusLabel(i.status) }}</span>
-          <span class="db-diff__badge ms-2">{{ i.badge }}</span>
+          <span class="db-diff__dot" [ngClass]="getBadgeClass(i.badge)" [title]="getStatusLabel(i.status)" aria-hidden="true"></span>
           <small *ngIf="i.detalhe">— {{ i.detalhe }}</small>
         </li>
       </ul>
@@ -83,7 +83,7 @@ import { DiffResult, DiffItem } from '../models/database.model';
   `,
   styles: [`
     .db-diff__controles { display: flex; gap: 1rem; align-items: center; margin: 1rem 0; flex-wrap: wrap; }
-    .db-diff__controles input { width: 100px; display: inline-block; }
+    .db-diff__controles input { width: 6.25rem; display: inline-block; }
     .db-diff__resultado h5 { font-weight: 600; }
     .db-diff__lista { list-style: none; padding: 0; margin: 0; }
     .db-diff__item { padding: 0.5rem 0.75rem; border-radius: 0.4rem; margin-bottom: 0.35rem; display: flex; gap: 0.6rem; align-items: center; font-size: 0.9rem; }
@@ -94,7 +94,11 @@ import { DiffResult, DiffItem } from '../models/database.model';
     .db-diff__item--nao-documentado { background: #fef3c7; color: #92400e; }
     .db-diff__chip { background: rgba(0,0,0,0.1); color: inherit; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 600; }
     .db-diff__status { margin-left: auto; font-weight: 600; }
-    .db-diff__badge { font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 0.25rem; background: rgba(0,0,0,0.1); }
+    .db-diff__dot { display: inline-block; width: 0.65rem; height: 0.65rem; border-radius: 50%; background: #9ca3af; flex-shrink: 0; }
+    .db-diff__dot--verde { background: #22c55e; }
+    .db-diff__dot--amarela { background: #eab308; }
+    .db-diff__dot--vermelha { background: #ef4444; }
+    .db-diff__dot--neutra { background: #9ca3b8; }
   `]
 })
 export class DbDiferencasComponent {
@@ -158,12 +162,15 @@ export class DbDiferencasComponent {
   }
 
   getStatusLabel(status: string): string {
-    switch (status) {
-      case 'Atualizado': return '🟢 Atualizado';
-      case 'Nova': return '🟡 Nova';
-      case 'Removida': return '🔴 Removida';
-      case 'Alterada': return '🟡 Alterada';
-      default: return status;
+    return status;
+  }
+
+  getBadgeClass(badge: string): string {
+    switch (badge) {
+      case '🟢': return 'db-diff__dot--verde';
+      case '🟡': return 'db-diff__dot--amarela';
+      case '🔴': return 'db-diff__dot--vermelha';
+      default: return 'db-diff__dot--neutra';
     }
   }
 }

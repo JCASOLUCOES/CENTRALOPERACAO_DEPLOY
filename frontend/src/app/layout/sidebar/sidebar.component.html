@@ -12,10 +12,11 @@
       <li *ngFor="let link of section.links; trackBy: trackByIndex">
         <a
           class="link-item"
-          [routerLink]="link.route"
+          [routerLink]="link.queryParams ? [link.route] : link.route"
+          [queryParams]="link.queryParams"
           routerLinkActive="active"
           [routerLinkActiveOptions]="{ exact: true }"
-          [title]="link.label"
+          [title]="link.dica || link.label"
         >
           <i class="bi" [ngClass]="link.icone"></i>
           <span class="link-label">{{ link.label }}</span>
@@ -48,7 +49,8 @@
           <li *ngFor="let child of grupo.itens; trackBy: trackByIndex">
             <a
               class="link-item link-item--child"
-              [routerLink]="child.route"
+              [routerLink]="child.queryParams ? [child.route] : child.route"
+              [queryParams]="child.queryParams"
               routerLinkActive="active"
               [routerLinkActiveOptions]="{ exact: false }"
               [title]="child.label"
@@ -61,4 +63,12 @@
       </div>
     </div>
   </section>
+
+  <footer class="sidebar-papel" *ngIf="!collapsed" [title]="papelSvc.dicaPapel()">
+    <i class="bi bi-person-badge"></i>
+    <span>Meu papel: <strong>{{ papelSvc.rotuloPapel() }}</strong></span>
+  </footer>
+  <footer class="sidebar-papel sidebar-papel--mini" *ngIf="collapsed" [title]="'Meu papel: ' + papelSvc.rotuloPapel()">
+    <i class="bi bi-person-badge"></i>
+  </footer>
 </aside>

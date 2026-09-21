@@ -5,6 +5,7 @@ import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { buscarMultiTerm } from '@shared/utils/texto.helper';
 import { AcessosService, EmpresaDetalhe, EmpresaResumo } from '../services/acessos.service';
 import { BuscaService } from '@core/services/busca.service';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 
 interface CampoDetalhe {
   label: string;
@@ -27,7 +28,7 @@ const TEMPO_EXPIRACAO_DETALHE_MS = 5 * 60 * 1000;
 @Component({
   selector: 'app-acessos',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgbModalModule],
+  imports: [CommonModule, FormsModule, NgbModalModule, PageHeaderComponent],
   templateUrl: './acessos.component.html',
   styleUrl: './acessos.component.scss'
 })

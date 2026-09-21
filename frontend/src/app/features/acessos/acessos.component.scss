@@ -4,21 +4,6 @@
   gap: 1.75rem;
 }
 
-.acessos__header {
-  h1 {
-    font-family: var(--font-display);
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--text-strong);
-    margin-bottom: 0.5rem;
-  }
-
-  p {
-    color: var(--text-muted);
-    max-width: 70ch;
-  }
-}
-
 .acessos__stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -53,9 +38,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
   font-size: 1.25rem;
   flex-shrink: 0;
 
@@ -74,7 +59,7 @@
 
 .acessos__busca-campo {
   flex: 1;
-  min-width: 240px;
+  min-width: 15rem;
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -124,8 +109,8 @@
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border: 3px solid var(--border-color);
   border-top-color: var(--primary-color);
   border-radius: 50%;
@@ -133,8 +118,8 @@
 }
 
 .spinner-sm {
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
@@ -219,9 +204,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
   font-size: 1.3rem;
   background: rgba(37, 99, 235, 0.12);
   color: #2563eb;
@@ -627,8 +612,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
   border: none;
   border-radius: 0.375rem;
   cursor: pointer;

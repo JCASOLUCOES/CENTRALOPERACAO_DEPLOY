@@ -15,6 +15,14 @@ export const implantacaoRoutes: Routes = [
     loadComponent: () => import('./pages/projetos/projetos.component').then(m => m.ProjetosComponent)
   },
   {
+    path: 'projetos/novo',
+    loadComponent: () => import('./pages/projetos/projeto-form.component').then(m => m.ProjetoFormComponent)
+  },
+  {
+    path: 'projetos/:id/editar',
+    loadComponent: () => import('./pages/projetos/projeto-form.component').then(m => m.ProjetoFormComponent)
+  },
+  {
     path: 'projetos/:id',
     loadComponent: () => import('./pages/projetos/projeto-detalhe.component').then(m => m.ProjetoDetalheComponent)
   },
@@ -23,12 +31,21 @@ export const implantacaoRoutes: Routes = [
     loadComponent: () => import('./pages/tarefas/tarefas.component').then(m => m.TarefasComponent)
   },
   {
-    path: 'agenda',
-    redirectTo: '/agenda',
+    path: 'tarefas/novo',
+    loadComponent: () => import('./pages/tarefas/tarefa-form.component').then(m => m.TarefaFormComponent)
+  },
+  {
+    path: 'tarefas/:id/editar',
+    loadComponent: () => import('./pages/tarefas/tarefa-form.component').then(m => m.TarefaFormComponent)
+  },
+  {
+    path: 'relatorio',
+    redirectTo: 'dashboard',
     pathMatch: 'full'
   },
   {
-    path: 'cadastros',
-    loadComponent: () => import('./pages/cadastros/cadastros.component').then(m => m.CadastrosComponent)
+    path: 'agenda',
+    redirectTo: '/agenda',
+    pathMatch: 'full'
   }
 ];

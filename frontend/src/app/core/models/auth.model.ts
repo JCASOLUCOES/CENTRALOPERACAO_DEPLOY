@@ -1,4 +1,4 @@
-export type PerfilUsuario = 'Usuario' | 'Editor' | 'Administrador' | 'Suporte';
+export type PerfilUsuario = 'Usuario' | 'Editor' | 'Administrador' | 'Suporte' | 'F';
 
 export interface LoginRequest {
   usuario: string;

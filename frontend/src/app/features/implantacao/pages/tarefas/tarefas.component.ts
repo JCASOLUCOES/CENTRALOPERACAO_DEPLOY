@@ -5,32 +5,32 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TarefasService } from '../../services/tarefas.service';
 import { TarefaResumo, TarefaFiltro } from '../../models/tarefa.model';
 import { ProjetosService } from '../../services/projetos.service';
-import { EquipesService } from '../../services/equipes.service';
-import { EquipeResumo } from '../../models/equipe-tipo-etapa-coluna.model';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 
-type Atalho = 'Todas' | 'Atrasadas' | 'EmAndamento' | 'Concluidas';
+type Atalho = 'Todas' | 'Atrasadas' | 'EmAndamento' | 'Concluidas' | 'Bugs' | 'Features';
 
 @Component({
   selector: 'app-implantacao-tarefas',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, PageHeaderComponent],
   styleUrl: './tarefas.component.scss',
   template: `
     <section class="tar-shell">
-      <header class="tar-header">
-        <div>
-          <p class="tar-eyebrow">EXECUÇÃO</p>
-          <h1 class="tar-title">Tarefas</h1>
-          <p class="tar-sub">{{ tarefas().length }} {{ tarefas().length === 1 ? 'tarefa' : 'tarefas' }} listadas</p>
-        </div>
-        <div class="tar-header__stats">
+      <app-page-header
+        titulo="Tarefas"
+        descricao="Liste, filtre e acompanhe o detalhamento de todas as tarefas cadastradas."
+        icone="bi-list-check">
+        <div actions class="tar-header__stats">
           <div class="tar-stat tar-stat--atraso" *ngIf="contagemAtrasadas() > 0">
             <i class="bi bi-exclamation-triangle-fill"></i>
             <strong>{{ contagemAtrasadas() }}</strong>
             <span>atrasada(s)</span>
           </div>
+          <a [routerLink]="['/implantacao/tarefas/novo']" class="tar-btn tar-btn--primary">
+            <i class="bi bi-plus-lg"></i> Nova tarefa
+          </a>
         </div>
-      </header>
+      </app-page-header>
 
       <nav class="tar-atalhos" role="tablist">
         <button type="button" class="tar-atalho"
@@ -48,17 +48,19 @@ type Atalho = 'Todas' | 'Atrasadas' | 'EmAndamento' | 'Concluidas';
           <input type="text" placeholder="Buscar tarefa…"
             [ngModel]="buscar()" (ngModelChange)="onBuscar($event)">
         </div>
-        <select class="tar-select" [ngModel]="equipe()" (ngModelChange)="onEquipe($event)">
-          <option value="">Todas equipes</option>
-          <option *ngFor="let e of equipes()" [value]="e.nome">{{ e.nome }}</option>
-        </select>
         <select class="tar-select" [ngModel]="projetoId()" (ngModelChange)="onProjeto($event)">
           <option value="">Todos projetos</option>
+          <option value="sem-projeto">Sem projeto</option>
           <option *ngFor="let p of projetos()" [value]="p.id">{{ p.codigo }} — {{ p.nome }}</option>
         </select>
       </div>
 
       <div *ngIf="loading()" class="tar-loading">Carregando tarefas…</div>
+
+      <div *ngIf="erro()" class="tar-alert tar-alert--error">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ erro() }}</span>
+      </div>
 
       <div *ngIf="!loading() && !tarefas().length" class="tar-empty">
         <i class="bi bi-clipboard2-x"></i>
@@ -75,6 +77,7 @@ type Atalho = 'Todas' | 'Atrasadas' | 'EmAndamento' | 'Concluidas';
             <span class="tar-prio" [attr.title]="prioridade(t.prioridade)" [attr.aria-label]="prioridade(t.prioridade)">
               <i class="bi bi-bar-chart-fill" *ngFor="let _ of [].constructor(t.prioridade || 0)"></i>
             </span>
+            <span class="tar-tipo" [ngClass]="tipoClass(t.tipo)">{{ tipoLabel(t.tipo) }}</span>
             <span class="tar-status" [ngClass]="classeStatus(t.status)">
               <i class="bi" [ngClass]="iconeStatus(t.status)"></i>
               {{ formatarStatus(t.status) }}
@@ -82,14 +85,25 @@ type Atalho = 'Todas' | 'Atrasadas' | 'EmAndamento' | 'Concluidas';
           </header>
 
           <h3 class="tar-card__titulo">
-            <a [routerLink]="['/implantacao/projetos', t.projetoId]">{{ t.titulo }}</a>
+            <a [routerLink]="getProjetoLink(t)">{{ t.titulo }}</a>
           </h3>
 
           <div class="tar-card__meta">
-            <a [routerLink]="['/implantacao/projetos', t.projetoId]" class="tar-card__projeto">
-              <i class="bi bi-folder2-open"></i>
-              <span class="tar-mono">{{ t.projetoCodigo }}</span>
-            </a>
+            <ng-container *ngIf="t.projetoId; else semProjetoTar">
+              <a [routerLink]="getProjetoLink(t)" class="tar-card__projeto">
+                <i class="bi bi-folder2-open"></i>
+                <span class="tar-mono">{{ t.projetoCodigo }}</span>
+              </a>
+            </ng-container>
+            <ng-template #semProjetoTar>
+              <span class="tar-card__projeto tar-card__projeto--sem">
+                <i class="bi bi-folder2-open"></i>
+                <span class="tar-mono">Sem projeto</span>
+              </span>
+            </ng-template>
+            <span class="tar-card__etapa" *ngIf="t.etapaNome" [title]="'Etapa: ' + t.etapaNome">
+              <i class="bi bi-flag"></i> {{ t.etapaNome }}
+            </span>
           </div>
 
           <div class="tar-card__rodape">
@@ -111,6 +125,21 @@ type Atalho = 'Todas' | 'Atrasadas' | 'EmAndamento' | 'Concluidas';
             <i class="bi bi-lock-fill"></i>
             <span>{{ t.bloqueadaMotivo || 'Tarefa bloqueada' }}</span>
           </div>
+
+          <div class="tar-card__acoes">
+            <a [routerLink]="['/implantacao/tarefas', t.id, 'editar']" class="tar-acao">
+              <i class="bi bi-pencil-square"></i> Editar
+            </a>
+            <button
+              type="button"
+              class="tar-acao tar-acao--danger"
+              (click)="excluir(t)"
+              [disabled]="excluindoId() === t.id"
+            >
+              <i class="bi" [ngClass]="excluindoId() === t.id ? 'bi-hourglass-split' : 'bi-trash'"></i>
+              {{ excluindoId() === t.id ? 'Excluindo...' : 'Excluir' }}
+            </button>
+          </div>
         </article>
       </div>
     </section>
@@ -119,16 +148,15 @@ type Atalho = 'Todas' | 'Atrasadas' | 'EmAndamento' | 'Concluidas';
 export class TarefasComponent implements OnInit {
   private readonly tarSvc = inject(TarefasService);
   private readonly projSvc = inject(ProjetosService);
-  private readonly eqSvc = inject(EquipesService);
   private readonly route = inject(ActivatedRoute);
 
   tarefas = signal<TarefaResumo[]>([]);
-  equipes = signal<EquipeResumo[]>([]);
   projetos = signal<{ id: number; codigo: string; nome: string }[]>([]);
   loading = signal(true);
+  erro = signal<string | null>(null);
+  excluindoId = signal<number | null>(null);
 
   atalho = signal<Atalho>('Todas');
-  equipe = signal('');
   projetoId = signal<string>('');
   buscar = signal('');
 
@@ -136,13 +164,14 @@ export class TarefasComponent implements OnInit {
     { id: 'Todas',        rotulo: 'Todas',        icone: 'bi-list-ul' },
     { id: 'Atrasadas',    rotulo: 'Atrasadas',    icone: 'bi-exclamation-triangle' },
     { id: 'EmAndamento',  rotulo: 'Em andamento', icone: 'bi-play-circle' },
-    { id: 'Concluidas',   rotulo: 'Concluídas',   icone: 'bi-check-circle' }
+    { id: 'Concluidas',   rotulo: 'Concluídas',   icone: 'bi-check-circle' },
+    { id: 'Bugs',         rotulo: 'Bugs',         icone: 'bi-bug-fill' },
+    { id: 'Features',     rotulo: 'Features',     icone: 'bi-sparkles' }
   ];
 
   readonly contagemAtrasadas = computed(() => this.tarefas().filter(t => this.atrasada(t) || t.bloqueada).length);
 
   ngOnInit(): void {
-    this.eqSvc.listar().subscribe(e => this.equipes.set(e));
     this.projSvc.listar({}).subscribe(p => this.projetos.set(p.map(x => ({ id: x.id, codigo: x.codigo, nome: x.nome }))));
 
     const qp = this.route.snapshot.queryParamMap.get('projetoId');
@@ -152,29 +181,58 @@ export class TarefasComponent implements OnInit {
 
   setAtalho(a: Atalho): void { this.atalho.set(a); this.carregar(); }
   onBuscar(v: string): void { this.buscar.set(v); this.carregar(); }
-  onEquipe(v: string): void { this.equipe.set(v); this.carregar(); }
-  onProjeto(v: string | number): void { this.projetoId.set(String(v)); this.carregar(); }
+  onProjeto(v: string | number): void { 
+    const val = String(v);
+    this.projetoId.set(val === 'sem-projeto' ? 'null' : val);
+    this.carregar(); 
+  }
 
   carregar(): void {
     this.loading.set(true);
+    this.erro.set(null);
     const f: TarefaFiltro = {};
-    if (this.projetoId()) f.projetoId = Number(this.projetoId());
-    if (this.equipe()) f.equipe = this.equipe();
+    const projId = this.projetoId();
+    if (projId && projId !== 'null') f.projetoId = Number(projId);
+    else if (projId === 'null') f.projetoId = undefined; // explicitamente sem projeto
     if (this.buscar()) f.buscar = this.buscar();
     if (this.atalho() === 'Atrasadas') f.apenasAtrasadas = true;
     if (this.atalho() === 'EmAndamento') f.apenasEmAndamento = true;
     if (this.atalho() === 'Concluidas') f.apenasConcluidas = true;
+    if (this.atalho() === 'Bugs') f.tipo = 1;
+    if (this.atalho() === 'Features') f.tipo = 0;
 
     this.tarSvc.listar(f).subscribe({
       next: t => { this.tarefas.set(t); this.loading.set(false); },
-      error: () => this.loading.set(false)
+      error: (err) => {
+        this.loading.set(false);
+        this.erro.set(err.error?.mensagem || 'Erro ao carregar tarefas');
+      }
+    });
+  }
+
+  excluir(tarefa: TarefaResumo): void {
+    if (this.excluindoId() !== null) return;
+    if (!confirm(`Excluir a tarefa T${tarefa.id} permanentemente?`)) return;
+
+    this.excluindoId.set(tarefa.id);
+    this.erro.set(null);
+    this.tarSvc.excluir(tarefa.id).subscribe({
+      next: () => {
+        this.tarefas.update(tarefas => tarefas.filter(t => t.id !== tarefa.id));
+        this.excluindoId.set(null);
+      },
+      error: (err) => {
+        this.excluindoId.set(null);
+        this.erro.set(err.error?.mensagem || 'Erro ao excluir tarefa');
+      }
     });
   }
 
   atrasada(t: TarefaResumo): boolean {
-    if (!t.dataPrevisao) return false;
+    const dataReferencia = t.dataEntrega ?? t.dataPrevisao;
+    if (!dataReferencia) return false;
     if (t.status === 'Concluida' || t.status === 'Cancelada') return false;
-    return new Date(t.dataPrevisao) < new Date(new Date().toDateString());
+    return new Date(dataReferencia) < new Date(new Date().toDateString());
   }
 
   classeStatus(s: string): string {
@@ -206,5 +264,17 @@ export class TarefasComponent implements OnInit {
 
   prioridade(p: number): string {
     return ['', 'Baixa', 'Média', 'Alta', 'Urgente'][p] ?? '—';
+  }
+
+  tipoLabel(t: number): string {
+    return t === 1 ? 'Bug' : 'Feature';
+  }
+
+  tipoClass(t: number): string {
+    return t === 1 ? 'tar-tipo--bug' : 'tar-tipo--feature';
+  }
+
+  getProjetoLink(t: TarefaResumo): string[] {
+    return t.projetoId ? ['/implantacao/projetos', String(t.projetoId)] : [];
   }
 }

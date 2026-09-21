@@ -1,0 +1,159 @@
+<div class="admin-dashboard">
+  <app-page-header
+    titulo="Dashboard Administrativo"
+    descricao="Indicadores administrativos da central, atualizados automaticamente."
+    icone="bi-speedometer2">
+    <span actions class="admin-dashboard__refresh" *ngIf="!loading">
+      <i class="bi bi-clock"></i> Atualizado automaticamente a cada 30s
+    </span>
+  </app-page-header>
+
+  <div *ngIf="loading" class="admin-dashboard__loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Carregando...</span>
+    </div>
+  </div>
+
+  <div *ngIf="erro" class="alert alert-danger" role="alert">
+    {{ erro }}
+  </div>
+
+  <ul class="nav nav-tabs mb-3" *ngIf="!loading && !erro">
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="aba === 'visao'" (click)="setAba('visao')">
+        <i class="bi bi-grid"></i> Visão Geral
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="aba === 'kanban'" (click)="setAba('kanban')">
+        <i class="bi bi-kanban"></i> Kanban
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="aba === 'alertas'" (click)="setAba('alertas')">
+        <i class="bi bi-bell"></i> Alertas
+        <span class="badge text-bg-danger ms-1" *ngIf="dashboard?.alertas?.length">{{ dashboard?.alertas?.length }}</span>
+      </button>
+    </li>
+  </ul>
+
+  <ng-container *ngIf="dashboard && !loading && aba === 'visao'">
+    <!-- KPIs -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3" *ngFor="let kpi of kpis">
+        <div class="card kpi-card border-{{ kpi.cor }}">
+          <div class="card-body text-center">
+            <i class="bi {{ kpi.icone }} kpi-card__icon"></i>
+            <div class="kpi-card__valor">{{ kpi.valor }}</div>
+            <div class="kpi-card__label">{{ kpi.label }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtro -->
+    <div class="card mb-4">
+      <div class="card-body d-flex align-items-center gap-3">
+        <label class="form-label mb-0"><i class="bi bi-filter"></i> Filtrar por função:</label>
+        <select class="form-select" style="max-width: 300px;" [(ngModel)]="funcaoSelecionada" (ngModelChange)="filtrar()">
+          <option [ngValue]="null">Todas as funções</option>
+          <option *ngFor="let f of dashboard.funcoes" [ngValue]="f.funcaoId">{{ f.nome }}</option>
+        </select>
+        <button class="btn btn-outline-secondary" (click)="funcaoSelecionada = null; filtrar()">
+          <i class="bi bi-x-circle"></i> Limpar
+        </button>
+      </div>
+    </div>
+
+    <!-- Cards por função -->
+    <h4 class="mb-3"><i class="bi bi-people"></i> Funções</h4>
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-md-6 col-lg-4" *ngFor="let funcao of funcoesFiltradas">
+        <div class="card funcao-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="card-title mb-0">{{ funcao.nome }}</h6>
+              <span class="badge bg-primary">{{ funcao.total }}</span>
+            </div>
+            <div class="row text-center g-2 mb-2">
+              <div class="col">
+                <div class="funcao-card__count funcao-card__count--emandamento">{{ funcao.emAndamento }}</div>
+                <div class="funcao-card__label">Em Andamento</div>
+              </div>
+              <div class="col">
+                <div class="funcao-card__count funcao-card__count--atrasadas">{{ funcao.atrasadas }}</div>
+                <div class="funcao-card__label">Atrasadas</div>
+              </div>
+              <div class="col">
+                <div class="funcao-card__count funcao-card__count--concluidas">{{ funcao.concluidas }}</div>
+                <div class="funcao-card__label">Concluídas</div>
+              </div>
+            </div>
+            <div *ngIf="funcao.responsaveis?.length" class="mt-2">
+              <small class="text-muted">
+                <i class="bi bi-person"></i>
+                {{ funcao.responsaveis.length }} responsável(ves)
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Última atualização -->
+    <div class="mt-4 text-muted text-center">
+      <small>
+        <i class="bi bi-clock"></i>
+        Última atualização: {{ dashboard.atualizadoEm }}
+      </small>
+    </div>
+  </ng-container>
+
+  <!-- Aba Kanban inline (mesma URL, sem navegação) -->
+  <ng-container *ngIf="aba === 'kanban' && !loading && !erro">
+    <div class="card mb-3">
+      <div class="card-body d-flex align-items-center gap-2 flex-wrap">
+        <i class="bi bi-info-circle text-primary"></i>
+        <span class="text-muted">Kanban completo de implantação — arraste cards, crie tarefas e use os filtros sem sair do dashboard.</span>
+      </div>
+    </div>
+    <app-implantacao-kanban></app-implantacao-kanban>
+  </ng-container>
+
+  <!-- Aba Alertas -->
+  <ng-container *ngIf="dashboard && !loading && aba === 'alertas'">
+    <h4 class="mb-3"><i class="bi bi-bell"></i> Alertas</h4>
+    <div class="alert alert-success" *ngIf="!dashboard.alertas?.length">
+      <i class="bi bi-check-circle"></i> Nenhum alerta no momento. Tudo sob controle.
+    </div>
+    <div class="row g-3">
+      <div class="col-12 col-md-6" *ngFor="let alerta of dashboard.alertas">
+        <div class="card alerta-card border-danger">
+          <div class="card-body d-flex align-items-center gap-3">
+            <div class="alerta-card__icone">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div>
+              <div class="alerta-card__tipo">{{ alerta.tipo }}</div>
+              <div class="alerta-card__descricao">{{ alerta.descricao }}</div>
+            </div>
+            <div class="ms-auto alerta-card__quantidade">
+              <span class="badge bg-danger">{{ alerta.quantidade }}</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="setAba('kanban')" title="Ver no Kanban">
+              Ver Kanban
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Última atualização -->
+    <div class="mt-4 text-muted text-center">
+      <small>
+        <i class="bi bi-clock"></i>
+        Última atualização: {{ dashboard.atualizadoEm }}
+      </small>
+    </div>
+  </ng-container>
+</div>

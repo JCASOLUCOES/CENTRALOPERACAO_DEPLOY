@@ -15,16 +15,39 @@ namespace Central_BackEnd.Controllers.Implantacao;
 public class ProjetosController : ControllerBase
 {
     private readonly IProjetoService _service;
-    public ProjetosController(IProjetoService service) { _service = service; }
+    private readonly IProjetoJornadaService _jornada;
+    private readonly IProjetoEtapaService _etapa;
+    public ProjetosController(IProjetoService service, IProjetoJornadaService jornada, IProjetoEtapaService etapa) { _service = service; _jornada = jornada; _etapa = etapa; }
 
     [HttpGet]
     public async Task<ActionResult<List<ProjetoResumo>>> Listar(
-        [FromQuery] string? equipe, [FromQuery] string? tipo, [FromQuery] string? status,
+        [FromQuery] string? tipo, [FromQuery] string? status,
         [FromQuery] int? clienteId, [FromQuery] string? responsavelId, [FromQuery] string? buscar,
+        [FromQuery] string? perfilId,
         CancellationToken ct = default)
     {
-        var filtro = new ProjetoFiltro(equipe, tipo, status, clienteId, responsavelId, buscar);
+        var filtro = new ProjetoFiltro(tipo, status, clienteId, responsavelId, buscar, perfilId);
         return Ok(await _service.ListarAsync(filtro, ct));
+    }
+
+    [HttpGet("com-etapas")]
+    public async Task<ActionResult<List<ProjetoComEtapasResumo>>> ListarComEtapas(
+        [FromQuery] string? tipo, [FromQuery] string? status,
+        [FromQuery] int? clienteId, [FromQuery] string? responsavelId, [FromQuery] string? buscar,
+        [FromQuery] string? perfilId,
+        CancellationToken ct = default)
+    {
+        var filtro = new ProjetoFiltro(tipo, status, clienteId, responsavelId, buscar, perfilId);
+        var projetos = await _service.ListarAsync(filtro, ct);
+        
+        var resultado = new List<ProjetoComEtapasResumo>();
+        foreach (var p in projetos)
+        {
+            var etapas = await _etapa.ObterEtapasAsync(p.Id, ct);
+            resultado.Add(new ProjetoComEtapasResumo(p, etapas));
+        }
+        
+        return Ok(resultado);
     }
 
     [HttpGet("{id:int}")]
@@ -34,9 +57,35 @@ public class ProjetosController : ControllerBase
         return p == null ? NotFound() : Ok(p);
     }
 
+    [HttpGet("{id:int}/jornada")]
+    public async Task<ActionResult<ProjetoJornada>> Jornada(int id, CancellationToken ct = default)
+    {
+        var j = await _jornada.ObterJornadaAsync(id, ct);
+        return j == null ? NotFound() : Ok(j);
+    }
+
+    [HttpGet("{id:int}/etapas")]
+    public async Task<ActionResult<List<ProjetoEtapaResumo>>> ObterEtapas(int id, CancellationToken ct = default)
+    {
+        var etapas = await _etapa.ObterEtapasAsync(id, ct);
+        return Ok(etapas);
+    }
+
+    [HttpGet("{id:int}/etapas/{ordem:int}")]
+    public async Task<ActionResult<ProjetoEtapaDetalhe>> ObterEtapaDetalhe(int id, int ordem, CancellationToken ct = default)
+    {
+        var etapa = await _etapa.ObterEtapaDetalheAsync(id, ordem, ct);
+        return etapa == null ? NotFound() : Ok(etapa);
+    }
+
     [HttpGet("proximo-codigo")]
-    public async Task<ActionResult<object>> ProximoCodigo([FromQuery] int equipeId, CancellationToken ct = default)
-        => Ok(new { codigo = await _service.ProximoCodigoAsync(equipeId, ct) });
+    public async Task<ActionResult<object>> ProximoCodigo(CancellationToken ct = default)
+        => Ok(new { codigo = await _service.ProximoCodigoAsync(ct) });
+
+    [HttpGet("clientes")]
+    [EnableRateLimiting("leitura")]
+    public async Task<ActionResult<List<ClienteResumo>>> ListarClientes(CancellationToken ct = default)
+        => Ok(await _service.ListarClientesAsync(ct));
 
     [HttpPost]
     public async Task<ActionResult<ProjetoDetalhe>> Criar([FromBody] ProjetoCriarRequest req, CancellationToken ct = default)
@@ -44,6 +93,8 @@ public class ProjetosController : ControllerBase
         try
         {
             var p = await _service.CriarAsync(req, ct);
+            // Inicializar etapas padrão
+            await _etapa.InicializarEtapasPadraoAsync(p.Id, ct);
             return CreatedAtAction(nameof(Obter), new { id = p.Id }, p);
         }
         catch (ArgumentException ex) { return BadRequest(new { mensagem = ex.Message }); }
@@ -56,6 +107,73 @@ public class ProjetosController : ControllerBase
         {
             var p = await _service.AtualizarAsync(id, req, ct);
             return p == null ? NotFound() : Ok(p);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { mensagem = ex.Message }); }
+    }
+
+    [HttpPut("{id:int}/etapas/{ordem:int}")]
+    public async Task<ActionResult<ProjetoEtapaDetalhe>> AtualizarEtapa(int id, int ordem, [FromBody] ProjetoEtapaAtualizarRequest req, CancellationToken ct = default)
+    {
+        try
+        {
+            var usuario = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var etapa = await _etapa.AtualizarEtapaAsync(id, ordem, req, usuario, ct);
+            return Ok(etapa);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { mensagem = ex.Message }); }
+    }
+
+    [HttpPost("{id:int}/etapas/retornar")]
+    public async Task<ActionResult<ProjetoEtapaDetalhe>> RetornarEtapa(int id, [FromBody] ProjetoEtapaRetornoRequest req, CancellationToken ct = default)
+    {
+        try
+        {
+            var usuario = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var etapa = await _etapa.RetornarEtapaAsync(id, req, ct);
+            return Ok(etapa);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { mensagem = ex.Message }); }
+    }
+
+    [HttpPost("{id:int}/etapas/inicializar")]
+    public async Task<ActionResult> InicializarEtapas(int id, CancellationToken ct = default)
+    {
+        await _etapa.InicializarEtapasPadraoAsync(id, ct);
+        return Ok();
+    }
+
+    [HttpPost("{id:int}/etapas/{ordem:int}/checklist")]
+    public async Task<ActionResult<ProjetoEtapaDetalhe>> AdicionarChecklistItem(int id, int ordem, [FromBody] ProjetoEtapaChecklistItemRequest item, CancellationToken ct = default)
+    {
+        try
+        {
+            var usuario = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var etapa = await _etapa.AdicionarChecklistItemAsync(id, ordem, item, usuario, ct);
+            return Ok(etapa);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { mensagem = ex.Message }); }
+    }
+
+    [HttpPost("{id:int}/etapas/{ordem:int}/documentos")]
+    public async Task<ActionResult<ProjetoEtapaDetalhe>> AdicionarDocumento(int id, int ordem, [FromBody] ProjetoEtapaDocumentoRequest req, CancellationToken ct = default)
+    {
+        try
+        {
+            var usuario = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var etapa = await _etapa.AdicionarDocumentoAsync(id, ordem, req, usuario, ct);
+            return Ok(etapa);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { mensagem = ex.Message }); }
+    }
+
+    [HttpPost("{id:int}/etapas/{ordem:int}/comentarios")]
+    public async Task<ActionResult<ProjetoEtapaDetalhe>> AdicionarComentario(int id, int ordem, [FromBody] ProjetoEtapaComentarioRequest req, CancellationToken ct = default)
+    {
+        try
+        {
+            var usuario = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var etapa = await _etapa.AdicionarComentarioAsync(id, ordem, req, usuario, ct);
+            return Ok(etapa);
         }
         catch (ArgumentException ex) { return BadRequest(new { mensagem = ex.Message }); }
     }

@@ -1,39 +1,223 @@
 /* estilos locais de Projetos - complementar ao design system global .adm-* */
 
 .imp-page {
-  max-width: 1320px;
+  max-width: 87.5rem;
   margin: 0 auto;
+  padding: 1rem;
+}
+
+.imp-page--3col {
+  max-width: none;
   padding: 1.5rem;
 }
-.imp-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  flex-wrap: wrap;
+
+.imp-layout {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr) 16.5rem;
   gap: 1rem;
-  margin-bottom: 1rem;
+  align-items: start;
 }
-.imp-header__title {
-  font: 800 1.875rem/1.1 var(--font-display);
-  letter-spacing: -0.02em;
+
+.imp-layout.sem-filtros {
+  grid-template-columns: minmax(0, 1fr) 16.5rem;
+}
+
+.imp-layout.sem-resumo {
+  grid-template-columns: 15rem minmax(0, 1fr);
+}
+
+.imp-layout.sem-filtros.sem-resumo {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.imp-conteudo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.imp-side {
+  background: var(--surface-main);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 0.75rem;
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
+}
+
+.imp-side.fechado {
+  display: none;
+}
+
+.imp-side__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.imp-side__title {
+  font: 700 0.8125rem/1.2 var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--text-color);
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
-.imp-eyebrow {
-  font: 600 0.6875rem/1 var(--font-body);
+
+.imp-side__close {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 0.2rem 0.45rem;
+  opacity: 0.7;
+}
+
+.imp-side__close:hover { opacity: 1; }
+
+.imp-side .filtro-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.imp-side .filtro-grupo label {
+  font: 600 0.6875rem/1.2 var(--font-body);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.06em;
   color: var(--text-color);
   opacity: 0.65;
+}
+
+.imp-side .imp-search,
+.imp-side .imp-form__select {
+  width: 100%;
+  max-width: none;
+}
+
+.stat-card {
+  background: var(--surface-main);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stat-title {
+  font: 700 0.6875rem/1.2 var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-color);
+  opacity: 0.6;
   margin: 0 0 0.25rem;
 }
-.imp-header__sub {
-  font: 400 0.875rem/1 var(--font-body);
+
+.stat-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font: 400 0.8125rem/1.4 var(--font-body);
   color: var(--text-color);
-  opacity: 0.7;
-  margin: 0.4rem 0 0;
 }
-.imp-header__actions { display: flex; gap: 0.5rem; }
+
+.stat-item strong { font-weight: 700; }
+
+.stat-item--alerta strong { color: #dc2626; }
+
+.stat-item--col {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0.35rem 0;
+  border-top: 1px dashed var(--border-color);
+}
+
+.stat-item--col:first-of-type { border-top: none; }
+
+.stat-data {
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.stat-sub {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-empty {
+  font: 400 0.75rem/1.4 var(--font-body);
+  color: var(--text-color);
+  opacity: 0.6;
+}
+
+.imp-btn--full {
+  width: 100%;
+}
+
+@media (max-width: 1400px) {
+  .imp-layout,
+  .imp-layout.sem-filtros,
+  .imp-layout.sem-resumo,
+  .imp-layout.sem-filtros.sem-resumo {
+    grid-template-columns: 15rem minmax(0, 1fr);
+  }
+  .imp-layout.sem-filtros,
+  .imp-layout.sem-filtros.sem-resumo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .imp-side--resumo {
+    position: fixed;
+    top: 4rem;
+    right: 1rem;
+    bottom: 1rem;
+    width: 17rem;
+    z-index: 60;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+    max-height: none;
+  }
+  .imp-side--resumo.fechado {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .imp-layout,
+  .imp-layout.sem-filtros,
+  .imp-layout.sem-resumo,
+  .imp-layout.sem-filtros.sem-resumo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .imp-side--filtros {
+    position: fixed;
+    top: 4rem;
+    left: 1rem;
+    bottom: 1rem;
+    width: 17rem;
+    z-index: 60;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+    max-height: none;
+  }
+  .imp-side--filtros.fechado {
+    display: none;
+  }
+}
+.imp-header__actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
 .imp-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
 .imp-chip {
@@ -57,17 +241,132 @@
 .imp-chip--impl.imp-chip--active { background: var(--primary-color); border-color: var(--primary-color); }
 .imp-chip--ciaa.imp-chip--active { background: #7c3aed; border-color: #7c3aed; }
 
-.imp-filtros {
+/* Lista de projetos: layout vertical (1 coluna, full width).
+   Projetos agrupados: ATIVOS (topo) + CONCLUÍDOS (embaixo). */
+.imp-projetos-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(31.25rem, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.imp-projetos-lista--vertical {
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 100%;
+  align-items: stretch;
+}
+
+/* Abas de grupo: Todos | Ativos | Concluídos | Atrasados */
+.abas-grupo {
+  display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 }
-.imp-filtros__search { flex: 1; min-width: 200px; }
+
+.aba-grupo {
+  background: var(--surface-main);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font: 600 0.8125rem/1 var(--font-body);
+  color: var(--text-color);
+  opacity: 0.75;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.aba-grupo:hover { opacity: 1; border-color: var(--primary-color); }
+.aba-grupo--active {
+  background: var(--text-color);
+  border-color: var(--text-color);
+  color: var(--surface-main);
+  opacity: 1;
+}
+.aba-grupo:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Grupo (seção colapsável) */
+.imp-grupo { margin-bottom: 1rem; }
+
+.grupo-header {
+  width: 100%;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  font: 600 0.875rem/1.2 var(--font-body);
+  letter-spacing: 0.02em;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease, filter 0.3s ease;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.grupo-header--ativos { background: linear-gradient(90deg, #0066cc, #004080); }
+.grupo-header--ativos:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.grupo-header--concluidos { background: linear-gradient(90deg, #0ca30c, #089009); }
+.grupo-header--concluidos:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 4px 12px rgba(12, 163, 12, 0.3);
+}
+
+.grupo-header:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.45);
+}
+
+.grupo-header__info {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.grupo-header__dot { font-size: 0.65rem; opacity: 0.9; }
+
+.grupo-header__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.95;
+  white-space: nowrap;
+}
+
+.grupo-header__toggle .bi { transition: transform 0.3s ease; }
+
+.imp-grupo-empty {
+  background: var(--surface-main);
+  border: 1px dashed var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+  font: 400 0.8125rem/1.4 var(--font-body);
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .imp-page { padding: 0.75rem 0.625rem; }
+  .grupo-header { padding: 0.65rem 0.8rem; font-size: 0.8125rem; }
+}
 .imp-search {
   width: 100%;
-  max-width: 360px;
+  max-width: 22.5rem;
   padding: 0.6rem 0.9rem;
   font: 400 0.875rem/1.4 var(--font-body);
   background: var(--surface-main);
@@ -126,7 +425,7 @@
 
 .imp-proj-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
   gap: 1rem;
 }
 .imp-card {
@@ -160,8 +459,8 @@
 .imp-team::before {
   content: '';
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
   background: currentColor;
 }
@@ -181,8 +480,8 @@
 .imp-status::before {
   content: '';
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
   background: currentColor;
 }
@@ -235,7 +534,7 @@
 .imp-progress {
   position: relative;
   width: 100%;
-  height: 8px;
+  height: 0.5rem;
   background: var(--border-color);
   border-radius: 999px;
   overflow: hidden;

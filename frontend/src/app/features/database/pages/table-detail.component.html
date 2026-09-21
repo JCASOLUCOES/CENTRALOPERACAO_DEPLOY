@@ -40,7 +40,7 @@
         <i class="bi bi-terminal"></i> Consultar dados
       </button>
       <button class="btn btn-outline-secondary btn-sm" (click)="abrirQueryBuilder()">
-        <i class="bi bi-diagram-3"></i> Query Builder
+        <i class="bi bi-diagram-3"></i> Criar consulta
       </button>
     </div>
   </div>
@@ -135,8 +135,9 @@
                  <th>Origem</th>
                  <th></th>
                  <th>Destino</th>
-                 <th *ngIf="incluirInferidas">Score</th>
-                 <th *ngIf="incluirInferidas">Motivos</th>
+                  <th *ngIf="incluirInferidas">Score</th>
+                  <th *ngIf="incluirInferidas">Motivos</th>
+                  <th>Ação</th>
                </tr>
              </thead>
              <tbody>
@@ -164,7 +165,12 @@
                    </div>
                    <small>{{ fkScore(fk) }}%</small>
                  </td>
-                 <td *ngIf="incluirInferidas"><small>{{ fk.motivos.join(', ') }}</small></td>
+                  <td *ngIf="incluirInferidas"><small>{{ fk.motivos.join(', ') }}</small></td>
+                  <td>
+                    <button class="btn btn-outline-primary btn-sm" (click)="abrirQueryBuilderComRelacionamento(fk)" title="Criar consulta com estas tabelas">
+                      <i class="bi bi-diagram-3"></i> Criar consulta
+                    </button>
+                  </td>
                </tr>
              </tbody>
           </table>
@@ -174,12 +180,6 @@
         </ng-template>
       </div>
 
-      <div class="table-detail__section mt-3" *ngIf="fks().length > 0">
-        <h5><i class="bi bi-diagram-3"></i> Diagrama</h5>
-        <button class="btn btn-sm btn-outline-primary" (click)="abrirDiagrama()">
-          <i class="bi bi-graph-up"></i> Ver diagrama de relacionamentos
-        </button>
-      </div>
     </div>
 
     <!-- ABA: TRIGGERS -->

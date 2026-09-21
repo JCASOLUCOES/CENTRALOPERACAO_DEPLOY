@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 
 interface CapituloGlossario {
   numero: number;
@@ -10,7 +11,7 @@ interface CapituloGlossario {
 @Component({
   selector: 'app-faq',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PageHeaderComponent],
   templateUrl: './faq.component.html',
   styleUrl: './faq.component.scss'
 })

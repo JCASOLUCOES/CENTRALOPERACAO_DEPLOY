@@ -46,9 +46,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 60px;
-  height: 60px;
-  border-radius: 16px;
+  width: 3.75rem;
+  height: 3.75rem;
+  border-radius: 1rem;
   font-size: 1.8rem;
   flex-shrink: 0;
 }
@@ -209,8 +209,8 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 24px;
-        height: 24px;
+        min-width: 1.5rem;
+        height: 1.5rem;
         border-radius: 999px;
         background: var(--surface-primary-soft, rgba(15, 76, 129, 0.1));
         color: var(--primary-color);

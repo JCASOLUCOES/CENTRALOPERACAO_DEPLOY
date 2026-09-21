@@ -1,11 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { DatabaseService } from '../services/database.service';
-import { DatabaseTable, DatabaseColumn, DatabaseRelationship } from '../models/database.model';
+import {
+  DatabaseTable, DatabaseColumn, DatabaseRelationship,
+  DatabaseQueryResult
+} from '../models/database.model';
 
-interface TabelaSelecionada {
+/** Tabela dentro da montagem visual. Alias é amigável (C, CL, CI...) e exibido ao usuário. */
+interface TabelaMontagem {
   schema: string;
   nome: string;
   alias: string;
@@ -13,39 +17,60 @@ interface TabelaSelecionada {
   colunasSelecionadas: string[];
 }
 
-interface JoinConfig {
-  origem: string;
-  destino: string;
-  colunaOrigem: string;
-  colunaDestino: string;
-  tipo: 'INNER' | 'LEFT';
+interface TabelaRelacionadaItem {
+  nomeCompleto: string;
+  schema: string;
+  nome: string;
+  relacao: DatabaseRelationship;
   confirmada: boolean;
 }
 
-interface CondicaoWhere {
-  coluna: string;
+interface FiltroSimples {
+  id: number;
   tabelaAlias: string;
+  coluna: string;
   operador: string;
   valor: string;
-  valor2?: string;
-  conector: 'AND' | 'OR';
+  valor2: string;
 }
 
-interface GrupoWhere {
-  condicoes: CondicaoWhere[];
-  conectorGrupo: 'AND' | 'OR';
-}
-
-interface CondicaoOrderBy {
-  coluna: string;
+interface OrdenacaoSimples {
   tabelaAlias: string;
+  coluna: string;
   direcao: 'ASC' | 'DESC';
 }
 
-interface CteConfig {
-  nome: string;
+interface OperadorAmigavel {
+  rotulo: string;
   sql: string;
+  precisaValor: boolean;
+  precisaValor2: boolean;
 }
+
+const OPERADORES: OperadorAmigavel[] = [
+  { rotulo: 'igual a', sql: '=', precisaValor: true, precisaValor2: false },
+  { rotulo: 'diferente de', sql: '<>', precisaValor: true, precisaValor2: false },
+  { rotulo: 'contém', sql: 'LIKE', precisaValor: true, precisaValor2: false },
+  { rotulo: 'começa com', sql: 'LIKE', precisaValor: true, precisaValor2: false },
+  { rotulo: 'termina com', sql: 'LIKE', precisaValor: true, precisaValor2: false },
+  { rotulo: 'maior que', sql: '>', precisaValor: true, precisaValor2: false },
+  { rotulo: 'menor que', sql: '<', precisaValor: true, precisaValor2: false },
+  { rotulo: 'maior ou igual', sql: '>=', precisaValor: true, precisaValor2: false },
+  { rotulo: 'menor ou igual', sql: '<=', precisaValor: true, precisaValor2: false },
+  { rotulo: 'entre', sql: 'BETWEEN', precisaValor: true, precisaValor2: true },
+  { rotulo: 'está preenchido', sql: 'IS NOT NULL', precisaValor: false, precisaValor2: false },
+  { rotulo: 'está vazio', sql: 'IS NULL', precisaValor: false, precisaValor2: false },
+];
+
+const ETAPAS = [
+  { id: 1, rotulo: 'Tabela', icone: 'bi-table' },
+  { id: 2, rotulo: 'Campos', icone: 'bi-list-check' },
+  { id: 3, rotulo: 'Relacionamentos', icone: 'bi-share' },
+  { id: 4, rotulo: 'Filtros', icone: 'bi-funnel' },
+  { id: 5, rotulo: 'Ordenação', icone: 'bi-arrow-down-up' },
+  { id: 6, rotulo: 'Resumo', icone: 'bi-clipboard-check' },
+  { id: 7, rotulo: 'SQL e resultado', icone: 'bi-code' },
+];
 
 @Component({
   selector: 'app-db-query-builder',
@@ -53,1380 +78,1056 @@ interface CteConfig {
   imports: [CommonModule, FormsModule],
   template: `
   <div class="db-qb">
-    <!-- Header -->
+    <!-- Cabeçalho -->
     <div class="db-qb__header">
-      <h4><i class="bi bi-diagram-3"></i> Query Builder Visual</h4>
-      <div class="db-qb__acoes">
-        <button class="btn btn-outline-secondary btn-sm" (click)="limpar()">
-          <i class="bi bi-trash"></i> Limpar
-        </button>
-        <button class="btn btn-outline-primary btn-sm" (click)="adicionarTabela()">
-          <i class="bi bi-plus"></i> Adicionar Tabela
-        </button>
-        <!-- LIMIT/TOP -->
-        <div class="db-qb__limit-group">
-          <label class="db-qb__limit-label">LIMIT/TOP</label>
-          <input type="number" class="form-control form-control-sm db-qb__limit-input"
-            [(ngModel)]="limitTop" min="1" max="10000" placeholder="100">
-        </div>
-        <button class="btn btn-primary btn-sm" (click)="gerarSQL()" [disabled]="tabelasSelecionadas().length === 0">
-          <i class="bi bi-code"></i> Gerar SQL
-        </button>
-        <button class="btn btn-success btn-sm" (click)="executarSQL()" [disabled]="!sqlGerado()">
-          <i class="bi bi-play-fill"></i> Executar
-        </button>
-      </div>
+      <h4><i class="bi bi-diagram-3"></i> Criador de Consultas</h4>
+      <button class="btn btn-outline-secondary btn-sm" (click)="reiniciar()">
+        <i class="bi bi-trash"></i> Recomeçar
+      </button>
     </div>
 
-    <!-- Painel lateral: Tabelas disponíveis -->
-    <div class="db-qb__layout">
-      <aside class="db-qb__lateral">
-        <div class="db-qb__secao">
-          <h6><i class="bi bi-table"></i> Tabelas Selecionadas ({{ tabelasSelecionadas().length }}/5)</h6>
-          <div *ngIf="tabelasSelecionadas().length === 0" class="db-qb__vazio">
-            <i class="bi bi-plus-circle"></i>
-            <span>Nenhuma tabela adicionada</span>
-            <button class="btn btn-sm btn-primary mt-2" (click)="adicionarTabela()">Adicionar primeira tabela</button>
-          </div>
-          <div *ngFor="let t of tabelasSelecionadas(); let i = index" class="db-qb__tabela-card">
-            <div class="db-qb__tabela-header">
-              <strong>{{ t.schema }}.{{ t.nome }}</strong>
-              <small class="text-muted ms-2">{{ t.alias }}</small>
-              <button class="btn btn-sm btn-outline-danger" (click)="removerTabela(i)" title="Remover">
-                <i class="bi bi-x"></i>
-              </button>
+    <!-- Stepper -->
+    <ol class="db-qb__steps">
+      <li *ngFor="let e of etapas" class="db-qb__step"
+        [class.db-qb__step--ativo]="etapa() === e.id"
+        [class.db-qb__step--ok]="etapaValida(e.id) && etapa() > e.id"
+        [class.db-qb__step--bloqueado]="!podeIrPara(e.id)">
+        <button type="button" (click)="irParaEtapa(e.id)" [disabled]="!podeIrPara(e.id)">
+          <span class="db-qb__step-num">{{ e.id }}</span>
+          <span class="db-qb__step-rotulo"><i class="bi" [ngClass]="e.icone"></i> {{ e.rotulo }}</span>
+        </button>
+      </li>
+    </ol>
+
+    <!-- ETAPA 1: tabela principal -->
+    <section *ngIf="etapa() === 1" class="db-qb__panel">
+      <h5>Tabela principal</h5>
+      <p class="text-muted small">Escolha a tabela de onde os dados partem. As demais tabelas entram depois, pelos relacionamentos.</p>
+      <div class="adm-search mb-2">
+        <i class="bi bi-search adm-search__icone"></i>
+        <input type="text" class="adm-search__input" placeholder="Pesquisar tabela..."
+          [(ngModel)]="filtroTabelaTexto">
+      </div>
+      <p class="small text-muted">{{ tabelasDisponiveis().length }} tabelas disponíveis</p>
+      <div *ngIf="tabelaPrincipal()" class="db-qb__principal">
+        <div>
+          <strong>{{ tabelaPrincipal()!.nome }}</strong>
+          <small class="text-muted ms-2">{{ tabelaPrincipal()!.schema }} · {{ tabelaPrincipal()!.alias }}</small>
+        </div>
+        <div class="db-qb__badges">
+          <span class="badge bg-info">{{ qtdColunasPrincipal() }} colunas</span>
+          <span class="badge bg-primary">{{ qtdRelacionamentosPrincipal() }} relacionamentos</span>
+        </div>
+      </div>
+      <div class="db-qb__lista">
+        <button *ngFor="let t of tabelasFiltradas" type="button"
+          class="db-qb__item" [class.db-qb__item--ativo]="ehPrincipal(t)"
+          (click)="definirPrincipal(t)">
+          <i class="bi bi-table"></i>
+          <span><strong>{{ t.nome }}</strong> <small class="text-muted">{{ t.schema }}</small></span>
+          <span *ngIf="ehPrincipal(t)" class="badge bg-success ms-auto">Principal</span>
+        </button>
+      </div>
+      <div class="db-qb__nav">
+        <span></span>
+        <button class="btn btn-primary btn-sm" (click)="irParaEtapa(2)" [disabled]="!etapaValida(1)">Continuar <i class="bi bi-arrow-right"></i></button>
+      </div>
+    </section>
+
+    <!-- ETAPA 2: campos da principal -->
+    <section *ngIf="etapa() === 2" class="db-qb__panel">
+      <h5>Campos da tabela {{ tabelaPrincipal()?.nome }}</h5>
+      <p class="text-muted small">Marque o que deve aparecer no resultado.</p>
+      <div class="db-qb__toolbar">
+        <div class="adm-search">
+          <i class="bi bi-search adm-search__icone"></i>
+          <input type="text" class="adm-search__input" placeholder="Pesquisar campos..." [(ngModel)]="buscaCampoPrincipal">
+        </div>
+        <button class="btn btn-outline-primary btn-sm" (click)="todosCamposPrincipal()">Todos</button>
+        <button class="btn btn-outline-secondary btn-sm" (click)="limparCamposPrincipal()">Limpar</button>
+      </div>
+      <div class="db-qb__campos">
+        <label *ngFor="let c of camposPrincipalFiltrados()" class="db-qb__campo">
+          <input type="checkbox" class="form-check-input"
+            [checked]="campoMarcado(tabelaPrincipal()!, c.coluna)"
+            (change)="alternarCampo(tabelaPrincipal()!, c.coluna)">
+          <span class="db-qb__campo-nome">{{ c.coluna }}</span>
+          <span *ngIf="c.isPrimaryKey" class="badge bg-warning text-dark" title="Chave primária">PK</span>
+          <span *ngIf="c.isForeignKey" class="badge bg-info" title="Chave estrangeira">FK</span>
+          <small class="text-muted">{{ c.tipo }}</small>
+        </label>
+      </div>
+      <div class="db-qb__nav">
+        <button class="btn btn-outline-secondary btn-sm" (click)="irParaEtapa(1)"><i class="bi bi-arrow-left"></i> Voltar</button>
+        <button class="btn btn-primary btn-sm" (click)="irParaEtapa(3)" [disabled]="!etapaValida(2)">Continuar <i class="bi bi-arrow-right"></i></button>
+      </div>
+    </section>
+
+    <!-- ETAPA 3: tabelas relacionadas -->
+    <section *ngIf="etapa() === 3" class="db-qb__panel">
+      <h5>Adicionar dados relacionados</h5>
+      <p class="text-muted small">Traga campos de outras tabelas sem escrever JOIN — o relacionamento é aplicado sozinho.</p>
+
+      <div class="db-qb__arvore">
+        <div class="db-qb__no db-qb__no--raiz">
+          <i class="bi bi-table"></i> {{ tabelaPrincipal()?.nome }}
+          <small class="text-muted">({{ tabelaPrincipal()?.alias }})</small>
+        </div>
+        <div *ngFor="let t of tabelasRelacionadas()" class="db-qb__no">
+          <span class="db-qb__galho">├──</span>
+          <i class="bi bi-table"></i> {{ t.nome }}
+          <small class="text-muted">({{ t.alias }})</small>
+          <button class="btn btn-sm btn-outline-secondary ms-2" (click)="alternarExpansao(t.alias)">
+            {{ tabelaExpandida() === t.alias ? 'Ocultar campos' : 'Ver campos' }}
+          </button>
+          <button class="btn btn-sm btn-outline-danger ms-1" (click)="removerTabela(t.alias)" title="Remover">
+            <i class="bi bi-x"></i>
+          </button>
+          <div class="small text-muted mt-1">{{ descricaoJoin(t) }}</div>
+          <div *ngIf="tabelaExpandida() === t.alias" class="db-qb__campos mt-2">
+            <div class="db-qb__toolbar">
+              <button class="btn btn-outline-primary btn-sm" (click)="todosCampos(t)">Todos</button>
+              <button class="btn btn-outline-secondary btn-sm" (click)="limparCampos(t)">Limpar</button>
             </div>
-            <div class="db-qb__colunas">
-              <label class="form-check form-check-inline" *ngFor="let c of t.colunas">
-                <input class="form-check-input" type="checkbox"
-                  [checked]="t.colunasSelecionadas.includes(c.coluna)"
-                  (change)="toggleColuna(i, c.coluna)">
-                <span class="form-check-label small">{{ c.coluna }}</span>
-              </label>
-            </div>
+            <label *ngFor="let c of t.colunas" class="db-qb__campo">
+              <input type="checkbox" class="form-check-input"
+                [checked]="campoMarcado(t, c.coluna)" (change)="alternarCampo(t, c.coluna)">
+              <span class="db-qb__campo-nome">{{ c.coluna }}</span>
+              <span *ngIf="c.isPrimaryKey" class="badge bg-warning text-dark">PK</span>
+              <span *ngIf="c.isForeignKey" class="badge bg-info">FK</span>
+              <small class="text-muted">{{ c.tipo }}</small>
+            </label>
           </div>
         </div>
+      </div>
 
-        <div class="db-qb__secao">
-          <h6><i class="bi bi-search"></i> Buscar Tabelas</h6>
-          <input type="text" class="form-control form-control-sm mb-2"
-            placeholder="Filtrar tabelas..."
-            [(ngModel)]="filtroTabelas">
-          <div class="db-qb__lista-tabelas" *ngIf="tabelasDisponiveisFiltradas().length > 0">
-            <button *ngFor="let t of tabelasDisponiveisFiltradas()"
-              class="db-qb__tabela-item"
-              (click)="adicionarTabelaExistente(t)"
-              [disabled]="jaSelecionada(t)">
-              <i class="bi bi-table"></i>
-              <span>{{ t.schema }}.{{ t.nome }}</span>
-              <span *ngIf="jaSelecionada(t)" class="badge bg-success ms-auto">Adicionada</span>
-            </button>
-          </div>
-        </div>
+      <button class="btn btn-outline-primary btn-sm mt-2" (click)="abrirModalTabelas()">
+        <i class="bi bi-plus"></i> Adicionar tabela
+      </button>
 
-        <!-- CTEs -->
-        <div class="db-qb__secao">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 style="margin:0"><i class="bi bi-stack"></i> CTEs ({{ ctes().length }})</h6>
-            <button class="btn btn-sm btn-outline-primary" (click)="abrirModalCte()">
-              <i class="bi bi-plus"></i> Adicionar CTE
-            </button>
-          </div>
-          <div *ngIf="ctes().length > 0" class="db-qb__cte-lista">
-            <div *ngFor="let cte of ctes(); let i = index" class="db-qb__cte-item">
-              <strong>{{ cte.nome }}</strong>
-              <button class="btn btn-sm btn-outline-danger" (click)="removerCte(i)">
-                <i class="bi bi-x"></i>
-              </button>
-            </div>
-          </div>
-          <div *ngIf="ctes().length === 0" class="db-qb__vazio db-qb__vazio--pequeno">
-            <span>Nenhuma CTE definida</span>
-          </div>
-        </div>
-      </aside>
+      <div class="db-qb__nav">
+        <button class="btn btn-outline-secondary btn-sm" (click)="irParaEtapa(2)"><i class="bi bi-arrow-left"></i> Voltar</button>
+        <button class="btn btn-primary btn-sm" (click)="irParaEtapa(4)">Continuar <i class="bi bi-arrow-right"></i></button>
+      </div>
+    </section>
 
-      <!-- Painel central: Joins, WHERE, GROUP BY, ORDER BY e SQL -->
-      <main class="db-qb__central">
-        <!-- Joins -->
-        <div class="db-qb__secao" *ngIf="joinsSugeridos().length > 0 || joinsManuais().length > 0">
-          <h6><i class="bi bi-share"></i> Relacionamentos (JOINs)</h6>
+    <!-- ETAPA 4: filtros -->
+    <section *ngIf="etapa() === 4" class="db-qb__panel">
+      <h5>Filtros</h5>
+      <p class="text-muted small">Opcional. Diga o que filtrar em linguagem simples — o WHERE é gerado sozinho.</p>
+      <div *ngFor="let f of filtros()" class="db-qb__filtro">
+        <select class="form-select form-select-sm" [(ngModel)]="f.tabelaAlias" (ngModelChange)="marcarAlterado()" title="Tabela">
+          <option *ngFor="let t of tabelas()" [ngValue]="t.alias">{{ t.nome }} ({{ t.alias }})</option>
+        </select>
+        <select class="form-select form-select-sm" [(ngModel)]="f.coluna" (ngModelChange)="marcarAlterado()" title="Campo">
+          <option *ngFor="let c of colunasDoAlias(f.tabelaAlias)" [ngValue]="c">{{ c }}</option>
+        </select>
+        <select class="form-select form-select-sm" [(ngModel)]="f.operador" (ngModelChange)="marcarAlterado()" title="Condição">
+          <option *ngFor="let op of operadores" [ngValue]="op.rotulo">{{ op.rotulo }}</option>
+        </select>
+        <input *ngIf="precisaValor(f)" [type]="tipoInput(f)" class="form-control form-control-sm"
+          [(ngModel)]="f.valor" (ngModelChange)="marcarAlterado()" placeholder="Valor">
+        <span *ngIf="precisaValor2(f)" class="text-muted small">e</span>
+        <input *ngIf="precisaValor2(f)" [type]="tipoInput(f)" class="form-control form-control-sm"
+          [(ngModel)]="f.valor2" (ngModelChange)="marcarAlterado()" placeholder="Valor final">
+        <button class="btn btn-sm btn-outline-danger" (click)="removerFiltro(f.id)" title="Remover filtro"><i class="bi bi-x"></i></button>
+      </div>
+      <button class="btn btn-outline-primary btn-sm" (click)="adicionarFiltro()"><i class="bi bi-plus"></i> Adicionar filtro</button>
+      <div class="db-qb__nav">
+        <button class="btn btn-outline-secondary btn-sm" (click)="irParaEtapa(3)"><i class="bi bi-arrow-left"></i> Voltar</button>
+        <button class="btn btn-primary btn-sm" (click)="irParaEtapa(5)">Continuar <i class="bi bi-arrow-right"></i></button>
+      </div>
+    </section>
 
-          <!-- Joins sugeridos (automáticos) -->
-          <div *ngIf="joinsSugeridos().length > 0" class="db-qb__joins-grupo">
-            <h6 class="small text-muted mb-2">Sugeridos automaticamente</h6>
-            <div *ngFor="let j of joinsSugeridos()" class="db-qb__join-card">
-              <div class="db-qb__join-main">
-                <span class="badge" [class.bg-primary]="j.confirmada" [class.bg-warning]="!j.confirmada">
-                  {{ j.confirmada ? 'FK Confirmada' : 'Possível' }}
-                </span>
-                <code>{{ j.origem }}.{{ j.colunaOrigem }}</code>
-                <i class="bi bi-arrow-right mx-2"></i>
-                <code>{{ j.destino }}.{{ j.colunaDestino }}</code>
-                <select class="form-select form-select-sm w-auto" [(ngModel)]="j.tipo" style="max-width: 100px;">
-                  <option [ngValue]="'INNER'">INNER</option>
-                  <option [ngValue]="'LEFT'">LEFT</option>
-                </select>
-              </div>
-              <div class="db-qb__join-acoes">
-                <button class="btn btn-sm btn-outline-primary" (click)="adicionarJoin(j)" [disabled]="joinJaAdicionado(j)">
-                  <i class="bi bi-plus"></i> Adicionar
-                </button>
-                <button class="btn btn-sm btn-outline-secondary" (click)="removerJoinSugerido(j)">
-                  <i class="bi bi-x"></i>
-                </button>
-              </div>
-            </div>
-          </div>
+    <!-- ETAPA 5: ordenação -->
+    <section *ngIf="etapa() === 5" class="db-qb__panel">
+      <h5>Ordenar por</h5>
+      <p class="text-muted small">Opcional. Defina a ordem das linhas do resultado.</p>
+      <div *ngFor="let o of ordenacoes(); let i = index" class="db-qb__filtro">
+        <select class="form-select form-select-sm" [(ngModel)]="o.tabelaAlias" (ngModelChange)="marcarAlterado()">
+          <option *ngFor="let t of tabelas()" [ngValue]="t.alias">{{ t.nome }} ({{ t.alias }})</option>
+        </select>
+        <select class="form-select form-select-sm" [(ngModel)]="o.coluna" (ngModelChange)="marcarAlterado()">
+          <option *ngFor="let c of colunasDoAlias(o.tabelaAlias)" [ngValue]="c">{{ c }}</option>
+        </select>
+        <select class="form-select form-select-sm" [(ngModel)]="o.direcao" (ngModelChange)="marcarAlterado()">
+          <option [ngValue]="'ASC'">Crescente (A–Z, 0–9)</option>
+          <option [ngValue]="'DESC'">Decrescente (Z–A, 9–0)</option>
+        </select>
+        <button class="btn btn-sm btn-outline-danger" (click)="removerOrdenacao(i)" title="Remover"><i class="bi bi-x"></i></button>
+      </div>
+      <button class="btn btn-outline-primary btn-sm" (click)="adicionarOrdenacao()"><i class="bi bi-plus"></i> Adicionar ordenação</button>
+      <div class="db-qb__nav">
+        <button class="btn btn-outline-secondary btn-sm" (click)="irParaEtapa(4)"><i class="bi bi-arrow-left"></i> Voltar</button>
+        <button class="btn btn-primary btn-sm" (click)="irParaEtapa(6)">Ver resumo <i class="bi bi-arrow-right"></i></button>
+      </div>
+    </section>
 
-          <!-- Joins manuais adicionados -->
-          <div *ngIf="joinsManuais().length > 0" class="db-qb__joins-grupo">
-            <h6 class="small text-muted mb-2">Adicionados à consulta</h6>
-            <div *ngFor="let j of joinsManuais()" class="db-qb__join-card db-qb__join-card--ativo">
-              <div class="db-qb__join-main">
-                <span class="badge bg-success">{{ j.tipo }} JOIN</span>
-                <code>{{ j.origem }}.{{ j.colunaOrigem }}</code>
-                <i class="bi bi-arrow-right mx-2"></i>
-                <code>{{ j.destino }}.{{ j.colunaDestino }}</code>
-              </div>
-              <button class="btn btn-sm btn-outline-danger" (click)="removerJoinManual(j)">
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
-          </div>
+    <!-- ETAPA 6: resumo -->
+    <section *ngIf="etapa() === 6" class="db-qb__panel">
+      <h5>Resumo da consulta</h5>
+      <div class="db-qb__resumo">
+        <div><span>Tabela principal</span><strong>{{ tabelaPrincipal()?.nome }}</strong></div>
+        <div><span>Tabelas utilizadas</span><strong>{{ tabelas().length }}</strong></div>
+        <div><span>Campos selecionados</span><strong>{{ totalCampos() }}</strong></div>
+        <div><span>Filtros</span><strong>{{ filtros().length }}</strong></div>
+        <div><span>Ordenações</span><strong>{{ ordenacoes().length }}</strong></div>
+      </div>
+      <div class="db-qb__limites">
+        <label>Registros por consulta
+          <select class="form-select form-select-sm" [(ngModel)]="limite">
+            <option [ngValue]="25">25</option><option [ngValue]="50">50</option>
+            <option [ngValue]="100">100</option><option [ngValue]="500">500</option>
+          </select>
+        </label>
+        <label>Tempo máximo (s)
+          <select class="form-select form-select-sm" [(ngModel)]="timeout">
+            <option [ngValue]="5">5</option><option [ngValue]="15">15</option>
+            <option [ngValue]="30">30</option><option [ngValue]="60">60</option>
+          </select>
+        </label>
+      </div>
 
-          <!-- Adicionar join manual -->
-          <div class="db-qb__join-manual" *ngIf="tabelasSelecionadas().length >= 2">
-            <h6 class="small text-muted mb-2">Adicionar JOIN manual</h6>
-            <div class="row g-2 align-items-end">
-              <div class="col-md-3">
-                <label class="form-label small">Tabela Origem</label>
-                <select class="form-select form-select-sm" [(ngModel)]="joinManual.origem">
-                  <option *ngFor="let t of tabelasSelecionadas()" [ngValue]="t.alias">{{ t.alias }} ({{ t.schema }}.{{ t.nome }})</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label small">Coluna Origem</label>
-                <select class="form-select form-select-sm" [(ngModel)]="joinManual.colunaOrigem">
-                  <option *ngFor="let c of colunasTabelaOrigem()" [ngValue]="c">{{ c }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label small">Tabela Destino</label>
-                <select class="form-select form-select-sm" [(ngModel)]="joinManual.destino">
-                  <option *ngFor="let t of tabelasSelecionadas()" [ngValue]="t.alias">{{ t.alias }} ({{ t.schema }}.{{ t.nome }})</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small">Coluna Destino</label>
-                <select class="form-select form-select-sm" [(ngModel)]="joinManual.colunaDestino">
-                  <option *ngFor="let c of colunasTabelaDestino()" [ngValue]="c">{{ c }}</option>
-                </select>
-              </div>
-              <div class="col-md-1">
-                <label class="form-label small">Tipo</label>
-                <select class="form-select form-select-sm" [(ngModel)]="joinManual.tipo">
-                  <option [ngValue]="'INNER'">INNER</option>
-                  <option [ngValue]="'LEFT'">LEFT</option>
-                </select>
-              </div>
-            </div>
-            <button class="btn btn-sm btn-outline-primary mt-2" (click)="adicionarJoinManual()">
-              <i class="bi bi-plus"></i> Adicionar JOIN
-            </button>
-          </div>
-        </div>
-
-        <!-- WHERE -->
-        <div class="db-qb__secao" *ngIf="tabelasSelecionadas().length > 0">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 style="margin:0"><i class="bi bi-funnel"></i> WHERE</h6>
-            <div>
-              <button class="btn btn-sm btn-outline-primary me-1" (click)="adicionarCondicao()">
-                <i class="bi bi-plus"></i> Adicionar Condição
-              </button>
-              <button class="btn btn-sm btn-outline-secondary" (click)="adicionarGrupo()">
-                <i class="bi bi-stack"></i> Grupo
-              </button>
-            </div>
-          </div>
-
-          <!-- Grupos WHERE -->
-          <div *ngFor="let grupo of condicoesWhere(); let gi = index" class="db-qb__where-grupo">
-            <div class="db-qb__where-grupo-header">
-              <span class="badge" [class.bg-info]="grupo.conectorGrupo === 'AND'" [class.bg-warning]="grupo.conectorGrupo === 'OR'">
-                {{ grupo.conectorGrupo }}
-              </span>
-              <button class="btn btn-sm btn-outline-danger" (click)="removerGrupo(gi)">
-                <i class="bi bi-trash"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-secondary" (click)="trocarConectorGrupo(gi)">
-                <i class="bi bi-arrow-repeat"></i>
-              </button>
-            </div>
-            <div class="db-qb__where-condicoes">
-              <div *ngFor="let cond of grupo.condicoes; let ci = index" class="db-qb__where-row">
-                <!-- Primeira condição não tem conector, as seguintes têm -->
-                <span *ngIf="ci > 0" class="db-qb__where-conector">
-                  <button class="btn btn-sm btn-outline-info btn-conector"
-                    (click)="trocarConectorCondicao(gi, ci)">{{ cond.conector }}</button>
-                </span>
-                <span *ngIf="ci === 0" class="db-qb__where-conector db-qb__where-conector--vazio"></span>
-
-                <select class="form-select form-select-sm" [(ngModel)]="cond.tabelaAlias">
-                  <option *ngFor="let t of tabelasSelecionadas()" [ngValue]="t.alias">{{ t.alias }}</option>
-                </select>
-                <select class="form-select form-select-sm" [(ngModel)]="cond.coluna">
-                  <option *ngFor="let c of colunasPorAlias(cond.tabelaAlias)" [ngValue]="c">{{ c }}</option>
-                </select>
-                <select class="form-select form-select-sm" [(ngModel)]="cond.operador">
-                  <option *ngFor="let op of operadoresWhere" [ngValue]="op">{{ op }}</option>
-                </select>
-                <!-- Input de valor (ou dois para BETWEEN) -->
-                <input *ngIf="cond.operador !== 'BETWEEN' && cond.operador !== 'IS NULL' && cond.operador !== 'IS NOT NULL'"
-                  type="text" class="form-control form-control-sm"
-                  [(ngModel)]="cond.valor" placeholder="Valor...">
-                <div *ngIf="cond.operador === 'BETWEEN'" class="db-qb__between">
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="cond.valor" placeholder="Início">
-                  <span class="text-muted">E</span>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="cond.valor2" placeholder="Fim">
-                </div>
-                <!-- IS NULL / IS NOT NULL não têm input -->
-                <input *ngIf="cond.operador === 'IS NULL' || cond.operador === 'IS NOT NULL'" type="hidden" [(ngModel)]="cond.valor" value="">
-
-                <button class="btn btn-sm btn-outline-danger" (click)="removerCondicao(gi, ci)">
-                  <i class="bi bi-x"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- GROUP BY / HAVING -->
-        <div class="db-qb__secao" *ngIf="tabelasSelecionadas().length > 0">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 style="margin:0"><i class="bi bi-arrow-repeat"></i> GROUP BY</h6>
-            <button class="btn btn-sm btn-outline-primary" (click)="limparGroupBy()">
-              <i class="bi bi-x"></i> Limpar
-            </button>
-          </div>
-          <div class="db-qb__groupby">
-            <div *ngFor="let t of tabelasSelecionadas()" class="db-qb__groupby-tabela">
+      <details class="db-qb__avancado">
+        <summary>Opções avançadas (agrupar e CTE)</summary>
+        <div class="mt-2">
+          <label class="form-label small">Agrupar por (GROUP BY)</label>
+          <div class="db-qb__campos">
+            <label *ngFor="let t of tabelas()" class="db-qb__campo db-qb__campo--bloco">
               <strong class="small">{{ t.alias }}:</strong>
-              <div class="db-qb__checkboxes">
-                <label class="form-check form-check-inline" *ngFor="let c of t.colunas">
-                  <input class="form-check-input" type="checkbox"
-                    [checked]="colunasGroupBy().includes(t.alias + '.' + c.coluna)"
-                    (change)="toggleColunaGroupBy(t.alias + '.' + c.coluna)">
-                  <span class="form-check-label small">{{ c.coluna }}</span>
-                </label>
-              </div>
-            </div>
+              <span *ngFor="let c of t.colunasSelecionadas" class="db-qb__mini">
+                <input type="checkbox" class="form-check-input"
+                  [checked]="agruparPor().includes(t.alias + '.' + c)"
+                  (change)="alternarAgrupar(t.alias + '.' + c)"> {{ c }}
+              </span>
+            </label>
           </div>
-          <!-- Função de agregação -->
-          <div class="db-qb__agregacao mt-2">
-            <label class="form-label small">Função de Agregação:</label>
-            <select class="form-select form-select-sm" [(ngModel)]="funcaoAgregacao">
-              <option *ngFor="let fn of funcoesAgregacao" [ngValue]="fn">{{ fn }}</option>
-            </select>
-          </div>
-          <!-- HAVING -->
-          <div class="db-qb__having mt-2">
-            <label class="form-label small">HAVING (condição pós-agregação):</label>
-            <input type="text" class="form-control form-control-sm"
-              [(ngModel)]="havingClause" placeholder="Ex: COUNT(*) > 1">
-          </div>
+          <label class="form-label small mt-2">Condição do grupo (HAVING)</label>
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="having" placeholder="Ex: COUNT(*) > 1">
         </div>
+      </details>
 
-        <!-- ORDER BY -->
-        <div class="db-qb__secao" *ngIf="tabelasSelecionadas().length > 0">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 style="margin:0"><i class="bi bi-arrow-down-up"></i> ORDER BY</h6>
-            <button class="btn btn-sm btn-outline-primary" (click)="adicionarOrderBy()">
-              <i class="bi bi-plus"></i> Adicionar Ordenação
-            </button>
-          </div>
-          <div *ngFor="let ord of condicoesOrderBy(); let i = index" class="db-qb__orderby-row">
-            <select class="form-select form-select-sm" [(ngModel)]="ord.coluna">
-              <option *ngFor="let c of colunasDeTodasTabelas()" [ngValue]="c">{{ c }}</option>
-            </select>
-            <button class="btn btn-sm btn-outline-info" (click)="trocarDirecaoOrderBy(i)">
-              {{ ord.direcao === 'ASC' ? 'ASC' : 'DESC' }}
-            </button>
-            <button class="btn btn-sm btn-outline-secondary" (click)="moverOrderByUp(i)" [disabled]="i === 0">
-              <i class="bi bi-chevron-up"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-secondary" (click)="moverOrderByDown(i)" [disabled]="i === condicoesOrderBy().length - 1">
-              <i class="bi bi-chevron-down"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-danger" (click)="removerOrderBy(i)">
-              <i class="bi bi-x"></i>
-            </button>
-          </div>
-          <div *ngIf="condicoesOrderBy().length === 0" class="db-qb__vazio db-qb__vazio--pequeno">
-            <span>Nenhuma ordenação definida</span>
-          </div>
+      <div class="db-qb__nav">
+        <button class="btn btn-outline-secondary btn-sm" (click)="irParaEtapa(5)"><i class="bi bi-arrow-left"></i> Voltar</button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary btn-sm" (click)="verSQL()" [disabled]="gerandoSql()">
+            <i class="bi bi-code"></i> {{ gerandoSql() ? 'Gerando…' : 'Ver SQL' }}
+          </button>
+          <button class="btn btn-success btn-sm" (click)="executar()" [disabled]="carregando() || gerandoSql()">
+            <i class="bi bi-play-fill"></i> {{ carregando() ? 'Executando…' : 'Executar' }}
+          </button>
         </div>
+      </div>
+    </section>
 
-        <!-- SQL Gerado -->
-        <div class="db-qb__secao" *ngIf="sqlGerado()">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6><i class="bi bi-code"></i> SQL Gerado</h6>
-            <button class="btn btn-sm btn-outline-secondary" (click)="copiarSQL()">
-              <i class="bi bi-clipboard"></i> Copiar
-            </button>
-          </div>
-          <pre class="db-qb__sql">{{ sqlGerado() }}</pre>
+    <!-- ETAPA 7: SQL + resultado -->
+    <section *ngIf="etapa() === 7" class="db-qb__panel">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0"><i class="bi bi-code"></i> SQL gerado</h5>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-secondary" (click)="copiarSQL()"><i class="bi bi-clipboard"></i> Copiar</button>
+          <button class="btn btn-sm btn-success" (click)="executar()" [disabled]="carregando() || gerandoSql()">
+            <i class="bi bi-play-fill"></i> {{ carregando() ? 'Executando…' : 'Executar' }}
+          </button>
         </div>
+      </div>
+      <p class="text-muted small">Este SQL foi montado a partir das suas escolhas. Somente leitura — comandos de escrita são bloqueados.</p>
+      <div *ngIf="avisoSql()" class="alert alert-warning py-2 small">{{ avisoSql() }}</div>
+      <pre class="db-qb__sql">{{ sqlGerado() || 'Gerando SQL…' }}</pre>
 
-        <!-- Preview dos dados (quando executado) -->
-        <div *ngIf="resultado()" class="db-qb__secao mt-3">
-          <h6><i class="bi bi-table"></i> Resultado</h6>
-          <div *ngIf="!resultado()!.sucesso" class="alert alert-danger">
-            <strong>Erro:</strong> {{ resultado()!.mensagemErro }}
+      <div *ngIf="resultado()" class="mt-3">
+        <h5><i class="bi bi-table"></i> Resultado</h5>
+        <div *ngIf="!resultado()!.sucesso" class="alert alert-danger"><strong>Erro:</strong> {{ resultado()!.mensagemErro }}</div>
+        <div *ngIf="resultado()!.sucesso">
+          <div class="db-qb__meta mb-2">
+            <span>{{ resultado()!.quantidadeRegistros }} registros</span>
+            <span>{{ resultado()!.duracaoMs }} ms</span>
           </div>
-          <div *ngIf="resultado()!.sucesso">
-            <div class="db-qb__meta mb-2">
-              <span>{{ resultado()!.quantidadeRegistros }} registros</span>
-              <span>{{ resultado()!.duracaoMs }} ms</span>
-            </div>
-            <div class="adm-table-wrap">
-              <table class="adm-table">
-                <thead><tr><th *ngFor="let c of resultado()!.colunas">{{ c }}</th></tr></thead>
-                <tbody>
-                  <tr *ngFor="let linha of resultado()!.linhas">
-                    <td *ngFor="let celula of linha">{{ celula === null ? '—' : celula }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <div class="adm-table-wrap">
+            <table class="adm-table">
+              <thead><tr><th *ngFor="let c of resultado()!.colunas">{{ c }}</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let linha of resultado()!.linhas">
+                  <td *ngFor="let celula of linha">{{ celula === null ? '—' : celula }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
-      </main>
+      </div>
+      <div class="db-qb__nav">
+        <button class="btn btn-outline-secondary btn-sm" (click)="irParaEtapa(6)"><i class="bi bi-arrow-left"></i> Voltar ao resumo</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal: adicionar tabela relacionada -->
+  <div class="db-qb__overlay" *ngIf="modalTabelasAberto" (click)="fecharModalTabelas()">
+    <div class="db-qb__modal" (click)="$event.stopPropagation()">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">Adicionar tabela</h5>
+        <button class="btn btn-sm btn-outline-secondary" (click)="fecharModalTabelas()"><i class="bi bi-x"></i></button>
+      </div>
+      <p class="text-muted small">Relações conhecidas da sua montagem. Escolha uma para ver o relacionamento antes de adicionar.</p>
+      <div class="adm-search mb-2">
+        <i class="bi bi-search adm-search__icone"></i>
+        <input type="text" class="adm-search__input" placeholder="Pesquisar relacionada..." [(ngModel)]="buscaRelacionadaTexto">
+      </div>
+      <div *ngIf="carregandoRels()" class="text-muted small">Carregando relacionamentos…</div>
+      <div class="db-qb__lista db-qb__lista--modal">
+        <button *ngFor="let item of relacionadasFiltradas" type="button" class="db-qb__item"
+          [class.db-qb__item--ativo]="pendente()?.nomeCompleto === item.nomeCompleto"
+          (click)="preverRelacionada(item)">
+          <i class="bi bi-table"></i>
+          <span><strong>{{ item.nome }}</strong> <small class="text-muted">{{ item.schema }}</small></span>
+          <span class="badge ms-auto" [class.bg-success]="item.confirmada" [class.bg-warning]="!item.confirmada">
+            {{ item.confirmada ? 'Confirmada' : 'Sugerida' }}
+          </span>
+        </button>
+        <div *ngIf="!carregandoRels() && relacionadasFiltradas.length === 0" class="text-muted small p-2">
+          Nenhuma tabela relacionada encontrada.
+        </div>
+      </div>
+      <div *ngIf="pendente()" class="db-qb__preview">
+        <div *ngIf="pendente()!.relacao.tipo === 'Confirmada'" class="alert alert-success py-2 small mb-2">
+          Relacionamento confirmado — definido por FK no SQL Server.
+        </div>
+        <div *ngIf="pendente()!.relacao.tipo !== 'Confirmada'" class="alert alert-warning py-2 small mb-2">
+          Relacionamento sugerido — inferido pela estrutura do banco. Confiança: {{ pendente()!.relacao.score }}%.
+        </div>
+        <code>{{ pendente()!.relacao.tabelaOrigem }}.{{ pendente()!.relacao.colunaOrigem }} = {{ pendente()!.relacao.tabelaDestino }}.{{ pendente()!.relacao.colunaDestino }}</code>
+        <div class="mt-1">
+          <button class="btn btn-sm btn-link p-0" (click)="verEvidencias(pendente()!.relacao)">Ver evidências</button>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end gap-2 mt-2">
+        <button class="btn btn-outline-secondary btn-sm" (click)="fecharModalTabelas()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" (click)="confirmarRelacionada()" [disabled]="!pendente()">Adicionar tabela</button>
+      </div>
     </div>
   </div>
 
-  <!-- Modal CTE -->
-  <div class="modal fade show db-qb__modal-overlay" *ngIf="cteAberta" (click)="fecharModalCte()">
-    <div class="modal-content db-qb__modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h5 class="modal-title">Nova CTE (Common Table Expression)</h5>
-        <button class="btn btn-sm btn-outline-secondary" (click)="fecharModalCte()">
-          <i class="bi bi-x"></i>
-        </button>
+  <!-- Modal: evidências -->
+  <div class="db-qb__overlay" *ngIf="relacaoDetalhe()" (click)="relacaoDetalhe.set(null)">
+    <div class="db-qb__modal" (click)="$event.stopPropagation()">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">Evidências do relacionamento</h5>
+        <button class="btn btn-sm btn-outline-secondary" (click)="relacaoDetalhe.set(null)"><i class="bi bi-x"></i></button>
       </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label small">Nome da CTE</label>
-          <input type="text" class="form-control" [(ngModel)]="cteNome" placeholder="Ex: vendas_mensais">
-        </div>
-        <div class="mb-3">
-          <label class="form-label small">SQL da CTE</label>
-          <textarea class="form-control" rows="4" [(ngModel)]="cteSql" placeholder="SELECT coluna1, coluna2 FROM tabela WHERE ..."></textarea>
-        </div>
-        <div class="mb-3">
-          <label class="form-label small">Referenciar no SELECT principal</label>
-          <select class="form-select" [(ngModel)]="cteReferencia">
-            <option [ngValue]="true">Sim — incluir CTE no SELECT</option>
-            <option [ngValue]="false">Não — apenas definir</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline-secondary btn-sm" (click)="fecharModalCte()">Cancelar</button>
-        <button class="btn btn-primary btn-sm" (click)="salvarCte()">Salvar CTE</button>
-      </div>
+      <code>{{ relacaoDetalhe()!.tabelaOrigem }}.{{ relacaoDetalhe()!.colunaOrigem }} = {{ relacaoDetalhe()!.tabelaDestino }}.{{ relacaoDetalhe()!.colunaDestino }}</code>
+      <ul class="mt-2 small">
+        <li *ngFor="let m of relacaoDetalhe()!.motivos">{{ m }}</li>
+      </ul>
+      <p class="small text-muted">Confiança: {{ relacaoDetalhe()!.score }}% · Tipo: {{ relacaoDetalhe()!.tipo }}</p>
     </div>
   </div>
   `,
   styles: [`
-    .db-qb {
-      padding: 1rem;
-    }
-
-    .db-qb__header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .db-qb__header h4 {
-      margin: 0;
-      font-size: 1.1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .db-qb__acoes {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .db-qb__limit-group {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.4rem;
-      padding: 0.25rem 0.5rem;
-    }
-
-    .db-qb__limit-label {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: #475569;
-      white-space: nowrap;
-    }
-
-    .db-qb__limit-input {
-      width: 70px;
-      text-align: center;
-    }
-
-    .db-qb__layout {
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      gap: 1rem;
-    }
-
-    .db-qb__lateral {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      padding: 1rem;
-      max-height: calc(100vh - 200px);
-      overflow-y: auto;
-    }
-
-    .db-qb__secao {
-      margin-bottom: 1.5rem;
-    }
-
-    .db-qb__secao h6 {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.8rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #475569;
-      margin: 0 0 0.5rem;
-    }
-
-    .db-qb__vazio {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 1.5rem;
-      color: #64748b;
-      text-align: center;
-    }
-
-    .db-qb__vazio--pequeno {
-      padding: 0.75rem;
-      font-size: 0.75rem;
-    }
-
-    .db-qb__vazio i {
-      font-size: 2rem;
-      color: #cbd5e1;
-    }
-
-    .db-qb__tabela-card {
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.4rem;
-      padding: 0.75rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .db-qb__tabela-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-    }
-
-    .db-qb__tabela-header strong {
-      font-size: 0.85rem;
-      color: #1e293b;
-    }
-
-    .db-qb__colunas {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-      max-height: 150px;
-      overflow-y: auto;
-    }
-
-    .db-qb__colunas .form-check {
-      margin: 0;
-    }
-
-    .db-qb__colunas .form-check-label {
-      font-size: 0.72rem;
-      cursor: pointer;
-    }
-
-    .db-qb__lista-tabelas {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .db-qb__tabela-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 0.6rem;
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.35rem;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-size: 0.8rem;
-    }
-
-    .db-qb__tabela-item:hover:not(:disabled) {
-      background: #dbeafe;
-      border-color: #3b82f6;
-    }
-
-    .db-qb__tabela-item:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .db-qb__central {
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      padding: 1rem;
-      min-height: 500px;
-    }
-
-    .db-qb__joins-grupo {
-      margin-bottom: 1rem;
-    }
-
-    .db-qb__join-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem 0.75rem;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.4rem;
-      margin-bottom: 0.35rem;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .db-qb__join-card--ativo {
-      background: #ecfdf5;
-      border-color: #a7f3d0;
-    }
-
-    .db-qb__join-main {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .db-qb__join-main code {
-      font-size: 0.75rem;
-    }
-
-    .db-qb__join-acoes {
-      display: flex;
-      gap: 0.35rem;
-    }
-
-    .db-qb__join-manual {
-      padding: 0.75rem;
-      background: #f8fafc;
-      border: 1px dashed #cbd5e1;
-      border-radius: 0.4rem;
-    }
-
-    /* WHERE styles */
-    .db-qb__where-grupo {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.4rem;
-      padding: 0.75rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .db-qb__where-grupo-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .db-qb__where-condicoes {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-
-    .db-qb__where-row {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      flex-wrap: wrap;
-    }
-
-    .db-qb__where-conector {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 50px;
-    }
-
-    .db-qb__where-conector--vazio {
-      visibility: hidden;
-    }
-
-    .btn-conector {
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 0.2rem 0.5rem;
-      min-width: 45px;
-    }
-
-    .db-qb__between {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .db-qb__between .form-control-sm {
-      width: 100px;
-    }
-
-    /* GROUP BY / HAVING styles */
-    .db-qb__groupby {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .db-qb__groupby-tabela {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .db-qb__checkboxes {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.25rem;
-    }
-
-    .db-qb__agregacao select,
-    .db-qb__having input {
-      max-width: 400px;
-    }
-
-    /* ORDER BY styles */
-    .db-qb__orderby-row {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      flex-wrap: wrap;
-      margin-bottom: 0.35rem;
-    }
-
-    .db-qb__orderby-row .form-select-sm {
-      max-width: 250px;
-    }
-
-    /* CTE styles */
-    .db-qb__cte-lista {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .db-qb__cte-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.4rem 0.6rem;
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.35rem;
-      font-size: 0.8rem;
-    }
-
-    .db-qb__modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.4);
-      z-index: 1050;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .db-qb__modal {
-      background: #fff;
-      border-radius: 0.5rem;
-      max-width: 600px;
-      width: 90%;
-      z-index: 1051;
-    }
-
-    .db-qb__sql {
-      background: #0f172a;
-      color: #e2e8f0;
-      padding: 1rem;
-      border-radius: 0.4rem;
-      font-family: 'IBM Plex Mono', 'Cascadia Code', monospace;
-      font-size: 0.8rem;
-      line-height: 1.5;
-      max-height: 300px;
-      overflow: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .db-qb__meta {
-      display: flex;
-      gap: 1.5rem;
-      color: #475569;
-      font-size: 0.85rem;
-    }
-
-    .adm-table-wrap {
-      border-radius: 0.4rem;
-      overflow: hidden;
-      border: 1px solid #e2e8f0;
-    }
-
-    .adm-table {
-      width: 100%;
-      margin: 0;
-      font-size: 0.82rem;
-    }
-
-    .adm-table th {
-      background: #f8fafc;
-      color: #6c757d;
-      font-weight: 600;
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      padding: 0.55rem 0.75rem;
-      border-bottom: 1px solid #e2e8f0;
-      white-space: nowrap;
-    }
-
-    .adm-table td {
-      padding: 0.5rem 0.75rem;
-      vertical-align: middle;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .adm-table tbody tr:hover {
-      background: #f1f5f9;
-    }
-
-    @media (max-width: 992px) {
-      .db-qb__layout {
-        grid-template-columns: 1fr;
-      }
-      .db-qb__lateral {
-        max-height: none;
-      }
-    }
+    .db-qb { padding: 1rem; }
+    .db-qb__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+    .db-qb__header h4 { margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.4rem; }
+    .db-qb__steps { list-style: none; display: flex; gap: 0.35rem; padding: 0; margin: 0 0 1rem; flex-wrap: wrap; }
+    .db-qb__step button { display: flex; align-items: center; gap: 0.4rem; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 1.2rem; padding: 0.3rem 0.7rem; font-size: 0.78rem; cursor: pointer; }
+    .db-qb__step--ativo button { background: #dbeafe; border-color: #3b82f6; font-weight: 700; }
+    .db-qb__step--ok button { background: #ecfdf5; border-color: #a7f3d0; }
+    .db-qb__step--bloqueado button { opacity: 0.45; cursor: not-allowed; }
+    .db-qb__step-num { display: inline-flex; align-items: center; justify-content: center; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: #fff; border: 1px solid #cbd5e1; font-size: 0.72rem; font-weight: 700; }
+    .db-qb__panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem; }
+    .db-qb__panel h5 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .db-qb__principal { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.4rem; padding: 0.6rem 0.8rem; margin: 0.6rem 0; flex-wrap: wrap; }
+    .db-qb__badges { display: flex; gap: 0.35rem; }
+    .db-qb__lista { display: flex; flex-direction: column; gap: 0.25rem; max-height: 20rem; overflow-y: auto; margin-top: 0.5rem; }
+    .db-qb__lista--modal { max-height: 16.25rem; }
+    .db-qb__item { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.65rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 0.35rem; text-align: left; cursor: pointer; font-size: 0.82rem; }
+    .db-qb__item:hover { background: #dbeafe; border-color: #3b82f6; }
+    .db-qb__item--ativo { background: #ecfdf5; border-color: #34d399; }
+    .db-qb__toolbar { display: flex; gap: 0.5rem; align-items: center; margin: 0.6rem 0; flex-wrap: wrap; }
+    .db-qb__toolbar .adm-search { flex: 1; min-width: 12.5rem; }
+    .db-qb__campos { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
+    .db-qb__campo { display: inline-flex; align-items: center; gap: 0.3rem; border: 1px solid #e2e8f0; border-radius: 0.35rem; padding: 0.3rem 0.5rem; font-size: 0.78rem; cursor: pointer; background: #f8fafc; }
+    .db-qb__campo--bloco { width: 100%; align-items: flex-start; flex-wrap: wrap; }
+    .db-qb__campo-nome { font-weight: 600; }
+    .db-qb__mini { display: inline-flex; align-items: center; gap: 0.2rem; margin-left: 0.4rem; font-size: 0.75rem; }
+    .db-qb__arvore { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.4rem; padding: 0.75rem; margin: 0.5rem 0; }
+    .db-qb__no { padding: 0.35rem 0; font-size: 0.85rem; }
+    .db-qb__no--raiz { font-weight: 700; }
+    .db-qb__galho { color: #94a3b8; margin-right: 0.3rem; }
+    .db-qb__filtro { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.4rem; padding: 0.5rem; margin-bottom: 0.4rem; }
+    .db-qb__filtro select, .db-qb__filtro input { max-width: 13.75rem; }
+    .db-qb__resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.375rem, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .db-qb__resumo > div { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.4rem; padding: 0.6rem; display: flex; flex-direction: column; gap: 0.2rem; }
+    .db-qb__resumo span { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+    .db-qb__limites { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+    .db-qb__limites label { font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.25rem; }
+    .db-qb__avancado { margin: 0.6rem 0; font-size: 0.82rem; }
+    .db-qb__avancado summary { cursor: pointer; font-weight: 600; color: #475569; }
+    .db-qb__nav { display: flex; justify-content: space-between; margin-top: 1rem; }
+    .db-qb__sql { background: #0f172a; color: #e2e8f0; padding: 1rem; border-radius: 0.4rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; max-height: 20rem; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+    .db-qb__meta { display: flex; gap: 1.5rem; color: #475569; font-size: 0.85rem; }
+    .db-qb__overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1050; display: flex; align-items: center; justify-content: center; }
+    .db-qb__modal { background: #fff; border-radius: 0.5rem; max-width: 38.75rem; width: 92%; max-height: 88vh; overflow-y: auto; padding: 1rem; }
+    .db-qb__modal code, .db-qb__preview code { font-size: 0.75rem; }
+    .db-qb__preview { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.4rem; padding: 0.6rem; margin-top: 0.5rem; }
+    .adm-table-wrap { border-radius: 0.4rem; overflow: hidden; border: 1px solid #e2e8f0; }
+    .adm-table { width: 100%; margin: 0; font-size: 0.82rem; }
+    .adm-table th { background: #f8fafc; font-size: 0.72rem; text-transform: uppercase; padding: 0.55rem 0.75rem; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+    .adm-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; }
+    .adm-table tbody tr:hover { background: #f1f5f9; }
   `]
 })
 export class DbQueryBuilderComponent implements OnInit {
   private readonly db = inject(DatabaseService);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly tabelasSelecionadas = signal<TabelaSelecionada[]>([]);
-  readonly joinsManuais = signal<JoinConfig[]>([]);
-  readonly joinsSugeridos = signal<JoinConfig[]>([]);
+  readonly etapas = ETAPAS;
+  readonly operadores = OPERADORES;
+
+  readonly etapa = signal(1);
+  readonly tabelas = signal<TabelaMontagem[]>([]);
   readonly tabelasDisponiveis = signal<DatabaseTable[]>([]);
-  readonly filtroTabelas = signal('');
-  readonly sqlGerado = signal<string>('');
-  readonly resultado = signal<any>(null);
+  readonly relacoes = signal<DatabaseRelationship[]>([]);
+  readonly relacaoUsadaPorTabela = signal<Record<string, DatabaseRelationship>>({});
+  readonly filtros = signal<FiltroSimples[]>([]);
+  readonly ordenacoes = signal<OrdenacaoSimples[]>([]);
+  readonly agruparPor = signal<string[]>([]);
+  readonly sqlGerado = signal('');
+  readonly avisoSql = signal<string | null>(null);
+  readonly gerandoSql = signal(false);
+  readonly carregandoRels = signal(false);
+  readonly resultado = signal<DatabaseQueryResult | null>(null);
   readonly carregando = signal(false);
+  readonly tabelaExpandida = signal<string | null>(null);
+  readonly pendente = signal<TabelaRelacionadaItem | null>(null);
+  readonly relacaoDetalhe = signal<DatabaseRelationship | null>(null);
 
-  // LIMIT/TOP (propriedade regular para [(ngModel)])
-  limitTop = 100;
+  filtroTabelaTexto = '';
+  buscaCampoPrincipal = '';
+  buscaRelacionadaTexto = '';
+  buscasCampoRelacionada: Record<string, string> = {};
+  modalTabelasAberto = false;
+  having = '';
+  limite = 100;
+  timeout = 30;
 
-  // WHERE
-  readonly condicoesWhere = signal<GrupoWhere[]>([]);
-  readonly operadoresWhere = ['=', '<>', '>', '<', '>=', '<=', 'LIKE', 'IN', 'IS NULL', 'IS NOT NULL', 'BETWEEN'];
+  private proximoFiltroId = 1;
 
-  // ORDER BY
-  readonly condicoesOrderBy = signal<CondicaoOrderBy[]>([]);
-
-  // GROUP BY / HAVING (propriedades regulares para [(ngModel)])
-  readonly colunasGroupBy = signal<string[]>([]);
-  readonly funcoesAgregacao = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX'];
-  funcaoAgregacao = 'COUNT';
-  havingClause = '';
-
-  // CTEs (propriedades regulares para [(ngModel)])
-  readonly ctes = signal<CteConfig[]>([]);
-  cteAberta = false;
-  cteNome = '';
-  cteSql = '';
-  cteReferencia = true;
-
-  joinManual: JoinConfig = {
-    origem: '',
-    destino: '',
-    colunaOrigem: '',
-    colunaDestino: '',
-    tipo: 'INNER',
-    confirmada: false
-  };
-
-  private aliasCounter = 0;
+  // ---------- ciclo de vida ----------
 
   ngOnInit(): void {
-    this.carregarTabelasDisponiveis();
-
-    // Verifica se veio com tabelas pré-selecionadas do TableDetail
+    this.db.listarTabelas().subscribe(t => this.tabelasDisponiveis.set(t ?? []));
     this.route.queryParams.subscribe(params => {
-      if (params['builder'] === 'true') {
-        const builderData = sessionStorage.getItem('db-query-builder-tables');
-        if (builderData) {
-          try {
-            const tabelas = JSON.parse(builderData);
-            for (const t of tabelas) {
-              const [schema, nome] = t.split('.');
-              this.adicionarTabelaPorNome(schema || 'dbo', nome);
-            }
-            sessionStorage.removeItem('db-query-builder-tables');
-          } catch {}
-        }
+      const legadas = this.lerTabelasLegadas();
+      const porParam = this.lerTabelasDeParams(params);
+      const lista = porParam.length > 0 ? porParam : legadas;
+      if (lista.length > 0) {
+        this.adicionarTabelasEmSequencia(lista);
       }
     });
   }
 
-  carregarTabelasDisponiveis(): void {
-    this.db.listarTabelas().subscribe(t => this.tabelasDisponiveis.set(t));
+  private lerTabelasLegadas(): string[] {
+    try {
+      const raw = sessionStorage.getItem('db-query-builder-tables');
+      if (!raw) return [];
+      sessionStorage.removeItem('db-query-builder-tables');
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr.filter((x: unknown) => typeof x === 'string') : [];
+    } catch { return []; }
   }
 
-  readonly tabelasDisponiveisFiltradas = computed(() => {
-    const filtro = this.filtroTabelas().toLowerCase();
-    if (!filtro) return this.tabelasDisponiveis();
-    return this.tabelasDisponiveis().filter(t =>
-      t.nome.toLowerCase().includes(filtro) ||
-      t.nomeCompleto.toLowerCase().includes(filtro)
-    );
-  });
-
-  jaSelecionada(t: DatabaseTable): boolean {
-    return this.tabelasSelecionadas().some(s => s.schema === t.schema && s.nome === t.nome);
+  private lerTabelasDeParams(params: Record<string, string>): string[] {
+    const lista: string[] = [];
+    const push = (v: string | undefined) => {
+      if (!v) return;
+      for (const parte of String(v).split(',')) {
+        const nome = parte.trim();
+        if (nome && !lista.includes(nome)) lista.push(nome);
+      }
+    };
+    push(params['tabela']);
+    push(params['tabelas']);
+    push(params['caminho']);
+    if (params['origem']) push(params['origem']);
+    if (params['destino'] ?? params['rel']) push(params['destino'] ?? params['rel']);
+    return lista;
   }
 
-  adicionarTabela(): void {
-    // Abre modal ou usa a lista lateral
+  private adicionarTabelasEmSequencia(lista: string[]): void {
+    const [primeira, ...resto] = lista;
+    if (!primeira) return;
+    const [schema, ...nomePartes] = primeira.split('.');
+    const nome = nomePartes.join('.') || schema;
+    const sch = nomePartes.length > 0 ? schema : 'dbo';
+    this.definirPrincipalPorNome(sch, nome, () => {
+      resto.forEach((item, idx) => {
+        setTimeout(() => {
+          const [s, ...n] = item.split('.');
+          const nm = n.join('.') || s;
+          this.adicionarTabelaPorNome(n.length > 0 ? s : 'dbo', nm);
+        }, 150 * (idx + 1));
+      });
+    });
   }
 
-  adicionarTabelaExistente(t: DatabaseTable): void {
-    this.adicionarTabelaPorNome(t.schema, t.nome);
+  // ---------- etapa 1: tabela principal ----------
+
+  get tabelasFiltradas(): DatabaseTable[] {
+    const f = this.filtroTabelaTexto.trim().toLowerCase();
+    const todas = this.tabelasDisponiveis();
+    const filtradas = !f ? todas : todas.filter(t =>
+      t.nome.toLowerCase().includes(f) || t.nomeCompleto.toLowerCase().includes(f));
+    return filtradas.slice(0, 80);
+  }
+
+  tabelaPrincipal(): TabelaMontagem | null {
+    return this.tabelas()[0] ?? null;
+  }
+
+  tabelasRelacionadas(): TabelaMontagem[] {
+    return this.tabelas().slice(1);
+  }
+
+  ehPrincipal(t: DatabaseTable): boolean {
+    const p = this.tabelaPrincipal();
+    return !!p && p.schema === t.schema && p.nome === t.nome;
+  }
+
+  qtdColunasPrincipal(): number {
+    return this.tabelaPrincipal()?.colunas.length ?? 0;
+  }
+
+  qtdRelacionamentosPrincipal(): number {
+    const p = this.tabelaPrincipal();
+    if (!p) return 0;
+    const chave = `${p.schema}.${p.nome}`;
+    return this.relacoes().filter(r => r.tabelaOrigem === chave || r.tabelaDestino === chave).length;
+  }
+
+  definirPrincipal(t: DatabaseTable): void {
+    if (this.ehPrincipal(t)) { this.irParaEtapa(2); return; }
+    this.definirPrincipalPorNome(t.schema, t.nome);
+  }
+
+  private definirPrincipalPorNome(schema: string, nome: string, depois?: () => void): void {
+    this.db.listarColunas(schema, nome).subscribe({
+      next: colunas => {
+        const mantidas = this.tabelas().slice(1)
+          .filter(t => !(t.schema === schema && t.nome === nome))
+          .map(t => ({ ...t }));
+        const alias = this.gerarAlias(nome, mantidas.map(t => t.alias));
+        const principal: TabelaMontagem = { schema, nome, alias, colunas: colunas ?? [], colunasSelecionadas: [] };
+        this.tabelas.set([principal, ...mantidas]);
+        this.marcarAlterado();
+        this.carregarRelacoes();
+        this.irParaEtapa(2);
+        depois?.();
+      },
+      error: () => { /* mantém estado atual em caso de falha */ }
+    });
   }
 
   adicionarTabelaPorNome(schema: string, nome: string): void {
-    if (this.tabelasSelecionadas().length >= 5) return;
-    if (this.jaSelecionada({ schema, nome, nomeCompleto: '', quantidadeRegistros: 0, quantidadeColunas: 0, quantidadeIndices: 0, quantidadeRelacionamentos: 0 } as any)) return;
+    if (this.tabelas().length >= 5) return;
+    if (this.tabelas().some(t => t.schema === schema && t.nome === nome)) return;
+    this.db.listarColunas(schema, nome).subscribe({
+      next: colunas => {
+        const alias = this.gerarAlias(nome, this.tabelas().map(t => t.alias));
+        this.tabelas.update(arr => [...arr, { schema, nome, alias, colunas: colunas ?? [], colunasSelecionadas: [] }]);
+        this.marcarAlterado();
+        this.carregarRelacoes();
+      },
+      error: () => { /* ignora falha de uma tabela */ }
+    });
+  }
 
-    this.carregando.set(true);
-    this.db.listarColunas(schema, nome).subscribe(colunas => {
-      const alias = `t${++this.aliasCounter}`;
-      this.tabelasSelecionadas.update(arr => [...arr, {
-        schema,
+  removerTabela(alias: string): void {
+    if (this.tabelas().length <= 1) return;
+    const removida = this.tabelas().find(t => t.alias === alias);
+    this.tabelas.update(arr => arr.filter(t => t.alias !== alias));
+    if (removida) {
+      const chave = `${removida.schema}.${removida.nome}`;
+      this.relacaoUsadaPorTabela.update(m => {
+        const copia = { ...m };
+        delete copia[chave];
+        return copia;
+      });
+      this.filtros.update(fs => fs.filter(f => f.tabelaAlias !== alias));
+      this.ordenacoes.update(os => os.filter(o => o.tabelaAlias !== alias));
+    }
+    this.marcarAlterado();
+    this.carregarRelacoes();
+  }
+
+  // ---------- aliases amigáveis ----------
+
+  private gerarAlias(nomeTabela: string, ocupados: string[]): string {
+    const usados = new Set([...this.tabelas().map(t => t.alias), ...ocupados]);
+    const base = nomeTabela.toUpperCase().replace(/^TB_?/, '');
+    const partes = base.split('_').filter(Boolean);
+    let candidato = (partes.map(p => p[0]).join('') || base.slice(0, 2)).slice(0, 4);
+    if (!candidato) candidato = 'T';
+    let alias = candidato;
+    let i = 1;
+    const primeira = partes[0] || base;
+    while (usados.has(alias) && i < 10) {
+      alias = (candidato + (primeira[i] ?? String(i))).slice(0, 4);
+      i++;
+    }
+    return alias;
+  }
+
+  // ---------- relacionamentos ----------
+
+  private carregarRelacoes(): void {
+    const principal = this.tabelaPrincipal();
+    if (!principal) { this.relacoes.set([]); return; }
+    this.carregandoRels.set(true);
+    const chave = `${principal.schema}.${principal.nome}`;
+    let rels: DatabaseRelationship[] = [];
+    let concluidas = 0;
+    const finalizar = () => {
+      concluidas++;
+      if (concluidas >= 2) {
+        const vistas = new Set<string>();
+        this.relacoes.set(rels.filter(r => {
+          const k = `${r.tabelaOrigem}.${r.colunaOrigem}->${r.tabelaDestino}.${r.colunaDestino}`;
+          if (vistas.has(k)) return false;
+          vistas.add(k);
+          return true;
+        }));
+        this.carregandoRels.set(false);
+      }
+    };
+    this.db.grafo(chave, 2, true).subscribe({
+      next: l => { rels = [...rels, ...(l ?? [])]; finalizar(); },
+      error: () => finalizar()
+    });
+    this.db.relacionamentos(principal.schema, true, 500).subscribe({
+      next: l => { rels = [...rels, ...(l ?? [])]; finalizar(); },
+      error: () => finalizar()
+    });
+  }
+
+  /** Tabelas relacionadas ainda não adicionadas, derivadas das relações conhecidas. */
+  get relacionadasDisponiveis(): TabelaRelacionadaItem[] {
+    const selecionadas = new Set(this.tabelas().map(t => `${t.schema}.${t.nome}`));
+    const mapa = new Map<string, TabelaRelacionadaItem>();
+    for (const r of this.relacoes()) {
+      const origemSel = selecionadas.has(r.tabelaOrigem);
+      const destinoSel = selecionadas.has(r.tabelaDestino);
+      if (origemSel === destinoSel) continue;
+      const outra = origemSel ? r.tabelaDestino : r.tabelaOrigem;
+      if (selecionadas.has(outra) || mapa.has(outra)) continue;
+      const [schema, ...resto] = outra.split('.');
+      const nome = resto.join('.') || schema;
+      mapa.set(outra, {
+        nomeCompleto: outra,
+        schema: resto.length > 0 ? schema : 'dbo',
         nome,
-        alias,
-        colunas,
-        colunasSelecionadas: []
-      }]);
-      this.atualizarJoinsSugeridos();
-      this.carregando.set(false);
+        relacao: r,
+        confirmada: r.tipo === 'Confirmada'
+      });
+    }
+    return [...mapa.values()].sort((a, b) =>
+      Number(b.confirmada) - Number(a.confirmada) || b.relacao.score - a.relacao.score);
+  }
+
+  get relacionadasFiltradas(): TabelaRelacionadaItem[] {
+    const f = this.buscaRelacionadaTexto.trim().toLowerCase();
+    if (!f) return this.relacionadasDisponiveis;
+    return this.relacionadasDisponiveis.filter(i => i.nome.toLowerCase().includes(f));
+  }
+
+  abrirModalTabelas(): void {
+    this.pendente.set(null);
+    this.buscaRelacionadaTexto = '';
+    this.modalTabelasAberto = true;
+    if (this.relacoes().length === 0) this.carregarRelacoes();
+  }
+
+  fecharModalTabelas(): void {
+    this.modalTabelasAberto = false;
+    this.pendente.set(null);
+  }
+
+  preverRelacionada(item: TabelaRelacionadaItem): void {
+    this.pendente.set(item);
+  }
+
+  confirmarRelacionada(): void {
+    const item = this.pendente();
+    if (!item || this.tabelas().length >= 5) return;
+    this.db.listarColunas(item.schema, item.nome).subscribe({
+      next: colunas => {
+        const alias = this.gerarAlias(item.nome, this.tabelas().map(t => t.alias));
+        this.tabelas.update(arr => [...arr, {
+          schema: item.schema, nome: item.nome, alias,
+          colunas: colunas ?? [], colunasSelecionadas: []
+        }]);
+        this.relacaoUsadaPorTabela.update(m => ({ ...m, [item.nomeCompleto]: item.relacao }));
+        this.marcarAlterado();
+        this.fecharModalTabelas();
+        this.carregarRelacoes();
+      },
+      error: () => { /* mantém estado */ }
     });
   }
 
-  /**
-   * Bug fix: renumerar aliases após remoção de tabela.
-   * Após remover a tabela no índice `index`, todos os aliases
-   * subsequentes são renumerados para manter a sequência contínua (t1, t2, t3...).
-   */
-  removerTabela(index: number): void {
-    const tabelas = this.tabelasSelecionadas();
-    if (index < 0 || index >= tabelas.length) return;
-
-    const tabelaRemovida = tabelas[index];
-    const novaLista = tabelas.filter((_, i) => i !== index);
-
-    // Renumerar aliases para manter t1, t2, t3... sequencial
-    const tabelasRenumeradas = novaLista.map((t, i) => {
-      const novoAlias = `t${i + 1}`;
-      if (t.alias === novoAlias) return t; // Já está correto
-      return { ...t, alias: novoAlias };
-    });
-
-    this.tabelasSelecionadas.set(tabelasRenumeradas);
-
-    // Atualizar joins manuais: remover referências ao alias removido e atualizar aliases renumerados
-    const aliasAntigo = tabelaRemovida.alias;
-    this.joinsManuais.update(joins =>
-      joins
-        .filter(j => j.origem !== aliasAntigo && j.destino !== aliasAntigo)
-        .map(j => ({
-          ...j,
-          origem: tabelasRenumeradas.find(x => x.alias === j.origem)?.alias || j.origem,
-          destino: tabelasRenumeradas.find(x => x.alias === j.destino)?.alias || j.destino
-        }))
-    );
-
-    this.atualizarJoinsSugeridos();
+  verEvidencias(rel: DatabaseRelationship): void {
+    this.relacaoDetalhe.set(rel);
   }
 
-  toggleColuna(tabelaIndex: number, coluna: string): void {
-    this.tabelasSelecionadas.update(arr => arr.map((t, i) => {
-      if (i !== tabelaIndex) return t;
-      const selecionadas = t.colunasSelecionadas;
-      const idx = selecionadas.indexOf(coluna);
-      if (idx >= 0) {
-        return { ...t, colunasSelecionadas: selecionadas.filter(c => c !== coluna) };
-      } else {
-        return { ...t, colunasSelecionadas: [...selecionadas, coluna] };
-      }
+  /** Relação usada para ligar uma tabela adicionada ao restante da montagem. */
+  joinDaTabela(t: TabelaMontagem): DatabaseRelationship | null {
+    const chave = `${t.schema}.${t.nome}`;
+    const direta = this.relacaoUsadaPorTabela()[chave];
+    if (direta) return direta;
+    const selecionadas = new Set(this.tabelas().map(x => `${x.schema}.${x.nome}`));
+    const candidatas = this.relacoes().filter(r =>
+      (r.tabelaOrigem === chave && selecionadas.has(r.tabelaDestino)) ||
+      (r.tabelaDestino === chave && selecionadas.has(r.tabelaOrigem)));
+    candidatas.sort((a, b) => Number(b.tipo === 'Confirmada') - Number(a.tipo === 'Confirmada') || b.score - a.score);
+    return candidatas[0] ?? null;
+  }
+
+  descricaoJoin(t: TabelaMontagem): string {
+    const r = this.joinDaTabela(t);
+    if (!r) return 'Sem relacionamento direto conhecido';
+    const tipo = r.tipo === 'Confirmada' ? 'Relacionamento confirmado' : `Relacionamento sugerido (${r.score}%)`;
+    return `${tipo}: ${r.tabelaOrigem}.${r.colunaOrigem} = ${r.tabelaDestino}.${r.colunaDestino}`;
+  }
+
+  alternarExpansao(alias: string): void {
+    this.tabelaExpandida.set(this.tabelaExpandida() === alias ? null : alias);
+  }
+
+  // ---------- etapa 2/3: campos ----------
+
+  camposPrincipalFiltrados(): DatabaseColumn[] {
+    const p = this.tabelaPrincipal();
+    if (!p) return [];
+    const f = this.buscaCampoPrincipal.trim().toLowerCase();
+    if (!f) return p.colunas;
+    return p.colunas.filter(c => c.coluna.toLowerCase().includes(f));
+  }
+
+  campoMarcado(t: TabelaMontagem, coluna: string): boolean {
+    return this.tabelas().find(x => x.alias === t.alias)?.colunasSelecionadas.includes(coluna) ?? false;
+  }
+
+  alternarCampo(t: TabelaMontagem, coluna: string): void {
+    this.tabelas.update(arr => arr.map(x => {
+      if (x.alias !== t.alias) return x;
+      const tem = x.colunasSelecionadas.includes(coluna);
+      return {
+        ...x,
+        colunasSelecionadas: tem
+          ? x.colunasSelecionadas.filter(c => c !== coluna)
+          : [...x.colunasSelecionadas, coluna]
+      };
     }));
+    this.marcarAlterado();
   }
 
-  // ========== WHERE ==========
-
-  adicionarCondicao(): void {
-    const novoGrupo: GrupoWhere = {
-      condicoes: [{
-        coluna: '',
-        tabelaAlias: this.tabelasSelecionadas()[0]?.alias || '',
-        operador: '=',
-        valor: '',
-        valor2: '',
-        conector: 'AND'
-      }],
-      conectorGrupo: 'AND'
-    };
-    this.condicoesWhere.update(arr => [...arr, novoGrupo]);
+  todosCamposPrincipal(): void {
+    const p = this.tabelaPrincipal();
+    if (p) this.todosCampos(p);
   }
 
-  removerCondicao(grupoIndex: number, condicaoIndex: number): void {
-    this.condicoesWhere.update(grupos => {
-      const novosGrupos = [...grupos];
-      const grupo = { ...novosGrupos[grupoIndex] };
-      grupo.condicoes = grupo.condicoes.filter((_, i) => i !== condicaoIndex);
-      if (grupo.condicoes.length === 0) {
-        novosGrupos.splice(grupoIndex, 1);
-      } else {
-        novosGrupos[grupoIndex] = grupo;
+  limparCamposPrincipal(): void {
+    const p = this.tabelaPrincipal();
+    if (p) this.limparCampos(p);
+  }
+
+  todosCampos(t: TabelaMontagem): void {
+    this.tabelas.update(arr => arr.map(x =>
+      x.alias === t.alias ? { ...x, colunasSelecionadas: x.colunas.map(c => c.coluna) } : x));
+    this.marcarAlterado();
+  }
+
+  limparCampos(t: TabelaMontagem): void {
+    this.tabelas.update(arr => arr.map(x =>
+      x.alias === t.alias ? { ...x, colunasSelecionadas: [] } : x));
+    this.marcarAlterado();
+  }
+
+  totalCampos(): number {
+    return this.tabelas().reduce((s, t) => s + t.colunasSelecionadas.length, 0);
+  }
+
+  nomeTabelaPorAlias(alias: string): string {
+    return this.tabelas().find(t => t.alias === alias)?.nome ?? alias;
+  }
+
+  colunasDoAlias(alias: string): string[] {
+    return this.tabelas().find(t => t.alias === alias)?.colunas.map(c => c.coluna) ?? [];
+  }
+
+  tipoColuna(alias: string, coluna: string): string {
+    return this.tabelas().find(t => t.alias === alias)?.colunas.find(c => c.coluna === coluna)?.tipo ?? '';
+  }
+
+  // ---------- etapa 4: filtros ----------
+
+  adicionarFiltro(): void {
+    const primeira = this.tabelas()[0];
+    if (!primeira) return;
+    const coluna = primeira.colunas[0]?.coluna ?? '';
+    this.filtros.update(arr => [...arr, {
+      id: this.proximoFiltroId++, tabelaAlias: primeira.alias,
+      coluna, operador: 'igual a', valor: '', valor2: ''
+    }]);
+    this.marcarAlterado();
+  }
+
+  removerFiltro(id: number): void {
+    this.filtros.update(arr => arr.filter(f => f.id !== id));
+    this.marcarAlterado();
+  }
+
+  private defOperador(rotulo: string): OperadorAmigavel {
+    return this.operadores.find(o => o.rotulo === rotulo) ?? this.operadores[0];
+  }
+
+  precisaValor(f: FiltroSimples): boolean {
+    return this.defOperador(f.operador).precisaValor;
+  }
+
+  precisaValor2(f: FiltroSimples): boolean {
+    return this.defOperador(f.operador).precisaValor2;
+  }
+
+  tipoInput(f: FiltroSimples): string {
+    const tipo = this.tipoColuna(f.tabelaAlias, f.coluna).toLowerCase();
+    if (tipo.includes('date') && !tipo.includes('datetime')) return 'date';
+    if (tipo.includes('time') || tipo.includes('datetime')) return 'datetime-local';
+    if (tipo.includes('int') || tipo.includes('decimal') || tipo.includes('numeric') || tipo.includes('float')) return 'number';
+    return 'text';
+  }
+
+  // ---------- etapa 5: ordenação ----------
+
+  adicionarOrdenacao(): void {
+    const primeira = this.tabelas()[0];
+    if (!primeira) return;
+    this.ordenacoes.update(arr => [...arr, {
+      tabelaAlias: primeira.alias, coluna: primeira.colunas[0]?.coluna ?? '', direcao: 'ASC'
+    }]);
+    this.marcarAlterado();
+  }
+
+  removerOrdenacao(index: number): void {
+    this.ordenacoes.update(arr => arr.filter((_, i) => i !== index));
+    this.marcarAlterado();
+  }
+
+  // ---------- avançado ----------
+
+  alternarAgrupar(chave: string): void {
+    this.agruparPor.update(arr =>
+      arr.includes(chave) ? arr.filter(x => x !== chave) : [...arr, chave]);
+    this.marcarAlterado();
+  }
+
+  // ---------- navegação ----------
+
+  etapaValida(id: number): boolean {
+    if (id === 1) return this.tabelas().length >= 1;
+    if (id === 2) return this.tabelas().length >= 1 && this.totalCampos() >= 1;
+    return this.etapaValida(2);
+  }
+
+  podeIrPara(id: number): boolean {
+    if (id <= this.etapa()) return true;
+    for (let i = 1; i < id; i++) {
+      if (i <= 2 && !this.etapaValida(i)) return false;
+    }
+    return this.etapaValida(2);
+  }
+
+  irParaEtapa(id: number): void {
+    if (id < 1 || id > 7 || !this.podeIrPara(id)) return;
+    this.etapa.set(id);
+    if (id === 7 && !this.sqlGerado()) this.gerarSQL();
+  }
+
+  marcarAlterado(): void {
+    this.sqlGerado.set('');
+    this.avisoSql.set(null);
+  }
+
+  // ---------- SQL via backend ----------
+
+  private montarRequisicao(): Record<string, unknown> {
+    const tabelas = this.tabelas();
+    const colunas: string[] = [];
+    for (const t of tabelas) {
+      for (const c of t.colunasSelecionadas) colunas.push(`${t.nome}.${c}`);
+    }
+    const selecionadas = new Set(tabelas.map(t => `${t.schema}.${t.nome}`));
+    const relsBackend = this.relacoes()
+      .filter(r => selecionadas.has(r.tabelaOrigem) && selecionadas.has(r.tabelaDestino))
+      .map(r => ({
+        Tipo: r.tipo, TabelaOrigem: r.tabelaOrigem, ColunaOrigem: r.colunaOrigem,
+        TabelaDestino: r.tabelaDestino, ColunaDestino: r.colunaDestino,
+        Score: r.score, Motivos: r.motivos ?? []
+      }));
+    for (const [chave, r] of Object.entries(this.relacaoUsadaPorTabela())) {
+      if (!relsBackend.some(x => x['TabelaOrigem'] === r.tabelaOrigem && x['TabelaDestino'] === r.tabelaDestino
+        && x['ColunaOrigem'] === r.colunaOrigem && x['ColunaDestino'] === r.colunaDestino)) {
+        relsBackend.push({
+          Tipo: r.tipo, TabelaOrigem: r.tabelaOrigem, ColunaOrigem: r.colunaOrigem,
+          TabelaDestino: r.tabelaDestino, ColunaDestino: r.colunaDestino,
+          Score: r.score, Motivos: r.motivos ?? []
+        });
       }
-      return novosGrupos.length > 0 ? novosGrupos : [this.criarGrupoPadrao()];
-    });
-  }
-
-  adicionarGrupo(): void {
-    this.condicoesWhere.update(arr => [...arr, this.criarGrupoPadrao()]);
-  }
-
-  removerGrupo(index: number): void {
-    this.condicoesWhere.update(grupos => {
-      const novos = grupos.filter((_, i) => i !== index);
-      return novos.length > 0 ? novos : [this.criarGrupoPadrao()];
-    });
-  }
-
-  trocarConectorGrupo(index: number): void {
-    this.condicoesWhere.update(grupos =>
-      grupos.map((g, i) =>
-        i === index ? { ...g, conectorGrupo: g.conectorGrupo === 'AND' ? 'OR' : 'AND' } : g
-      )
-    );
-  }
-
-  trocarConectorCondicao(grupoIndex: number, condicaoIndex: number): void {
-    this.condicoesWhere.update(grupos =>
-      grupos.map((g, gi) => {
-        if (gi !== grupoIndex) return g;
-        const condicoes = [...g.condicoes];
-        if (condicaoIndex < condicoes.length) {
-          condicoes[condicaoIndex] = {
-            ...condicoes[condicaoIndex],
-            conector: condicoes[condicaoIndex].conector === 'AND' ? 'OR' : 'AND'
-          };
+    }
+    const where = this.filtros()
+      .filter(f => f.coluna && (!this.precisaValor(f) || f.valor !== ''))
+      .map(f => {
+        const def = this.defOperador(f.operador);
+        const tabela = this.nomeTabelaPorAlias(f.tabelaAlias);
+        let operador = def.sql;
+        let valor: string | undefined = f.valor;
+        if (def.sql === 'LIKE') {
+          if (f.operador === 'contém') valor = `%${f.valor}%`;
+          else if (f.operador === 'começa com') valor = `${f.valor}%`;
+          else valor = `%${f.valor}`;
         }
-        return { ...g, condicoes };
-      })
-    );
-  }
-
-  private criarGrupoPadrao(): GrupoWhere {
+        if (!def.precisaValor) { operador = def.sql; valor = undefined; }
+        return {
+          Coluna: `${tabela}.${f.coluna}`, Operador: operador,
+          Valor: valor, Valor2: this.precisaValor2(f) ? f.valor2 : undefined, Logica: 'AND'
+        };
+      });
+    const orderBy = this.ordenacoes()
+      .filter(o => o.coluna)
+      .map(o => ({
+        Coluna: `${this.nomeTabelaPorAlias(o.tabelaAlias)}.${o.coluna}`,
+        Ascendente: o.direcao === 'ASC'
+      }));
+    const groupBy = this.agruparPor().map(g => {
+      const [alias, ...resto] = g.split('.');
+      return { Coluna: `${this.nomeTabelaPorAlias(alias)}.${resto.join('.')}`, Agregacao: null };
+    });
     return {
-      condicoes: [{
-        coluna: '',
-        tabelaAlias: this.tabelasSelecionadas()[0]?.alias || '',
-        operador: '=',
-        valor: '',
-        valor2: '',
-        conector: 'AND'
-      }],
-      conectorGrupo: 'AND'
+      Tabelas: tabelas.map(t => `${t.schema}.${t.nome}`),
+      Colunas: colunas,
+      Relacionamentos: relsBackend,
+      WhereConditions: where,
+      OrderBy: orderBy,
+      GroupBy: groupBy,
+      Limite: this.limite,
+      Ctes: []
     };
   }
 
-  colunasPorAlias(alias: string): string[] {
-    const t = this.tabelasSelecionadas().find(x => x.alias === alias);
-    return t ? t.colunas.map(c => c.coluna) : [];
+  verSQL(): void {
+    this.gerarSQL(() => this.irParaEtapa(7));
   }
 
-  // ========== ORDER BY ==========
-
-  adicionarOrderBy(): void {
-    const primeiraTabela = this.tabelasSelecionadas()[0];
-    if (!primeiraTabela) return;
-    this.condicoesOrderBy.update(arr => [
-      ...arr,
-      { coluna: '', tabelaAlias: primeiraTabela.alias, direcao: 'ASC' }
-    ]);
-  }
-
-  removerOrderBy(index: number): void {
-    this.condicoesOrderBy.update(arr => arr.filter((_, i) => i !== index));
-  }
-
-  trocarDirecaoOrderBy(index: number): void {
-    this.condicoesOrderBy.update(arr =>
-      arr.map((o, i) => i === index ? { ...o, direcao: o.direcao === 'ASC' ? 'DESC' : 'ASC' } : o)
-    );
-  }
-
-  moverOrderByUp(index: number): void {
-    if (index <= 0) return;
-    this.condicoesOrderBy.update(arr => {
-      const novos = [...arr];
-      [novos[index - 1], novos[index]] = [novos[index], novos[index - 1]];
-      return novos;
-    });
-  }
-
-  moverOrderByDown(index: number): void {
-    const arr = this.condicoesOrderBy();
-    if (index >= arr.length - 1) return;
-    this.condicoesOrderBy.update(arr => {
-      const novos = [...arr];
-      [novos[index], novos[index + 1]] = [novos[index + 1], novos[index]];
-      return novos;
-    });
-  }
-
-  // ========== GROUP BY / HAVING ==========
-
-  toggleColunaGroupBy(colunaComAlias: string): void {
-    this.colunasGroupBy.update(arr => {
-      const idx = arr.indexOf(colunaComAlias);
-      if (idx >= 0) {
-        return arr.filter(c => c !== colunaComAlias);
-      } else {
-        return [...arr, colunaComAlias];
+  gerarSQL(depois?: () => void): void {
+    if (this.tabelas().length === 0 || this.totalCampos() === 0) return;
+    this.gerandoSql.set(true);
+    this.db.executarQueryBuilderAvançado(this.montarRequisicao()).subscribe({
+      next: (r: { sqlGerado?: string; aviso?: string }) => {
+        this.sqlGerado.set(r?.sqlGerado ?? '');
+        this.avisoSql.set(r?.aviso ?? null);
+        this.gerandoSql.set(false);
+        depois?.();
+      },
+      error: () => {
+        this.sqlGerado.set(this.montarSQLLocal());
+        this.avisoSql.set('Serviço de montagem indisponível — SQL gerado localmente.');
+        this.gerandoSql.set(false);
+        depois?.();
       }
     });
   }
 
-  limparGroupBy(): void {
-    this.colunasGroupBy.set([]);
-    this.havingClause = '';
-  }
-
-  // ========== CTEs ==========
-
-abrirModalCte(): void {
-    this.cteNome = '';
-    this.cteSql = '';
-    this.cteReferencia = true;
-    this.cteAberta = true;
-  }
-
-  fecharModalCte(): void {
-    this.cteAberta = false;
-  }
-
-  salvarCte(): void {
-    if (!this.cteNome.trim() || !this.cteSql.trim()) return;
-    const cte: CteConfig = {
-      nome: this.cteNome.trim(),
-      sql: this.cteSql.trim()
-    };
-    this.ctes.update(arr => [...arr, cte]);
-    this.fecharModalCte();
-  }
-
-  removerCte(index: number): void {
-    this.ctes.update(arr => arr.filter((_, i) => i !== index));
-  }
-
-  // ========== Utilidades ==========
-
-  readonly colunasTabelaOrigem = computed(() => {
-    const t = this.tabelasSelecionadas().find(x => x.alias === this.joinManual.origem);
-    return t ? t.colunas.map(c => c.coluna) : [];
-  });
-
-  readonly colunasTabelaDestino = computed(() => {
-    const t = this.tabelasSelecionadas().find(x => x.alias === this.joinManual.destino);
-    return t ? t.colunas.map(c => c.coluna) : [];
-  });
-
-  readonly colunasDeTodasTabelas = computed(() => {
-    const cols: string[] = [];
-    for (const t of this.tabelasSelecionadas()) {
-      for (const c of t.colunas) {
-        cols.push(`${t.alias}.${c.coluna}`);
+  /** Contingência local com os mesmos aliases amigáveis da tela. */
+  private montarSQLLocal(): string {
+    const tabelas = this.tabelas();
+    const cols = tabelas.flatMap(t =>
+      t.colunasSelecionadas.length > 0
+        ? t.colunasSelecionadas.map(c => `${t.alias}.${c}`)
+        : [`${t.alias}.*`]).join(', ');
+    let sql = `SELECT TOP ${this.limite} ${cols}\nFROM ${tabelas[0].schema}.${tabelas[0].nome} ${tabelas[0].alias}`;
+    for (const t of tabelas.slice(1)) {
+      const r = this.joinDaTabela(t);
+      if (r) {
+        const origemSel = tabelas.some(x => `${x.schema}.${x.nome}` === r.tabelaOrigem);
+        sql += `\nINNER JOIN ${t.schema}.${t.nome} ${t.alias}\n    ON ${r.tabelaOrigem}.${r.colunaOrigem} = ${r.tabelaDestino}.${r.colunaDestino}`;
+        void origemSel;
       }
     }
-    return cols;
-  });
-
-  getSchemaByAlias(alias: string): string {
-    const t = this.tabelasSelecionadas().find(x => x.alias === alias);
-    return t?.schema || 'dbo';
-  }
-
-  getNomeByAlias(alias: string): string {
-    const t = this.tabelasSelecionadas().find(x => x.alias === alias);
-    return t?.nome || '';
-  }
-
-  atualizarJoinsSugeridos(): void {
-    const tabelas = this.tabelasSelecionadas();
-    if (tabelas.length < 2) {
-      this.joinsSugeridos.set([]);
-      return;
-    }
-
-    const sugestoes: JoinConfig[] = [];
-    for (let i = 0; i < tabelas.length; i++) {
-      for (let j = i + 1; j < tabelas.length; j++) {
-        const t1 = tabelas[i];
-        const t2 = tabelas[j];
-        this.db.relacionamentos(t1.schema, true, 100).subscribe(rels => {
-          for (const rel of rels) {
-            if ((rel.tabelaOrigem === `${t1.schema}.${t1.nome}` && rel.tabelaDestino === `${t2.schema}.${t2.nome}`) ||
-                (rel.tabelaOrigem === `${t2.schema}.${t2.nome}` && rel.tabelaDestino === `${t1.schema}.${t1.nome}`)) {
-              const origem = rel.tabelaOrigem === `${t1.schema}.${t1.nome}` ? t1.alias : t2.alias;
-              const destino = rel.tabelaOrigem === `${t1.schema}.${t1.nome}` ? t2.alias : t1.alias;
-              const colOrigem = rel.tabelaOrigem === `${t1.schema}.${t1.nome}` ? rel.colunaOrigem : rel.colunaDestino;
-              const colDestino = rel.tabelaOrigem === `${t1.schema}.${t1.nome}` ? rel.colunaDestino : rel.colunaOrigem;
-
-              sugestoes.push({
-                origem,
-                destino,
-                colunaOrigem: colOrigem,
-                colunaDestino: colDestino,
-                tipo: rel.tipo === 'Confirmada' ? 'INNER' : 'LEFT',
-                confirmada: rel.tipo === 'Confirmada'
-              });
-            }
-          }
-          this.joinsSugeridos.set([...sugestoes]);
-        });
+    const wheres = this.filtros().filter(f => f.coluna).map(f => {
+      const def = this.defOperador(f.operador);
+      const ref = `${f.tabelaAlias}.${f.coluna}`;
+      if (!def.precisaValor) return `${ref} ${def.sql}`;
+      if (def.sql === 'BETWEEN') return `${ref} BETWEEN '${f.valor}' AND '${f.valor2}'`;
+      if (def.sql === 'LIKE') {
+        const v = f.operador === 'contém' ? `%${f.valor}%` : f.operador === 'começa com' ? `${f.valor}%` : `%${f.valor}`;
+        return `${ref} LIKE '${v}'`;
       }
-    }
-  }
-
-  joinJaAdicionado(j: JoinConfig): boolean {
-    return this.joinsManuais().some(m =>
-      m.origem === j.origem && m.destino === j.destino &&
-      m.colunaOrigem === j.colunaOrigem && m.colunaDestino === j.colunaDestino
-    );
-  }
-
-  adicionarJoin(j: JoinConfig): void {
-    if (this.joinJaAdicionado(j)) return;
-    this.joinsManuais.update(arr => [...arr, { ...j }]);
-  }
-
-  adicionarJoinManual(): void {
-    if (!this.joinManual.origem || !this.joinManual.destino ||
-        !this.joinManual.colunaOrigem || !this.joinManual.colunaDestino) return;
-    if (this.joinManual.origem === this.joinManual.destino) return;
-
-    this.joinsManuais.update(arr => [...arr, { ...this.joinManual }]);
-    this.joinManual = { origem: '', destino: '', colunaOrigem: '', colunaDestino: '', tipo: 'INNER', confirmada: false };
-  }
-
-  removerJoinManual(j: JoinConfig): void {
-    this.joinsManuais.update(arr => arr.filter(m => m !== j));
-  }
-
-  removerJoinSugerido(j: JoinConfig): void {
-    this.joinsSugeridos.update(arr => arr.filter(s => s !== j));
-  }
-
-  // ========== GERAR SQL ==========
-
-  gerarSQL(): void {
-    const tabelas = this.tabelasSelecionadas();
-    if (tabelas.length === 0) return;
-
-    const joins = this.joinsManuais();
-    const ctes = this.ctes();
-    const where = this.condicoesWhere();
-    const orderBy = this.condicoesOrderBy();
-    const groupBy = this.colunasGroupBy();
-    const having = this.havingClause;
-    const limitTop = this.limitTop;
-
-    let sql = '';
-
-    // WITH (CTEs)
-    if (ctes.length > 0) {
-      const cteClauses = ctes.map(cte => `${cte.nome} AS (${cte.sql})`).join(',\n');
-      sql += `WITH ${cteClauses}\n`;
-    }
-
-    // SELECT
-    const primeiraTabela = tabelas[0];
-
-    if (tabelas.length === 1) {
-      const t = tabelas[0];
-      const cols = t.colunasSelecionadas.length > 0
-        ? t.colunasSelecionadas.map(c => `${t.alias}.[${c}]`).join(', ')
-        : `${t.alias}.*`;
-      sql += `SELECT ${cols}\nFROM [${t.schema}].[${t.nome}] ${t.alias}`;
-    } else {
-      // Múltiplas tabelas com JOINs
-      const cols = tabelas.flatMap(t =>
-        t.colunasSelecionadas.length > 0
-          ? t.colunasSelecionadas.map(c => `${t.alias}.[${c}]`)
-          : [`${t.alias}.*`]
-      ).join(', ');
-
-      sql += `SELECT ${cols}\nFROM [${primeiraTabela.schema}].[${primeiraTabela.nome}] ${primeiraTabela.alias}`;
-
-      for (const j of joins) {
-        sql += `\n${j.tipo} JOIN [${this.getSchemaByAlias(j.destino)}].[${this.getNomeByAlias(j.destino)}] ${j.destino}
-  ON ${j.origem}.[${j.colunaOrigem}] = ${j.destino}.[${j.colunaDestino}]`;
-      }
-    }
-
-    // WHERE
-    if (where.length > 0) {
-      const whereClauses = where.map(grupo => {
-        const condicoesStr = grupo.condicoes.map(c => {
-          let valorStr = c.valor;
-          if (c.operador === 'BETWEEN') {
-            return `${c.tabelaAlias}.[${c.coluna}] ${c.operador} '${c.valor}' AND '${c.valor2 || ''}'`;
-          }
-          if (c.operador === 'IS NULL' || c.operador === 'IS NOT NULL') {
-            return `${c.tabelaAlias}.[${c.coluna}] ${c.operador}`;
-          }
-          if (c.operador === 'IN') {
-            return `${c.tabelaAlias}.[${c.coluna}] ${c.operador} (${c.valor})`;
-          }
-          return `${c.tabelaAlias}.[${c.coluna}] ${c.operador} '${valorStr}'`;
-        });
-        const grupoStr = condicoesStr.join(` ${grupo.conectorGrupo} `);
-        return `(${grupoStr})`;
-      });
-      sql += `\nWHERE ${whereClauses.join('\n  ')}`;
-    }
-
-    // GROUP BY
-    if (groupBy.length > 0) {
-      sql += `\nGROUP BY ${groupBy.map(gb => gb).join(', ')}`;
-    }
-
-    // HAVING
-    if (having) {
-      sql += `\nHAVING ${having}`;
-    }
-
-    // ORDER BY
-    if (orderBy.length > 0) {
-      const orderClauses = orderBy.map(o => {
-        const alias = o.tabelaAlias;
-        const col = o.coluna;
-        return `${alias}.[${col}] ${o.direcao}`;
-      });
-      sql += `\nORDER BY ${orderClauses.join(', ')}`;
-    }
-
-    // LIMIT/TOP
-    // Se já usou SELECT TOP na primeira tabela, substituir; senão adicionar
-    if (limitTop > 0) {
-      // Verifica se a query já começa com SELECT TOP
-      if (ctes.length > 0) {
-        // Com CTE, adiciona TOP após SELECT
-        sql = sql.replace('SELECT ', `SELECT TOP ${limitTop} `);
-      } else if (tabelas.length === 1) {
-        // Substitui SELECT por SELECT TOP
-        sql = sql.replace('SELECT ', `SELECT TOP ${limitTop} `);
-      } else {
-        sql += `\nOFFSET 0 ROWS FETCH NEXT ${limitTop} ROWS ONLY`;
-      }
-    }
-
-    this.sqlGerado.set(sql);
-  }
-
-  executarSQL(): void {
-    const sql = this.sqlGerado();
-    if (!sql) return;
-    this.carregando.set(true);
-    this.db.executarQuery({ sql, limite: this.limitTop, timeoutSegundos: 30 }).subscribe({
-      next: r => { this.resultado.set(r); this.carregando.set(false); },
-      error: () => { this.resultado.set({ sucesso: false, mensagemErro: 'Falha ao executar' }); this.carregando.set(false); }
+      return `${ref} ${def.sql} '${f.valor}'`;
     });
+    if (wheres.length > 0) sql += `\nWHERE ${wheres.join(' AND ')}`;
+    if (this.ordenacoes().length > 0) {
+      sql += `\nORDER BY ${this.ordenacoes().map(o => `${o.tabelaAlias}.${o.coluna} ${o.direcao}`).join(', ')}`;
+    }
+    return sql + ';';
   }
 
   copiarSQL(): void {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && this.sqlGerado()) {
       navigator.clipboard.writeText(this.sqlGerado());
     }
   }
 
-  limpar(): void {
-    this.tabelasSelecionadas.set([]);
-    this.joinsManuais.set([]);
-    this.joinsSugeridos.set([]);
-    this.sqlGerado.set('');
-    this.resultado.set(null);
-    this.aliasCounter = 0;
-    this.condicoesWhere.set([]);
-    this.condicoesOrderBy.set([]);
-    this.colunasGroupBy.set([]);
-    this.havingClause = '';
-    this.limitTop = 100;
-    this.ctes.set([]);
+  executar(): void {
+    const rodar = () => {
+      const sql = this.sqlGerado();
+      if (!sql) return;
+      this.carregando.set(true);
+      this.db.executarQuery({ sql, limite: this.limite, timeoutSegundos: this.timeout }).subscribe({
+        next: r => {
+          this.resultado.set(r);
+          this.carregando.set(false);
+          this.irParaEtapa(7);
+        },
+        error: () => {
+          this.resultado.set({
+            sucesso: false, colunas: [], linhas: [],
+            quantidadeRegistros: 0, duracaoMs: 0, mensagemErro: 'Falha ao executar consulta.'
+          });
+          this.carregando.set(false);
+          this.irParaEtapa(7);
+        }
+      });
+    };
+    if (!this.sqlGerado()) this.gerarSQL(rodar);
+    else rodar();
   }
+
+  reiniciar(): void {
+    this.tabelas.set([]);
+    this.relacoes.set([]);
+    this.relacaoUsadaPorTabela.set({});
+    this.filtros.set([]);
+    this.ordenacoes.set([]);
+    this.agruparPor.set([]);
+    this.having = '';
+    this.sqlGerado.set('');
+    this.avisoSql.set(null);
+    this.resultado.set(null);
+    this.etapa.set(1);
+  }
+
+  readonly resumo = computed(() => ({
+    tabelas: this.tabelas().length,
+    campos: this.totalCampos(),
+    filtros: this.filtros().length,
+    ordenacoes: this.ordenacoes().length
+  }));
 }

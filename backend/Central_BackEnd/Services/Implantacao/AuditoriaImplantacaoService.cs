@@ -19,7 +19,10 @@ public class AuditoriaImplantacaoService : IAuditoriaImplantacaoService
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        // Entidades EF têm navegações circulares (ex.: Tarefa ↔ Responsaveis).
+        // Ignora ciclos para a linha de auditoria ser salva em vez de descartada.
+        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
     };
 
     public AuditoriaImplantacaoService(AppDbContext db, ILogger<AuditoriaImplantacaoService> logger)

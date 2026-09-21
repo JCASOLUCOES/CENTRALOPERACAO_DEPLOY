@@ -41,4 +41,11 @@ public class Etapa
 
     [Column("ETP_DataInclusao")]
     public DateTime DataInclusao { get; set; } = DateTime.Now;
+
+    [MaxLength(50)]
+    [Column("ETP_UsuarioAlteracao")]
+    public string? UsuarioAlteracao { get; set; }
+
+    [Column("ETP_DataAlteracao")]
+    public DateTime? DataAlteracao { get; set; }
 }

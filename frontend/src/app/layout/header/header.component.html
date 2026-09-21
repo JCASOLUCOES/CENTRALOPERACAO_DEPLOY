@@ -78,8 +78,15 @@
             <i class="bi" [ngClass]="isDark ? 'bi-sun-fill' : 'bi-moon-stars-fill'" aria-hidden="true"></i>
           </button>
         </li>
-        <li class="nav-item user-nav" ngbDropdown *ngIf="currentUser">
-          <button class="user-nav__trigger" ngbDropdownToggle [attr.aria-label]="'Menu do usuário: ' + currentUser.nome">
+        <li class="nav-item user-nav"
+            #userDropdownEl
+            ngbDropdown
+            #userDropdown="ngbDropdown"
+            [open]="isOpen"
+            (openChange)="isOpen = $event"
+            autoClose="outside"
+            *ngIf="currentUser">
+          <button class="user-nav__trigger" type="button" ngbDropdownToggle [attr.aria-label]="'Menu do usuário: ' + currentUser.nome" (click)="toggleUserMenu($event)">
             <span class="user-nav__avatar">{{ getIniciais(currentUser) }}</span>
             <span class="user-nav__name">{{ currentUser.nome }}</span>
             <span class="user-nav__caret" aria-hidden="true">▾</span>
@@ -91,24 +98,24 @@
               <span class="user-nav__user-role">{{ currentUser.perfil }}</span>
             </div>
             <div class="user-nav__divider"></div>
-            <button class="user-nav__item" ngbDropdownItem>
+            <button class="user-nav__item" type="button" ngbDropdownItem>
               <i class="bi bi-person" aria-hidden="true"></i> Meu Perfil
             </button>
-            <button class="user-nav__item" ngbDropdownItem>
+            <button class="user-nav__item" type="button" ngbDropdownItem>
               <i class="bi bi-sliders" aria-hidden="true"></i> Preferências
             </button>
-            <button class="user-nav__item" ngbDropdownItem (click)="toggleTheme()">
+            <button class="user-nav__item" type="button" ngbDropdownItem (click)="toggleTheme()">
               <i class="bi" [ngClass]="isDark ? 'bi-sun-fill' : 'bi-moon-stars-fill'" aria-hidden="true"></i>
               {{ isDark ? 'Modo claro' : 'Modo escuro' }}
             </button>
-            <button class="user-nav__item" ngbDropdownItem>
+            <button class="user-nav__item" type="button" ngbDropdownItem>
               <i class="bi bi-info-circle" aria-hidden="true"></i> Sobre o Sistema
             </button>
-            <button class="user-nav__item" ngbDropdownItem *ngIf="currentUser.perfil === 'Administrador'">
+            <button class="user-nav__item" type="button" ngbDropdownItem *ngIf="currentUser.perfil === 'Administrador'" routerLink="/admin">
               <i class="bi bi-gear" aria-hidden="true"></i> Administração
             </button>
             <div class="user-nav__divider"></div>
-            <button class="user-nav__item user-nav__item--danger" ngbDropdownItem (click)="logout()">
+            <button class="user-nav__item user-nav__item--danger" type="button" ngbDropdownItem (click)="logout()">
               <i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sair
             </button>
             <div class="user-nav__footer">

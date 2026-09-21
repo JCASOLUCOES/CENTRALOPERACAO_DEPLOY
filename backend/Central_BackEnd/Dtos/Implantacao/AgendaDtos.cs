@@ -1,6 +1,26 @@
 using Central_BackEnd.Models.Implantacao;
+using System.ComponentModel.DataAnnotations;
 
 namespace Central_BackEnd.Dtos.Implantacao;
+
+public record TipoEventoResponse(
+    int Id,
+    string Nome,
+    string? Cor);
+
+public record OperadorResumo(
+    string Id,
+    string Nome,
+    string? Email);
+
+public record FuncaoResumo(
+    int Id,
+    string Descricao,
+    string? Classificacao);
+
+public record AgendaParticipanteResponse(
+    string ParticipanteId,
+    string? ParticipanteNome);
 
 public record AgendaResumo(
     int Id,
@@ -12,11 +32,13 @@ public record AgendaResumo(
     bool DiaInteiro,
     string? Cor,
     AgendaTipo Tipo,
-    AgendaVisibilidade Visibilidade,
+    int? TipoId,
+    string? TipoNome,
+    string? TipoCor,
     int? ProjetoId,
     string? ProjetoCodigo,
-    bool Recorrente,
-    AgendaRecorrencia PadraoRecorrencia);
+    PrioridadeAgenda Prioridade,
+    int? SLAMinutos);
 
 public record AgendaDetalhe(
     int Id,
@@ -30,42 +52,69 @@ public record AgendaDetalhe(
     bool DiaInteiro,
     string? Cor,
     AgendaTipo Tipo,
-    AgendaVisibilidade Visibilidade,
+    int? TipoId,
+    string? TipoNome,
+    string? TipoCor,
     int? ProjetoId,
     string? ProjetoCodigo,
-    bool Recorrente,
-    AgendaRecorrencia PadraoRecorrencia,
+    List<AgendaParticipanteResponse> Participantes,
     string? UsuarioInclusao,
     DateTime DataInclusao,
     string? UsuarioAlteracao,
-    DateTime? DataAlteracao);
+    DateTime? DataAlteracao,
+    PrioridadeAgenda Prioridade,
+    int? SLAMinutos);
 
 public record AgendaCriarRequest(
-    string Titulo,
+    [Required][MaxLength(200)] string Titulo,
     string? Descricao,
     string? Local,
-    DateTime DataInicio,
+    [Required] DateTime DataInicio,
     DateTime? DataFim,
     bool DiaInteiro,
-    string? Cor,
-    AgendaTipo Tipo,
-    AgendaVisibilidade Visibilidade,
+    int? TipoId,
+    [Required][MaxLength(15)] string ResponsavelId,
     int? ProjetoId,
-    bool Recorrente,
-    AgendaRecorrencia PadraoRecorrencia,
-    string UsuarioInclusao);
+    List<string>? ParticipantesIds,
+    int Prioridade,
+    int? SLAMinutos);
 
 public record AgendaAtualizarRequest(
-    string Titulo,
+    [Required][MaxLength(200)] string Titulo,
     string? Descricao,
     string? Local,
-    DateTime DataInicio,
+    [Required] DateTime DataInicio,
     DateTime? DataFim,
     bool DiaInteiro,
-    string? Cor,
-    AgendaTipo Tipo,
-    AgendaVisibilidade Visibilidade,
+    int? TipoId,
+    [Required][MaxLength(15)] string ResponsavelId,
     int? ProjetoId,
-    bool Recorrente,
-    AgendaRecorrencia PadraoRecorrencia,
-    string UsuarioAlteracao);
+    List<string>? ParticipantesIds,
+    string UsuarioAlteracao,
+    int Prioridade,
+    int? SLAMinutos);
+
+public record AgendaMoverRequest(
+    [Required] DateTime NovaDataInicio,
+    [Required] DateTime NovaDataFim);
+
+public record AgendaCriarLoteRequest(
+    [Required][MaxLength(200)] string Titulo,
+    string? Descricao,
+    string? Local,
+    [Required] DateTime DataInicio,
+    DateTime? DataFim,
+    bool DiaInteiro,
+    int? TipoId,
+    [Required][MaxLength(15)] string ResponsavelId,
+    int? ProjetoId,
+    List<string>? ParticipantesIds,
+    int Prioridade,
+    int? SLAMinutos,
+    [Required] DateTime DataRepeticaoFim,
+    /// <summary>Padrão de recorrência: 0/1=Diária, 2=Semanal, 3=Mensal (AgendaRecorrencia).</summary>
+    int PadraoRecorrencia = 1);
+
+public record AgendaLoteResponse(
+    int TotalCriados,
+    List<AgendaDetalhe> Eventos);

@@ -3,7 +3,7 @@
 }
 
 .tdh {
-  max-width: 1060px;
+  max-width: 92.5rem;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -33,18 +33,18 @@
   z-index: 0;
 
   &--um {
-    width: 200px;
-    height: 200px;
-    right: -60px;
-    top: -80px;
+    width: 12.5rem;
+    height: 12.5rem;
+    right: -3.75rem;
+    top: -5rem;
     background: rgba(37, 211, 102, 0.14);
   }
 
   &--dois {
-    width: 160px;
-    height: 160px;
-    right: 110px;
-    bottom: -90px;
+    width: 10rem;
+    height: 10rem;
+    right: 6.875rem;
+    bottom: -5.625rem;
     background: rgba(37, 99, 235, 0.12);
   }
 }
@@ -64,8 +64,8 @@
 }
 
 .tdh__icone {
-  width: 56px;
-  height: 56px;
+  width: 3.5rem;
+  height: 3.5rem;
   border-radius: 1rem;
   display: inline-flex;
   align-items: center;
@@ -176,7 +176,7 @@
 
 .tdh__indice-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   gap: 0.5rem;
 }
 
@@ -207,8 +207,8 @@
 }
 
 .tdh__link-num {
-  width: 26px;
-  height: 26px;
+  width: 1.625rem;
+  height: 1.625rem;
   border-radius: 0.5rem;
   display: inline-flex;
   align-items: center;
@@ -261,8 +261,8 @@
 }
 
 .tdh__secao-num {
-  width: 34px;
-  height: 34px;
+  width: 2.125rem;
+  height: 2.125rem;
   border-radius: 0.7rem;
   display: inline-flex;
   align-items: center;
@@ -608,8 +608,8 @@
   }
 
   .tdh__icone {
-    width: 48px;
-    height: 48px;
+    width: 3rem;
+    height: 3rem;
     font-size: 1.3rem;
   }
 

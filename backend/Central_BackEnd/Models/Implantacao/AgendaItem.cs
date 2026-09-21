@@ -21,10 +21,8 @@ public enum AgendaVisibilidade
 {
     [Display(Name = "Público")]
     Publico = 0,
-    [Display(Name = "Equipe")]
-    Equipe = 1,
     [Display(Name = "Privado")]
-    Privado = 2
+    Privado = 1
 }
 
 public enum AgendaRecorrencia
@@ -36,6 +34,16 @@ public enum AgendaRecorrencia
     Semanal = 2,
     [Display(Name = "Mensal")]
     Mensal = 3
+}
+
+public enum PrioridadeAgenda
+{
+    [Display(Name = "Normal")]
+    Normal = 0,
+    [Display(Name = "Alta")]
+    Alta = 1,
+    [Display(Name = "Crítica")]
+    Critica = 2
 }
 
 [Table("IMPL_Agenda")]
@@ -89,11 +97,25 @@ public class AgendaItem
     [ForeignKey("ProjetoId")]
     public Projeto? Projeto { get; set; }
 
+    [Column("AGD_TipoId")]
+    public int? TipoId { get; set; }
+
+    [ForeignKey("TipoId")]
+    public TipoEvento? TipoEvento { get; set; }
+
     [Column("AGD_Recorrente")]
     public bool Recorrente { get; set; }
 
     [Column("AGD_PadraoRecorrencia")]
     public AgendaRecorrencia PadraoRecorrencia { get; set; } = AgendaRecorrencia.Nenhuma;
+
+    /// <summary>Prioridade explícita do evento (0=Normal, 1=Alta, 2=Crítica).</summary>
+    [Column("AGD_Prioridade")]
+    public PrioridadeAgenda Prioridade { get; set; } = PrioridadeAgenda.Normal;
+
+    /// <summary>SLA em minutos (opcional). O frontend calcula o restante.</summary>
+    [Column("AGD_SLAMinutos")]
+    public int? SLAMinutos { get; set; }
 
     [MaxLength(15)]
     [Column("AGD_UsuarioInclusao")]
@@ -108,4 +130,6 @@ public class AgendaItem
 
     [Column("AGD_DataAlteracao")]
     public DateTime? DataAlteracao { get; set; }
+
+    public List<AgendaParticipante> Participantes { get; set; } = new();
 }

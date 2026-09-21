@@ -267,10 +267,6 @@ export class TableDetailComponent implements OnInit, OnDestroy {
       .componentInstance.trigger = trigger;
   }
 
-  abrirDiagrama(): void {
-    this.router.navigate(['/database/diagrama'], { queryParams: { tabela: `${this.schema()}.${this.tabela()}` } });
-  }
-
   abrirConsultas(): void {
     const sql = `SELECT TOP ${this.limiteConsulta()} * FROM [${this.schema()}].[${this.tabela()}]`;
     sessionStorage.setItem('db-query-prefill', sql);
@@ -280,7 +276,17 @@ export class TableDetailComponent implements OnInit, OnDestroy {
   abrirQueryBuilder(): void {
     const tabelas = [`${this.schema()}.${this.tabela()}`];
     sessionStorage.setItem('db-query-builder-tables', JSON.stringify(tabelas));
-    this.router.navigate(['/database/query-builder'], { queryParams: { builder: 'true' } });
+    this.router.navigate(['/database/consultas'], {
+      queryParams: { aba: 'builder', tabela: `${this.schema()}.${this.tabela()}` }
+    });
+  }
+
+  abrirQueryBuilderComRelacionamento(fk: DatabaseRelationship): void {
+    const tabelas = [fk.tabelaOrigem, fk.tabelaDestino];
+    sessionStorage.setItem('db-query-builder-tables', JSON.stringify(tabelas));
+    this.router.navigate(['/database/consultas'], {
+      queryParams: { aba: 'builder', caminho: tabelas.join(',') }
+    });
   }
 
   toggleColuna(coluna: string): void {

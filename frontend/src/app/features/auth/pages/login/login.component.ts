@@ -32,7 +32,7 @@ export class LoginComponent implements OnInit {
   constructor() {
     this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
     if (this.authService.isAuthenticated()) {
-      this.router.navigateByUrl(this.returnUrl);
+      this.router.navigateByUrl(this.resolverDestino(this.authService.getCurrentUser()?.perfil));
     }
   }
 
@@ -66,14 +66,28 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
 
     this.authService.login({ usuario, senha, lembrarAcesso }).subscribe({
-      next: () => {
+      next: (user) => {
         this.loading = false;
-        this.router.navigateByUrl(this.returnUrl);
+        this.router.navigateByUrl(this.resolverDestino(user?.perfil));
       },
       error: () => {
         this.loading = false;
         this.errorMessage = 'Usuário ou senha inválidos. Verifique suas credenciais e tente novamente.';
       }
     });
+  }
+
+  /**
+   * Central Executiva é a nova home dos gestores.
+   * Admin com returnUrl genérico ('/' ou vazio) vai para /executivo;
+   * deep-link (ex. /implantacao/kanban) é sempre respeitado;
+   * usuário comum segue para a Home atual.
+   */
+  private resolverDestino(perfil?: string): string {
+    const alvo = this.returnUrl?.trim() || '/';
+    if (alvo !== '/' && alvo !== '') {
+      return alvo;
+    }
+    return perfil === 'Administrador' ? '/executivo' : '/';
   }
 }

@@ -20,12 +20,6 @@ public class TipoProjeto
     [Column("TPP_Nome")]
     public string Nome { get; set; } = string.Empty;
 
-    [Column("TPP_EquipeId")]
-    public int? EquipeId { get; set; }
-
-    [ForeignKey("EquipeId")]
-    public Equipe? Equipe { get; set; }
-
     [Column("TPP_ClienteObrigatorio")]
     public bool ClienteObrigatorio { get; set; } = true;
 
@@ -42,4 +36,11 @@ public class TipoProjeto
 
     [Column("TPP_DataInclusao")]
     public DateTime DataInclusao { get; set; } = DateTime.Now;
+
+    [MaxLength(50)]
+    [Column("TPP_UsuarioAlteracao")]
+    public string? UsuarioAlteracao { get; set; }
+
+    [Column("TPP_DataAlteracao")]
+    public DateTime? DataAlteracao { get; set; }
 }

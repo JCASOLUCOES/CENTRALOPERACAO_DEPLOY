@@ -105,21 +105,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IRagProxyService, RagProxyService>();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IGoogleSheetsService, GoogleSheetsService>();
 builder.Services.AddScoped<IPasswordValidationService, PasswordValidationService>();
 builder.Services.AddSingleton<BruteForceGuard>();
 
 // Modulo IMPLANTACAO/PROJETOS
-builder.Services.AddScoped<IClienteService, ClienteService>();
-builder.Services.AddScoped<IEquipeService, EquipeService>();
 builder.Services.AddScoped<ITipoProjetoService, TipoProjetoService>();
 builder.Services.AddScoped<IEtapaService, EtapaService>();
 builder.Services.AddScoped<IColunaKanbanService, ColunaKanbanService>();
 builder.Services.AddScoped<IProjetoService, ProjetoService>();
+builder.Services.AddScoped<IProjetoEtapaService, ProjetoEtapaService>();
+builder.Services.AddScoped<IProjetoJornadaService, ProjetoJornadaService>();
 builder.Services.AddScoped<ITarefaService, TarefaService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<ILegacyDataService, LegacyDataService>();
+builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<IAgendaService, AgendaService>();
 builder.Services.AddScoped<IAuditoriaImplantacaoService, AuditoriaImplantacaoService>();
 
@@ -137,11 +138,13 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+    var isDev = builder.Environment.IsDevelopment();
+
     options.AddPolicy("login", http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "anonimo",
         _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 5,
+            PermitLimit = isDev ? 50 : 5,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0
         }));
@@ -154,7 +157,21 @@ builder.Services.AddRateLimiter(options =>
 
         return RateLimitPartition.GetFixedWindowLimiter(chave, _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 5,
+            PermitLimit = isDev ? 100 : 50,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        });
+    });
+
+    options.AddPolicy("leitura", http =>
+    {
+        var chave = http.User.Identity?.IsAuthenticated == true
+            ? http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonimo"
+            : http.Connection.RemoteIpAddress?.ToString() ?? "anonimo";
+
+        return RateLimitPartition.GetFixedWindowLimiter(chave, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 100,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0
         });
@@ -185,6 +202,10 @@ if (!app.Environment.IsDevelopment())
     {
         error.Run(async context =>
         {
+            var ex = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+            var loggerFactory = context.RequestServices.GetService<ILoggerFactory>();
+            loggerFactory?.CreateLogger("GlobalExceptionHandler")
+                .LogError(ex, "Erro nao tratado em {Metodo} {Caminho}", context.Request.Method, context.Request.Path);
             context.Response.StatusCode = 500;
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsJsonAsync(new { mensagem = "Erro interno no servidor." });
@@ -234,6 +255,19 @@ if (app.Environment.IsDevelopment())
                 UsuarioInclusao = "seed",
                 PerfilId = "A"
             });
+            db.Operadores.Add(new Central_BackEnd.Models.Operador
+            {
+                OperadorId = "financeiro1",
+                Nome = "Richelle Financeiro",
+                Senha = "teste123",
+                Email = "financeiro@richelle.com",
+                SeAtivo = "S",
+                SeAdmin = false,
+                PerfilSkin = "F",
+                DataInclusao = DateTime.Now,
+                UsuarioInclusao = "seed",
+                PerfilId = "F"
+            });
             db.SaveChanges();
         }
 
@@ -248,64 +282,40 @@ if (app.Environment.IsDevelopment())
             db.SaveChanges();
         }
 
-        // Seed IMPL_Equipe: IMPLANTACAO + CIAA
-        if (!db.Equipes.Any())
-        {
-            db.Equipes.AddRange(
-                new Central_BackEnd.Models.Implantacao.Equipe
-                {
-                    Nome = "IMPLANTACAO",
-                    Descricao = "Equipe responsavel por implantacoes em clientes",
-                    PrefixoCodigo = "IMP",
-                    UsuarioInclusao = "seed",
-                    DataInclusao = DateTime.Now
-                },
-                new Central_BackEnd.Models.Implantacao.Equipe
-                {
-                    Nome = "CIAA",
-                    Descricao = "Centro de Inovacao, Automacao e IA",
-                    PrefixoCodigo = "CIAA",
-                    UsuarioInclusao = "seed",
-                    DataInclusao = DateTime.Now
-                }
-            );
-            db.SaveChanges();
-        }
-
-        // Seed IMPL_ColunaKanban: 5 colunas padrao
+        // Seed IMPL_ColunaKanban: 7 colunas padrao (BACKLOG -> CONCLUIDO)
         if (!db.ColunasKanban.Any())
         {
             db.ColunasKanban.AddRange(
-                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "BACKLOG",        Ordem = 1, Cor = "#94a3b8", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "A FAZER",       Ordem = 2, Cor = "#60a5fa", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "EM ANDAMENTO",  Ordem = 3, Cor = "#fbbf24", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "HOMOLOGACAO",   Ordem = 4, Cor = "#a78bfa", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "CONCLUIDO",     Ordem = 5, Cor = "#34d399", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now }
+                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "BACKLOG",             Ordem = 1, Cor = "#94a3b8", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
+                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "A FAZER",             Ordem = 2, Cor = "#60a5fa", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
+                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "EM DESENVOLVIMENTO",  Ordem = 3, Cor = "#f59e0b", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
+                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "EM ANDAMENTO",        Ordem = 4, Cor = "#fbbf24", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
+                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "HOMOLOGACAO",         Ordem = 5, Cor = "#a78bfa", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
+                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "BLOQUEADO",           Ordem = 6, Cor = "#ef4444", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
+                new Central_BackEnd.Models.Implantacao.ColunaKanban { Nome = "CONCLUIDO",           Ordem = 7, Cor = "#34d399", Padrao = true, UsuarioInclusao = "seed", DataInclusao = DateTime.Now }
             );
             db.SaveChanges();
         }
 
-        // Seed IMPL_TipoProjeto: CLIENTE, CARTEIRA, INTEGRACAO (IMPLANTACAO) + PROJETO_CIAA (CIAA)
+        // Seed IMPL_TipoProjeto: CLIENTE, CARTEIRA, INTEGRACAO + PROJETO_CIAA
         if (!db.TiposProjeto.Any())
         {
-            var eqImpl = db.Equipes.FirstOrDefault(e => e.Nome == "IMPLANTACAO");
-            var eqCiaa = db.Equipes.FirstOrDefault(e => e.Nome == "CIAA");
             db.TiposProjeto.AddRange(
-                new Central_BackEnd.Models.Implantacao.TipoProjeto { Codigo = "CLIENTE",      Nome = "Cliente",      ClienteObrigatorio = true,  Ordem = 1, EquipeId = eqImpl?.Id, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.TipoProjeto { Codigo = "CARTEIRA",     Nome = "Carteira",     ClienteObrigatorio = true,  Ordem = 2, EquipeId = eqImpl?.Id, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.TipoProjeto { Codigo = "INTEGRACAO",   Nome = "Integracao",   ClienteObrigatorio = true,  Ordem = 3, EquipeId = eqImpl?.Id, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.TipoProjeto { Codigo = "PROJETO_CIAA", Nome = "Projeto CIAA", ClienteObrigatorio = false, Ordem = 1, EquipeId = eqCiaa?.Id, UsuarioInclusao = "seed", DataInclusao = DateTime.Now }
+                new Central_BackEnd.Models.Implantacao.TipoProjeto { Codigo = "CLIENTE",      Nome = "Cliente",      ClienteObrigatorio = true,  Ordem = 1, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
+                new Central_BackEnd.Models.Implantacao.TipoProjeto { Codigo = "CARTEIRA",     Nome = "Carteira",     ClienteObrigatorio = true,  Ordem = 2, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
+                new Central_BackEnd.Models.Implantacao.TipoProjeto { Codigo = "INTEGRACAO",   Nome = "Integracao",   ClienteObrigatorio = true,  Ordem = 3, UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
+                new Central_BackEnd.Models.Implantacao.TipoProjeto { Codigo = "PROJETO_CIAA", Nome = "Projeto CIAA", ClienteObrigatorio = false, Ordem = 1, UsuarioInclusao = "seed", DataInclusao = DateTime.Now }
             );
             db.SaveChanges();
         }
 
-        // Seed IMPL_Etapa: 6 etapas IMPLANTACAO + 7 etapas CIAA
+        // Seed IMPL_Etapa
         if (!db.Etapas.Any())
         {
             var tipoCliente = db.TiposProjeto.FirstOrDefault(t => t.Codigo == "CLIENTE");
             var tipoCiaa = db.TiposProjeto.FirstOrDefault(t => t.Codigo == "PROJETO_CIAA");
             db.Etapas.AddRange(
-                // IMPLANTACAO
+                // Geral
                 new Central_BackEnd.Models.Implantacao.Etapa { Nome = "KICKOFF",        Ordem = 1, TipoProjetoId = tipoCliente?.Id, Cor = "#0f4c81", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
                 new Central_BackEnd.Models.Implantacao.Etapa { Nome = "PARAMETRIZACAO", Ordem = 2, TipoProjetoId = tipoCliente?.Id, Cor = "#2563eb", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
                 new Central_BackEnd.Models.Implantacao.Etapa { Nome = "TREINAMENTO",    Ordem = 3, TipoProjetoId = tipoCliente?.Id, Cor = "#0ea5e9", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
@@ -324,49 +334,10 @@ if (app.Environment.IsDevelopment())
             db.SaveChanges();
         }
 
-        // Seed IMPL_Cliente: 3 clientes para IMPLANTACAO
-        if (!db.Clientes.Any())
-        {
-            db.Clientes.AddRange(
-                new Central_BackEnd.Models.Implantacao.Cliente
-                {
-                    Nome = "Tech Solutions S/A",
-                    Cnpj = "12.345.678/0001-90",
-                    Contato = "contato@techsolutions.com.br",
-                    Observacao = "Cliente do segmento de tecnologia. Contrato de 36 meses.",
-                    Ativo = true,
-                    UsuarioInclusao = "admin",
-                    DataInclusao = DateTime.Now
-                },
-                new Central_BackEnd.Models.Implantacao.Cliente
-                {
-                    Nome = "Indústria Aurora Ltda",
-                    Cnpj = "98.765.432/0001-10",
-                    Contato = "implantacao@aurora.ind.br",
-                    Observacao = "Foco em módulos de cobrança. Implantação em fases.",
-                    Ativo = true,
-                    UsuarioInclusao = "admin",
-                    DataInclusao = DateTime.Now
-                },
-                new Central_BackEnd.Models.Implantacao.Cliente
-                {
-                    Nome = "Grupo Vértice",
-                    Cnpj = "11.222.333/0001-44",
-                    Contato = "ti@vertice.com",
-                    Observacao = "Cliente novo, em fase de kickoff.",
-                    Ativo = true,
-                    UsuarioInclusao = "admin",
-                    DataInclusao = DateTime.Now
-                }
-            );
-            db.SaveChanges();
-        }
-
+#if false // Seeds de exemplo DESABILITADOS — base limpa para testes (estruturais acima continuam)
         // Seed IMPL_Projeto: 1 IMPL + 1 CIAA
         if (!db.Projetos.Any())
         {
-            var eqImpl = db.Equipes.FirstOrDefault(e => e.Nome == "IMPLANTACAO");
-            var eqCiaa = db.Equipes.FirstOrDefault(e => e.Nome == "CIAA");
             var tipoCliente = db.TiposProjeto.FirstOrDefault(t => t.Codigo == "CLIENTE");
             var tipoCiaa = db.TiposProjeto.FirstOrDefault(t => t.Codigo == "PROJETO_CIAA");
             var colBacklog = db.ColunasKanban.FirstOrDefault(c => c.Nome == "BACKLOG");
@@ -374,8 +345,8 @@ if (app.Environment.IsDevelopment())
             var colAndamento = db.ColunasKanban.FirstOrDefault(c => c.Nome == "EM ANDAMENTO");
             var colHomologacao = db.ColunasKanban.FirstOrDefault(c => c.Nome == "HOMOLOGACAO");
             var colConcluido = db.ColunasKanban.FirstOrDefault(c => c.Nome == "CONCLUIDO");
-            var clienteTech = db.Clientes.FirstOrDefault(c => c.Nome == "Tech Solutions S/A");
-            var clienteAurora = db.Clientes.FirstOrDefault(c => c.Nome == "Indústria Aurora Ltda");
+            // Cliente do seed: primeiro cliente ativo de tbcliente (somente leitura).
+            var clienteSeed = db.ClientesLegado.FirstOrDefault(c => c.Ativo == "S");
 
             // 1) IMPL-0001 — Implantação Tech Solutions (60% concluído)
             var p1 = new Central_BackEnd.Models.Implantacao.Projeto
@@ -383,9 +354,8 @@ if (app.Environment.IsDevelopment())
                 Codigo = "IMP-0001",
                 Nome = "Implantação Tech Solutions S/A",
                 Descricao = "Implantação completa do Actyon no cliente Tech Solutions.\n\nFases: kickoff → parametrização → treinamento → homologação → go live.\nEscopo inclui 3 carteiras (Cobrança, Financeiro, RH) e 2 integrações bancárias.",
-                EquipeId = eqImpl!.Id,
                 TipoProjetoId = tipoCliente!.Id,
-                ClienteId = clienteTech!.Id,
+                ClienteId = clienteSeed != null ? clienteSeed.Id : null,
                 ResponsavelId = "admin",
                 CriadorId = "admin",
                 Status = Central_BackEnd.Models.Implantacao.StatusProjeto.EmAndamento,
@@ -529,7 +499,6 @@ if (app.Environment.IsDevelopment())
                 Codigo = "CIAA-0001",
                 Nome = "Agente IA — Classificação de Chamados",
                 Descricao = "Projeto de automação com IA para classificar e rotear chamados automaticamente.\n\nObjetivo: reduzir tempo de triagem em 60% e melhorar a assertividade do primeiro atendimento.\nStack: n8n + API Actyon + prompt engineering + integração com sistema de tickets.",
-                EquipeId = eqCiaa!.Id,
                 TipoProjetoId = tipoCiaa!.Id,
                 ClienteId = null,
                 ResponsavelId = "admin",
@@ -644,12 +613,45 @@ if (app.Environment.IsDevelopment())
             );
             db.SaveChanges();
         }
+#endif
 
+        // Seed CC_TipoEvento: 7 tipos de evento para Agenda
+        if (!db.TiposEvento.Any())
+        {
+            db.TiposEvento.AddRange(
+                new Central_BackEnd.Models.Implantacao.TipoEvento { Nome = "Reunião", Cor = "#0f4c81", Ativo = true },
+                new Central_BackEnd.Models.Implantacao.TipoEvento { Nome = "Daily", Cor = "#7c3aed", Ativo = true },
+                new Central_BackEnd.Models.Implantacao.TipoEvento { Nome = "Treinamento", Cor = "#059669", Ativo = true },
+                new Central_BackEnd.Models.Implantacao.TipoEvento { Nome = "Atendimento", Cor = "#d97706", Ativo = true },
+                new Central_BackEnd.Models.Implantacao.TipoEvento { Nome = "Pessoal", Cor = "#8b5cf6", Ativo = true },
+                new Central_BackEnd.Models.Implantacao.TipoEvento { Nome = "Outro", Cor = "#6b7280", Ativo = true },
+                new Central_BackEnd.Models.Implantacao.TipoEvento { Nome = "Férias", Cor = "#eab308", Ativo = true }
+            );
+            db.SaveChanges();
+        }
+
+        // Garantir tipo Férias em bancos já populados (seed inicial só roda com tabela vazia)
+        if (!db.TiposEvento.Any(t => t.Nome == "Férias"))
+        {
+            db.TiposEvento.Add(
+                new Central_BackEnd.Models.Implantacao.TipoEvento { Nome = "Férias", Cor = "#eab308", Ativo = true }
+            );
+            db.SaveChanges();
+        }
+
+        // Mapear TipoEvento IDs para usar no seed de eventos
+        var tipoReuniao = db.TiposEvento.FirstOrDefault(t => t.Nome == "Reunião")?.Id ?? 1;
+        var tipoDaily = db.TiposEvento.FirstOrDefault(t => t.Nome == "Daily")?.Id ?? 2;
+        var tipoTreinamento = db.TiposEvento.FirstOrDefault(t => t.Nome == "Treinamento")?.Id ?? 3;
+        var tipoAtendimento = db.TiposEvento.FirstOrDefault(t => t.Nome == "Atendimento")?.Id ?? 4;
+        var tipoPessoal = db.TiposEvento.FirstOrDefault(t => t.Nome == "Pessoal")?.Id ?? 5;
+        var tipoOutro = db.TiposEvento.FirstOrDefault(t => t.Nome == "Outro")?.Id ?? 6;
+        var tipoFerias = db.TiposEvento.FirstOrDefault(t => t.Nome == "Férias")?.Id ?? 7;
+
+#if false // Seed de exemplo DESABILITADO — base limpa para testes
         // Seed IMPL_Agenda: 5 eventos de exemplo
         if (!db.Agenda.Any())
         {
-            var eqImpl = db.Equipes.FirstOrDefault(e => e.Nome == "IMPLANTACAO");
-            var eqCiaa = db.Equipes.FirstOrDefault(e => e.Nome == "CIAA");
             var p1 = db.Projetos.FirstOrDefault(p => p.Codigo == "IMP-0001");
             var p2 = db.Projetos.FirstOrDefault(p => p.Codigo == "CIAA-0001");
 
@@ -665,6 +667,7 @@ if (app.Environment.IsDevelopment())
                     DiaInteiro = false,
                     Cor = "#0f4c81",
                     Tipo = Central_BackEnd.Models.Implantacao.AgendaTipo.Reuniao,
+                    TipoId = tipoReuniao,
                     Visibilidade = Central_BackEnd.Models.Implantacao.AgendaVisibilidade.Publico,
                     ProjetoId = p1?.Id,
                     Recorrente = false,
@@ -683,7 +686,8 @@ if (app.Environment.IsDevelopment())
                     DiaInteiro = false,
                     Cor = "#16a34a",
                     Tipo = Central_BackEnd.Models.Implantacao.AgendaTipo.Treinamento,
-                    Visibilidade = Central_BackEnd.Models.Implantacao.AgendaVisibilidade.Equipe,
+                    TipoId = tipoTreinamento,
+                    Visibilidade = Central_BackEnd.Models.Implantacao.AgendaVisibilidade.Publico,
                     ProjetoId = p1?.Id,
                     Recorrente = false,
                     PadraoRecorrencia = Central_BackEnd.Models.Implantacao.AgendaRecorrencia.Nenhuma,
@@ -701,7 +705,8 @@ if (app.Environment.IsDevelopment())
                     DiaInteiro = false,
                     Cor = "#7c3aed",
                     Tipo = Central_BackEnd.Models.Implantacao.AgendaTipo.Reuniao,
-                    Visibilidade = Central_BackEnd.Models.Implantacao.AgendaVisibilidade.Equipe,
+                    TipoId = tipoReuniao,
+                    Visibilidade = Central_BackEnd.Models.Implantacao.AgendaVisibilidade.Publico,
                     ProjetoId = p2?.Id,
                     Recorrente = true,
                     PadraoRecorrencia = Central_BackEnd.Models.Implantacao.AgendaRecorrencia.Semanal,
@@ -719,6 +724,7 @@ if (app.Environment.IsDevelopment())
                     DiaInteiro = false,
                     Cor = "#d97706",
                     Tipo = Central_BackEnd.Models.Implantacao.AgendaTipo.Atendimento,
+                    TipoId = tipoAtendimento,
                     Visibilidade = Central_BackEnd.Models.Implantacao.AgendaVisibilidade.Publico,
                     ProjetoId = p1?.Id,
                     Recorrente = false,
@@ -737,6 +743,7 @@ if (app.Environment.IsDevelopment())
                     DiaInteiro = false,
                     Cor = "#94a3b8",
                     Tipo = Central_BackEnd.Models.Implantacao.AgendaTipo.Pessoal,
+                    TipoId = tipoPessoal,
                     Visibilidade = Central_BackEnd.Models.Implantacao.AgendaVisibilidade.Privado,
                     ProjetoId = null,
                     Recorrente = false,
@@ -747,6 +754,7 @@ if (app.Environment.IsDevelopment())
             );
             db.SaveChanges();
         }
+#endif
     }
     }
 

@@ -1,8 +1,31 @@
+import { environment } from "@env/environment";
+
+export interface OperadorResumo {
+  id: string;
+  nome: string;
+  email: string | null;
+}
+
+export interface ClienteResumo {
+  id: number;
+  nome: string;
+  cnpj?: string;
+  ativo: boolean;
+}
+
+export interface TipoProjetoResumo {
+  id: number;
+  codigo: string;
+  nome: string;
+  clienteObrigatorio: boolean;
+  ordem: number;
+  ativo: boolean;
+}
+
 export interface ProjetoResumo {
   id: number;
   codigo: string;
   nome: string;
-  equipeNome: string;
   tipoProjetoNome: string;
   clienteId?: number;
   clienteNome?: string;
@@ -21,7 +44,6 @@ export interface ProjetoResumo {
 
 export interface ProjetoDetalhe extends ProjetoResumo {
   descricao?: string;
-  equipeId: number;
   tipoProjetoId: number;
   criadorId: string;
   criadorNome: string;
@@ -43,7 +65,6 @@ export interface ProjetoDetalhe extends ProjetoResumo {
 export interface ProjetoCriarRequest {
   nome: string;
   descricao?: string;
-  equipeId: number;
   tipoProjetoId: number;
   clienteId?: number;
   clienteLegadoId?: number;
@@ -73,10 +94,140 @@ export interface ProjetoMudarStatusRequest {
 }
 
 export interface ProjetoFiltro {
-  equipe?: string;
   tipo?: string;
   status?: string;
   clienteId?: number;
   responsavelId?: string;
   buscar?: string;
+  perfilId?: string;
+}
+
+export type EtapaJornadaEstado = "Concluida" | "EmAndamento" | "Bloqueada" | "Pendente";
+
+export interface EtapaJornadaItem {
+  etapaId: number;
+  nome: string;
+  cor?: string;
+  ordem: number;
+  totalTarefas: number;
+  tarefasConcluidas: number;
+  percentual: number;
+  estado: EtapaJornadaEstado;
+}
+
+export interface ProjetoJornada {
+  projetoId: number;
+  etapas: EtapaJornadaItem[];
+  progressoGeral: number;
+  etapaAtualId?: number;
+}
+
+// ===== NOVOS TYPES PARA ETAPAS FIXAS (9 ETAPAS) =====
+
+export type ProjetoEtapaEstado = "Concluida" | "EmAndamento" | "Bloqueada" | "Pendente";
+
+export interface ProjetoEtapaResumo {
+  ordem: number;
+  nome: string;
+  estado: "Concluida" | "EmAndamento" | "Bloqueada" | "Pendente";
+  percentual: number;
+  checklistTotal: number;
+  checklistConcluidos: number;
+  dataInicio?: string;
+  dataFimPrevista?: string;
+  dataFimReal?: string;
+  atrasoDias?: number;
+  responsavelNome?: string;
+  /** Contador dinâmico de tarefas vinculadas (via Tarefa.ProjetoEtapaId). */
+  tarefasTotal?: number;
+  tarefasConcluidas?: number;
+  id?: number;
+}
+
+export interface ProjetoEtapaChecklistItem {
+  id: number;
+  descricao: string;
+  concluido: boolean;
+  dataConclusao?: string;
+  usuarioConclusao?: string;
+}
+
+export interface ProjetoEtapaDocumentoItem {
+  id: number;
+  nome: string;
+  url: string;
+  descricao?: string;
+  dataInclusao: string;
+  usuarioInclusao: string;
+}
+
+export interface ProjetoEtapaHistoricoItem {
+  id: number;
+  acao: string;
+  detalhes?: string;
+  usuario: string;
+  data: string;
+}
+
+export interface ProjetoEtapaComentarioItem {
+  id: number;
+  texto: string;
+  usuario: string;
+  data: string;
+}
+
+export interface ProjetoEtapaDetalhe {
+  ordem: number;
+  nome: string;
+  estado: "Concluida" | "EmAndamento" | "Bloqueada" | "Pendente";
+  percentual: number;
+  checklist: ProjetoEtapaChecklistItem[];
+  documentos: ProjetoEtapaDocumentoItem[];
+  historico: ProjetoEtapaHistoricoItem[];
+  comentarios: ProjetoEtapaComentarioItem[];
+  dataInicio?: string;
+  dataFimPrevista?: string;
+  dataFimReal?: string;
+  atrasoDias?: number;
+  responsavelId?: string;
+  responsavelNome?: string;
+}
+
+export interface ProjetoEtapaChecklistItemRequest {
+  id?: number;
+  descricao: string;
+  concluido: boolean;
+}
+
+export interface ProjetoEtapaAtualizarRequest {
+  percentual: number;
+  checklist: ProjetoEtapaChecklistItemRequest[];
+  estado?: string;
+  dataFimReal?: string;
+  responsavelId?: string;
+}
+
+export interface ProjetoEtapaRetornoRequest {
+  ordemAlvo: number;
+  motivo: string;
+  usuarioAlteracao: string;
+}
+
+export interface ProjetoEtapaDocumentoRequest {
+  nome: string;
+  url: string;
+  descricao?: string;
+}
+
+export interface ProjetoEtapaComentarioRequest {
+  texto: string;
+}
+
+export interface ProjetoComEtapasResumo {
+  projeto: ProjetoResumo;
+  etapas: ProjetoEtapaResumo[];
+}
+
+interface ProximoCodigoResponse {
+  codigo: string;
 }

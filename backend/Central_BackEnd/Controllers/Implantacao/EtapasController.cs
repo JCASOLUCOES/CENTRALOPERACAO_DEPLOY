@@ -16,10 +16,14 @@ public class EtapasController : ControllerBase
     public EtapasController(IEtapaService service) { _service = service; }
 
     [HttpGet]
-    public async Task<ActionResult<List<EtapaResumo>>> Listar([FromQuery] int? tipoProjetoId, CancellationToken ct = default)
-        => Ok(await _service.ListarAsync(tipoProjetoId, ct));
+    public async Task<ActionResult<List<EtapaResumo>>> Listar(
+        [FromQuery] int? tipoProjetoId, [FromQuery] bool apenasAtivas = true, CancellationToken ct = default)
+        => Ok(await _service.ListarAsync(tipoProjetoId, apenasAtivas, ct));
 
+    // Etapas são FIXAS (seed por tipo). Escrita restrita a Administrador.
+    // A leitura alimenta o vínculo Tarefa.EtapaId (tarefa-form, kanban).
     [HttpPost]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult<EtapaResumo>> Criar([FromBody] EtapaCriarRequest req, CancellationToken ct = default)
     {
         try { return Ok(await _service.CriarAsync(req, ct)); }
@@ -27,6 +31,7 @@ public class EtapasController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult<EtapaResumo>> Atualizar(int id, [FromBody] EtapaAtualizarRequest req, CancellationToken ct = default)
     {
         try
@@ -38,6 +43,7 @@ public class EtapasController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult> Excluir(int id, CancellationToken ct = default)
     {
         var ok = await _service.ExcluirAsync(id, ct);

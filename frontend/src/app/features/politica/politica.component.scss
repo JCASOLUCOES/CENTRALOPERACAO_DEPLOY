@@ -1,5 +1,5 @@
 .politica-page {
-  max-width: 980px;
+  max-width: 61.25rem;
   margin: 2.5rem auto 0;
   display: flex;
   flex-direction: column;
@@ -25,18 +25,18 @@
   z-index: 0;
 
   &--um {
-    width: 210px;
-    height: 210px;
-    right: -70px;
-    top: -90px;
+    width: 13.125rem;
+    height: 13.125rem;
+    right: -4.375rem;
+    top: -5.625rem;
     background: rgba(37, 211, 102, 0.14);
   }
 
   &--dois {
-    width: 160px;
-    height: 160px;
-    right: 120px;
-    bottom: -90px;
+    width: 10rem;
+    height: 10rem;
+    right: 7.5rem;
+    bottom: -5.625rem;
     background: rgba(37, 99, 235, 0.12);
   }
 }
@@ -56,8 +56,8 @@
 }
 
 .politica-hero__icone {
-  width: 54px;
-  height: 54px;
+  width: 3.375rem;
+  height: 3.375rem;
   border-radius: 1rem;
   display: inline-flex;
   align-items: center;
@@ -128,8 +128,8 @@
 }
 
 .politica-secao__icone {
-  width: 46px;
-  height: 46px;
+  width: 2.875rem;
+  height: 2.875rem;
   border-radius: 0.9rem;
   display: inline-flex;
   align-items: center;
@@ -172,8 +172,8 @@
   background: var(--surface-secondary);
 
   &__num {
-    width: 30px;
-    height: 30px;
+    width: 1.875rem;
+    height: 1.875rem;
     border-radius: 0.6rem;
     display: inline-flex;
     align-items: center;

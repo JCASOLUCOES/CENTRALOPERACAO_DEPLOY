@@ -50,23 +50,21 @@ public class Projeto
     [Column("PRJ_Descricao")]
     public string? Descricao { get; set; }
 
-    [Column("PRJ_EquipeId")]
-    public int EquipeId { get; set; }
-
-    [ForeignKey("EquipeId")]
-    public Equipe? Equipe { get; set; }
-
     [Column("PRJ_TipoProjetoId")]
     public int TipoProjetoId { get; set; }
 
     [ForeignKey("TipoProjetoId")]
     public TipoProjeto? TipoProjeto { get; set; }
 
+    /// <summary>
+    /// FK para tbcliente.CLIENTE_ID (tabela legada, somente leitura).
+    /// Fonte única de clientes do módulo Implantação.
+    /// </summary>
     [Column("PRJ_ClienteId")]
     public int? ClienteId { get; set; }
 
     [ForeignKey("ClienteId")]
-    public Cliente? Cliente { get; set; }
+    public ClienteLegado? Cliente { get; set; }
 
     /// <summary>
     /// FK para tbcliente.CLIENTE_ID do banco legado (dbBUSINESS_HML).
@@ -137,4 +135,6 @@ public class Projeto
 
     [Column("PRJ_DataAlteracao")]
     public DateTime? DataAlteracao { get; set; }
+
+    public List<ProjetoEtapa> Etapas { get; set; } = new();
 }

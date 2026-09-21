@@ -27,6 +27,12 @@ export class AuthService {
   getOperadorLogado(): string {
     return this.authUserSubject.value?.id ?? 'sistema';
   }
+
+  getOperadorLogadoCompleto(): { id: string; nome: string; perfil: PerfilUsuario } | null {
+    const user = this.authUserSubject.value;
+    if (!user) return null;
+    return { id: user.id, nome: user.nome, perfil: user.perfil };
+  }
   private refreshTokenPromise: Promise<string | null> | null = null;
   private verificacaoPeriodicaId: ReturnType<typeof setInterval> | null = null;
   private readonly INTERVALO_VERIFICACAO = 5 * 60 * 1000; // 5 minutos
@@ -117,7 +123,7 @@ export class AuthService {
     if (!user) {
       return false;
     }
-    return user.perfil === 'Administrador' || user.perfil === perfil;
+    return user.perfil === 'Administrador' || user.perfil === perfil || user.perfil === 'F';
   }
 
   // ===================== VERIFICACAO PERIODICA =====================

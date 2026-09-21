@@ -1,15 +1,19 @@
 import { Component, OnInit, inject, signal, computed, effect, viewChildren, ElementRef, afterNextRender } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem, CdkDrag } from '@angular/cdk/drag-drop';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { ProjetosService } from '../../services/projetos.service';
 import { TarefasService } from '../../services/tarefas.service';
 import { ColunasKanbanService } from '../../services/cadastros.service';
+import { AuthService } from '@core/services/auth.service';
 import { TarefaResumo, TarefaDetalhe, TarefaFiltro, TarefaCriarRequest, ComentarioCriarRequest, TarefaAtualizarRequest } from '../../models/tarefa.model';
-import { ColunaKanbanResumo, ColunaKanbanAtualizarRequest } from '../../models/equipe-tipo-etapa-coluna.model';
+import { ColunaKanbanResumo } from '../../models/cadastros.model';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { ProjetoResumo } from '../../models/projeto.model';
+import { UsuarioDropdownComponent } from '@shared/components/usuario-dropdown/usuario-dropdown.component';
+import { ChatContextoService } from '@features/chat/chat-contexto.service';
 
 interface Coluna {
   id: number | null;
@@ -53,25 +57,20 @@ interface InlineEditState {
 @Component({
   selector: 'app-implantacao-kanban',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, DragDropModule, ScrollingModule],
+  imports: [CommonModule, FormsModule, RouterLink, DragDropModule, ScrollingModule, UsuarioDropdownComponent, PageHeaderComponent],
   template: `
     <section class="adm-page imp-kanban">
-      <header class="imp-kanban__header">
-        <div>
-          <h1 class="adm-header__title">
-            <i class="bi bi-kanban"></i> Kanban
-          </h1>
-          <p class="adm-header__desc">
-            Visualize e mova tarefas entre colunas. Atualizações sincronizam com o backend.
-          </p>
-        </div>
-        <div class="imp-kanban__controls">
+      <app-page-header
+        titulo="Kanban"
+        descricao="Visualize e mova tarefas entre colunas. Atualizações sincronizam com o backend."
+        icone="bi-kanban">
+        <div actions class="imp-kanban__controls">
           <select class="adm-search__input" [value]="projetoId()" (change)="onProjetoChange($any($event.target).value)">
             <option value="">Todos os projetos</option>
-            <option *ngFor="let p of projetos()" [value]="p.id">{{ p.codigo }} — {{ p.nome }}</option>
-          </select>
+          <option *ngFor="let p of projetos()" [value]="p.id">{{ p.codigo }} — {{ p.nome }}</option>
+            </select>
         </div>
-      </header>
+      </app-page-header>
 
       <!-- Quick Filters Bar -->
       <div class="imp-kanban__filters">
@@ -97,10 +96,10 @@ interface InlineEditState {
         <div class="imp-kanban__filter-group">
           <select class="imp-kanban__filter-select" [(ngModel)]="quickFilters().prioridade" (ngModelChange)="onQuickFilterChange('prioridade', $event)">
             <option [value]="null">Todas prioridades</option>
-            <option [value]="1">Baixa</option>
-            <option [value]="2">Média</option>
-            <option [value]="3">Alta</option>
-            <option [value]="4">Urgente</option>
+            <option [value]="0">Baixa</option>
+            <option [value]="1">Média</option>
+            <option [value]="2">Alta</option>
+            <option [value]="3">Urgente</option>
           </select>
         </div>
         <div class="imp-kanban__filter-group">
@@ -119,6 +118,26 @@ interface InlineEditState {
         <button class="imp-kanban__filter-clear" (click)="limparFiltros()" *ngIf="temFiltrosAtivos()">
           <i class="bi bi-x-circle"></i> Limpar
         </button>
+        <span class="imp-kanban__filter-count" *ngIf="temFiltrosAtivos()" role="status">
+          Exibindo {{ tarefasFiltradas().length }} de {{ tarefas().length }}
+        </span>
+        <button
+          type="button"
+          class="imp-kanban__filter-count imp-kanban__filter-count--etapa"
+          *ngIf="etapaId() !== null"
+          (click)="limparEtapa()"
+          [title]="'Remover filtro de etapa: ' + etapaNomeFiltro()">
+          <i class="bi bi-flag-fill"></i> {{ etapaNomeFiltro() }} <i class="bi bi-x"></i>
+        </button>
+      </div>
+
+      <!-- Métricas rápidas (Corretor #5 Passo 4) -->
+      <div class="imp-kanban__metrics" *ngIf="!loading() && tarefas().length">
+        <span class="imp-kanban__metric"><strong>{{ tarefas().length }}</strong> tarefas</span>
+        <span class="imp-kanban__metric imp-kanban__metric--ok"><strong>{{ metricas().concluidas }}</strong> concluídas</span>
+        <span class="imp-kanban__metric imp-kanban__metric--warn" *ngIf="metricas().atrasadas"><strong>{{ metricas().atrasadas }}</strong> atrasadas</span>
+        <span class="imp-kanban__metric imp-kanban__metric--danger" *ngIf="metricas().urgentes"><strong>{{ metricas().urgentes }}</strong> urgentes abertas</span>
+        <span class="imp-kanban__metric" *ngIf="metricas().semResponsavel"><strong>{{ metricas().semResponsavel }}</strong> sem responsável</span>
       </div>
 
       <div *ngIf="loading()" class="adm-empty">
@@ -145,9 +164,6 @@ interface InlineEditState {
                 {{ coluna.tarefas.length }}/{{ coluna.limiteWip }}
               </span>
             </div>
-            <button class="imp-kanban__coluna-menu" type="button" title="Opções da coluna" (click)="toggleColumnMenu(coluna.id!)">
-              <i class="bi bi-three-dots-vertical"></i>
-            </button>
           </header>
           <div class="imp-kanban__cards">
             <ng-container *ngFor="let swimlane of coluna.swimlanes; let slIdx = index">
@@ -170,6 +186,7 @@ class="imp-kanban__card"
                         #cardRef
                         tabindex="0"
                         role="listitem"
+                        [attr.data-prioridade]="t.prioridade"
                         [attr.aria-label]="'Tarefa ' + t.id + ': ' + t.titulo"
                         [attr.aria-selected]="selectedTarefas().has(t.id)">
                 <div class="imp-kanban__card-head">
@@ -205,12 +222,15 @@ class="imp-kanban__card"
                   <span class="imp-code">{{ t.projetoCodigo }}</span>
                   <span class="imp-kanban__card-cliente">{{ t.projetoNome }}</span>
                 </a>
-                <div class="imp-kanban__card-meta" *ngIf="t.responsavelNome || t.dataPrevisao">
+                <div class="imp-kanban__card-meta" *ngIf="t.responsavelNome || t.dataPrevisao || t.etapaNome">
                   <span class="imp-kanban__assignee" *ngIf="t.responsavelNome">
                     <i class="bi bi-person"></i> {{ t.responsavelNome }}
                   </span>
-                  <span class="imp-kanban__due" *ngIf="t.dataPrevisao" [class.imp-kanban__due--overdue]="isOverdue(t)">
-                    <i class="bi bi-calendar"></i> {{ t.dataPrevisao | date:'dd/MM' }}
+                  <span class="imp-kanban__etapa" *ngIf="t.etapaNome" [title]="'Etapa: ' + t.etapaNome">
+                    <i class="bi bi-flag"></i> {{ t.etapaNome }}
+                  </span>
+                  <span class="imp-kanban__due" *ngIf="slaInfo(t) as sla" [ngClass]="sla.classe">
+                    <i class="bi bi-calendar"></i> {{ sla.texto }}
                   </span>
                 </div>
                 <div class="imp-kanban__card-foot">
@@ -223,17 +243,17 @@ class="imp-kanban__card"
                     </span>
                     <select *ngIf="inlineEdit()?.tarefaId === t.id && inlineEdit()?.field === 'prioridade'"
                             class="imp-kanban__inline-edit-select"
-                            [ngModel]="inlineEdit()?.value ?? 2"
+                            [ngModel]="inlineEdit()?.value ?? 1"
                             (ngModelChange)="onInlineEditValueChange($event)"
                             (blur)="salvarInlineEdit(t, 'prioridade')"
                             (keydown.escape)="cancelarInlineEdit()"
                             (change)="salvarInlineEdit(t, 'prioridade')"
                             #prioridadeSelect
                             aria-label="Editar prioridade">
-                      <option [value]="1">Baixa</option>
-                      <option [value]="2">Média</option>
-                      <option [value]="3">Alta</option>
-                      <option [value]="4">Urgente</option>
+                      <option [value]="0">Baixa</option>
+                      <option [value]="1">Média</option>
+                      <option [value]="2">Alta</option>
+                      <option [value]="3">Urgente</option>
                     </select>
                   </div>
                   <span class="imp-kanban__horas">
@@ -243,45 +263,6 @@ class="imp-kanban__card"
                 </div>
               </article>
             </ng-container>
-
-            <!-- Add Card Form -->
-            <div class="imp-kanban__add-card" *ngIf="showingAddForm() === coluna.id">
-              <form (ngSubmit)="criarTarefa(coluna.id!)" class="imp-kanban__add-form">
-                <input
-                  type="text"
-                  class="imp-kanban__add-input"
-                  placeholder="Título da tarefa..."
-                  [(ngModel)]="novaTarefaTitulo"
-                  name="titulo"
-                  required
-                  autofocus
-                  (keydown.escape)="cancelarNovaTarefa()"
-                >
-                <div class="imp-kanban__add-row">
-                  <select class="imp-kanban__add-select" [(ngModel)]="novaTarefaPrioridade" name="prioridade">
-                    <option [value]="1">Baixa</option>
-                    <option [value]="2">Média</option>
-                    <option [value]="3">Alta</option>
-                    <option [value]="4">Urgente</option>
-                  </select>
-                  <input
-                    type="text"
-                    class="imp-kanban__add-input imp-kanban__add-input--small"
-                    placeholder="Responsável (opcional)"
-                    [(ngModel)]="novaTarefaResponsavel"
-                    name="responsavel"
-                  >
-                </div>
-                <div class="imp-kanban__add-actions">
-                  <button type="submit" class="imp-kanban__btn imp-kanban__btn--primary" [disabled]="!novaTarefaTitulo().trim()">
-                    <i class="bi bi-plus"></i> Adicionar
-                  </button>
-                  <button type="button" class="imp-kanban__btn imp-kanban__btn--ghost" (click)="cancelarNovaTarefa()">
-                    <i class="bi bi-x"></i>
-                  </button>
-                </div>
-              </form>
-            </div>
 
             <!-- Add Card Trigger -->
             <button
@@ -293,22 +274,107 @@ class="imp-kanban__card"
               <span>Adicionar tarefa</span>
             </button>
 
+            <!-- Add Card Inline Form -->
+            <div *ngIf="showingAddForm() === coluna.id" class="imp-kanban__add-card">
+              <div class="imp-kanban__add-form" (keydown.escape)="cancelarNovaTarefa()">
+                <input
+                  type="text"
+                  class="imp-kanban__add-input"
+                  placeholder="Título da tarefa *"
+                  [ngModel]="novaTarefaTitulo()"
+                  (ngModelChange)="novaTarefaTitulo.set($event ?? '')"
+                  (keydown.enter)="criarTarefa(coluna.id!)"
+                  aria-label="Título da nova tarefa">
+                <textarea
+                  class="imp-kanban__add-input"
+                  rows="2"
+                  placeholder="Descrição (opcional)"
+                  [ngModel]="novaTarefaDescricao()"
+                  (ngModelChange)="novaTarefaDescricao.set($event ?? '')"
+                  aria-label="Descrição da nova tarefa"></textarea>
+                <div class="imp-kanban__add-row">
+                  <select
+                    class="imp-kanban__add-select"
+                    [ngModel]="novaTarefaPrioridade()"
+                    (ngModelChange)="novaTarefaPrioridade.set(Number($event))"
+                    aria-label="Prioridade da nova tarefa">
+                    <option [value]="0">Baixa</option>
+                    <option [value]="1">Média</option>
+                    <option [value]="2">Alta</option>
+                    <option [value]="3">Urgente</option>
+                  </select>
+                  <input
+                    type="date"
+                    class="imp-kanban__add-input imp-kanban__add-input--small"
+                    [ngModel]="novaTarefaDataEntrega()"
+                    (ngModelChange)="novaTarefaDataEntrega.set($event ?? '')"
+                    aria-label="Data de entrega da nova tarefa"
+                    title="Data de entrega *">
+                </div>
+                <div class="imp-kanban__add-row">
+                  <app-usuario-dropdown
+                    [selecionados]="novaTarefaResponsavelIds()"
+                    (selecaoChange)="novaTarefaResponsavelIds.set($event)">
+                  </app-usuario-dropdown>
+                </div>
+                <div class="imp-kanban__add-row">
+                  <select
+                    class="imp-kanban__add-select"
+                    [ngModel]="novaTarefaProjetoId() ?? ''"
+                    (ngModelChange)="aoMudarProjetoNovaTarefa($event)"
+                    aria-label="Projeto da nova tarefa">
+                    <option [value]="''">Sem projeto</option>
+                    <option *ngFor="let p of projetos()" [value]="p.id">{{ p.codigo }} — {{ p.nome }}</option>
+                  </select>
+                </div>
+                <div class="imp-kanban__add-row" *ngIf="novaTarefaProjetoId() !== null">
+                  <select
+                    class="imp-kanban__add-select"
+                    [ngModel]="novaTarefaEtapaId() ?? ''"
+                    (ngModelChange)="novaTarefaEtapaId.set($event === '' || $event == null ? null : Number($event))"
+                    aria-label="Etapa da nova tarefa">
+                    <option [value]="''">Selecione a etapa... *</option>
+                    <option *ngFor="let e of etapasCriacao()" [value]="e.id">{{ e.nome }}</option>
+                  </select>
+                </div>
+                <div class="imp-kanban__add-row" *ngIf="novaTarefaProjetoId() !== null && etapasFixasCriacao().length">
+                  <select
+                    class="imp-kanban__add-select"
+                    [ngModel]="novaTarefaProjetoEtapaId() ?? ''"
+                    (ngModelChange)="novaTarefaProjetoEtapaId.set($event === '' || $event == null ? null : Number($event))"
+                    aria-label="Etapa do projeto (card) da nova tarefa"
+                    title="Define o card fixo cujo contador soma esta tarefa">
+                    <option [value]="''">Sem card (só totais)</option>
+                    <option *ngFor="let e of etapasFixasCriacao()" [value]="e.id">{{ e.ordem }} — {{ e.nome }}</option>
+                  </select>
+                </div>
+                <div class="imp-kanban__add-erro" *ngIf="erroNovaTarefa()">
+                  <i class="bi bi-exclamation-triangle-fill"></i>
+                  <span>{{ erroNovaTarefa() }}</span>
+                </div>
+                <div class="imp-kanban__add-actions">
+                  <button
+                    type="button"
+                    class="imp-kanban__btn imp-kanban__btn--primary"
+                    (click)="criarTarefa(coluna.id!)"
+                    [disabled]="!novaTarefaTitulo().trim() || criandoTarefa()">
+                    <i class="bi" [ngClass]="criandoTarefa() ? 'bi-hourglass-split' : 'bi-check-lg'"></i>
+                    {{ criandoTarefa() ? 'Criando...' : 'Criar' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="imp-kanban__btn imp-kanban__btn--ghost"
+                    (click)="cancelarNovaTarefa()"
+                    [disabled]="criandoTarefa()">
+                    <i class="bi bi-x"></i> Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div *ngIf="!coluna.tarefas.length && showingAddForm() !== coluna.id" class="imp-kanban__vazio">
               <i class="bi bi-inbox"></i>
               <span>Sem tarefas</span>
-            </div>
-          </div>
-
-          <!-- Column Menu Dropdown -->
-          <div class="imp-kanban__coluna-dropdown" *ngIf="openColumnMenu() === coluna.id" (clickOutside)="fecharColumnMenu()">
-            <div class="imp-kanban__dropdown-item" (click)="editarColuna(coluna)">
-              <i class="bi bi-pencil"></i> Editar coluna
-            </div>
-            <div class="imp-kanban__dropdown-item" (click)="definirWip(coluna)">
-              <i class="bi bi-speedometer"></i> Definir WIP Limit
-            </div>
-            <div class="imp-kanban__dropdown-item" (click)="ocultarColuna(coluna)">
-              <i class="bi bi-eye-slash"></i> Ocultar coluna
             </div>
           </div>
         </div>
@@ -357,11 +423,31 @@ class="imp-kanban__card"
         </header>
 
         <div class="imp-kanban__drawer-content" *ngIf="!drawerLoading()">
+          <button type="button" class="imp-kanban__btn imp-kanban__btn--ghost imp-kanban__jota-btn" (click)="perguntarJota(t)">
+            <i class="bi bi-robot"></i> Perguntar ao JOTA sobre esta tarefa
+          </button>
+          <div class="imp-kanban__drawer-section imp-kanban__reatribuir">
+            <h3>Responsáveis</h3>
+            <app-usuario-dropdown
+              [selecionados]="reatribuirIds()"
+              (selecaoChange)="reatribuirIds.set($event)">
+            </app-usuario-dropdown>
+            <button type="button" class="imp-kanban__btn imp-kanban__btn--primary" (click)="salvarReatribuicao()" [disabled]="reatribuindo()">
+              <i class="bi" [ngClass]="reatribuindo() ? 'bi-hourglass-split' : 'bi-person-check'"></i>
+              {{ reatribuindo() ? 'Salvando...' : 'Salvar responsáveis' }}
+            </button>
+          </div>
           <div class="imp-kanban__drawer-section">
             <div class="imp-kanban__drawer-field">
               <label>Projeto</label>
               <a [routerLink]="['/implantacao/projetos', t.projetoId]" class="imp-kanban__drawer-link">
                 <span class="imp-code">{{ t.projetoCodigo }}</span> {{ t.projetoNome }}
+              </a>
+            </div>
+            <div class="imp-kanban__drawer-field" *ngIf="t.etapaNome">
+              <label>Etapa</label>
+              <a [routerLink]="['/implantacao/kanban']" [queryParams]="{ projetoId: t.projetoId, etapaId: t.etapaId }" class="imp-kanban__drawer-link">
+                <i class="bi bi-flag"></i> {{ t.etapaNome }}
               </a>
             </div>
             <div class="imp-kanban__drawer-field">
@@ -436,12 +522,28 @@ export class KanbanComponent implements OnInit {
   private readonly tarefasService = inject(TarefasService);
   private readonly projetosService = inject(ProjetosService);
   private readonly colunasService = inject(ColunasKanbanService);
+  private readonly auth = inject(AuthService);
+  private readonly chatCtx = inject(ChatContextoService);
+  private readonly route = inject(ActivatedRoute);
 
   tarefas = signal<TarefaResumo[]>([]);
   colunasOriginais = signal<ColunaKanbanResumo[]>([]);
   projetos = signal<ProjetoResumo[]>([]);
   loading = signal(true);
   projetoId = signal<string>('');
+  /** Filtro por etapa (navegação vinda da timeline do projeto). */
+  etapaId = signal<number | null>(null);
+  etapasFiltro = signal<{ id: number; nome: string }[]>([]);
+  etapaNomeFiltro = computed(() => {
+    const id = this.etapaId();
+    if (id == null) return '';
+    return this.etapasFiltro().find(e => e.id === id)?.nome ?? `Etapa ${id}`;
+  });
+  /** Operadores válidos (para validar responsáveis antes do POST). */
+  operadores = signal<{ id: string; nome: string }[]>([]);
+
+  /** Filtro por perfil do operador responsável (ex: 'F' para Kanban ADM). */
+  perfilFiltro = signal<string | null>(null);
 
   // Quick Filters
   quickFilters = signal<QuickFilters>({
@@ -456,12 +558,30 @@ export class KanbanComponent implements OnInit {
   drawerLoading = signal(false);
   novoComentario = signal('');
 
+  // Reatribuição (Corretor #5: gestor reatribui via dropdown, sem prompt)
+  reatribuirIds = signal<string[]>([]);
+  reatribuindo = signal(false);
+
   // Add Card Inline
   showingAddForm = signal<number | null>(null);
   novaTarefaTitulo = signal('');
   novaTarefaDescricao = signal('');
-  novaTarefaPrioridade = signal(2);
-  novaTarefaResponsavel = signal('');
+  // Prioridade na escala do backend (PrioridadeTarefa): 0 Baixa … 3 Urgente
+  novaTarefaPrioridade = signal(1);
+  novaTarefaTipo = signal(0);
+  novaTarefaResponsavelIds = signal<string[]>([]);
+  novaTarefaProjetoId = signal<number | null>(null);
+  novaTarefaEtapaId = signal<number | null>(null);
+  etapasCriacao = signal<{ id: number; nome: string }[]>([]);
+  /** Etapas FIXAS do projeto (cards de 9; alimenta o contador dinâmico). */
+  novaTarefaProjetoEtapaId = signal<number | null>(null);
+  etapasFixasCriacao = signal<{ id: number; ordem: number; nome: string; estado: string }[]>([]);
+  novaTarefaChamadoIds = signal<number[]>([]);
+  novaTarefaDataEntregaDate = signal<Date | null>(null);
+  novaTarefaDataEntrega = signal('');
+  erroNovaTarefa = signal<string | null>(null);
+  criandoTarefa = signal(false);
+  protected readonly Number = Number;
 
   // Bulk Selection
   selectedTarefas = signal<Set<number>>(new Set());
@@ -593,9 +713,44 @@ export class KanbanComponent implements OnInit {
     return this.colunas().filter(c => c.limiteWip && c.limiteWip > 0 && c.tarefas.length > c.limiteWip);
   });
 
+  // Métricas rápidas do quadro (Corretor #5 Passo 4)
+  metricas = computed(() => {
+    const tar = this.tarefas();
+    const hoje = new Date(new Date().toDateString()).getTime();
+    const aberta = (t: TarefaResumo) => t.status !== 'Concluida' && t.status !== 'Concluido' && t.status !== 'Cancelada' && t.status !== 'Cancelado';
+    const atrasada = (t: TarefaResumo) => {
+      if (!aberta(t)) return false;
+      const ref = t.dataEntrega ?? t.dataPrevisao;
+      return !!ref && new Date(new Date(ref).toDateString()).getTime() < hoje;
+    };
+    return {
+      concluidas: tar.filter(t => !aberta(t)).length,
+      atrasadas: tar.filter(atrasada).length,
+      urgentes: tar.filter(t => aberta(t) && t.prioridade === 3).length,
+      semResponsavel: tar.filter(t => aberta(t) && !t.responsavelId).length
+    };
+  });
+
   ngOnInit(): void {
     this.colunasService.listar(false).subscribe(cs => this.colunasOriginais.set(cs));
     this.projetosService.listar({}).subscribe(ps => this.projetos.set(ps));
+    this.tarefasService.listarOperadores().subscribe({
+      next: ops => this.operadores.set(ops ?? []),
+      error: () => this.operadores.set([])
+    });
+    // Deep-link da timeline do projeto (?projetoId=&etapaId=) + Kanban ADM (?perfil=F).
+    this.route.queryParams.subscribe(qp => {
+      const pid = qp['projetoId'];
+      const eid = qp['etapaId'];
+      const perfil = qp['perfil'];
+      if (pid && /^\d+$/.test(pid)) this.projetoId.set(pid);
+      if (eid && /^\d+$/.test(eid)) this.etapaId.set(Number(eid));
+      if (perfil) this.perfilFiltro.set(perfil);
+    });
+    this.tarefasService.listarEtapas().subscribe({
+      next: lista => this.etapasFiltro.set((lista ?? []).map(e => ({ id: e.id, nome: e.nome }))),
+      error: () => this.etapasFiltro.set([])
+    });
     this.carregar();
   }
 
@@ -603,6 +758,9 @@ export class KanbanComponent implements OnInit {
     this.loading.set(true);
     const filtro: TarefaFiltro = {};
     if (this.projetoId()) filtro.projetoId = Number(this.projetoId());
+    if (this.etapaId() != null) filtro.etapaId = this.etapaId() ?? undefined;
+    const perfil = this.perfilFiltro();
+    if (perfil) filtro.perfilId = perfil;
     this.tarefasService.listar(filtro).subscribe({
       next: (t) => { this.tarefas.set(t); this.loading.set(false); },
       error: () => this.loading.set(false)
@@ -611,6 +769,11 @@ export class KanbanComponent implements OnInit {
 
   onProjetoChange(v: string): void {
     this.projetoId.set(v);
+    this.carregar();
+  }
+
+  limparEtapa(): void {
+    this.etapaId.set(null);
     this.carregar();
   }
 
@@ -642,9 +805,6 @@ export class KanbanComponent implements OnInit {
   trackByColuna = (_: number, c: Coluna) => c.id;
   trackByTarefa = (_: number, t: TarefaResumo) => t.id;
 
-  // Column menu state
-  openColumnMenu = signal<number | null>(null);
-
   // Quick Filters
   onQuickFilterChange(key: keyof QuickFilters, value: string | number | boolean): void {
     this.quickFilters.update(f => ({ ...f, [key]: value }));
@@ -657,6 +817,8 @@ export class KanbanComponent implements OnInit {
 
   limparFiltros(): void {
     this.quickFilters.set({ assignee: '', prioridade: null, buscar: '', apenasMinhas: false });
+    this.etapaId.set(null);
+    this.carregar();
   }
 
   aplicarFiltros(): void {
@@ -672,6 +834,7 @@ export class KanbanComponent implements OnInit {
       next: (t) => {
         this.selectedTarefa.set(t);
         this.novoComentario.set('');
+        this.reatribuirIds.set(t.responsaveis?.map(r => r.operadorId) ?? (t.responsavelId ? [t.responsavelId] : []));
         this.drawerLoading.set(false);
       },
       error: () => this.drawerLoading.set(false)
@@ -681,6 +844,7 @@ export class KanbanComponent implements OnInit {
   fecharDrawer(): void {
     this.selectedTarefa.set(null);
     this.novoComentario.set('');
+    this.reatribuirIds.set([]);
   }
 
   adicionarComentario(tarefaId: number): void {
@@ -702,6 +866,26 @@ export class KanbanComponent implements OnInit {
     if (!t.dataPrevisao) return false;
     if (t.status === 'Concluida' || t.status === 'Concluido' || t.status === 'Cancelada' || t.status === 'Cancelado') return false;
     return new Date(t.dataPrevisao) < new Date(new Date().toDateString());
+  }
+
+  /** Corretor #3 Passo 3: SLA graduado (vencida / vence hoje / atenção / no prazo). */
+  slaInfo(t: TarefaResumo | TarefaDetalhe): { texto: string; classe: string } {
+    const ref = t.dataEntrega ?? t.dataPrevisao;
+    if (!ref) return { texto: 'Sem prazo', classe: '' };
+    const dt = new Date(ref);
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const rotulo = `${dd}/${mm}`;
+    if (t.status === 'Concluida' || t.status === 'Concluido' || t.status === 'Cancelada' || t.status === 'Cancelado') {
+      return { texto: rotulo, classe: '' };
+    }
+    const hoje = new Date(new Date().toDateString());
+    const dias = Math.round((new Date(dt.toDateString()).getTime() - hoje.getTime()) / 86400000);
+    if (dias < 0) return { texto: `Vencida (${rotulo})`, classe: 'imp-kanban__due--overdue' };
+    if (dias === 0) return { texto: 'Vence hoje', classe: 'imp-kanban__due--warning' };
+    if (dias === 1) return { texto: 'Vence amanhã', classe: 'imp-kanban__due--warning' };
+    if (dias <= 3) return { texto: `Vence em ${dias}d (${rotulo})`, classe: 'imp-kanban__due--attention' };
+    return { texto: rotulo, classe: '' };
   }
 
   classePrioridadeStatus(status: string): string {
@@ -739,124 +923,158 @@ export class KanbanComponent implements OnInit {
     // Visual feedback handled by CSS
   }
 
-  // Column Menu
-  toggleColumnMenu(colunaId: number): void {
-    this.openColumnMenu.update(current => current === colunaId ? null : colunaId);
-  }
-
-  fecharColumnMenu(): void {
-    this.openColumnMenu.set(null);
-  }
-
-  editarColuna(coluna: Coluna): void {
-    this.fecharColumnMenu();
-    const novoNome = prompt(`Editar nome da coluna "${coluna.nome}":`, coluna.nome);
-    if (novoNome !== null && novoNome.trim() !== '' && novoNome.trim() !== coluna.nome) {
-      const colunaOriginal = this.colunasOriginais().find(c => c.id === coluna.id);
-      const req: ColunaKanbanAtualizarRequest = {
-        nome: novoNome.trim(),
-        ordem: colunaOriginal?.ordem || 0,
-        cor: coluna.cor,
-        ativa: true,
-        limiteWip: coluna.limiteWip
-      };
-      this.colunasService.atualizar(coluna.id!, req).subscribe({
-        next: () => {
-          this.colunasOriginais.update(arr => arr.map(c => c.id === coluna.id ? { ...c, nome: novoNome.trim() } : c));
-          this.toastSucesso('Coluna renomeada');
-        },
-        error: (err) => this.toastErro('Erro ao renomear: ' + (err.error?.mensagem || err.message))
-      });
-    }
-  }
-
-  definirWip(coluna: Coluna): void {
-    this.fecharColumnMenu();
-    const novoWip = prompt(`Definir WIP Limit para "${coluna.nome}" (atual: ${coluna.limiteWip || 'sem limite'}):`, String(coluna.limiteWip || ''));
-    if (novoWip !== null) {
-      const wip = novoWip.trim() ? Number(novoWip) : undefined;
-      const req: ColunaKanbanAtualizarRequest = {
-        nome: coluna.nome,
-        ordem: 0, // placeholder
-        cor: coluna.cor,
-        ativa: true,
-        limiteWip: wip
-      };
-      this.colunasService.atualizar(coluna.id!, req).subscribe({
-        next: () => {
-          this.colunasOriginais.update(arr => arr.map(c => c.id === coluna.id ? { ...c, limiteWip: wip } : c));
-          this.toastSucesso(wip ? `WIP Limit definido para ${wip}` : 'WIP Limit removido');
-        },
-        error: (err) => this.toastErro('Erro ao definir WIP: ' + (err.error?.mensagem || err.message))
-      });
-    }
-  }
-
-  ocultarColuna(coluna: Coluna): void {
-    this.fecharColumnMenu();
-    if (confirm(`Ocultar coluna "${coluna.nome}"?`)) {
-      const req: ColunaKanbanAtualizarRequest = {
-        nome: coluna.nome,
-        ordem: 0,
-        cor: coluna.cor,
-        ativa: false,
-        limiteWip: coluna.limiteWip
-      };
-      this.colunasService.atualizar(coluna.id!, req).subscribe({
-        next: () => {
-          this.colunasOriginais.update(arr => arr.map(c => c.id === coluna.id ? { ...c, ativa: false } : c));
-          this.toastSucesso('Coluna ocultada');
-        },
-        error: (err) => this.toastErro('Erro ao ocultar coluna: ' + (err.error?.mensagem || err.message))
-      });
-    }
-  }
+  // Colunas do Kanban são FIXAS (seed): apenas mover tarefas entre elas.
 
   // Add Card Inline
   mostrarFormNovaTarefa(colunaId: number): void {
     this.showingAddForm.set(colunaId);
     this.novaTarefaTitulo.set('');
     this.novaTarefaDescricao.set('');
-    this.novaTarefaPrioridade.set(2);
-    this.novaTarefaResponsavel.set('');
+    this.novaTarefaPrioridade.set(1);
+    this.novaTarefaTipo.set(0);
+    this.novaTarefaResponsavelIds.set([]);
+    this.novaTarefaChamadoIds.set([]);
+    this.novaTarefaDataEntregaDate.set(null);
+    this.novaTarefaDataEntrega.set('');
+    this.erroNovaTarefa.set(null);
+
+    // Pre-fill projeto com o filtro atual do Kanban
+    const filtroProjeto = this.projetoId();
+    this.novaTarefaProjetoId.set(filtroProjeto ? Number(filtroProjeto) : null);
+    // Pre-fill etapa com o filtro atual; carrega o fluxo do projeto
+    this.novaTarefaEtapaId.set(this.etapaId());
+    this.carregarEtapasCriacao(this.novaTarefaProjetoId());
+
+    // Pre-fill responsavel with logged user
+    const operador = this.auth.getOperadorLogadoCompleto();
+    if (operador) {
+      this.novaTarefaResponsavelIds.set([operador.id]);
+    }
+
     // Focus no input na próxima tick
     setTimeout(() => {
-      const input = document.querySelector('.imp-kanban__add-input') as HTMLInputElement;
+      const input = document.querySelector('.imp-kanban__add-card .imp-kanban__add-input') as HTMLInputElement;
       input?.focus();
     }, 0);
+  }
+
+  /** Fluxo de etapas para o form inline (via detalhe do projeto → tipoProjeto). */
+  carregarEtapasCriacao(projetoId: number | null): void {
+    if (projetoId == null) {
+      this.etapasCriacao.set([]);
+      this.novaTarefaEtapaId.set(null);
+      this.etapasFixasCriacao.set([]);
+      this.novaTarefaProjetoEtapaId.set(null);
+      return;
+    }
+    this.projetosService.obter(projetoId).subscribe({
+      next: (p) => {
+        this.tarefasService.listarEtapas(p.tipoProjetoId).subscribe({
+          next: (lista) => this.etapasCriacao.set((lista ?? []).map(e => ({ id: e.id, nome: e.nome }))),
+          error: () => this.etapasCriacao.set([])
+        });
+      },
+      error: () => this.etapasCriacao.set([])
+    });
+    // Etapas fixas do projeto (default = em andamento).
+    this.projetosService.obterEtapasProjeto(projetoId).subscribe({
+      next: (lista) => {
+        const fixas = (lista ?? []).filter(e => e.id != null)
+          .map(e => ({ id: e.id as number, ordem: e.ordem, nome: e.nome, estado: e.estado }));
+        this.etapasFixasCriacao.set(fixas);
+        this.novaTarefaProjetoEtapaId.set(
+          fixas.find(f => f.estado === 'EmAndamento')?.id
+          ?? fixas.find(f => f.estado !== 'Concluida')?.id
+          ?? null);
+      },
+      error: () => {
+        this.etapasFixasCriacao.set([]);
+        this.novaTarefaProjetoEtapaId.set(null);
+      }
+    });
+  }
+
+  aoMudarProjetoNovaTarefa(valor: string | number | null): void {
+    const pid = valor === '' || valor == null ? null : Number(valor);
+    this.novaTarefaProjetoId.set(pid);
+    this.novaTarefaEtapaId.set(null);
+    this.novaTarefaProjetoEtapaId.set(null);
+    this.carregarEtapasCriacao(pid);
   }
 
   cancelarNovaTarefa(): void {
     this.showingAddForm.set(null);
     this.novaTarefaTitulo.set('');
     this.novaTarefaDescricao.set('');
-    this.novaTarefaResponsavel.set('');
+    this.novaTarefaPrioridade.set(1);
+    this.novaTarefaTipo.set(0);
+    this.novaTarefaResponsavelIds.set([]);
+    this.novaTarefaProjetoId.set(null);
+    this.novaTarefaEtapaId.set(null);
+    this.etapasCriacao.set([]);
+    this.novaTarefaProjetoEtapaId.set(null);
+    this.etapasFixasCriacao.set([]);
+    this.novaTarefaChamadoIds.set([]);
+    this.novaTarefaDataEntregaDate.set(null);
+    this.novaTarefaDataEntrega.set('');
+    this.erroNovaTarefa.set(null);
+    this.criandoTarefa.set(false);
   }
 
   criarTarefa(colunaId: number): void {
     const titulo = this.novaTarefaTitulo().trim();
-    if (!titulo) return;
-
-    const projetoSelecionado = this.projetos().find(p => p.id === Number(this.projetoId()));
-    if (!projetoSelecionado && this.projetoId()) {
-      alert('Selecione um projeto válido');
+    if (!titulo) {
+      this.erroNovaTarefa.set('Informe o título da tarefa.');
       return;
     }
+    if (this.novaTarefaResponsavelIds().length === 0) {
+      this.erroNovaTarefa.set('Selecione pelo menos um responsável.');
+      return;
+    }
+    const dataEntregaStr = this.novaTarefaDataEntrega().trim();
+    if (!dataEntregaStr) {
+      this.erroNovaTarefa.set('Informe a data de entrega.');
+      return;
+    }
+    // Valida responsáveis contra a lista de operadores (evita 400/500 do backend).
+    const conhecidos = new Set(this.operadores().map(o => o.id));
+    const desconhecidos = this.novaTarefaResponsavelIds().filter(id => conhecidos.size > 0 && !conhecidos.has(id));
+    if (desconhecidos.length) {
+      this.erroNovaTarefa.set(`Responsável não encontrado no sistema: ${desconhecidos.join(', ')}`);
+      return;
+    }
+    // Com projeto, a etapa é obrigatória (jornada da implantação).
+    const pidNova = this.novaTarefaProjetoId();
+    if (pidNova !== null && this.novaTarefaEtapaId() == null) {
+      this.erroNovaTarefa.set('Selecione a etapa da tarefa.');
+      return;
+    }
+    this.erroNovaTarefa.set(null);
+    this.criandoTarefa.set(true);
+
+    const responsavelPrincipal = this.novaTarefaResponsavelIds()[0];
+    const etapaNomeNova = this.etapasCriacao().find(e => e.id === this.novaTarefaEtapaId())?.nome;
 
     const req: TarefaCriarRequest = {
-      projetoId: projetoSelecionado?.id || 0,
+      projetoId: pidNova ?? undefined,
+      etapaId: this.novaTarefaEtapaId() ?? undefined,
+      projetoEtapaId: this.novaTarefaProjetoEtapaId() ?? undefined,
       colunaKanbanId: colunaId,
       titulo,
       descricao: this.novaTarefaDescricao() || undefined,
-      responsavelId: this.novaTarefaResponsavel() || undefined,
-      criadorId: 'admin', // TODO: obter do auth
+      responsavelId: responsavelPrincipal,
+      responsavelIds: this.novaTarefaResponsavelIds().length > 0 ? this.novaTarefaResponsavelIds() : undefined,
+      criadorId: this.auth.getOperadorLogado(),
       prioridade: this.novaTarefaPrioridade(),
+      tipo: this.novaTarefaTipo(),
       ordem: this.colunas().find(c => c.id === colunaId)?.tarefas.length || 0,
+      dataEntrega: dataEntregaStr || undefined,
       horasEstimadas: undefined
     };
 
     this.tarefasService.criar(req).subscribe({
       next: (t) => {
+        this.criandoTarefa.set(false);
         this.tarefas.update(arr => [...arr, {
           id: t.id,
           projetoId: t.projetoId,
@@ -870,19 +1088,29 @@ export class KanbanComponent implements OnInit {
           colunaKanbanId: t.colunaKanbanId,
           ordem: t.ordem,
           dataPrevisao: t.dataPrevisao,
+          dataEntrega: t.dataEntrega,
           dataConclusao: t.dataConclusao,
           bloqueada: t.bloqueada,
           bloqueadaMotivo: t.motivoBloqueio,
           horasEstimadas: t.horasEstimadas,
           horasRealizadas: t.horasRealizadas,
-          chamadoLegadoId: undefined,
-          dataInclusao: t.dataInclusao
+          tipo: t.tipo,
+          responsaveis: t.responsaveis ?? [],
+          arquivada: t.arquivada ?? false,
+          chamadoLegadoId: t.chamadoLegadoId,
+          dataInclusao: t.dataInclusao,
+          etapaId: t.etapaId ?? this.novaTarefaEtapaId() ?? undefined,
+          etapaNome: t.etapaNome ?? etapaNomeNova,
+          projetoEtapaId: t.projetoEtapaId ?? this.novaTarefaProjetoEtapaId() ?? undefined
         }]);
         this.cancelarNovaTarefa();
+        this.toastSucesso('Tarefa criada com sucesso');
       },
       error: (err) => {
+        this.criandoTarefa.set(false);
         console.error('Erro ao criar tarefa:', err);
-        alert('Erro ao criar tarefa: ' + (err.error?.mensagem || err.message));
+        this.erroNovaTarefa.set(err.error?.mensagem || 'Erro ao criar tarefa. Tente novamente.');
+        this.toastErro('Erro ao criar tarefa: ' + (err.error?.mensagem || err.message));
       }
     });
   }
@@ -894,12 +1122,72 @@ export class KanbanComponent implements OnInit {
     console.log('Menu tarefa:', tarefa);
   }
 
+  /** Corretor #1: abre o JOTA já situado no contexto desta tarefa. */
+  perguntarJota(t: TarefaDetalhe): void {
+    this.chatCtx.definirContextoTarefa({
+      tarefaId: t.id,
+      titulo: t.titulo,
+      responsavel: t.responsavelNome || undefined,
+      prioridade: this.prioridade(t.prioridade),
+      status: this.formatarStatus(t.status),
+      projeto: t.projetoCodigo ? `${t.projetoCodigo} — ${t.projetoNome}` : (t.projetoNome || undefined),
+      descricao: t.descricao || undefined
+    });
+  }
+
+  /** Corretor #5: reatribui responsáveis preservando os demais campos. */
+  salvarReatribuicao(): void {
+    const t = this.selectedTarefa();
+    if (!t || this.reatribuindo()) return;
+    const ids = this.reatribuirIds();
+    if (!ids.length) {
+      this.toastErro('Selecione pelo menos um responsável');
+      return;
+    }
+    this.reatribuindo.set(true);
+    const req: TarefaAtualizarRequest = {
+      titulo: t.titulo,
+      descricao: t.descricao,
+      responsavelId: ids[0],
+      responsavelIds: ids,
+      prioridade: t.prioridade,
+      tipo: t.tipo,
+      ordem: t.ordem,
+      dataPrevisao: t.dataPrevisao,
+      dataConclusao: t.dataConclusao,
+      horasEstimadas: t.horasEstimadas,
+      horasRealizadas: t.horasRealizadas,
+      bloqueada: t.bloqueada,
+      motivoBloqueio: t.motivoBloqueio,
+      usuarioAlteracao: this.auth.getOperadorLogado()
+    };
+    this.tarefasService.atualizar(t.id, req).subscribe({
+      next: () => {
+        this.tarefasService.obter(t.id).subscribe(d => {
+          this.selectedTarefa.set(d);
+          this.reatribuirIds.set(d.responsaveis?.map(r => r.operadorId) ?? (d.responsavelId ? [d.responsavelId] : []));
+          this.tarefas.update(arr => arr.map(x =>
+            x.id === d.id
+              ? { ...x, responsavelId: d.responsavelId, responsavelNome: d.responsavelNome, responsaveis: d.responsaveis ?? [] }
+              : x
+          ));
+        });
+        this.reatribuindo.set(false);
+        this.toastSucesso('Responsáveis atualizados');
+      },
+      error: (err) => {
+        this.reatribuindo.set(false);
+        this.toastErro('Erro ao reatribuir: ' + (err.error?.mensagem || err.message));
+      }
+    });
+  }
+
   classePrioridade(p: number): string {
-    return ['', 'imp-kanban__prio--baixa', 'imp-kanban__prio--media', 'imp-kanban__prio--alta', 'imp-kanban__prio--urgente'][p] ?? '';
+    return ['imp-kanban__prio--baixa', 'imp-kanban__prio--media', 'imp-kanban__prio--alta', 'imp-kanban__prio--urgente'][p] ?? '';
   }
 
   prioridade(p: number): string {
-    return ['', 'Baixa', 'Média', 'Alta', 'Urgente'][p] ?? '—';
+    return ['Baixa', 'Média', 'Alta', 'Urgente'][p] ?? '—';
   }
 
   formatHoras(estimadas?: number, realizadas?: number): string {
@@ -972,6 +1260,7 @@ export class KanbanComponent implements OnInit {
       descricao: undefined, // TarefaResumo não tem descricao
       responsavelId: tarefa.responsavelId,
       prioridade: tarefa.prioridade,
+      tipo: tarefa.tipo,
       ordem: tarefa.ordem,
       dataPrevisao: tarefa.dataPrevisao,
       dataConclusao: tarefa.dataConclusao,
@@ -1063,7 +1352,6 @@ export class KanbanComponent implements OnInit {
         this.fecharDrawer();
         this.cancelarInlineEdit();
         this.cancelarNovaTarefa();
-        this.fecharColumnMenu();
         this.limparFoco();
         break;
       case 'F2':
@@ -1200,11 +1488,11 @@ export class KanbanComponent implements OnInit {
     const ids = Array.from(this.selectedTarefas());
     if (ids.length === 0) return;
     
-    const prioridade = prompt(`Definir prioridade para ${ids.length} tarefa(s):\n1 - Baixa\n2 - Média\n3 - Alta\n4 - Urgente`, '2');
+    const prioridade = prompt(`Definir prioridade para ${ids.length} tarefa(s):\n0 - Baixa\n1 - Média\n2 - Alta\n3 - Urgente`, '1');
     if (!prioridade) return;
     
     const p = Number(prioridade);
-    if (p < 1 || p > 4) {
+    if (!Number.isInteger(p) || p < 0 || p > 3) {
       this.toastErro('Prioridade inválida');
       return;
     }
@@ -1215,6 +1503,7 @@ export class KanbanComponent implements OnInit {
         descricao: undefined,
         responsavelId: undefined,
         prioridade: p,
+        tipo: 0,
         ordem: 0,
         dataPrevisao: undefined,
         dataConclusao: undefined,
@@ -1246,6 +1535,7 @@ export class KanbanComponent implements OnInit {
         descricao: undefined,
         responsavelId: responsavel.trim(),
         prioridade: 0,
+        tipo: 0,
         ordem: 0,
         dataPrevisao: undefined,
         dataConclusao: undefined,

@@ -22,27 +22,7 @@ $wa-dark: #075E54;
 /* Header                   */
 /* ======================== */
 
-.frase__header {
-  h1 {
-    font-family: var(--font-display);
-    font-size: 1.6rem;
-    margin: 0 0 0.35rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-strong, var(--text-color));
 
-    i {
-      color: $wa-green;
-    }
-  }
-
-  p {
-    margin: 0;
-    font-size: 0.95rem;
-    color: var(--text-secondary);
-  }
-}
 
 /* ======================== */
 /* Fluxograma               */
@@ -56,7 +36,7 @@ $wa-dark: #075E54;
 }
 
 .flx__no {
-  max-width: 420px;
+  max-width: 26.25rem;
   background: var(--surface-secondary-soft);
   border: 1.5px solid var(--border-primary-soft);
   border-radius: 0.65rem;
@@ -121,7 +101,7 @@ $wa-dark: #075E54;
   }
 
   &--longo {
-    max-width: 520px;
+    max-width: 32.5rem;
     background: rgba(37, 211, 102, 0.07);
     border-style: dashed;
   }
@@ -140,7 +120,7 @@ $wa-dark: #075E54;
 .flx__seta {
   position: relative;
   width: 3px;
-  height: 28px;
+  height: 1.75rem;
   background: var(--flow-line);
   border-radius: 3px;
 
@@ -194,8 +174,8 @@ $wa-dark: #075E54;
   flex-direction: column;
   align-items: center;
   gap: 0.6rem;
-  min-width: 170px;
-  flex: 0 1 300px;
+  min-width: 10.625rem;
+  flex: 0 1 18.75rem;
   padding: 0.75rem 0.9rem 0.9rem;
   border-radius: 0.8rem;
   border: 1.5px dashed var(--border-primary-soft);
@@ -361,8 +341,8 @@ $wa-dark: #075E54;
 }
 
 .frase-grupo__icone {
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -392,9 +372,9 @@ $wa-dark: #075E54;
 }
 
 .frase-grupo__badge {
-  min-width: 24px;
-  height: 24px;
-  padding: 0 6px;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.375rem;
   border-radius: 999px;
   display: flex;
   align-items: center;
@@ -587,7 +567,7 @@ p {
 
 .frase-modal__caixa {
   width: 100%;
-  max-width: 560px;
+  max-width: 35rem;
   max-height: 90vh;
   overflow-y: auto;
   background: var(--surface-main);
@@ -802,7 +782,7 @@ p {
 
     > div:nth-child(2) {
       flex: 1;
-      min-width: 240px;
+      min-width: 15rem;
     }
   }
 }
@@ -827,8 +807,8 @@ p {
 }
 
 .fb-bloco__icone {
-  width: 38px;
-  height: 38px;
+  width: 2.375rem;
+  height: 2.375rem;
   border-radius: 0.65rem;
   display: flex;
   align-items: center;
@@ -1001,8 +981,8 @@ p {
 }
 
 .fb-bloco__regra-icone {
-  width: 44px;
-  height: 44px;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 0.7rem;
   background: rgba(37, 211, 102, 0.15);
   color: $wa-green;
@@ -1063,17 +1043,13 @@ p {
     gap: 1rem;
   }
 
-  .frase__header h1 {
-    font-size: 1.35rem;
-  }
-
   .frase-grupo__header {
     padding: 0.75rem 0.85rem;
   }
 
   .frase-grupo__icone {
-    width: 36px;
-    height: 36px;
+    width: 2.25rem;
+    height: 2.25rem;
     font-size: 0.95rem;
   }
 
@@ -1086,7 +1062,7 @@ p {
 
   .flx__no {
     font-size: 0.88rem;
-    max-width: 340px;
+    max-width: 21.25rem;
   }
 
   .flx__ramo {
@@ -1094,6 +1070,6 @@ p {
   }
 
   .flx__opcao {
-    min-width: 130px;
+    min-width: 8.125rem;
   }
 }

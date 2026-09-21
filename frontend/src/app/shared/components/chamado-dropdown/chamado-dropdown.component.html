@@ -1,0 +1,60 @@
+<div class="cham-dd" (clickOutside)="fechar()">
+  <button type="button" class="cham-dd__trigger" (click)="toggleAberto()">
+    <div class="cham-dd__chips">
+      @for (chId of selecionados; track chId) {
+        <span class="cham-dd__chip">
+          {{ getChamadoLabel(chId) }}
+          <button type="button" class="cham-dd__chip-remove" (click)="toggle(chId); $event.stopPropagation()">
+            <i class="bi bi-x"></i>
+          </button>
+        </span>
+      }
+      @if (!selecionados.length) {
+        <span class="cham-dd__placeholder">{{ placeholder }}</span>
+      }
+    </div>
+    <i class="bi bi-chevron-down" [class.rotated]="aberto()"></i>
+  </button>
+
+  @if (aberto()) {
+    <div class="cham-dd__panel">
+      <input
+        type="text"
+        class="cham-dd__search"
+        placeholder="Buscar chamado (ID ou título)..."
+        [(ngModel)]="busca"
+        (ngModelChange)="onBuscaChange()"
+        (input)="$event.stopPropagation()"
+        (keydown.esc)="fechar()"
+        autofocus
+      >
+      <div class="cham-dd__list">
+        @for (ch of filtrados(); track ch.chamadoId) {
+          <label class="cham-dd__item" (click)="$event.stopPropagation()">
+            <input
+              type="checkbox"
+              [checked]="isSelecionado(ch.chamadoId)"
+              (change)="toggle(ch.chamadoId)"
+            >
+            <span class="cham-dd__item-main">
+              <span class="cham-dd__item-id">#{{ ch.chamadoId }}</span>
+              <span class="cham-dd__item-title">{{ ch.titulo }}</span>
+            </span>
+            @if (ch.status) {
+              <span class="cham-dd__item-status">{{ ch.status }}</span>
+            }
+          </label>
+        }
+        @if (!filtrados().length && !carregando()) {
+          <div class="cham-dd__empty">Nenhum chamado encontrado</div>
+        }
+        @if (carregando()) {
+          <div class="cham-dd__loading"><i class="bi bi-arrow-clockwise spin"></i> Carregando...</div>
+        }
+        @if (erro()) {
+          <div class="cham-dd__error">{{ erro() }}</div>
+        }
+      </div>
+    </div>
+  }
+</div>

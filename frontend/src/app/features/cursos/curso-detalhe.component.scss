@@ -93,9 +93,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 60px;
-  height: 60px;
-  border-radius: 16px;
+  width: 3.75rem;
+  height: 3.75rem;
+  border-radius: 1rem;
   font-size: 1.8rem;
   flex-shrink: 0;
 }
@@ -241,7 +241,7 @@
 .curso-detalhe__video {
   position: relative;
   width: 100%;
-  max-width: 900px;
+  max-width: 56.25rem;
   aspect-ratio: 16 / 9;
   background: #000000;
   border-radius: 0.75rem;

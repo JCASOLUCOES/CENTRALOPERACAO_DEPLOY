@@ -59,26 +59,25 @@ jobs:
           git config user.name "docs-writer [bot]"
           git config user.email "docs-writer@github.com"
 
-      - name: Generate TELAS.md via docs-writer agent
+      - name: Validate extracted data (docs-writer syncs docs in chat)
         run: |
-          echo "📝 O agente docs-writer atualizará docs/TELAS.md com base em scripts/screens-data.json"
           ls -la scripts/screens-data.json 2>/dev/null || true
-          ls -la docs/TELAS.md 2>/dev/null || true
+          node -e "const d=require('./scripts/screens-data.json'); console.log('routes:', d.frontend.routes.length, '| components:', d.frontend.components.length, '| endpoints:', d.backend.endpoints.length, '| tables:', d.backend.tables.length, '| migrations:', d.backend.migrations.length);"
 
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet docs/TELAS.md; then
+          if git diff --quiet docs/TELAS.md docs/telas scripts/screens-data.json; then
             echo "no_changes=true" >> $GITHUB_OUTPUT
           else
             echo "no_changes=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Commit TELAS.md changes
+      - name: Commit docs changes
         if: steps.changes.outputs.no_changes == 'false'
         run: |
-          git add docs/TELAS.md scripts/screens-data.json
-          git commit -m "docs: sync TELAS.md (auto-generated via docs-writer)"
+          git add docs/TELAS.md docs/telas scripts/screens-data.json
+          git commit -m "docs: sync TELAS.md (extract-screens)"
           git push
 
       - name: Create PR comment
@@ -91,5 +90,5 @@ jobs:
               repository_id: context.repo.repoId,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '📝 **TELAS.md atualizado automaticamente!**\n\nO agente `docs-writer` sincronizou a documentação de telas e APIs com as últimas mudanças no código-fonte.\n\n- Componentes modificados detectados via diff\n- Novos endpoints backend registrados\n- Migrations atualizadas'
+              body: '📝 **Documentação de telas verificada!**\n\nO `extract-screens` atualizou `scripts/screens-data.json` com as mudanças detectadas.\n\n- `docs/TELAS.md` é o índice; o conteúdo vive em `docs/telas/`\n- A sincronização do texto é feita pelo agente `docs-writer` no chat\n- Componentes modificados detectados via diff\n- Novos endpoints backend registrados\n- Migrations atualizadas'
             })

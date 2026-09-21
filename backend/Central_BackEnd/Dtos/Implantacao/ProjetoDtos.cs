@@ -4,7 +4,6 @@ public record ProjetoResumo(
     int Id,
     string Codigo,
     string Nome,
-    string EquipeNome,
     string TipoProjetoNome,
     int? ClienteId,
     string? ClienteNome,
@@ -24,8 +23,6 @@ public record ProjetoDetalhe(
     string Codigo,
     string Nome,
     string? Descricao,
-    int EquipeId,
-    string EquipeNome,
     int TipoProjetoId,
     string TipoProjetoNome,
     int? ClienteId,
@@ -61,7 +58,6 @@ public record ProjetoDetalhe(
 public record ProjetoCriarRequest(
     string Nome,
     string? Descricao,
-    int EquipeId,
     int TipoProjetoId,
     int? ClienteId,
     int? ClienteLegadoId,
@@ -76,16 +72,15 @@ public record ProjetoCriarRequest(
     string? Observacao);
 
 public record ProjetoAtualizarRequest(
-    string Nome,
+    string? Nome,
     string? Descricao,
-    int EquipeId,
-    int TipoProjetoId,
+    int? TipoProjetoId,
     int? ClienteId,
     int? ClienteLegadoId,
     string? ResponsavelId,
     int? ColunaKanbanId,
-    int Prioridade,
-    int Progresso,
+    int? Prioridade,
+    int? Progresso,
     DateTime? DataInicio,
     DateTime? DataPrevisao,
     DateTime? DataConclusao,
@@ -94,6 +89,7 @@ public record ProjetoAtualizarRequest(
     int? HorasPlanejadas,
     int? HorasRealizadas,
     string? Observacao,
+    string? Status,
     string UsuarioAlteracao);
 
 public record ProjetoMudarStatusRequest(
@@ -102,9 +98,123 @@ public record ProjetoMudarStatusRequest(
     string UsuarioAlteracao);
 
 public record ProjetoFiltro(
-    string? Equipe,
     string? Tipo,
     string? Status,
     int? ClienteId,
     string? ResponsavelId,
-    string? Buscar);
+    string? Buscar,
+    string? PerfilId = null);
+
+public record ClienteResumo(
+    int Id,
+    string Nome,
+    string? Cnpj,
+    bool Ativo);
+
+/// <summary>Jornada de implantação: etapas do fluxo com progresso derivado das tarefas.</summary>
+public record EtapaJornadaItem(
+    int EtapaId,
+    string Nome,
+    string? Cor,
+    int Ordem,
+    int TotalTarefas,
+    int TarefasConcluidas,
+    int Percentual,
+    string Estado);
+
+public record ProjetoJornada(
+    int ProjetoId,
+    List<EtapaJornadaItem> Etapas,
+    int ProgressoGeral,
+    int? EtapaAtualId);
+
+// ===== NOVOS DTOs PARA ETAPAS FIXAS (9 ETAPAS) =====
+
+public record ProjetoEtapaResumo(
+    int Ordem,
+    string Nome,
+    string Estado,
+    int Percentual,
+    int ChecklistTotal,
+    int ChecklistConcluidos,
+    DateTime? DataInicio,
+    DateTime? DataFimPrevista,
+    DateTime? DataFimReal,
+    int? AtrasoDias,
+    string? ResponsavelNome,
+    int TarefasTotal = 0,
+    int TarefasConcluidas = 0,
+    int? Id = null);
+
+public record ProjetoEtapaChecklistItem(
+    int Id,
+    string Descricao,
+    bool Concluido,
+    DateTime? DataConclusao,
+    string? UsuarioConclusao);
+
+public record ProjetoEtapaDocumentoItem(
+    int Id,
+    string Nome,
+    string Url,
+    string? Descricao,
+    DateTime DataInclusao,
+    string UsuarioInclusao);
+
+public record ProjetoEtapaHistoricoItem(
+    int Id,
+    string Acao,
+    string? Detalhes,
+    string Usuario,
+    DateTime Data);
+
+public record ProjetoEtapaComentarioItem(
+    int Id,
+    string Texto,
+    string Usuario,
+    DateTime Data);
+
+public record ProjetoEtapaDetalhe(
+    int Ordem,
+    string Nome,
+    string Estado,
+    int Percentual,
+    List<ProjetoEtapaChecklistItem> Checklist,
+    List<ProjetoEtapaDocumentoItem> Documentos,
+    List<ProjetoEtapaHistoricoItem> Historico,
+    List<ProjetoEtapaComentarioItem> Comentarios,
+    DateTime? DataInicio,
+    DateTime? DataFimPrevista,
+    DateTime? DataFimReal,
+    int? AtrasoDias,
+    string? ResponsavelId,
+    string? ResponsavelNome);
+
+public record ProjetoEtapaChecklistItemRequest(
+    int? Id,
+    string Descricao,
+    bool Concluido);
+
+public record ProjetoEtapaAtualizarRequest(
+    int Percentual,
+    List<ProjetoEtapaChecklistItemRequest> Checklist,
+    string? Estado,
+    DateTime? DataFimReal,
+    string? ResponsavelId);
+
+public record ProjetoEtapaRetornoRequest(
+    int OrdemAlvo,
+    string Motivo,
+    string UsuarioAlteracao);
+
+public record ProjetoEtapaDocumentoRequest(
+    string Nome,
+    string Url,
+    string? Descricao);
+
+public record ProjetoEtapaComentarioRequest(
+    string Texto);
+
+public record ProjetoComEtapasResumo(
+    ProjetoResumo Projeto,
+    List<ProjetoEtapaResumo> Etapas);

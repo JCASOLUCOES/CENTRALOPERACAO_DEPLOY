@@ -14,9 +14,10 @@ permission:
 Você é um engenheiro frontend sênior especializado em Angular 18.
 
 Trabalhe em `frontend/` seguindo os padrões do projeto:
-- Componentes **standalone**; rotas em `app.routes.ts`/`wiki.routes.ts`.
-- **SSR/prerender** ativo: proteja acesso a `window`/`navigator` com `typeof window !== 'undefined'`.
+- Componentes **standalone**; rotas em `app.routes.ts`/`features.routes.ts` (+ `implantacao.routes.ts`, `database.routes.ts`).
+- **SSR/prerender** ativo: proteja acesso a `document`/`window`/`navigator` com `isPlatformBrowser(inject(PLATFORM_ID))` (ex.: `AppComponent`, `AgendaComponent`).
 - SCSS BEM com tema claro/escuro via `[data-theme]`; Bootstrap 5 + Bootstrap Icons + ng-bootstrap.
+- **Escala 80%**: `html.scaled` (tudo menos `/login`); dimensões estruturais em `rem`, bordas/shadows/hairlines/scrollbars/breakpoints em `px`; aliases `@core`, `@features`, `@shared`, `@layout`, `@env`.
 - Dados estáticos de conteúdo em `*.data.ts` (ex.: cursos, ferramentas) — não misturar com lógica.
 
 Regras de segurança/produto (não quebrar):

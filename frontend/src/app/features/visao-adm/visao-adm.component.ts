@@ -6,11 +6,12 @@ import { Procedimento, SetorProcedimento } from './data/procedimentos.data';
 import { Utilidade } from './data/utilidades.data';
 import { ProcedimentosService, SetorInfo } from './procedimentos.service';
 import { UtilidadesService } from './utilidades.service';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-visao-adm',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, PageHeaderComponent],
   templateUrl: './visao-adm.component.html',
   styleUrl: './visao-adm.component.scss'
 })

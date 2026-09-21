@@ -16,8 +16,8 @@ public class TiposProjetoController : ControllerBase
     public TiposProjetoController(ITipoProjetoService service) { _service = service; }
 
     [HttpGet]
-    public async Task<ActionResult<List<TipoProjetoResumo>>> Listar([FromQuery] int? equipeId, [FromQuery] bool apenasAtivos = true, CancellationToken ct = default)
-        => Ok(await _service.ListarAsync(equipeId, apenasAtivos, ct));
+    public async Task<ActionResult<List<TipoProjetoResumo>>> Listar([FromQuery] bool apenasAtivos = true, CancellationToken ct = default)
+        => Ok(await _service.ListarAsync(apenasAtivos, ct));
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TipoProjetoResumo>> Obter(int id, CancellationToken ct = default)
@@ -26,7 +26,9 @@ public class TiposProjetoController : ControllerBase
         return t == null ? NotFound() : Ok(t);
     }
 
+    // Tipos de projeto são FIXOS (4 tipos via seed). Escrita restrita a Administrador.
     [HttpPost]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult<TipoProjetoResumo>> Criar([FromBody] TipoProjetoCriarRequest req, CancellationToken ct = default)
     {
         try
@@ -38,6 +40,7 @@ public class TiposProjetoController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult<TipoProjetoResumo>> Atualizar(int id, [FromBody] TipoProjetoAtualizarRequest req, CancellationToken ct = default)
     {
         try
@@ -49,6 +52,7 @@ public class TiposProjetoController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult> Excluir(int id, CancellationToken ct = default)
     {
         var ok = await _service.ExcluirAsync(id, ct);

@@ -97,7 +97,7 @@ import { DatabaseRelationship } from '../models/database.model';
     }
     .db-rel__chip--confirmada { background: #dbeafe; color: #1e40af; }
     .db-rel__chip--possivel { background: #f3e8ff; color: #6b21a8; }
-    .db-rel__score { position: relative; width: 80px; height: 18px; background: #e2e8f0; border-radius: 0.3rem; overflow: hidden; }
+    .db-rel__score { position: relative; width: 5rem; height: 1.125rem; background: #e2e8f0; border-radius: 0.3rem; overflow: hidden; }
     .db-rel__score-barra { position: absolute; left: 0; top: 0; bottom: 0; width: var(--score, 0%); }
     .db-rel__score-barra--alta { background: #16a34a; }
     .db-rel__score-barra--media { background: #d97706; }

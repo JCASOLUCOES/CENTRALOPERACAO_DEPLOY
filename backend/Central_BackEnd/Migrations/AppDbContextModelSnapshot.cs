@@ -163,6 +163,10 @@ namespace Central_BackEnd.Migrations
                         .HasColumnType("int")
                         .HasColumnName("AGD_PadraoRecorrencia");
 
+                    b.Property<int>("Prioridade")
+                        .HasColumnType("int")
+                        .HasColumnName("AGD_Prioridade");
+
                     b.Property<int?>("ProjetoId")
                         .HasColumnType("int")
                         .HasColumnName("AGD_ProjetoId");
@@ -171,9 +175,17 @@ namespace Central_BackEnd.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("AGD_Recorrente");
 
+                    b.Property<int?>("SLAMinutos")
+                        .HasColumnType("int")
+                        .HasColumnName("AGD_SLAMinutos");
+
                     b.Property<int>("Tipo")
                         .HasColumnType("int")
                         .HasColumnName("AGD_Tipo");
+
+                    b.Property<int?>("TipoId")
+                        .HasColumnType("int")
+                        .HasColumnName("AGD_TipoId");
 
                     b.Property<string>("Titulo")
                         .IsRequired()
@@ -203,7 +215,45 @@ namespace Central_BackEnd.Migrations
 
                     b.HasIndex("ProjetoId");
 
+                    b.HasIndex("TipoId");
+
+                    b.HasIndex("OperadorId", "DataInicio", "DataFim")
+                        .HasDatabaseName("IX_IMPL_Agenda_Operador_DataInicio_DataFim");
+
                     b.ToTable("IMPL_Agenda");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.AgendaParticipante", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AgendaId")
+                        .HasColumnType("int")
+                        .HasColumnName("AgendaId");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CriadoEm");
+
+                    b.Property<string>("ParticipanteId")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)")
+                        .HasColumnName("ParticipanteId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParticipanteId");
+
+                    b.HasIndex("AgendaId", "ParticipanteId")
+                        .IsUnique();
+
+                    b.ToTable("CC_AgendaParticipante");
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.AuditoriaImplantacao", b =>
@@ -262,6 +312,43 @@ namespace Central_BackEnd.Migrations
                     b.HasIndex("Entidade", "EntidadeId");
 
                     b.ToTable("IMPL_Auditoria");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ChamadoLegado", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("CHAMADO_ID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("int")
+                        .HasColumnName("CLIENTE_ID");
+
+                    b.Property<DateTime?>("DataFechamento")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DATA_FECHAMENTO");
+
+                    b.Property<DateTime?>("DataPrevisao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DATA_PREVISAO");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("STATUS");
+
+                    b.Property<string>("Titulo")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("TITULO");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("tbchamado", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Cliente", b =>
@@ -324,6 +411,42 @@ namespace Central_BackEnd.Migrations
                     b.ToTable("IMPL_Cliente");
                 });
 
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ClienteLegado", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("CLIENTE_ID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Ativo")
+                        .HasMaxLength(1)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(1)")
+                        .HasColumnName("ATIVO");
+
+                    b.Property<string>("Cnpj")
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(max)")
+                        .HasColumnName("CNPJ");
+
+                    b.Property<string>("Fantasia")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("FANTASIA");
+
+                    b.Property<string>("RazaoSocial")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("RAZAO_SOCIAL");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("tbcliente", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ColunaKanban", b =>
                 {
                     b.Property<int>("Id")
@@ -341,6 +464,10 @@ namespace Central_BackEnd.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("CLK_Cor");
+
+                    b.Property<DateTime?>("DataAlteracao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CLK_DataAlteracao");
 
                     b.Property<DateTime>("DataInclusao")
                         .HasColumnType("datetime2")
@@ -363,6 +490,11 @@ namespace Central_BackEnd.Migrations
                     b.Property<bool>("Padrao")
                         .HasColumnType("bit")
                         .HasColumnName("CLK_Padrao");
+
+                    b.Property<string>("UsuarioAlteracao")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("CLK_UsuarioAlteracao");
 
                     b.Property<string>("UsuarioInclusao")
                         .IsRequired()
@@ -411,54 +543,6 @@ namespace Central_BackEnd.Migrations
                     b.ToTable("IMPL_ComentarioTarefa");
                 });
 
-            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Equipe", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("EQP_Id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Ativa")
-                        .HasColumnType("bit")
-                        .HasColumnName("EQP_Ativa");
-
-                    b.Property<DateTime>("DataInclusao")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("EQP_DataInclusao");
-
-                    b.Property<string>("Descricao")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasColumnName("EQP_Descricao");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("EQP_Nome");
-
-                    b.Property<string>("PrefixoCodigo")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasColumnName("EQP_PrefixoCodigo");
-
-                    b.Property<string>("UsuarioInclusao")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("EQP_UsuarioInclusao");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Nome")
-                        .IsUnique();
-
-                    b.ToTable("IMPL_Equipe");
-                });
-
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Etapa", b =>
                 {
                     b.Property<int>("Id")
@@ -481,6 +565,10 @@ namespace Central_BackEnd.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("ETP_Cor");
 
+                    b.Property<DateTime?>("DataAlteracao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ETP_DataAlteracao");
+
                     b.Property<DateTime>("DataInclusao")
                         .HasColumnType("datetime2")
                         .HasColumnName("ETP_DataInclusao");
@@ -499,6 +587,11 @@ namespace Central_BackEnd.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ETP_TipoProjetoId");
 
+                    b.Property<string>("UsuarioAlteracao")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("ETP_UsuarioAlteracao");
+
                     b.Property<string>("UsuarioInclusao")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -512,35 +605,35 @@ namespace Central_BackEnd.Migrations
                     b.ToTable("IMPL_Etapa");
                 });
 
-            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.MembroEquipe", b =>
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.FuncionarioLegado", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("FuncionarioId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasColumnName("MBE_Id");
+                        .HasColumnName("FUNCIONARIO_ID");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FuncionarioId"));
 
-                    b.Property<DateTime>("DataInclusao")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("MBE_DataInclusao");
+                    b.Property<string>("Ativo")
+                        .HasMaxLength(1)
+                        .HasColumnType("nvarchar(1)")
+                        .HasColumnName("ATIVO");
 
-                    b.Property<int>("EquipeId")
+                    b.Property<int?>("FuncaoId")
                         .HasColumnType("int")
-                        .HasColumnName("MBE_EquipeId");
+                        .HasColumnName("FUNCAO_ID");
 
                     b.Property<string>("OperadorId")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
-                        .HasColumnName("MBE_OperadorId");
+                        .HasColumnName("OPERADOR_ID");
 
-                    b.HasKey("Id");
+                    b.HasKey("FuncionarioId");
 
-                    b.HasIndex("EquipeId", "OperadorId")
-                        .IsUnique();
-
-                    b.ToTable("IMPL_MembroEquipe");
+                    b.ToTable("tbfuncionario", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Projeto", b =>
@@ -609,10 +702,6 @@ namespace Central_BackEnd.Migrations
                         .HasColumnType("nvarchar(4000)")
                         .HasColumnName("PRJ_Descricao");
 
-                    b.Property<int>("EquipeId")
-                        .HasColumnType("int")
-                        .HasColumnName("PRJ_EquipeId");
-
                     b.Property<int?>("HorasPlanejadas")
                         .HasColumnType("int")
                         .HasColumnName("PRJ_HorasPlanejadas");
@@ -673,11 +762,276 @@ namespace Central_BackEnd.Migrations
 
                     b.HasIndex("ColunaKanbanId");
 
-                    b.HasIndex("EquipeId");
-
                     b.HasIndex("TipoProjetoId");
 
                     b.ToTable("IMPL_Projeto");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ProjetoEtapa", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("PEP_Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AtrasoDias")
+                        .HasColumnType("int")
+                        .HasColumnName("PEP_AtrasoDias");
+
+                    b.Property<DateTime?>("DataAlteracao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PEP_DataAlteracao");
+
+                    b.Property<DateTime?>("DataFimPrevista")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PEP_DataFimPrevista");
+
+                    b.Property<DateTime?>("DataFimReal")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PEP_DataFimReal");
+
+                    b.Property<DateTime>("DataInclusao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PEP_DataInclusao");
+
+                    b.Property<DateTime?>("DataInicio")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PEP_DataInicio");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("PEP_Estado");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("PEP_Nome");
+
+                    b.Property<int>("Ordem")
+                        .HasColumnType("int")
+                        .HasColumnName("PEP_Ordem");
+
+                    b.Property<int>("Percentual")
+                        .HasColumnType("int")
+                        .HasColumnName("PEP_Percentual");
+
+                    b.Property<int>("ProjetoId")
+                        .HasColumnType("int")
+                        .HasColumnName("PEP_ProjetoId");
+
+                    b.Property<string>("ResponsavelId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PEP_ResponsavelId");
+
+                    b.Property<string>("UsuarioAlteracao")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PEP_UsuarioAlteracao");
+
+                    b.Property<string>("UsuarioInclusao")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PEP_UsuarioInclusao");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjetoId", "Ordem")
+                        .IsUnique();
+
+                    b.ToTable("tbprojetoEtapa");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ProjetoEtapaChecklist", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("PEC_Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Concluido")
+                        .HasColumnType("bit")
+                        .HasColumnName("PEC_Concluido");
+
+                    b.Property<DateTime?>("DataAlteracao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PEC_DataAlteracao");
+
+                    b.Property<DateTime?>("DataConclusao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PEC_DataConclusao");
+
+                    b.Property<DateTime>("DataInclusao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PEC_DataInclusao");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("PEC_Descricao");
+
+                    b.Property<int>("Ordem")
+                        .HasColumnType("int")
+                        .HasColumnName("PEC_Ordem");
+
+                    b.Property<int>("ProjetoEtapaId")
+                        .HasColumnType("int")
+                        .HasColumnName("PEC_ProjetoEtapaId");
+
+                    b.Property<string>("UsuarioAlteracao")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PEC_UsuarioAlteracao");
+
+                    b.Property<string>("UsuarioConclusao")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PEC_UsuarioConclusao");
+
+                    b.Property<string>("UsuarioInclusao")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PEC_UsuarioInclusao");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjetoEtapaId");
+
+                    b.ToTable("tbprojetoEtapaChecklist");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ProjetoEtapaComentario", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("PEC_Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Data")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PEC_Data");
+
+                    b.Property<int>("ProjetoEtapaId")
+                        .HasColumnType("int")
+                        .HasColumnName("PEC_ProjetoEtapaId");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)")
+                        .HasColumnName("PEC_Texto");
+
+                    b.Property<string>("Usuario")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PEC_Usuario");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjetoEtapaId");
+
+                    b.ToTable("tbprojetoEtapaComentario");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ProjetoEtapaDocumento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("PED_Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DataInclusao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PED_DataInclusao");
+
+                    b.Property<string>("Descricao")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("PED_Descricao");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("PED_Nome");
+
+                    b.Property<int>("ProjetoEtapaId")
+                        .HasColumnType("int")
+                        .HasColumnName("PED_ProjetoEtapaId");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("PED_Url");
+
+                    b.Property<string>("UsuarioInclusao")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PED_UsuarioInclusao");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjetoEtapaId");
+
+                    b.ToTable("tbprojetoEtapaDocumento");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ProjetoEtapaHistorico", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("PEH_Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Acao")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("PEH_Acao");
+
+                    b.Property<DateTime>("Data")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PEH_Data");
+
+                    b.Property<string>("Detalhes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("PEH_Detalhes");
+
+                    b.Property<int>("ProjetoEtapaId")
+                        .HasColumnType("int")
+                        .HasColumnName("PEH_ProjetoEtapaId");
+
+                    b.Property<string>("Usuario")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PEH_Usuario");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjetoEtapaId");
+
+                    b.ToTable("tbprojetoEtapaHistorico");
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Tarefa", b =>
@@ -688,6 +1042,10 @@ namespace Central_BackEnd.Migrations
                         .HasColumnName("TRF_Id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Arquivada")
+                        .HasColumnType("bit")
+                        .HasColumnName("TRF_Arquivada");
 
                     b.Property<bool>("Bloqueada")
                         .HasColumnType("bit")
@@ -714,6 +1072,10 @@ namespace Central_BackEnd.Migrations
                     b.Property<DateTime?>("DataConclusao")
                         .HasColumnType("datetime2")
                         .HasColumnName("TRF_DataConclusao");
+
+                    b.Property<DateTime?>("DataEntrega")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("TRF_DataEntrega");
 
                     b.Property<DateTime>("DataInclusao")
                         .HasColumnType("datetime2")
@@ -753,7 +1115,11 @@ namespace Central_BackEnd.Migrations
                         .HasColumnType("int")
                         .HasColumnName("TRF_Prioridade");
 
-                    b.Property<int>("ProjetoId")
+                    b.Property<int?>("ProjetoEtapaId")
+                        .HasColumnType("int")
+                        .HasColumnName("TRF_ProjetoEtapaId");
+
+                    b.Property<int?>("ProjetoId")
                         .HasColumnType("int")
                         .HasColumnName("TRF_ProjetoId");
 
@@ -765,6 +1131,10 @@ namespace Central_BackEnd.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int")
                         .HasColumnName("TRF_Status");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("int")
+                        .HasColumnName("TRF_TipoTarefa");
 
                     b.Property<string>("Titulo")
                         .IsRequired()
@@ -789,9 +1159,148 @@ namespace Central_BackEnd.Migrations
 
                     b.HasIndex("EtapaId");
 
+                    b.HasIndex("ProjetoEtapaId");
+
                     b.HasIndex("ProjetoId");
 
                     b.ToTable("IMPL_Tarefa");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.TarefaApontamento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("APT_Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Data")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("APT_Data");
+
+                    b.Property<DateTime>("DataInclusao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("APT_DataInclusao");
+
+                    b.Property<decimal>("Horas")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("APT_Horas");
+
+                    b.Property<string>("Observacao")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("APT_Observacao");
+
+                    b.Property<string>("OperadorId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("OPERADOR_ID");
+
+                    b.Property<int>("TarefaId")
+                        .HasColumnType("int")
+                        .HasColumnName("TRF_Id");
+
+                    b.Property<string>("UsuarioInclusao")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("APT_UsuarioInclusao");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TarefaId", "Data");
+
+                    b.ToTable("IMPL_TarefaApontamento");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.TarefaChamado", b =>
+                {
+                    b.Property<int>("TarefaId")
+                        .HasColumnType("int")
+                        .HasColumnName("TRF_Id");
+
+                    b.Property<int>("ChamadoId")
+                        .HasColumnType("int")
+                        .HasColumnName("CHAMADO_ID");
+
+                    b.Property<DateTime>("DataInclusao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("TRF_DataInclusao");
+
+                    b.Property<string>("UsuarioInclusao")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("TRF_UsuarioInclusao");
+
+                    b.HasKey("TarefaId", "ChamadoId");
+
+                    b.HasIndex("ChamadoId");
+
+                    b.ToTable("IMPL_TarefaChamado");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.TarefaResponsavel", b =>
+                {
+                    b.Property<int>("TarefaId")
+                        .HasColumnType("int")
+                        .HasColumnName("TRF_Id");
+
+                    b.Property<string>("OperadorId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("OPERADOR_ID");
+
+                    b.Property<DateTime>("DataInclusao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("TRF_DataInclusao");
+
+                    b.Property<string>("UsuarioInclusao")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("TRF_UsuarioInclusao");
+
+                    b.HasKey("TarefaId", "OperadorId");
+
+                    b.HasIndex("OperadorId");
+
+                    b.ToTable("IMPL_TarefaResponsavel");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.TipoEvento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("bit")
+                        .HasColumnName("Ativo");
+
+                    b.Property<string>("Cor")
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)")
+                        .HasColumnName("Cor");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Nome");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nome")
+                        .IsUnique();
+
+                    b.ToTable("CC_TipoEvento");
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.TipoProjeto", b =>
@@ -817,13 +1326,13 @@ namespace Central_BackEnd.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("TPP_Codigo");
 
+                    b.Property<DateTime?>("DataAlteracao")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("TPP_DataAlteracao");
+
                     b.Property<DateTime>("DataInclusao")
                         .HasColumnType("datetime2")
                         .HasColumnName("TPP_DataInclusao");
-
-                    b.Property<int?>("EquipeId")
-                        .HasColumnType("int")
-                        .HasColumnName("TPP_EquipeId");
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -835,6 +1344,11 @@ namespace Central_BackEnd.Migrations
                         .HasColumnType("int")
                         .HasColumnName("TPP_Ordem");
 
+                    b.Property<string>("UsuarioAlteracao")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("TPP_UsuarioAlteracao");
+
                     b.Property<string>("UsuarioInclusao")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -845,8 +1359,6 @@ namespace Central_BackEnd.Migrations
 
                     b.HasIndex("Codigo")
                         .IsUnique();
-
-                    b.HasIndex("EquipeId");
 
                     b.ToTable("IMPL_TipoProjeto");
                 });
@@ -987,7 +1499,33 @@ namespace Central_BackEnd.Migrations
                         .HasForeignKey("ProjetoId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Central_BackEnd.Models.Implantacao.TipoEvento", "TipoEvento")
+                        .WithMany()
+                        .HasForeignKey("TipoId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Projeto");
+
+                    b.Navigation("TipoEvento");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.AgendaParticipante", b =>
+                {
+                    b.HasOne("Central_BackEnd.Models.Implantacao.AgendaItem", "Agenda")
+                        .WithMany("Participantes")
+                        .HasForeignKey("AgendaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Central_BackEnd.Models.Operador", "Participante")
+                        .WithMany()
+                        .HasForeignKey("ParticipanteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Agenda");
+
+                    b.Navigation("Participante");
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ComentarioTarefa", b =>
@@ -1011,20 +1549,9 @@ namespace Central_BackEnd.Migrations
                     b.Navigation("TipoProjeto");
                 });
 
-            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.MembroEquipe", b =>
-                {
-                    b.HasOne("Central_BackEnd.Models.Implantacao.Equipe", "Equipe")
-                        .WithMany()
-                        .HasForeignKey("EquipeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Equipe");
-                });
-
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Projeto", b =>
                 {
-                    b.HasOne("Central_BackEnd.Models.Implantacao.Cliente", "Cliente")
+                    b.HasOne("Central_BackEnd.Models.Implantacao.ClienteLegado", "Cliente")
                         .WithMany()
                         .HasForeignKey("ClienteId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1033,12 +1560,6 @@ namespace Central_BackEnd.Migrations
                         .WithMany()
                         .HasForeignKey("ColunaKanbanId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Central_BackEnd.Models.Implantacao.Equipe", "Equipe")
-                        .WithMany()
-                        .HasForeignKey("EquipeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
 
                     b.HasOne("Central_BackEnd.Models.Implantacao.TipoProjeto", "TipoProjeto")
                         .WithMany()
@@ -1050,9 +1571,62 @@ namespace Central_BackEnd.Migrations
 
                     b.Navigation("ColunaKanban");
 
-                    b.Navigation("Equipe");
-
                     b.Navigation("TipoProjeto");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ProjetoEtapa", b =>
+                {
+                    b.HasOne("Central_BackEnd.Models.Implantacao.Projeto", "Projeto")
+                        .WithMany("Etapas")
+                        .HasForeignKey("ProjetoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Projeto");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ProjetoEtapaChecklist", b =>
+                {
+                    b.HasOne("Central_BackEnd.Models.Implantacao.ProjetoEtapa", "ProjetoEtapa")
+                        .WithMany("Checklist")
+                        .HasForeignKey("ProjetoEtapaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjetoEtapa");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ProjetoEtapaComentario", b =>
+                {
+                    b.HasOne("Central_BackEnd.Models.Implantacao.ProjetoEtapa", "ProjetoEtapa")
+                        .WithMany("Comentarios")
+                        .HasForeignKey("ProjetoEtapaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjetoEtapa");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ProjetoEtapaDocumento", b =>
+                {
+                    b.HasOne("Central_BackEnd.Models.Implantacao.ProjetoEtapa", "ProjetoEtapa")
+                        .WithMany("Documentos")
+                        .HasForeignKey("ProjetoEtapaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjetoEtapa");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ProjetoEtapaHistorico", b =>
+                {
+                    b.HasOne("Central_BackEnd.Models.Implantacao.ProjetoEtapa", "ProjetoEtapa")
+                        .WithMany("Historico")
+                        .HasForeignKey("ProjetoEtapaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjetoEtapa");
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Tarefa", b =>
@@ -1067,27 +1641,56 @@ namespace Central_BackEnd.Migrations
                         .HasForeignKey("EtapaId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Central_BackEnd.Models.Implantacao.ProjetoEtapa", "ProjetoEtapa")
+                        .WithMany()
+                        .HasForeignKey("ProjetoEtapaId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Central_BackEnd.Models.Implantacao.Projeto", "Projeto")
                         .WithMany()
                         .HasForeignKey("ProjetoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("ColunaKanban");
 
                     b.Navigation("Etapa");
 
                     b.Navigation("Projeto");
+
+                    b.Navigation("ProjetoEtapa");
                 });
 
-            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.TipoProjeto", b =>
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.TarefaApontamento", b =>
                 {
-                    b.HasOne("Central_BackEnd.Models.Implantacao.Equipe", "Equipe")
-                        .WithMany()
-                        .HasForeignKey("EquipeId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                    b.HasOne("Central_BackEnd.Models.Implantacao.Tarefa", "Tarefa")
+                        .WithMany("Apontamentos")
+                        .HasForeignKey("TarefaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Equipe");
+                    b.Navigation("Tarefa");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.TarefaChamado", b =>
+                {
+                    b.HasOne("Central_BackEnd.Models.Implantacao.Tarefa", "Tarefa")
+                        .WithMany("Chamados")
+                        .HasForeignKey("TarefaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tarefa");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.TarefaResponsavel", b =>
+                {
+                    b.HasOne("Central_BackEnd.Models.Implantacao.Tarefa", "Tarefa")
+                        .WithMany("Responsaveis")
+                        .HasForeignKey("TarefaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tarefa");
                 });
 
             modelBuilder.Entity("Central_BackEnd.Models.Operador", b =>
@@ -1109,6 +1712,36 @@ namespace Central_BackEnd.Migrations
                         .IsRequired();
 
                     b.Navigation("Operador");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.AgendaItem", b =>
+                {
+                    b.Navigation("Participantes");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Projeto", b =>
+                {
+                    b.Navigation("Etapas");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.ProjetoEtapa", b =>
+                {
+                    b.Navigation("Checklist");
+
+                    b.Navigation("Comentarios");
+
+                    b.Navigation("Documentos");
+
+                    b.Navigation("Historico");
+                });
+
+            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Tarefa", b =>
+                {
+                    b.Navigation("Apontamentos");
+
+                    b.Navigation("Chamados");
+
+                    b.Navigation("Responsaveis");
                 });
 #pragma warning restore 612, 618
         }

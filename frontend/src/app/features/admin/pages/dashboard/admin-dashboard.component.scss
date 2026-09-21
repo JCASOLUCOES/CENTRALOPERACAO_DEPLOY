@@ -1,0 +1,90 @@
+.admin-dashboard {
+  padding: 1rem;
+
+  &__refresh {
+    font-size: 0.85rem;
+    color: #6c757d;
+  }
+
+  &__loading {
+    display: flex;
+    justify-content: center;
+    padding: 3rem;
+  }
+}
+
+.kpi-card {
+  border-left-width: 4px;
+  border-left-style: solid;
+  transition: transform 0.15s;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &__icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &--blue .kpi-card__icon { color: #0d6efd; }
+  &--orange .kpi-card__icon { color: #fd7e14; }
+  &--red .kpi-card__icon { color: #dc3545; }
+  &--green .kpi-card__icon { color: #198754; }
+
+  &__valor {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  &__label {
+    font-size: 0.85rem;
+    color: #6c757d;
+  }
+}
+
+.funcao-card {
+  transition: transform 0.15s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+  }
+
+  &__count {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  &__count--emandamento { color: #fd7e14; }
+  &__count--atrasadas { color: #dc3545; }
+  &__count--concluidas { color: #198754; }
+
+  &__label {
+    font-size: 0.75rem;
+    color: #6c757d;
+  }
+}
+
+.alerta-card {
+  &__icone {
+    font-size: 1.5rem;
+    color: #dc3545;
+  }
+
+  &__tipo {
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+
+  &__descricao {
+    font-size: 0.85rem;
+    color: #6c757d;
+  }
+
+  &__quantidade {
+    font-size: 1rem;
+  }
+}

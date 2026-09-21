@@ -3,6 +3,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { DatabaseService } from './services/database.service';
 import { DbGlobalSearchComponent } from './components/db-global-search.component';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 
 interface DbTab {
   rota: string;
@@ -16,7 +17,7 @@ type Ambiente = 'DEV' | 'HML' | 'PROD' | 'DESCONHECIDO';
 @Component({
   selector: 'app-database-shell',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, DbGlobalSearchComponent],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, DbGlobalSearchComponent, PageHeaderComponent],
   templateUrl: './database-shell.component.html',
   styleUrl: './database-shell.component.scss'
 })
@@ -32,11 +33,8 @@ export class DatabaseShellComponent {
     { rota: 'visao-geral',  rotulo: 'Visão Geral',     icone: 'bi-speedometer2' },
     { rota: 'explorador',   rotulo: 'Explorador',      icone: 'bi-diagram-3-fill' },
     { rota: 'relacionamentos', rotulo: 'Relacionamentos', icone: 'bi-share' },
-    { rota: 'diagrama',     rotulo: 'Diagrama',        icone: 'bi-grid-3x3' },
     { rota: 'consultas',    rotulo: 'Consultas',       icone: 'bi-terminal' },
-    { rota: 'query-builder', rotulo: 'Query Builder',  icone: 'bi-diagram-3' },
     { rota: 'diferencas',   rotulo: 'Diferenças',      icone: 'bi-arrow-left-right' },
-    { rota: 'ia-chat',      rotulo: 'IA Chat',         icone: 'bi-robot' },
     { rota: 'configuracao', rotulo: 'Configuração',    icone: 'bi-gear-fill' }
   ];
 

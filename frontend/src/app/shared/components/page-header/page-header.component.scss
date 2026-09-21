@@ -1,0 +1,43 @@
+/* Cabeçalho padrão de página — espelho exato do header do Kanban. */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  min-height: 4.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.page-header__textos {
+  min-width: 0;
+}
+
+.page-header__titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font: 800 1.5rem/1.2 var(--font-display);
+  letter-spacing: -0.02em;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.page-header__titulo .bi {
+  font-size: 1.25rem;
+  color: var(--primary-color);
+}
+
+.page-header__sub {
+  font: 400 0.875rem/1.4 var(--font-body);
+  color: var(--text-color);
+  opacity: 0.7;
+  margin: 0.25rem 0 0;
+}
+
+.page-header__acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}

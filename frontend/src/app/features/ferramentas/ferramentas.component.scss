@@ -4,21 +4,6 @@
   gap: 1.75rem;
 }
 
-.ferramentas__header {
-  h1 {
-    font-family: var(--font-display);
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--text-strong);
-    margin-bottom: 0.5rem;
-  }
-
-  p {
-    color: var(--text-muted);
-    max-width: 70ch;
-  }
-}
-
 .ferramentas__stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -53,9 +38,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
   font-size: 1.25rem;
   flex-shrink: 0;
 
@@ -79,7 +64,7 @@
 
 .ferramentas__busca-campo {
   flex: 1;
-  min-width: 240px;
+  min-width: 15rem;
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -198,9 +183,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
   font-size: 1.3rem;
 }
 

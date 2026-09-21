@@ -1,6 +1,36 @@
+export interface ResponsavelResumo {
+  operadorId: string;
+  nome: string;
+}
+
+export interface ChamadoResumo {
+  chamadoId: number;
+  titulo?: string;
+  status?: string;
+  dataPrevisao?: string;
+}
+
+export interface ApontamentoResumo {
+  id: number;
+  operadorId: string;
+  operadorNome: string;
+  data: string;
+  horas: number;
+  observacao?: string;
+}
+
+export interface HistoricoMovimentacao {
+  tarefaId: number;
+  statusAnterior?: string;
+  statusNovo?: string;
+  usuario?: string;
+  data: string;
+  observacao?: string;
+}
+
 export interface TarefaResumo {
   id: number;
-  projetoId: number;
+  projetoId?: number;
   projetoCodigo: string;
   projetoNome: string;
   titulo: string;
@@ -9,15 +39,23 @@ export interface TarefaResumo {
   status: string;
   prioridade: number;
   colunaKanbanId?: number;
+  chamadoLegadoId?: number;
   ordem: number;
   dataPrevisao?: string;
+  dataEntrega?: string;
+  tipo: number;
   dataConclusao?: string;
   bloqueada: boolean;
   bloqueadaMotivo?: string;
   horasEstimadas?: number;
   horasRealizadas?: number;
-  chamadoLegadoId?: number;
+  responsaveis: ResponsavelResumo[];
   dataInclusao: string;
+  arquivada: boolean;
+  etapaId?: number;
+  etapaNome?: string;
+  projetoEtapaId?: number;
+  projetoEtapaNome?: string;
 }
 
 export interface ComentarioTarefaResumo {
@@ -30,11 +68,14 @@ export interface ComentarioTarefaResumo {
 
 export interface TarefaDetalhe {
   id: number;
-  projetoId: number;
+  projetoId?: number;
   projetoCodigo: string;
   projetoNome: string;
+  chamadoLegadoId?: number;
   etapaId?: number;
   etapaNome?: string;
+  projetoEtapaId?: number;
+  projetoEtapaNome?: string;
   colunaKanbanId?: number;
   colunaKanbanNome?: string;
   titulo: string;
@@ -47,11 +88,17 @@ export interface TarefaDetalhe {
   prioridade: number;
   ordem: number;
   dataPrevisao?: string;
+  dataEntrega?: string;
+  tipo: number;
   dataConclusao?: string;
   horasEstimadas?: number;
   horasRealizadas?: number;
   bloqueada: boolean;
   motivoBloqueio?: string;
+  arquivada: boolean;
+  responsaveis: ResponsavelResumo[];
+  chamados: ChamadoResumo[];
+  apontamentos: ApontamentoResumo[];
   comentarios: ComentarioTarefaResumo[];
   dataInclusao: string;
   usuarioInclusao: string;
@@ -60,29 +107,39 @@ export interface TarefaDetalhe {
 }
 
 export interface TarefaCriarRequest {
-  projetoId: number;
+  projetoId?: number;
   etapaId?: number;
+  projetoEtapaId?: number;
   colunaKanbanId?: number;
+  chamadoLegadoId?: number;
   titulo: string;
   descricao?: string;
   responsavelId?: string;
+  responsavelIds?: string[];
   criadorId: string;
   prioridade: number;
+  tipo: number;
   ordem: number;
   dataPrevisao?: string;
+  dataEntrega?: string;
   horasEstimadas?: number;
-  chamadoLegadoId?: number;
 }
 
 export interface TarefaAtualizarRequest {
   etapaId?: number;
+  projetoEtapaId?: number;
   colunaKanbanId?: number;
+  chamadoLegadoId?: number;
   titulo: string;
   descricao?: string;
   responsavelId?: string;
+  responsavelIds?: string[];
+  status?: string;
   prioridade: number;
+  tipo: number;
   ordem: number;
   dataPrevisao?: string;
+  dataEntrega?: string;
   dataConclusao?: string;
   horasEstimadas?: number;
   horasRealizadas?: number;
@@ -94,6 +151,7 @@ export interface TarefaAtualizarRequest {
 export interface TarefaMudarColunaRequest {
   colunaKanbanId?: number;
   novaOrdem: number;
+  motivoBloqueio?: string;
 }
 
 export interface ComentarioCriarRequest {
@@ -101,14 +159,32 @@ export interface ComentarioCriarRequest {
   texto: string;
 }
 
+export interface ApontamentoCriarRequest {
+  operadorId: string;
+  data: string;
+  horas: number;
+  observacao?: string;
+}
+
+export interface ApontamentoAtualizarRequest {
+  data: string;
+  horas: number;
+  observacao?: string;
+  usuarioAlteracao: string;
+}
+
 export interface TarefaFiltro {
   projetoId?: number;
-  equipe?: string;
   responsavelId?: string;
   status?: string;
   prioridade?: number;
+  tipo?: number;
   buscar?: string;
   apenasAtrasadas?: boolean;
   apenasEmAndamento?: boolean;
   apenasConcluidas?: boolean;
+  apenasVenceHoje?: boolean;
+  perfilId?: string;
+  incluirArquivadas?: boolean;
+  etapaId?: number;
 }

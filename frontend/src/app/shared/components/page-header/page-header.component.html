@@ -1,0 +1,7 @@
+<header class="page-header">
+  <div class="page-header__textos">
+    <h1 class="page-header__titulo"><i *ngIf="icone" class="bi" [ngClass]="icone" aria-hidden="true"></i> {{ titulo }}</h1>
+    <p class="page-header__sub" *ngIf="descricao">{{ descricao }}</p>
+  </div>
+  <div class="page-header__acoes"><ng-content select="[actions]"></ng-content></div>
+</header>

@@ -1,0 +1,178 @@
+.etapa-card {
+  flex: 0 0 9rem;
+  min-width: 9rem;
+  max-width: 9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  scroll-snap-align: start;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  &.estado-concluida {
+    border-left: 4px solid #22c55e;
+    background: linear-gradient(180deg, #f0fdf4 0%, var(--surface) 100%);
+  }
+
+  &.estado-em-andamento {
+    border-left: 4px solid #3b82f6;
+    background: linear-gradient(180deg, #eff6ff 0%, var(--surface) 100%);
+  }
+
+  &.estado-bloqueada {
+    border-left: 4px solid #f59e0b;
+    opacity: 0.85;
+    background: linear-gradient(180deg, #fffbeb 0%, var(--surface) 100%);
+  }
+
+  &.estado-pendente {
+    border-left: 4px solid #9ca3af;
+    opacity: 0.6;
+    background: linear-gradient(180deg, #f9fafb 0%, var(--surface) 100%);
+  }
+}
+
+.etapa-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.etapa-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.etapa-icone {
+  font-size: 1rem;
+  flex-shrink: 0;
+
+  &.icone-concluida { color: #22c55e; }
+  &.icone-em-andamento { color: #3b82f6; animation: pulse 1.5s infinite; }
+  &.icone-bloqueada { color: #f59e0b; }
+  &.icone-pendente { color: #9ca3af; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.etapa-nome {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.etapa-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.progress-bar {
+  height: 0.375rem;
+  background: var(--border);
+  border-radius: 0.1875rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease, background 0.2s ease;
+  background: var(--primary);
+}
+
+.etapa-card.estado-concluida .progress-fill { background: #22c55e; }
+.etapa-card.estado-em-andamento .progress-fill { background: #3b82f6; }
+.etapa-card.estado-bloqueada .progress-fill { background: #f59e0b; }
+.etapa-card.estado-pendente .progress-fill { background: #9ca3af; }
+
+.progress-text {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-align: right;
+}
+
+.etapa-status {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+
+.etapa-checklist,
+.etapa-tarefas {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+
+  .checklist-done { font-weight: 600; color: #22c55e; }
+  .checklist-sep { color: var(--border); }
+  .checklist-total { color: var(--ink-soft); }
+  .tarefas-label { font-size: 0.65rem; opacity: 0.8; }
+}
+
+.etapa-tarefas {
+  font-weight: 600;
+}
+
+.etapa-atraso {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #ef4444;
+  background: #fef2f2;
+  padding: 0.125rem 0.375rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: fit-content;
+}
+
+.etapa-responsavel {
+  font-size: 0.65rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}

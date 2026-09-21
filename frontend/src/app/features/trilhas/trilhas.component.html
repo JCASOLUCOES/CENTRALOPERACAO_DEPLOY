@@ -28,35 +28,48 @@
     <h2 class="tdh__indice-titulo">
       <i class="bi bi-list-ul"></i> Índice <small>clique para abrir a seção</small>
     </h2>
+    <div class="tdh__busca">
+      <i class="bi bi-search" aria-hidden="true"></i>
+      <input
+        type="search"
+        [(ngModel)]="filtro"
+        placeholder="Descreva o problema... ex. erro 500, lentidão, smtp"
+        aria-label="Filtrar seções do guia"
+      />
+    </div>
     <div class="tdh__indice-grid">
-      <button type="button" class="tdh__link" (click)="toggleSecao('classificacao')">
-        <span class="tdh__link-num">1</span> Classificação do Incidente
+      <button
+        type="button"
+        class="tdh__link"
+        *ngFor="let s of secoesVisiveis()"
+        (click)="toggleSecao(s.id)"
+      >
+        <span class="tdh__link-num">{{ s.numero }}</span> {{ s.titulo }}
       </button>
-      <button type="button" class="tdh__link" (click)="toggleSecao('diagnostico')">
-        <span class="tdh__link-num">2</span> Diagnóstico Inicial
-      </button>
-      <button type="button" class="tdh__link" (click)="toggleSecao('documentos')">
-        <span class="tdh__link-num">3</span> Documentos e Histórico
-      </button>
-      <button type="button" class="tdh__link" (click)="toggleSecao('plano-acao')">
-        <span class="tdh__link-num">4</span> Plano de Ação
-      </button>
-      <button type="button" class="tdh__link" (click)="toggleSecao('comunicacao')">
-        <span class="tdh__link-num">5</span> Comunicação com o Cliente
-      </button>
-      <button type="button" class="tdh__link" (click)="toggleSecao('fechamento')">
-        <span class="tdh__link-num">6</span> Fechamento do Incidente
-      </button>
-      <button type="button" class="tdh__link" (click)="toggleSecao('fluxo-resumido')">
-        <span class="tdh__link-num">7</span> Fluxo Resumido
-      </button>
-      <button type="button" class="tdh__link" (click)="toggleSecao('exemplos-praticos')">
-        <span class="tdh__link-num">8</span> Exemplos Práticos
-      </button>
+      <p class="tdh__vazio" *ngIf="!secoesVisiveis().length">
+        Nenhuma seção corresponde. Tente outro termo ou
+        <a [routerLink]="['/chat']">pergunte ao JOTA</a>.
+      </p>
     </div>
   </nav>
 
-  <div class="tdh__conteudo">
+  <div class="tdh__exemplos" aria-label="Problemas comuns">
+    <button
+      type="button"
+      class="tdh__exemplo"
+      *ngFor="let e of exemplosRapidos"
+      (click)="abrirSecao('exemplos-praticos')"
+    >
+      <i class="bi {{ e.icone }}" aria-hidden="true"></i>
+      <span><strong>{{ e.titulo }}</strong><small>{{ e.descricao }}</small></span>
+    </button>
+    <a class="tdh__exemplo tdh__exemplo--jota" [routerLink]="['/chat']">
+      <i class="bi bi-robot" aria-hidden="true"></i>
+      <span><strong>Não achou?</strong><small>Pergunte ao JOTA com o contexto</small></span>
+    </a>
+  </div>
+
+  <div class="tdh__conteudo" #conteudo>
 
     <!-- 1. Classificação -->
     <article class="tdh__secao" [attr.aria-expanded]="secaoAbertaId === 'classificacao'">

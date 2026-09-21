@@ -51,17 +51,17 @@
     opacity: 0.35;
 
     &--um {
-      width: 340px;
-      height: 340px;
-      top: -120px;
-      right: -80px;
+      width: 21.25rem;
+      height: 21.25rem;
+      top: -7.5rem;
+      right: -5rem;
       background: radial-gradient(circle, var(--secondary-color), transparent 70%);
     }
 
     &--dois {
-      width: 260px;
-      height: 260px;
-      bottom: -110px;
+      width: 16.25rem;
+      height: 16.25rem;
+      bottom: -6.875rem;
       left: 40%;
       background: radial-gradient(circle, var(--accent-color), transparent 70%);
     }
@@ -70,7 +70,7 @@
   &__conteudo {
     position: relative;
     z-index: 1;
-    max-width: 640px;
+    max-width: 40rem;
   }
 
   &__selo {

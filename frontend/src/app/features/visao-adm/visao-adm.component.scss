@@ -6,7 +6,7 @@
    CENTRAL DE UTILIDADES
    ═══════════════════════════════════════════ */
 .util {
-  max-width: 1060px;
+  max-width: 66.25rem;
   margin: 2.5rem auto 0;
   display: flex;
   flex-direction: column;
@@ -32,18 +32,18 @@
   z-index: 0;
 
   &--um {
-    width: 200px;
-    height: 200px;
-    right: -60px;
-    top: -80px;
+    width: 12.5rem;
+    height: 12.5rem;
+    right: -3.75rem;
+    top: -5rem;
     background: rgba(37, 211, 102, 0.14);
   }
 
   &--dois {
-    width: 160px;
-    height: 160px;
-    right: 110px;
-    bottom: -90px;
+    width: 10rem;
+    height: 10rem;
+    right: 6.875rem;
+    bottom: -5.625rem;
     background: rgba(37, 99, 235, 0.12);
   }
 }
@@ -63,8 +63,8 @@
 }
 
 .util__icone {
-  width: 56px;
-  height: 56px;
+  width: 3.5rem;
+  height: 3.5rem;
   border-radius: 1rem;
   display: inline-flex;
   align-items: center;
@@ -146,7 +146,7 @@
 
 .util__rapido {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(13.125rem, 1fr));
   gap: 0.6rem;
 }
 
@@ -187,8 +187,8 @@
 }
 
 .util__rapido-icone {
-  width: 38px;
-  height: 38px;
+  width: 2.375rem;
+  height: 2.375rem;
   border-radius: 0.7rem;
   display: inline-flex;
   align-items: center;
@@ -214,7 +214,7 @@
 
 .util__busca {
   flex: 1;
-  min-width: 240px;
+  min-width: 15rem;
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -326,7 +326,7 @@
 /* ---------- Grid de cards ---------- */
 .util__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
   gap: 0.9rem;
 }
 
@@ -352,8 +352,8 @@
 }
 
 .util__card-icone {
-  width: 46px;
-  height: 46px;
+  width: 2.875rem;
+  height: 2.875rem;
   border-radius: 0.85rem;
   display: inline-flex;
   align-items: center;
@@ -538,8 +538,8 @@
 }
 
 .util__linha-icone {
-  width: 42px;
-  height: 42px;
+  width: 2.625rem;
+  height: 2.625rem;
   border-radius: 0.7rem;
   display: inline-flex;
   align-items: center;
@@ -621,8 +621,8 @@
   }
 
   .util__icone {
-    width: 48px;
-    height: 48px;
+    width: 3rem;
+    height: 3rem;
     font-size: 1.25rem;
   }
 

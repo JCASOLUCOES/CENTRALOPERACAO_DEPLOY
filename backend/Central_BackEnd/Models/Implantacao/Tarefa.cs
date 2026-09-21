@@ -27,6 +27,12 @@ public enum PrioridadeTarefa
     Urgente = 3
 }
 
+public enum TipoTarefa
+{
+    Feature = 0,
+    Bug = 1
+}
+
 [Table("IMPL_Tarefa")]
 public class Tarefa
 {
@@ -35,7 +41,7 @@ public class Tarefa
     public int Id { get; set; }
 
     [Column("TRF_ProjetoId")]
-    public int ProjetoId { get; set; }
+    public int? ProjetoId { get; set; }
 
     [ForeignKey("ProjetoId")]
     public Projeto? Projeto { get; set; }
@@ -52,6 +58,17 @@ public class Tarefa
 
     [ForeignKey("EtapaId")]
     public Etapa? Etapa { get; set; }
+
+    /// <summary>
+    /// FK para a etapa FIXA do projeto (tbprojetoEtapa.PEP_Id, jornada de 9 etapas).
+    /// Define o contador dinâmico do card (tarefas concluídas vs total).
+    /// NULL = conta só nos totais do projeto/jornada, sem card fixo.
+    /// </summary>
+    [Column("TRF_ProjetoEtapaId")]
+    public int? ProjetoEtapaId { get; set; }
+
+    [ForeignKey("ProjetoEtapaId")]
+    public ProjetoEtapa? ProjetoEtapa { get; set; }
 
     [Column("TRF_ColunaKanbanId")]
     public int? ColunaKanbanId { get; set; }
@@ -88,14 +105,33 @@ public class Tarefa
     [Column("TRF_DataPrevisao")]
     public DateTime? DataPrevisao { get; set; }
 
+    /// <summary>
+    /// Data de entrega (somente data). Base oficial do cálculo de atraso:
+    /// atrasada = DataEntrega &lt; hoje AND Status ∉ {Concluida, Cancelada}.
+    /// </summary>
+    [Column("TRF_DataEntrega")]
+    public DateTime? DataEntrega { get; set; }
+
     [Column("TRF_DataConclusao")]
     public DateTime? DataConclusao { get; set; }
+
+    /// <summary>Feature (0, default p/ compatibilidade) ou Bug (1, retrabalho).</summary>
+    [Column("TRF_TipoTarefa")]
+    public TipoTarefa Tipo { get; set; } = TipoTarefa.Feature;
 
     [Column("TRF_HorasEstimadas")]
     public int? HorasEstimadas { get; set; }
 
+    /// <summary>
+    /// Total derivado: SUM(IMPL_TarefaApontamento). Mantido sincronizado pelo
+    /// service a cada apontamento; nunca editado diretamente.
+    /// </summary>
     [Column("TRF_HorasRealizadas")]
     public int? HorasRealizadas { get; set; }
+
+    public ICollection<TarefaResponsavel> Responsaveis { get; set; } = new List<TarefaResponsavel>();
+    public ICollection<TarefaChamado> Chamados { get; set; } = new List<TarefaChamado>();
+    public ICollection<TarefaApontamento> Apontamentos { get; set; } = new List<TarefaApontamento>();
 
     [Column("TRF_Bloqueada")]
     public bool Bloqueada { get; set; } = false;
@@ -103,6 +139,9 @@ public class Tarefa
     [MaxLength(500)]
     [Column("TRF_MotivoBloqueio")]
     public string? MotivoBloqueio { get; set; }
+
+    [Column("TRF_Arquivada")]
+    public bool Arquivada { get; set; } = false;
 
     [Required]
     [MaxLength(50)]

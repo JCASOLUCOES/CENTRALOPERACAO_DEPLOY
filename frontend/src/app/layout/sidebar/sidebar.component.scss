@@ -3,7 +3,7 @@
 }
 
 .sidebar {
-  width: 280px;
+  width: 17.5rem;
   height: 100%;
   overflow-y: auto;
   background: var(--surface-main);
@@ -32,8 +32,8 @@
 }
 
 .dot {
-  width: 12px;
-  height: 12px;
+  width: 0.75rem;
+  height: 0.75rem;
   border-radius: 50%;
   background: linear-gradient(
     135deg,
@@ -114,7 +114,7 @@
     top: 50%;
     transform: translateY(-50%);
     width: 3px;
-    height: 18px;
+    height: 1.125rem;
     border-radius: 2px;
     background: var(--signal);
   }
@@ -226,7 +226,7 @@
 /* ======================== */
 
 .sidebar--collapsed {
-  width: 72px;
+  width: 4.5rem;
   padding: 1rem 0.5rem;
 
   .section {
@@ -271,3 +271,22 @@
     gap: 0.45rem;
   }
 }
+
+/* Rodapé de papel (somente exibição) */
+.sidebar-papel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--surface-main);
+  border: 1px solid var(--border-primary-soft);
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  margin-top: auto;
+}
+
+.sidebar-papel i { color: var(--primary-color); }
+.sidebar-papel span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sidebar-papel--mini { justify-content: center; padding: 0.6rem 0; }

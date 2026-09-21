@@ -10,7 +10,8 @@
       "@core/*": ["src/app/core/*"],
       "@layout/*": ["src/app/layout/*"],
       "@shared/*": ["src/app/shared/*"],
-      "@features/*": ["src/app/features/*"]
+      "@features/*": ["src/app/features/*"],
+      "@env/*": ["src/environments/*"]
     },
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
