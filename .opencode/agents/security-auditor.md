@@ -24,3 +24,8 @@ Responda em formato estruturado, para cada achado:
 - **Nível de Risco:** (Crítico / Médio / Baixo)
 - **Evidência:** arquivo e linha do problema
 - **Correção:** trecho de código corrigido pronto para uso
+
+## Otimização de contexto (sempre)
+- Escaneie por padrões (`grep` por `password|secret|token|innerHTML|FromRaw|SqlQuery|Authorize`)
+  antes de abrir qualquer arquivo; leia só os trechos com match.
+- Agrupe achados por arquivo; não reexplique o contexto do projeto a cada item.

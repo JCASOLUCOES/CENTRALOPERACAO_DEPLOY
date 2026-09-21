@@ -31,3 +31,13 @@ Valide com `npm run build`. Avisos de budget pré-existentes (bundle > 1.05 MB e
 
 Se uma mudança alterar comportamento público (rotas, formulários, telas), avise para
 que a documentação (`docs/`) seja atualizada.
+
+## Otimização de contexto (sempre)
+- **Investigue por fora, leia por dentro**: use `glob`/`grep` para localizar e `read` com
+  `offset/limit` para ler só o trecho necessário — nunca abra arquivos gigantes por inteiro.
+- **Docs antes do código**: para entender uma tela, leia primeiro `docs/TELAS.md` (índice)
+  e o arquivo do módulo em `docs/telas/`; só então abra o componente.
+- **Escopo mínimo**: toque apenas os arquivos do pedido; confirme símbolos (imports, rotas,
+  guards) com buscas antes de assumir.
+- **Resposta enxuta**: cite `arquivo:linha`, resuma achados em bullets; não cole arquivos
+  inteiros nem repita contexto já estabelecido na conversa.

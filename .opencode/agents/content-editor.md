@@ -28,3 +28,8 @@ Regras:
 - Não altere lógica, componentes, templates ou serviços — somente dados de conteúdo.
 
 Ao terminar, resuma as mudanças feitas (itens adicionados/removidos) para revisão do usuário.
+
+## Otimização de contexto (sempre)
+- Localize o item com `grep` pelo título/ID e edite só o bloco correspondente —
+  nunca abra `*.data.ts` inteiros (alguns têm milhares de linhas).
+- Reuse interfaces e formatos existentes; valide um item de exemplo antes de replicar em lote.

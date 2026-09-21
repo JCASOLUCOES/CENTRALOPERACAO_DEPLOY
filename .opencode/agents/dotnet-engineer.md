@@ -31,3 +31,13 @@ Sempre valide o resultado com `dotnet build -c Debug --nologo` e busque **0 erro
 
 Se uma mudança alterar comportamento público (endpoints, claims, cookies, config),
 avise para que a documentação (`docs/`) seja atualizada.
+
+## Otimização de contexto (sempre)
+- **Investigue por fora, leia por dentro**: use `glob`/`grep` para localizar e `read` com
+  `offset/limit` para ler só o trecho necessário — nunca abra services/controllers longos por inteiro.
+- **Docs antes do código**: para entender um endpoint/entidade, leia primeiro
+  `docs/telas/06-backend.md` (via índice `docs/TELAS.md`); só então abra controller/service/model.
+- **Escopo mínimo**: toque apenas os arquivos do pedido; confira DI em `Program.cs` e
+  relacionamentos em `AppDbContext.cs` com buscas antes de assumir.
+- **Resposta enxuta**: cite `arquivo:linha`, resuma achados em bullets; não cole arquivos
+  inteiros nem repita contexto já estabelecido na conversa.
