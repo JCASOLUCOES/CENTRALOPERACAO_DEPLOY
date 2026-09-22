@@ -153,7 +153,12 @@ O que o script faz além do build (`npm run build` + `dotnet publish`):
    (backend não sobe parcialmente). Com sucesso, remove o `app_offline.htm`
    (a menos que já fosse preexistente) e o IIS recarrega sozinho.
 6. **Frontend**: purge mirror de `deploy\frontend\browser` para
-   `Suporte_Front`.
+   `Suporte_Front`. O build Angular copia `frontend/public/web.config`
+   (regra **SPA fallback** do URL Rewrite do IIS: toda URL sem arquivo/diretório
+   físico → `/index.html`) para `browser/`, então o `web.config` **viaja no
+   pacote e sobrevive ao `/MIR`** — sem ele, hard refresh (Ctrl+F5) em rotas
+   com path param (ex.: `/implantacao/tarefas/:id/editar`) retorna 404 do IIS
+   (o prerender só cobre as rotas literais de `prerender-routes.txt`).
 7. Exibe os caminhos publicados e do backup (quando habilitado).
 
 > **Desempenho:** todas as cópias usam um único robocopy por destino com

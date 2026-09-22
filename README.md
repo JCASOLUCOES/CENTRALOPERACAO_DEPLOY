@@ -10,10 +10,10 @@ Este repositório (`JCASOLUCOES/CENTRALOPERACAO_DEPLOY`) é a fonte única do si
 
 ```text
 Central-Conhecimento-developer/
-├── docs/                 # Documentação unificada (Telas, Deploy, Arquitetura)
+├── docs/                 # Documentação unificada (índice: docs/INDEX.md)
 ├── scripts/              # Scripts de utilidade (Deploy, Extração de metadados)
 ├── frontend/             # Angular 18 (standalone + SSR)
-│   └── src/app/features/ # 17 módulos (inclui executivo/ — Central Executiva)
+│   └── src/app/features/ # Módulos lazy (inclui executivo/ — rota desativada)
 └── backend/              # ASP.NET Core 8 (Web API)
     └── Central_BackEnd/  # Controllers, Services e EF Core
 ```
@@ -71,19 +71,17 @@ Porta padrão: `http://localhost:4200`
 ## ✨ Novas Funcionalidades (v0.8.0)
 
 ### 🧭 Navegação reorganizada (sidebar, header, Home, JOTA)
-- **Sidebar com 7 seções de links diretos**: Início (Central Executiva `/executivo` admin-only via `ehAdministrador()` estrito + Visão Geral `/` + Agenda), Atendimento (`/trilhas/resolver`, `/fraseologia`, `/modelo-chamados`, `/trilhas/sql|rede|infra`), Implantação, Ferramentas, Conhecimento, JCA, Administração (Kanban ADM `/administrativo` só `hasRole('F')` + Gestão da Central `/admin/dashboard` só Administrador). Sem links JOTA; sem grupos expansíveis em uso
-- **Header**: nav Início/Fraseologias/Ferramentas/Acessos/Cursos, breadcrumb com `/agenda`, `/chat`, `/implantacao/*`, `/admin/*`, `/executivo/dashboard`; busca local via `BuscaIndexService` (multi-termo sem acento, sem backend) com atalho `Ctrl+K` (`BuscaService.abrirBusca()`)
+- **Sidebar** (`header-nav.config.ts`): seções Início (Visão Geral `/` + Agenda), SUPORTE (resolver, fraseologia, modelos, trilhas), Implantação, Ferramentas, Conhecimento, JCA (inclui Kanban ADM `hasRole('F')` → `/implantacao/kanban?perfil=F`), Administração (`/admin/dashboard` só Administrador). **Central Executiva `/executivo` e `/administrativo` desativados** (rotas comentadas)
+- **Header**: nav Início/Fraseologias/Ferramentas/Acessos/Cursos, breadcrumb com `/agenda`, `/chat`, `/implantacao/*`, `/admin/*`, `/gestor/entrada`; busca local via `BuscaIndexService` com atalho `Ctrl+K`
 - **Home refeita**: saudação com nome, 6 acessos rápidos, "Continue de onde parou"/"Mais utilizados" (`RecentesService`, `localStorage cc.recentes.v1`, partem vazios) + agenda real de 7 dias
-- **JOTA transversal**: `features/chat/jota-widget/` (FAB + painel em todo o `MainLayout`, proxy real `POST /api/rag-proxy/chat`, erro honesto); página `/chat` mantida; trilha Resolver com filtro de seções, exemplos rápidos e CTA JOTA
-- Detalhes por tela em [`docs/TELAS.md`](./docs/TELAS.md) (índice; conteúdo em [`docs/telas/`](./docs/telas/01-base.md)) e guia em [`docs/DOCUMENTACAO-COMPLETA.md`](./docs/DOCUMENTACAO-COMPLETA.md#7-aplicação-frontend-módulos)
+- **JOTA transversal**: FAB + painel em todo o `MainLayout` (proxy real `POST /api/rag-proxy/chat`, erro honesto); página `/chat` mantida
+- **Pós-login:** admin sem deep-link → **`/gestor/entrada`** (Módulo Gestor); comum → `/`
+- Detalhes por tela em [`docs/TELAS.md`](./docs/TELAS.md) (índice; conteúdo em [`docs/telas/`](./docs/telas/)) e guia em [`docs/frontend-modulos.md`](./docs/frontend-modulos.md)
 
-### 📊 Central Executiva (Dashboard Executivo)
-- **Nova home dos gestores**: login como `Administrador` (sem deep-link) cai em `/executivo/dashboard` (protegida por `adminGuard`, sob o `MainLayout`); usuário comum segue na Home atual
-- **Resumo executivo**: KPIs total / em andamento / concluídas / atrasadas / bloqueadas / urgentes, com links para Kanban/Tarefas
-- **Visão por módulo**: Implantação (dados reais), Financeiro (placeholder → Visão ADM) via `MODULOS_REGISTRY` enxuto (Suporte/Compras/CRM removidos)
-- **Visão por equipe**: cards por Função com andamento/atrasadas/concluídas, barra de progresso e responsáveis
-- **Atenção imediata + tarefas críticas + próximas entregas + agenda da semana + atalhos rápidos**; gráficos Chart.js; auto-refresh 30s; filtro por função
-- **Sem backend novo**: facade `ExecutivoDashboardService` combina `GET /admin/dashboard`, `/implantacao/dashboard`, `/implantacao/projetos`, `/implantacao/tarefas` e `/agenda/eventos`
+### 📊 Módulo Gestor (home dos gestores)
+- **Nova home dos gestores**: login como `Administrador` (sem deep-link) cai em `/gestor/entrada` (painéis CEO/CTO/COO — ver [`docs/telas/07-gestao.md`](./docs/telas/07-gestao.md))
+- **Central Executiva (`/executivo`) desativada**: rota comentada em `features.routes.ts`; código-fonte em `features/executivo/` permanece no repo sem rota ativa
+- Acesso ao Gestor: dropdown do usuário (admin) + pós-login
 
 ### 🐛 Correção: Erro Visual da Agenda (Overlay/Backdrop)
 **Problema**: Ao navegar para `/agenda`, a tela apresentava tom esbranquiçado/opaco com travamento de cliques (sidebar, header e área de conteúdo).
@@ -125,12 +123,15 @@ O deploy é automatizado via script PowerShell que realiza o build, backup e pub
 
 ## 📝 Documentação Centralizada
 
-Toda a documentação técnica reside na pasta `/docs`:
+Toda a documentação técnica reside na pasta `/docs` (índice: [`docs/INDEX.md`](./docs/INDEX.md)):
 
-1. [**TELAS.md**](./docs/TELAS.md) — Mapa completo de telas, rotas, componentes e APIs (auto-gerado).
-2. [**DOCUMENTACAO-COMPLETA.md**](./docs/DOCUMENTACAO-COMPLETA.md) — Guia detalhado de arquitetura e regras de negócio.
-3. [**DEPLOY.md**](./docs/DEPLOY.md) — Manual de publicação e manutenção do servidor.
-4. [**backend-auth-integracao.md**](./docs/backend-auth-integracao.md) — Detalhes técnicos do fluxo JWT.
+1. [`INDEX.md`](./docs/INDEX.md) — navegação de toda a documentação
+2. [`VISAO-GERAL.md`](./docs/VISAO-GERAL.md) — contexto, stack, checklist de nova tela
+3. [`NEGOCIO.md`](./docs/NEGOCIO.md) — regras de negócio compactas
+4. [`TELAS.md`](./docs/TELAS.md) — mapa de telas/APIs (índice; conteúdo em `docs/telas/`)
+5. [`DOCUMENTACAO-COMPLETA.md`](./docs/DOCUMENTACAO-COMPLETA.md) — arquitetura + JWT + deploy (fatiada: também `implantacao.md`, `frontend-modulos.md`, `integracoes-bd.md`)
+6. [`DEPLOY.md`](./docs/DEPLOY.md) — publicação e manutenção do servidor
+7. [`backend-auth-integracao.md`](./docs/backend-auth-integracao.md) — fluxo JWT
 
 ---
 

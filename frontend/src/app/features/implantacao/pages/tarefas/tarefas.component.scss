@@ -51,6 +51,33 @@
   color: #991b1b;
 }
 
+.tar-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 2000;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface-main);
+  border: 1px solid #16a34a;
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+  font: 500 0.875rem/1 var(--font-body);
+  color: #166534;
+  animation: tar-toast-in 0.2s cubic-bezier(0, 0, 0.2, 1);
+}
+.tar-toast i {
+  font-size: 1.1rem;
+  color: #16a34a;
+  flex-shrink: 0;
+}
+@keyframes tar-toast-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .tar-card__acoes {
   display: flex;
   justify-content: flex-end;
@@ -440,3 +467,53 @@
   .tar-grid { grid-template-columns: 1fr; }
   .tar-atalhos { overflow-x: auto; width: 100%; }
 }
+
+/* ===== ARQUIVAMENTO ===== */
+.tar-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.4rem;
+  background: #fff;
+  font-size: 0.9rem;
+  color: #334155;
+  cursor: pointer;
+  transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
+}
+
+.tar-checkbox:hover { border-color: #0f4c81; background: #f8fafc; }
+.tar-checkbox:focus-within { outline: none; border-color: #0f4c81; box-shadow: 0 0 0 3px rgba(15, 76, 129, 0.12); }
+.tar-checkbox input { accent-color: #0f4c81; width: 1.1rem; height: 1.1rem; }
+
+/* Badge Arquivada */
+.tar-card__arquivada {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 0.25rem;
+  border: 1px solid #e2e8f0;
+}
+
+/* Botão Arquivar/Desarquivar */
+.tar-acao--archive {
+  color: #0f4c81;
+}
+
+.tar-acao--archive:hover:not(:disabled) {
+  color: #166534;
+  text-decoration: underline;
+}
+
+.tar-acao--archive i { font-size: 0.9rem; }

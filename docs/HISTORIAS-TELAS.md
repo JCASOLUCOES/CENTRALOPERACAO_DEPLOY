@@ -3,12 +3,13 @@
 > Documento de QA/histórias de usuário, uma seção por tela. Cada história foi verificada no código (componente `.ts` + template `.html` + rotas + service quando houver).
 > Rotas confirmadas em `frontend/src/app/app.routes.ts` (`/login`), `frontend/src/app/features.routes.ts`, `frontend/src/app/features/implantacao/implantacao.routes.ts` e `frontend/src/app/features/database/database.routes.ts`.
 > Nota de escopo: o fluxo Kanban→Agenda está **fora de escopo** e não é coberto aqui.
+> Rotas **desativadas**: `/executivo` e `/administrativo` (comentadas em `features.routes.ts` — seções marcadas abaixo).
 
 ## LOGIN (`/login`)
 **História:** Como operador, quero entrar com usuário e senha para acessar o sistema.
 **Passos:** 1. Preenche os campos "Usuário" (`#usuario`) e "Senha" (`#senha`). 2. Marca "Lembrar meu acesso" se quiser sessão de 4h. 3. Clica em "Entrar".
 **Backend/tabelas:** `POST /api/v1/auth/login` (retorna accessToken + user); `POST /api/v1/auth/refresh` (cookie HttpOnly `cc_refresh`); tabelas `TBOPERADOR` + `RefreshTokens` (via backend).
-**Resultado esperado:** Login válido redireciona para `/`; sessão expirada exibe "Sua sessão expirou"; access token fica somente em memória.
+**Resultado esperado:** Login válido redireciona: admin sem deep-link → **`/gestor/entrada`**; demais → `/`; sessão expirada exibe "Sua sessão expirou"; access token fica somente em memória; deep-link (`returnUrl`) é respeitado.
 
 ## HOME (`/`)
 **História:** Como operador, quero uma entrada operacional (o que posso fazer) em vez de um dashboard institucional.
@@ -296,11 +297,8 @@
 **Backend/tabelas:** Mesmo `POST /api/rag-proxy/chat`; `sessionId` em memória; erro mostra indisponibilidade honesta; sem escrita.
 **Resultado esperado:** Painel abre/fecha, histórico da conversa na sessão, erro sem fake.
 
-## CENTRAL EXECUTIVA (`/executivo`, `/executivo/dashboard`)
-**História:** Como gestor (Administrador), quero o panorama da operação sem abrir cada módulo.
-**Passos:** 1. Faz login e cai em `/executivo/dashboard`. 2. Lê KPIs, Projetos em andamento (top 6), Kanban Total embutido, gráficos, módulos, alertas, críticas, entregas/agenda, equipes e atalhos.
-**Backend/tabelas:** Facade `forkJoin` de 5 GETs (`/admin/dashboard`, `/implantacao/dashboard`, `/implantacao/projetos`, `/implantacao/tarefas`, `/agenda/eventos`); zero endpoint novo; sem escrita.
-**Resultado esperado:** Admin vê tudo; não-admin é barrado pelo `adminGuard` (volta para `/`).
+## CENTRAL EXECUTIVA (`/executivo`, `/executivo/dashboard`) — ~~DESATIVADA~~
+**Status:** rota **comentada** em `features.routes.ts`; código-fonte em `features/executivo/` permanece no repo. Não acessível via URL. Home dos gestores = **Módulo Gestor** `/gestor/entrada` (ver `telas/07-gestao.md`).
 
 ## ADMINISTRAÇÃO — GESTÃO DA CENTRAL (`/admin/dashboard`)
 **História:** Como administrador, quero os indicadores operacionais e acesso às telas de gestão.
@@ -308,8 +306,5 @@
 **Backend/tabelas:** `GET /api/v1/admin/dashboard` (`AdminDashboardService`); sem escrita.
 **Resultado esperado:** KPIs + por função + alertas; refresh a cada 30s.
 
-## ADMINISTRATIVO — KANBAN ADM (`/administrativo`)
-**História:** Como operador com perfil F/Administrador, quero o kanban filtrado do administrativo.
-**Passos:** 1. Abre `/administrativo` (link visível só via `hasRole('F')`). 2. Usa o mesmo `KanbanComponent` com filtro de perfil.
-**Backend/tabelas:** Mesmos endpoints do kanban (`/implantacao/tarefas`, `/implantacao/projetos`); `data.perfilFilter='F'`; sem guard de rota (visibilidade só no menu).
-**Resultado esperado:** Board filtrado; URL direta acessível a qualquer autenticado (comportamento atual documentado).
+## ADMINISTRATIVO — KANBAN ADM (`/administrativo`) — ~~DESATIVADA~~
+**Status:** rota **comentada** em `features.routes.ts`. O link "Kanban ADM" da sidebar usa `/implantacao/kanban?perfil=F` (query param no `KanbanComponent`), não a rota `/administrativo`.

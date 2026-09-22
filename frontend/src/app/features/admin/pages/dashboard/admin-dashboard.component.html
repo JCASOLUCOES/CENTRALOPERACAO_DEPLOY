@@ -3,9 +3,14 @@
     titulo="Dashboard Administrativo"
     descricao="Indicadores administrativos da central, atualizados automaticamente."
     icone="bi-speedometer2">
-    <span actions class="admin-dashboard__refresh" *ngIf="!loading">
-      <i class="bi bi-clock"></i> Atualizado automaticamente a cada 30s
-    </span>
+    <div actions class="admin-dashboard__header-actions">
+      <a [routerLink]="['/admin/cadastros']" class="adm-btn adm-btn--ghost" title="Gerenciar cadastros base (Tipos de Projeto, Etapas)">
+        <i class="bi bi-gear"></i> Cadastros
+      </a>
+      <span class="admin-dashboard__refresh" *ngIf="!loading">
+        <i class="bi bi-clock"></i> Atualizado automaticamente a cada 30s
+      </span>
+    </div>
   </app-page-header>
 
   <div *ngIf="loading" class="admin-dashboard__loading">

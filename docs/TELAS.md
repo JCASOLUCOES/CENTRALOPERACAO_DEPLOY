@@ -16,7 +16,7 @@
 | Database Explorer | [`telas/04-database.md`](./telas/04-database.md) (§14) |
 | Empresa / Onboarding, Agenda | [`telas/05-empresa-agenda.md`](./telas/05-empresa-agenda.md) (§§15–16) |
 | Backend: endpoints por controller, entidades e migrations | [`telas/06-backend.md`](./telas/06-backend.md) (§§17–18) |
-| Chat Central, Central Executiva | [`telas/07-gestao.md`](./telas/07-gestao.md) (§§19–20) |
+| Chat Central, Central Executiva, Módulo Gestor (entrada full-screen + painéis CEO/CTO/COO) | [`telas/07-gestao.md`](./telas/07-gestao.md) (§§19–21) |
 
 ## Correspondência (âncoras antigas → arquivo novo)
 

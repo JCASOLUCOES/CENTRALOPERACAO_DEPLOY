@@ -119,18 +119,18 @@
             </select>
           </div>
 
-          <div class="imp-form__field">
-            <label for="colunaKanban" class="imp-form__label">Coluna Inicial (Kanban)</label>
+          <div class="imp-form__field" *ngIf="!isEdit()">
+            <label for="etapaInicial" class="imp-form__label">Etapa inicial</label>
             <select
-              id="colunaKanban"
+              id="etapaInicial"
               class="imp-form__select"
-              [ngModel]="colunaKanbanId()"
-              (ngModelChange)="colunaKanbanId.set($event === null || $event === '' ? null : Number($event))"
-              name="colunaKanbanId"
+              [ngModel]="etapaInicialOrdem()"
+              (ngModelChange)="etapaInicialOrdem.set(Number($event))"
+              name="etapaInicialOrdem"
             >
-              <option [value]="null">Sem coluna inicial</option>
-              <option *ngFor="let c of colunasKanban()" [value]="c.id">{{ c.nome }}</option>
+              <option *ngFor="let e of etapasPadrao()" [value]="e.ordem">{{ e.ordem }} — {{ e.nome }}</option>
             </select>
+            <small class="imp-form__hint">Etapas anteriores nascem já concluídas; a escolhida inicia em andamento.</small>
           </div>
         </div>
 
@@ -162,37 +162,6 @@
               step="1"
               readonly
               placeholder="Preenchido automaticamente ao selecionar o cliente"
-            />
-          </div>
-        </div>
-
-        <div class="imp-form__grid" *ngIf="isEdit()">
-          <div class="imp-form__field">
-            <label for="status" class="imp-form__label">Status</label>
-            <select
-              id="status"
-              class="imp-form__select"
-              [ngModel]="status()"
-              (ngModelChange)="status.set($event ?? '')"
-              name="status"
-            >
-              <option [value]="">Manter atual</option>
-              <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
-            </select>
-          </div>
-
-          <div class="imp-form__field">
-            <label for="progresso" class="imp-form__label">Progresso (%)</label>
-            <input
-              type="number"
-              id="progresso"
-              class="imp-form__input"
-              [ngModel]="progresso()"
-              (ngModelChange)="progresso.set($event === null || $event === '' ? null : Number($event))"
-              name="progresso"
-              min="0"
-              max="100"
-              step="1"
             />
           </div>
         </div>

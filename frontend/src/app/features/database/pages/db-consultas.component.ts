@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, inject, signal, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { DatabaseService } from '../services/database.service';
@@ -233,6 +233,7 @@ export class DbConsultasComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly jota = inject(JotaChatService);
   readonly favoritosSvc = inject(DatabaseFavoritosService);
+  private readonly platformId = inject(PLATFORM_ID);
 
   readonly resultado = signal<DatabaseQueryResult | null>(null);
   readonly carregando = signal(false);
@@ -257,6 +258,12 @@ export class DbConsultasComponent implements OnInit {
         this.abaInterna.set('builder');
       }
     });
+
+    if (!isPlatformBrowser(this.platformId)) {
+      // No SSR/prerender, carrega apenas o histórico local
+      this.carregarHistorico();
+      return;
+    }
 
     // 1. Prefill de procedure (do modal)
     const prefillProc = sessionStorage.getItem('db-procedure-prefill');

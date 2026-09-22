@@ -35,8 +35,7 @@ public class AdminDashboardService : IAdminDashboardService
 
         // --- Atrasadas ---
         var atrasadas = await _db.Tarefas.AsNoTracking()
-            .Where(t => t.DataPrevisao.HasValue && t.DataPrevisao.Value < hoje &&
-                        t.Status != StatusTarefa.Concluida && t.Status != StatusTarefa.Cancelada)
+            .OndeAtrasadas(hoje)
             .CountAsync(ct);
 
         // --- Concluidas ---
@@ -107,8 +106,7 @@ public class AdminDashboardService : IAdminDashboardService
         }
 
         var urgentes = await _db.Tarefas.AsNoTracking()
-            .Where(t => t.DataPrevisao.HasValue && t.DataPrevisao.Value < hoje &&
-                        t.Status != StatusTarefa.Concluida && t.Status != StatusTarefa.Cancelada)
+            .OndeAtrasadas(hoje)
             .CountAsync(ct);
         if (urgentes > 0)
         {

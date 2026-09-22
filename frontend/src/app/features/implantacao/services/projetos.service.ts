@@ -26,7 +26,8 @@ import {
   ProjetoEtapaChecklistItem,
   ProjetoEtapaDocumentoItem,
   ProjetoEtapaHistoricoItem,
-  ProjetoEtapaComentarioItem
+  ProjetoEtapaComentarioItem,
+  EtapaPadraoResumo
 } from "../models/projeto.model";
 
 @Injectable({ providedIn: "root" })
@@ -95,6 +96,11 @@ export class ProjetosService {
 
   obterEtapasProjeto(projetoId: number): Observable<ProjetoEtapaResumo[]> {
     return this.http.get<ProjetoEtapaResumo[]>(`${this.baseUrl}/${projetoId}/etapas`);
+  }
+
+  /** Lista fixa das 9 etapas padrão (fonte única no backend). */
+  listarEtapasPadrao(): Observable<EtapaPadraoResumo[]> {
+    return this.http.get<EtapaPadraoResumo[]>(`${this.baseUrl}/etapas-padrao`);
   }
 
   // M�todos originais mantidos para compatibilidade

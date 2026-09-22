@@ -1,0 +1,60 @@
+
+.coo-dashboard {
+  padding: 0 0 2rem;
+}
+
+.coo-dashboard__acoes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* KPIs Grid */
+.coo-dashboard__kpis {
+  margin-bottom: 1.5rem;
+}
+
+/* Gráficos */
+.coo-dashboard__charts {
+  margin-bottom: 1.5rem;
+}
+
+.coo-dashboard__chart-card {
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+}
+
+.coo-dashboard__chart-card .eyebrow {
+  margin-bottom: 0.5rem;
+}
+
+.coo-dashboard__chart-card .adm-section-title {
+  margin-bottom: 1rem;
+}
+
+.coo-dashboard__chart-wrap {
+  flex: 1;
+  height: 280px;
+  position: relative;
+  min-height: 280px;
+}
+
+.coo-dashboard__chart-wrap--donut {
+  height: 300px;
+  min-height: 300px;
+}
+
+/* Atualização */
+.coo-dashboard__atualizado {
+  text-align: center;
+  margin-top: 2rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .coo-dashboard__charts {
+    grid-template-columns: 1fr;
+  }
+}

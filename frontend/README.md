@@ -37,22 +37,23 @@ frontend/src/app/
 │   └── interceptors/
 │       └── auth.interceptor.ts   # Bearer token + withCredentials: true
 ├── layout/                   # Shell principal
-│   ├── header/               # Nav (Início/Fraseologias/Ferramentas/Acessos/Cursos), breadcrumb (/agenda, /chat, /implantacao/*, /admin/*, /executivo/dashboard), busca local (BuscaIndexService), dropdown usuário
-│   ├── sidebar/              # 7 seções de links diretos (Início, Atendimento, Implantação, Ferramentas, Conhecimento, JCA, Administração; sem links JOTA, sem grupos em uso)
+│   ├── header/               # Nav (Início/Fraseologias/Ferramentas/Acessos/Cursos), breadcrumb (/agenda, /chat, /implantacao/*, /admin/*, /gestor/entrada), busca local (BuscaIndexService), dropdown usuário
+│   ├── sidebar/              # Seções de links diretos em `header-nav.config.ts` (sem /executivo, sem /administrativo)
 │   ├── main-layout/          # Layout com <router-outlet> + <app-jota-widget> (FAB + painel, proxy real)
 │   └── footer/               # Versão (app-version.ts)
-├── features/                 # 17 módulos lazy-loaded (inclui `executivo/` — Central Executiva, só admin)
-│   ├── agenda/               # ← NOVO: Calendário MVP
+├── features/                 # Módulos lazy-loaded (inclui `executivo/` — rota desativada em features.routes.ts)
+│   ├── agenda/               # Calendário MVP
 │   │   ├── agenda.component.ts
 │   │   ├── agenda-evento-modal.component.ts
 │   │   └── services/agenda.service.ts  # DTOs/interfaces + moverEvento (models/agenda.model.ts removido — era duplicata)
-│   ├── auth/                 # Login (+ `resolverDestino()`: admin sem deep-link → `/executivo`)
-│   ├── executivo/            # ← NOVO: Central Executiva (dashboard do diretor, só admin)
+│   ├── auth/                 # Login (+ `resolverDestino()`: admin sem deep-link → `/gestor/entrada`)
+│   ├── executivo/            # Central Executiva — rota COMENTADA (código permanece; sem acesso via URL)
 │   │   ├── executivo.routes.ts       # `''` → redirect `dashboard`
 │   │   ├── models/executivo.model.ts # KPIs, módulos, equipe, alertas, `ResumoExecutivo`
 │   │   ├── data/modulos.registry.ts  # Implantação (real) + Financeiro (placeholder → /visao-adm)
 │   │   ├── services/executivo-dashboard.service.ts  # Facade `forkJoin` 5 fontes (zero endpoint novo no backend)
-│   │   └── pages/executivo-dashboard/  # Component + template + styles (Projetos em andamento + Kanban Total embutido, Chart.js, auto-refresh 30s)
+│   │   └── pages/executivo-dashboard/  # Component + template + styles
+│   ├── gestor/               # Módulo Gestor (`/gestor/entrada` — home pós-login admin, painéis CEO/CTO/COO)
 │   ├── wiki/                 # Ferramentas, Acessos, Cursos, Trilhas, Stack, Fraseologia, Modelo Chamados, Política, Visão ADM
 │   ├── implantacao/          # Dashboard, Kanban, Projetos, Tarefas, Cadastros (módulo Equipes removido em 2026-09-12)
 │   ├── database/             # Database Explorer (7 abas)
@@ -75,7 +76,7 @@ frontend/src/app/
 | **Refresh Token** | Cookie HttpOnly `cc_refresh` (backend) — 4h com "Lembrar acesso" |
 | **Refresh Silencioso** | `auth.guard` tenta refresh no reload (F5) → repopula `user` via `restaurarSessao()` |
 | **Verificação Periódica** | A cada 5 min: valida token + antecipa refresh; expiração → logout + mensagem "Sua sessão expirou" |
-| **Destino pós-login** | `resolverDestino()` (`login.component.ts`): admin com `returnUrl` genérico (`/` ou vazio) → `/executivo`; deep-link respeitado; comum → `/` |
+| **Destino pós-login** | `resolverDestino()` (`login.component.ts`): admin com `returnUrl` genérico (`/` ou vazio) → `/gestor/entrada`; deep-link respeitado; comum → `/` |
 | **Logout** | `POST /api/v1/auth/logout` (revoga refresh) + `Router.navigate(['/login'])` |
 
 ---
@@ -96,7 +97,8 @@ frontend/src/app/
 | Rota | Módulo | Componente Principal | Descrição |
 |------|--------|---------------------|-----------|
 | `/` → `/home` | Home | `HomeComponent` | Saudação com nome, busca `Ctrl+K` (`BuscaService.abrirBusca()`), 6 acessos rápidos, Continue/Mais utilizados (`RecentesService`, partem vazios) + agenda real 7 dias (usuário comum cai aqui após login) |
-| `/executivo/dashboard` | **Central Executiva (só `Administrador`, `adminGuard`)** | `ExecutivoDashboardComponent` | **Painel do Diretor: 6 KPIs clicáveis, Projetos em andamento (top 6, deep-link `kanban?projetoId=`), Kanban Total embutido, visão por módulo (só Implantação real + Financeiro → Visão ADM), por equipe (Funcao), alertas, tarefas críticas, próximas entregas + agenda 7 dias, gráficos Chart.js, auto-refresh 30s, filtro por função. Facade `forkJoin` 5 fontes sobre `GET /admin/dashboard` + `/implantacao/dashboard` + `/implantacao/projetos` + `/implantacao/tarefas` + `/agenda/eventos` (zero endpoint novo). Admin sem deep-link cai aqui após login** |
+| `/gestor/entrada` | **Módulo Gestor** (admin, pós-login) | painéis CEO/CTO/COO | Home dos gestores — ver `docs/telas/07-gestao.md`; admin sem deep-link cai aqui após login |
+| ~~`/executivo/dashboard`~~ | **Central Executiva — DESATIVADA** (rota comentada) | `ExecutivoDashboardComponent` | Código em `features/executivo/` sem rota ativa; não acessível via URL |
 | `/agenda` | **Agenda (MVP)** | `AgendaComponent` | **Calendário Dia/Semana/Mês, CRUD eventos, tipos, participantes, filtros responsável/função, escopo Meus/Geral, drag-drop mover** |
 | `/ferramentas` | Ferramentas | `FerramentasComponent` | Cards + busca |
 | `/ferramentas/acessos` | Acessos | `AcessosComponent` | Empresas Google Sheets + modal senha + credenciais |
@@ -174,8 +176,8 @@ O mesmo `agenda.service.ts` exporta ainda `ErroConflito` (`{ mensagem, conflitos
   - `AgendaEventoModalComponent`: `@Input() isAdmin`, `@Input() somenteLeitura`; `salvar()`/`excluir()` early return se `somenteLeitura`; banner "Somente leitura: apenas o responsável X ou um administrador pode editar este evento"; inputs desabilitados; botões "Salvar"/"Excluir" ocultos; `tratarErroSalvar()` trata 403 → "Sem permissão para alterar este evento"
   - Backend: `PUT`/`DELETE`/`PATCH /mover` retornam **403** `ForbiddenException` se não for dono nem admin; `POST` (criar) permanece permissivo
 
-### Sidebar (7 seções, só links diretos)
-Início (Central Executiva `/executivo` primeiro item só `ehAdministrador()` estrito + Visão Geral `/` + Agenda), Atendimento (`/trilhas/resolver`, `/fraseologia`, `/modelo-chamados`, `/trilhas/sql|rede|infra`), Implantação (`/implantacao/dashboard|projetos|kanban|tarefas|cadastros`), Ferramentas (`/database`, `/ferramentas/acessos`, `/ferramentas`), Conhecimento (`/cursos`, `/ferramentas/faq`, `/stack`), JCA (`/empresa`, `/empresa/onboarding`, `/politica`, `/visao-adm`), Administração (Kanban ADM `/administrativo` só `hasRole('F')` + Gestão da Central `/admin/dashboard` só Administrador). Sem links JOTA; nenhum grupo expansível em uso (`sidebar.component.ts:59-128`).
+### Sidebar (`header-nav.config.ts`)
+Início (Visão Geral `/` + Agenda), SUPORTE (resolver, fraseologia, modelos, trilhas), Implantação (`/implantacao/dashboard|projetos|kanban|tarefas`), Ferramentas (`/database`, `/ferramentas/acessos`, `/ferramentas`), Conhecimento (`/cursos`, `/ferramentas/faq`, `/stack`), JCA (`/empresa`, `/empresa/onboarding`, `/politica`, `/visao-adm`, Kanban ADM `hasRole('F')` → `/implantacao/kanban?perfil=F`), Administração (`/admin/dashboard` só Administrador). **Sem `/executivo` nem `/administrativo`** (rotas desativadas). Módulo Gestor via dropdown do usuário e pós-login.
 
 ---
 
@@ -213,7 +215,9 @@ export const environment = {
 
 ## 📚 Documentação Relacionada
 
-- [`docs/telas/05-empresa-agenda.md`](../docs/telas/05-empresa-agenda.md) — Documentação completa da tela Agenda + API
-- [`docs/DOCUMENTACAO-COMPLETA.md`](../docs/DOCUMENTACAO-COMPLETA.md#71-módulo-agenda-mvp) — Guia do módulo Agenda
+- [`docs/INDEX.md`](../docs/INDEX.md) — índice de toda a documentação
+- [`docs/telas/05-empresa-agenda.md`](../docs/telas/05-empresa-agenda.md) — tela Agenda + API
+- [`docs/telas/07-gestao.md`](../docs/telas/07-gestao.md) — Módulo Gestor + Chat
+- [`docs/frontend-modulos.md`](../docs/frontend-modulos.md) — módulos frontend (Agenda, Executiva desativada)
 - [`docs/DEPLOY.md`](../docs/DEPLOY.md) — Deploy frontend no IIS (porta 1010)
 - [`README.md`](../README.md) — Visão geral do monorepo

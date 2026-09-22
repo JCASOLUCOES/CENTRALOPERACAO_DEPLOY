@@ -3,13 +3,13 @@ import { adminGuard } from "@core/guards/admin.guard";
 
 export const featuresRoutes: Routes = [
   {
-    path: "",
-    loadComponent: () => import("@features/home/home.component").then((m) => m.HomeComponent)
+    path: "gestor",
+    canActivate: [adminGuard],
+    loadChildren: () => import("@features/gestor/gestor.routes").then((m) => m.gestorRoutes)
   },
   {
-    path: "executivo",
-    canActivate: [adminGuard],
-    loadChildren: () => import("@features/executivo/executivo.routes").then((m) => m.executivoRoutes)
+    path: "",
+    loadComponent: () => import("@features/home/home.component").then((m) => m.HomeComponent)
   },
   {
     path: "ferramentas",
@@ -80,11 +80,6 @@ export const featuresRoutes: Routes = [
     loadComponent: () => import("@features/visao-adm/visao-adm-detalhe.component").then((m) => m.VisaoAdmDetalheComponent)
   },
   {
-    path: "administrativo",
-    loadComponent: () => import("@features/implantacao/pages/kanban/kanban.component").then((m) => m.KanbanComponent),
-    data: { perfilFilter: "F" }
-  },
-  {
     path: "fraseologia",
     loadComponent: () => import("@features/fraseologia/fraseologia.component").then((m) => m.FraseologiaComponent)
   },
@@ -122,5 +117,8 @@ export const featuresRoutes: Routes = [
         loadComponent: () => import("@features/empresa/onboarding/components/onboarding-capitulo/onboarding-capitulo.component").then((m) => m.OnboardingCapituloComponent)
       }
     ]
-  }
+  },
+  // Rotas removidas temporariamente (Painel do Diretor / Gestão da Central):
+  // { path: "executivo", canActivate: [adminGuard], loadChildren: () => import("@features/executivo/executivo.routes").then((m) => m.executivoRoutes) },
+  // { path: "administrativo", loadComponent: () => import("@features/implantacao/pages/kanban/kanban.component").then((m) => m.KanbanComponent), data: { perfilFilter: "F" } },
 ];

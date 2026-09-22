@@ -78,7 +78,7 @@ export class DatabaseService {
     return this.http.put<void>(`${this.baseUrl}/config`, req);
   }
 
-  listarProcedures(schema?: string, busca?: string, take = 200): Observable<ProcedureResumo[]> {
+  listarProcedures(schema?: string, busca?: string, take = 5000): Observable<ProcedureResumo[]> {
     let params = new HttpParams().set('take', String(take));
     if (schema) params = params.set('schema', schema);
     if (busca) params = params.set('busca', busca);
@@ -89,7 +89,7 @@ export class DatabaseService {
     return this.http.get<ProcedureDetalhe>(`${this.baseUrl}/procedures/${encodeURIComponent(schema)}/${encodeURIComponent(nome)}`);
   }
 
-  buscarProcedures(termo: string, take = 50): Observable<ProcedureResumo[]> {
+  buscarProcedures(termo: string, take = 5000): Observable<ProcedureResumo[]> {
     return this.http.get<ProcedureResumo[]>(`${this.baseUrl}/procedures/search`, {
       params: new HttpParams().set('termo', termo).set('take', String(take))
     });

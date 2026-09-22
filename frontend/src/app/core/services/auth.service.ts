@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, firstValueFrom, from, of, throwError } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
   LoginRequest,
@@ -21,8 +22,11 @@ export class AuthService {
   private readonly baseUrl = `${environment.apiBaseUrl}/auth`;
   private readonly tokenStorage = inject(TokenStorageService);
   private readonly router = inject(Router);
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly authUserSubject = new BehaviorSubject<Usuario | null>(null);
   readonly currentUser$ = this.authUserSubject.asObservable();
+  private readonly authInitializedSubject = new BehaviorSubject<boolean>(false);
+  readonly authInitialized$ = this.authInitializedSubject.asObservable();
 
   getOperadorLogado(): string {
     return this.authUserSubject.value?.id ?? 'sistema';
@@ -33,11 +37,37 @@ export class AuthService {
     if (!user) return null;
     return { id: user.id, nome: user.nome, perfil: user.perfil };
   }
+
+  isAuthInitialized(): boolean {
+    return this.authInitializedSubject.value;
+  }
+
   private refreshTokenPromise: Promise<string | null> | null = null;
   private verificacaoPeriodicaId: ReturnType<typeof setInterval> | null = null;
   private readonly INTERVALO_VERIFICACAO = 5 * 60 * 1000; // 5 minutos
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {
+    if (isPlatformBrowser(this.platformId)) {
+      this.inicializarAuth();
+    }
+  }
+
+  private async inicializarAuth(): Promise<void> {
+    if (this.isAuthenticated()) {
+      this.authInitializedSubject.next(true);
+      this.iniciarVerificacaoPeriodica();
+      return;
+    }
+
+    try {
+      await firstValueFrom(this.refreshTokenSingleFlight());
+      this.iniciarVerificacaoPeriodica();
+    } catch {
+      // ignora - authInitialized será true mesmo sem login
+    } finally {
+      this.authInitializedSubject.next(true);
+    }
+  }
 
   // ===================== LOGIN =====================
 
@@ -89,12 +119,15 @@ export class AuthService {
     this.tokenStorage.clear();
     this.authUserSubject.next(null);
 
-    if (redirecionar && typeof window !== 'undefined') {
-      // Armazenar flag para componente de login mostrar mensagem
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem('sessaoExpirada', 'true');
+    if (redirecionar) {
+      this.authInitializedSubject.next(false);
+      if (typeof window !== 'undefined') {
+        // Armazenar flag para componente de login mostrar mensagem
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('sessaoExpirada', 'true');
+        }
+        this.router.navigate(['/login']);
       }
-      this.router.navigate(['/login']);
     }
   }
 

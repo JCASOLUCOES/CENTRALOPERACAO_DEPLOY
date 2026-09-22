@@ -18,7 +18,6 @@ public class AppDbContext : DbContext
 
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<TipoProjeto> TiposProjeto => Set<TipoProjeto>();
-    public DbSet<Etapa> Etapas => Set<Etapa>();
     public DbSet<ColunaKanban> ColunasKanban => Set<ColunaKanban>();
     public DbSet<Projeto> Projetos => Set<Projeto>();
     public DbSet<ProjetoEtapa> ProjetoEtapas => Set<ProjetoEtapa>();
@@ -99,14 +98,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<TipoProjeto>(entity =>
         {
             entity.HasIndex(e => e.Codigo).IsUnique();
-        });
-
-        modelBuilder.Entity<Etapa>(entity =>
-        {
-            entity.HasOne(e => e.TipoProjeto)
-                  .WithMany()
-                  .HasForeignKey(e => e.TipoProjetoId)
-                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Projeto>(entity =>
@@ -201,10 +192,6 @@ public class AppDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(e => e.ProjetoId)
                   .OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(e => e.Etapa)
-                  .WithMany()
-                  .HasForeignKey(e => e.EtapaId)
-                  .OnDelete(DeleteBehavior.SetNull);
             // Restrict explícito: SQL Server rejeita múltiplos caminhos em cascata
             // (IMPL_Projeto → IMPL_Tarefa direto + via tbprojetoEtapa com SET NULL).
             // Excluir projeto continua funcionando (cascatas apagam ambos os lados

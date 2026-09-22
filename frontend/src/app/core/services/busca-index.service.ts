@@ -39,8 +39,7 @@ const PAGINAS: ResultadoBusca[] = [
   { titulo: 'Cursos', tipo: 'Conhecimento', rota: '/cursos', icone: 'bi-mortarboard' },
   { titulo: 'Procedimentos', tipo: 'JCA', rota: '/visao-adm', icone: 'bi-clipboard-data' },
   { titulo: 'Políticas internas', tipo: 'JCA', rota: '/politica', icone: 'bi-file-earmark-text' },
-  { titulo: 'Onboarding corporativo', tipo: 'JCA', rota: '/empresa/onboarding', icone: 'bi-rocket-takeoff' },
-  { titulo: 'Central Executiva', tipo: 'Gestão', rota: '/executivo', icone: 'bi-speedometer2' }
+  { titulo: 'Onboarding corporativo', tipo: 'JCA', rota: '/empresa/onboarding', icone: 'bi-rocket-takeoff' }
 ];
 
 function normalizar(texto: string): string {

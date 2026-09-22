@@ -27,47 +27,51 @@ public class ProjetoJornadaService : IProjetoJornadaService
             .FirstOrDefaultAsync(p => p.Id == projetoId, ct);
         if (projeto == null) return null;
 
-        // Fluxo = etapas ativas do TipoProjeto do projeto + globais, na ordem cadastrada.
-        var etapas = await _db.Etapas.AsNoTracking()
-            .Where(e => e.Ativa && (e.TipoProjetoId == null || e.TipoProjetoId == projeto.TipoProjetoId))
+        // Jornada = etapas fixas do projeto (cards de 9 etapas), na ordem cadastrada.
+        var etapas = await _db.ProjetoEtapas.AsNoTracking()
+            .Where(e => e.ProjetoId == projetoId)
             .OrderBy(e => e.Ordem)
             .ToListAsync(ct);
 
-        // Tarefas do projeto (mesma convenção da lista: sem arquivadas), agrupadas por etapa.
+        // Projeto sem etapas fixas ainda — não recalcula progresso (evita zerar).
+        if (etapas.Count == 0) return null;
+
+        // Tarefas do projeto (mesma convenção da lista: sem arquivadas), agrupadas por etapa do card.
         var tarefas = await _db.Tarefas.AsNoTracking()
-            .Where(t => t.ProjetoId == projetoId && !t.Arquivada)
-            .Select(t => new { t.EtapaId, t.Status })
+            .Where(t => t.ProjetoId == projetoId && !t.Arquivada && t.ProjetoEtapaId != null)
+            .Select(t => new { t.ProjetoEtapaId, t.Status })
             .ToListAsync(ct);
 
         var itens = new List<EtapaJornadaItem>();
         var anteriorCompleta = true;
         foreach (var e in etapas)
         {
-            var daEtapa = tarefas.Where(t => t.EtapaId == e.Id).ToList();
+            var daEtapa = tarefas.Where(t => t.ProjetoEtapaId == e.Id).ToList();
             var total = daEtapa.Count;
             var concluidas = daEtapa.Count(t => t.Status == StatusTarefa.Concluida);
             var percentual = total > 0 ? (int)Math.Round(concluidas * 100.0 / total) : 0;
 
             string estado;
-            if (total > 0 && concluidas == total)
+            // Estado persistido tem prioridade (ex.: etapas concluídas na criação, sem tarefas).
+            if (e.Estado == "Concluida" || (total > 0 && concluidas == total))
                 estado = "Concluida";
             else if (!anteriorCompleta)
                 estado = "Bloqueada";
-            else if (total > 0)
+            else if (total > 0 || e.Estado == "EmAndamento")
                 estado = "EmAndamento";
             else
                 estado = "Pendente";
 
             // Etapa vazia não bloqueia a seguinte (100% vazio).
-            anteriorCompleta = total == 0 || concluidas == total;
+            anteriorCompleta = total == 0 || concluidas == total || e.Estado == "Concluida";
 
-            itens.Add(new EtapaJornadaItem(e.Id, e.Nome, e.Cor, e.Ordem, total, concluidas, percentual, estado));
+            // Etapa concluída sem tarefas (criação em etapa avançada) conta 100%.
+            var percentualFinal = estado == "Concluida" && total == 0 ? 100 : percentual;
+
+            itens.Add(new EtapaJornadaItem(e.Id, e.Nome, null, e.Ordem, total, concluidas, percentualFinal, estado));
         }
 
-        var comTarefas = itens.Where(i => i.TotalTarefas > 0).ToList();
-        var geral = comTarefas.Count > 0
-            ? (int)Math.Round(comTarefas.Average(i => i.Percentual))
-            : 0;
+        var geral = (int)Math.Round(itens.Average(i => i.Estado == "Concluida" ? 100.0 : i.Percentual));
 
         var atual = itens.FirstOrDefault(i => i.Estado != "Concluida") ?? itens.LastOrDefault();
 

@@ -1,14 +1,15 @@
 import { Component, OnInit, inject, signal, computed, effect, viewChildren, ElementRef, afterNextRender } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, ActivatedRoute } from '@angular/router';
-import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem, CdkDrag } from '@angular/cdk/drag-drop';
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { CdkDragDrop, DragDropModule, CdkDrag } from '@angular/cdk/drag-drop';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { ProjetosService } from '../../services/projetos.service';
 import { TarefasService } from '../../services/tarefas.service';
 import { ColunasKanbanService } from '../../services/cadastros.service';
 import { AuthService } from '@core/services/auth.service';
-import { TarefaResumo, TarefaDetalhe, TarefaFiltro, TarefaCriarRequest, ComentarioCriarRequest, TarefaAtualizarRequest } from '../../models/tarefa.model';
+import { TarefaResumo, TarefaDetalhe, TarefaFiltro, TarefaCriarRequest, ComentarioCriarRequest, TarefaAtualizarRequest, ehAtrasada } from '../../models/tarefa.model';
 import { ColunaKanbanResumo } from '../../models/cadastros.model';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { ProjetoResumo } from '../../models/projeto.model';
@@ -121,14 +122,6 @@ interface InlineEditState {
         <span class="imp-kanban__filter-count" *ngIf="temFiltrosAtivos()" role="status">
           Exibindo {{ tarefasFiltradas().length }} de {{ tarefas().length }}
         </span>
-        <button
-          type="button"
-          class="imp-kanban__filter-count imp-kanban__filter-count--etapa"
-          *ngIf="etapaId() !== null"
-          (click)="limparEtapa()"
-          [title]="'Remover filtro de etapa: ' + etapaNomeFiltro()">
-          <i class="bi bi-flag-fill"></i> {{ etapaNomeFiltro() }} <i class="bi bi-x"></i>
-        </button>
       </div>
 
       <!-- Métricas rápidas (Corretor #5 Passo 4) -->
@@ -145,16 +138,13 @@ interface InlineEditState {
         <p>Carregando kanban...</p>
       </div>
 
-      <div *ngIf="!loading() && colunasComSwimlanes().length" class="imp-kanban__board">
+      <div *ngIf="!loading() && colunasComSwimlanes().length" class="imp-kanban__board" cdkDropListGroup>
         <div *ngFor="let coluna of colunasComSwimlanes(); let colIdx = index; trackBy: trackByColuna"
              class="imp-kanban__coluna"
              [class.imp-kanban__coluna--wip-exceeded]="coluna.limiteWip && coluna.limiteWip > 0 && coluna.tarefas.length > coluna.limiteWip"
              cdkDropList
              [cdkDropListData]="coluna.tarefas"
-             [cdkDropListConnectedTo]="connectedTo()"
-             (cdkDropListDropped)="onDrop($event, coluna)"
-             (cdkDropListEntered)="onDragEntered(coluna)"
-             (cdkDropListExited)="onDragExited(coluna)">
+             (cdkDropListDropped)="onDrop($event, coluna)">
           <header class="imp-kanban__coluna-head">
             <div class="imp-kanban__coluna-title">
               <span class="imp-kanban__dot" [style.background]="coluna.cor"></span>
@@ -217,17 +207,43 @@ class="imp-kanban__card"
                   <button class="imp-kanban__card-menu" type="button" title="Mais ações" (click)="$event.stopPropagation(); abrirMenuTarefa(t, $event)">
                     <i class="bi bi-three-dots-vertical"></i>
                   </button>
+                  <div class="imp-kanban__menu-overlay" *ngIf="menuTarefaAberta()?.id === t.id" (click)="fecharMenuTarefa()"></div>
+                  <div class="imp-kanban__card-dropdown" *ngIf="menuTarefaAberta()?.id === t.id" [style.top.px]="calcularTopoMenu()" [style.left.px]="calcularEsquerdaMenu()">
+                    <button class="imp-kanban__dropdown-item" (click)="editarTarefaDoMenu(t); fecharMenuTarefa()">
+                      <i class="bi bi-pencil-square"></i> Editar
+                    </button>
+                    <button class="imp-kanban__dropdown-item" (click)="duplicarTarefa(t); fecharMenuTarefa()">
+                      <i class="bi bi-copy"></i> Duplicar
+                    </button>
+                    <div class="imp-kanban__dropdown-divider"></div>
+                    <button
+                      *ngIf="!t.arquivada && t.status === 'Concluida'"
+                      class="imp-kanban__dropdown-item"
+                      (click)="arquivarTarefaDoMenu(t); fecharMenuTarefa()">
+                      <i class="bi bi-archive"></i> Arquivar
+                    </button>
+                    <button
+                      *ngIf="t.arquivada"
+                      class="imp-kanban__dropdown-item"
+                      (click)="desarquivarTarefaDoMenu(t); fecharMenuTarefa()">
+                      <i class="bi bi-archive-fill"></i> Desarquivar
+                    </button>
+                    <div class="imp-kanban__dropdown-divider"></div>
+                    <button class="imp-kanban__dropdown-item imp-kanban__dropdown-item--danger" (click)="excluirTarefaDoMenu(t); fecharMenuTarefa()">
+                      <i class="bi bi-trash"></i> Excluir
+                    </button>
+                  </div>
                 </div>
                 <a [routerLink]="['/implantacao/projetos', t.projetoId]" class="imp-kanban__card-projeto">
                   <span class="imp-code">{{ t.projetoCodigo }}</span>
                   <span class="imp-kanban__card-cliente">{{ t.projetoNome }}</span>
                 </a>
-                <div class="imp-kanban__card-meta" *ngIf="t.responsavelNome || t.dataPrevisao || t.etapaNome">
+                <div class="imp-kanban__card-meta" *ngIf="t.responsavelNome || t.dataPrevisao || t.projetoEtapaNome">
                   <span class="imp-kanban__assignee" *ngIf="t.responsavelNome">
                     <i class="bi bi-person"></i> {{ t.responsavelNome }}
                   </span>
-                  <span class="imp-kanban__etapa" *ngIf="t.etapaNome" [title]="'Etapa: ' + t.etapaNome">
-                    <i class="bi bi-flag"></i> {{ t.etapaNome }}
+                  <span class="imp-kanban__etapa" *ngIf="t.projetoEtapaNome" [title]="'Etapa: ' + t.projetoEtapaNome">
+                    <i class="bi bi-flag"></i> {{ t.projetoEtapaNome }}
                   </span>
                   <span class="imp-kanban__due" *ngIf="slaInfo(t) as sla" [ngClass]="sla.classe">
                     <i class="bi bi-calendar"></i> {{ sla.texto }}
@@ -327,24 +343,15 @@ class="imp-kanban__card"
                     <option *ngFor="let p of projetos()" [value]="p.id">{{ p.codigo }} — {{ p.nome }}</option>
                   </select>
                 </div>
-                <div class="imp-kanban__add-row" *ngIf="novaTarefaProjetoId() !== null">
-                  <select
-                    class="imp-kanban__add-select"
-                    [ngModel]="novaTarefaEtapaId() ?? ''"
-                    (ngModelChange)="novaTarefaEtapaId.set($event === '' || $event == null ? null : Number($event))"
-                    aria-label="Etapa da nova tarefa">
-                    <option [value]="''">Selecione a etapa... *</option>
-                    <option *ngFor="let e of etapasCriacao()" [value]="e.id">{{ e.nome }}</option>
-                  </select>
-                </div>
                 <div class="imp-kanban__add-row" *ngIf="novaTarefaProjetoId() !== null && etapasFixasCriacao().length">
                   <select
                     class="imp-kanban__add-select"
                     [ngModel]="novaTarefaProjetoEtapaId() ?? ''"
                     (ngModelChange)="novaTarefaProjetoEtapaId.set($event === '' || $event == null ? null : Number($event))"
                     aria-label="Etapa do projeto (card) da nova tarefa"
-                    title="Define o card fixo cujo contador soma esta tarefa">
-                    <option [value]="''">Sem card (só totais)</option>
+                    title="Define o card fixo cujo contador soma esta tarefa"
+                    required
+                  >
                     <option *ngFor="let e of etapasFixasCriacao()" [value]="e.id">{{ e.ordem }} — {{ e.nome }}</option>
                   </select>
                 </div>
@@ -444,10 +451,10 @@ class="imp-kanban__card"
                 <span class="imp-code">{{ t.projetoCodigo }}</span> {{ t.projetoNome }}
               </a>
             </div>
-            <div class="imp-kanban__drawer-field" *ngIf="t.etapaNome">
-              <label>Etapa</label>
-              <a [routerLink]="['/implantacao/kanban']" [queryParams]="{ projetoId: t.projetoId, etapaId: t.etapaId }" class="imp-kanban__drawer-link">
-                <i class="bi bi-flag"></i> {{ t.etapaNome }}
+            <div class="imp-kanban__drawer-field" *ngIf="t.projetoEtapaNome">
+              <label>Etapa do projeto</label>
+              <a [routerLink]="['/implantacao/kanban']" [queryParams]="{ projetoId: t.projetoId, etapaId: t.projetoEtapaId }" class="imp-kanban__drawer-link">
+                <i class="bi bi-flag"></i> {{ t.projetoEtapaNome }}
               </a>
             </div>
             <div class="imp-kanban__drawer-field">
@@ -463,8 +470,8 @@ class="imp-kanban__card"
               <span>{{ t.responsavelNome || '—' }}</span>
             </div>
             <div class="imp-kanban__drawer-field">
-              <label>Previsão</label>
-              <span [class.imp-kanban__due--overdue]="isOverdue(t)">{{ t.dataPrevisao ? (t.dataPrevisao | date:'dd/MM/yyyy') : '—' }}</span>
+              <label>Prazo</label>
+              <span [class.imp-kanban__due--overdue]="isOverdue(t)">{{ (t.dataEntrega ?? t.dataPrevisao) ? ((t.dataEntrega ?? t.dataPrevisao) | date:'dd/MM/yyyy') : '—' }}</span>
             </div>
             <div class="imp-kanban__drawer-field">
               <label>Horas</label>
@@ -525,25 +532,21 @@ export class KanbanComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly chatCtx = inject(ChatContextoService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   tarefas = signal<TarefaResumo[]>([]);
   colunasOriginais = signal<ColunaKanbanResumo[]>([]);
   projetos = signal<ProjetoResumo[]>([]);
   loading = signal(true);
   projetoId = signal<string>('');
-  /** Filtro por etapa (navegação vinda da timeline do projeto). */
-  etapaId = signal<number | null>(null);
-  etapasFiltro = signal<{ id: number; nome: string }[]>([]);
-  etapaNomeFiltro = computed(() => {
-    const id = this.etapaId();
-    if (id == null) return '';
-    return this.etapasFiltro().find(e => e.id === id)?.nome ?? `Etapa ${id}`;
-  });
   /** Operadores válidos (para validar responsáveis antes do POST). */
   operadores = signal<{ id: string; nome: string }[]>([]);
 
   /** Filtro por perfil do operador responsável (ex: 'F' para Kanban ADM). */
   perfilFiltro = signal<string | null>(null);
+
+  /** Modo do filtro de perfil: 'excluir' (implantação) ou 'incluir' (admin). */
+  perfilModo = signal<'incluir' | 'excluir'>('excluir');
 
   // Quick Filters
   quickFilters = signal<QuickFilters>({
@@ -562,6 +565,9 @@ export class KanbanComponent implements OnInit {
   reatribuirIds = signal<string[]>([]);
   reatribuindo = signal(false);
 
+  // Card Action Menu
+  menuTarefaAberta = signal<TarefaResumo | null>(null);
+
   // Add Card Inline
   showingAddForm = signal<number | null>(null);
   novaTarefaTitulo = signal('');
@@ -571,8 +577,6 @@ export class KanbanComponent implements OnInit {
   novaTarefaTipo = signal(0);
   novaTarefaResponsavelIds = signal<string[]>([]);
   novaTarefaProjetoId = signal<number | null>(null);
-  novaTarefaEtapaId = signal<number | null>(null);
-  etapasCriacao = signal<{ id: number; nome: string }[]>([]);
   /** Etapas FIXAS do projeto (cards de 9; alimenta o contador dinâmico). */
   novaTarefaProjetoEtapaId = signal<number | null>(null);
   etapasFixasCriacao = signal<{ id: number; ordem: number; nome: string; estado: string }[]>([]);
@@ -657,9 +661,6 @@ export class KanbanComponent implements OnInit {
   focusedCardIndex = signal<number>(-1);
   focusedColumnIndex = signal<number>(-1);
 
-  // IDs das listas conectadas (drag entre colunas)
-  connectedTo = computed(() => this.colunasOriginais().map(c => 'col-' + (c.id ?? 'backlog')));
-
   colunas = computed<Coluna[]>(() => {
     const cols = this.colunasOriginais();
     const tar = this.tarefasFiltradas();
@@ -716,16 +717,10 @@ export class KanbanComponent implements OnInit {
   // Métricas rápidas do quadro (Corretor #5 Passo 4)
   metricas = computed(() => {
     const tar = this.tarefas();
-    const hoje = new Date(new Date().toDateString()).getTime();
     const aberta = (t: TarefaResumo) => t.status !== 'Concluida' && t.status !== 'Concluido' && t.status !== 'Cancelada' && t.status !== 'Cancelado';
-    const atrasada = (t: TarefaResumo) => {
-      if (!aberta(t)) return false;
-      const ref = t.dataEntrega ?? t.dataPrevisao;
-      return !!ref && new Date(new Date(ref).toDateString()).getTime() < hoje;
-    };
     return {
       concluidas: tar.filter(t => !aberta(t)).length,
-      atrasadas: tar.filter(atrasada).length,
+      atrasadas: tar.filter(t => ehAtrasada(t)).length,
       urgentes: tar.filter(t => aberta(t) && t.prioridade === 3).length,
       semResponsavel: tar.filter(t => aberta(t) && !t.responsavelId).length
     };
@@ -738,18 +733,15 @@ export class KanbanComponent implements OnInit {
       next: ops => this.operadores.set(ops ?? []),
       error: () => this.operadores.set([])
     });
-    // Deep-link da timeline do projeto (?projetoId=&etapaId=) + Kanban ADM (?perfil=F).
+    // Detecta se é Kanban Admin (/admin/kanban) ou Implantação (/implantacao/kanban)
+    const isAdminRoute = this.router.url.includes('/admin/kanban');
+    this.perfilModo.set(isAdminRoute ? 'incluir' : 'excluir');
+    // Deep-link da timeline do projeto (?projetoId=) + Kanban ADM (?perfil=F).
     this.route.queryParams.subscribe(qp => {
       const pid = qp['projetoId'];
-      const eid = qp['etapaId'];
       const perfil = qp['perfil'];
       if (pid && /^\d+$/.test(pid)) this.projetoId.set(pid);
-      if (eid && /^\d+$/.test(eid)) this.etapaId.set(Number(eid));
       if (perfil) this.perfilFiltro.set(perfil);
-    });
-    this.tarefasService.listarEtapas().subscribe({
-      next: lista => this.etapasFiltro.set((lista ?? []).map(e => ({ id: e.id, nome: e.nome }))),
-      error: () => this.etapasFiltro.set([])
     });
     this.carregar();
   }
@@ -758,9 +750,11 @@ export class KanbanComponent implements OnInit {
     this.loading.set(true);
     const filtro: TarefaFiltro = {};
     if (this.projetoId()) filtro.projetoId = Number(this.projetoId());
-    if (this.etapaId() != null) filtro.etapaId = this.etapaId() ?? undefined;
     const perfil = this.perfilFiltro();
-    if (perfil) filtro.perfilId = perfil;
+    if (perfil) {
+      filtro.perfilId = perfil;
+      filtro.perfilModo = this.perfilModo();
+    }
     this.tarefasService.listar(filtro).subscribe({
       next: (t) => { this.tarefas.set(t); this.loading.set(false); },
       error: () => this.loading.set(false)
@@ -772,31 +766,80 @@ export class KanbanComponent implements OnInit {
     this.carregar();
   }
 
-  limparEtapa(): void {
-    this.etapaId.set(null);
-    this.carregar();
-  }
-
   onDrop(event: CdkDragDrop<TarefaResumo[]>, colunaDestino: Coluna): void {
-    if (event.previousContainer === event.container) {
-      // Reordenar dentro da mesma coluna
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-    } else {
-      // Mover para outra coluna
-      transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
+    const tarefa = event.item.data as TarefaResumo | undefined;
+    if (!tarefa) return;
+
+    const origemId = tarefa.colunaKanbanId ?? null;
+    const destinoId = colunaDestino.id ?? null;
+
+    // Drop sem mudança real (mesma posição)
+    if (origemId === destinoId && event.previousIndex === event.currentIndex) return;
+
+    // Coluna BLOQUEADO exige motivo (validação do backend)
+    let motivoBloqueio: string | undefined;
+    const nomeDestino = (colunaDestino.nome || '').toUpperCase();
+    if (nomeDestino.includes('BLOQUEAD')) {
+      const motivo = prompt('Informe o motivo do bloqueio:');
+      if (!motivo || !motivo.trim()) {
+        this.toastErro('Motivo do bloqueio é obrigatório para mover para BLOQUEADO.');
+        return;
+      }
+      motivoBloqueio = motivo.trim();
     }
 
-    // Atualizar ordem/status no backend
-    const tarefaMovida = colunaDestino.tarefas[event.currentIndex];
-    const novaColunaId = colunaDestino.id;
-    const novaOrdem = event.currentIndex;
-    this.tarefasService.mudarColuna(tarefaMovida.id, {
-      colunaKanbanId: novaColunaId ?? undefined,
-      novaOrdem
+    const anterior = { colunaKanbanId: tarefa.colunaKanbanId, ordem: tarefa.ordem };
+
+    // Atualização otimista no signal `tarefas` (o computed de colunas se recria a partir dele)
+    this.tarefas.update(arr => {
+      const outras = arr.filter(x => x.id !== tarefa.id).map(x => ({ ...x }));
+      const destino = outras
+        .filter(x => x.colunaKanbanId === destinoId)
+        .sort((a, b) => a.ordem - b.ordem);
+      destino.splice(Math.min(event.currentIndex, destino.length), 0, {
+        ...tarefa,
+        colunaKanbanId: destinoId ?? tarefa.colunaKanbanId,
+        ordem: event.currentIndex
+      });
+      destino.forEach((x, i) => { x.ordem = i; });
+      const demais = outras.filter(x => x.colunaKanbanId !== destinoId);
+      return [...demais, ...destino];
+    });
+
+    this.tarefasService.mudarColuna(tarefa.id, {
+      colunaKanbanId: colunaDestino.id ?? undefined,
+      novaOrdem: event.currentIndex,
+      motivoBloqueio
     }).subscribe({
+      next: (atualizada) => {
+        if (atualizada) {
+          this.tarefas.update(arr => arr.map(x => x.id === atualizada.id
+            ? {
+                ...x,
+                status: atualizada.status,
+                bloqueada: atualizada.bloqueada,
+                bloqueadaMotivo: atualizada.motivoBloqueio ?? x.bloqueadaMotivo,
+                dataConclusao: atualizada.dataConclusao,
+                colunaKanbanId: atualizada.colunaKanbanId,
+                ordem: atualizada.ordem
+              }
+            : x
+          ));
+        }
+        this.toastSucesso(
+          origemId === destinoId
+            ? `Ordem atualizada em "${colunaDestino.nome}"`
+            : `Tarefa movida para "${colunaDestino.nome}"`
+        );
+      },
       error: (err) => {
-        console.error('Erro ao mover tarefa:', err);
-        // Reverter
+        // Reverter atualização otimista e recarregar do backend
+        this.tarefas.update(arr => arr.map(x =>
+          x.id === tarefa.id
+            ? { ...x, colunaKanbanId: anterior.colunaKanbanId, ordem: anterior.ordem }
+            : x
+        ));
+        this.toastErro('Erro ao mover tarefa: ' + (err.error?.mensagem || err.message));
         this.carregar();
       }
     });
@@ -817,7 +860,6 @@ export class KanbanComponent implements OnInit {
 
   limparFiltros(): void {
     this.quickFilters.set({ assignee: '', prioridade: null, buscar: '', apenasMinhas: false });
-    this.etapaId.set(null);
     this.carregar();
   }
 
@@ -863,9 +905,7 @@ export class KanbanComponent implements OnInit {
   }
 
   isOverdue(t: TarefaResumo | TarefaDetalhe): boolean {
-    if (!t.dataPrevisao) return false;
-    if (t.status === 'Concluida' || t.status === 'Concluido' || t.status === 'Cancelada' || t.status === 'Cancelado') return false;
-    return new Date(t.dataPrevisao) < new Date(new Date().toDateString());
+    return ehAtrasada(t);
   }
 
   /** Corretor #3 Passo 3: SLA graduado (vencida / vence hoje / atenção / no prazo). */
@@ -877,6 +917,7 @@ export class KanbanComponent implements OnInit {
     const mm = String(dt.getMonth() + 1).padStart(2, '0');
     const rotulo = `${dd}/${mm}`;
     if (t.status === 'Concluida' || t.status === 'Concluido' || t.status === 'Cancelada' || t.status === 'Cancelado') {
+      if (ehAtrasada(t)) return { texto: `Vencida (${rotulo})`, classe: 'imp-kanban__due--overdue' };
       return { texto: rotulo, classe: '' };
     }
     const hoje = new Date(new Date().toDateString());
@@ -914,15 +955,6 @@ export class KanbanComponent implements OnInit {
     return map[s] ?? s;
   }
 
-  // Drag visual feedback
-  onDragEntered(coluna: Coluna): void {
-    // Visual feedback handled by CSS .cdk-drop-list-dragging
-  }
-
-  onDragExited(coluna: Coluna): void {
-    // Visual feedback handled by CSS
-  }
-
   // Colunas do Kanban são FIXAS (seed): apenas mover tarefas entre elas.
 
   // Add Card Inline
@@ -941,8 +973,6 @@ export class KanbanComponent implements OnInit {
     // Pre-fill projeto com o filtro atual do Kanban
     const filtroProjeto = this.projetoId();
     this.novaTarefaProjetoId.set(filtroProjeto ? Number(filtroProjeto) : null);
-    // Pre-fill etapa com o filtro atual; carrega o fluxo do projeto
-    this.novaTarefaEtapaId.set(this.etapaId());
     this.carregarEtapasCriacao(this.novaTarefaProjetoId());
 
     // Pre-fill responsavel with logged user
@@ -958,24 +988,13 @@ export class KanbanComponent implements OnInit {
     }, 0);
   }
 
-  /** Fluxo de etapas para o form inline (via detalhe do projeto → tipoProjeto). */
+  /** Etapas fixas do projeto para o form inline (cards de 9 etapas). */
   carregarEtapasCriacao(projetoId: number | null): void {
     if (projetoId == null) {
-      this.etapasCriacao.set([]);
-      this.novaTarefaEtapaId.set(null);
       this.etapasFixasCriacao.set([]);
       this.novaTarefaProjetoEtapaId.set(null);
       return;
     }
-    this.projetosService.obter(projetoId).subscribe({
-      next: (p) => {
-        this.tarefasService.listarEtapas(p.tipoProjetoId).subscribe({
-          next: (lista) => this.etapasCriacao.set((lista ?? []).map(e => ({ id: e.id, nome: e.nome }))),
-          error: () => this.etapasCriacao.set([])
-        });
-      },
-      error: () => this.etapasCriacao.set([])
-    });
     // Etapas fixas do projeto (default = em andamento).
     this.projetosService.obterEtapasProjeto(projetoId).subscribe({
       next: (lista) => {
@@ -997,7 +1016,6 @@ export class KanbanComponent implements OnInit {
   aoMudarProjetoNovaTarefa(valor: string | number | null): void {
     const pid = valor === '' || valor == null ? null : Number(valor);
     this.novaTarefaProjetoId.set(pid);
-    this.novaTarefaEtapaId.set(null);
     this.novaTarefaProjetoEtapaId.set(null);
     this.carregarEtapasCriacao(pid);
   }
@@ -1010,8 +1028,6 @@ export class KanbanComponent implements OnInit {
     this.novaTarefaTipo.set(0);
     this.novaTarefaResponsavelIds.set([]);
     this.novaTarefaProjetoId.set(null);
-    this.novaTarefaEtapaId.set(null);
-    this.etapasCriacao.set([]);
     this.novaTarefaProjetoEtapaId.set(null);
     this.etapasFixasCriacao.set([]);
     this.novaTarefaChamadoIds.set([]);
@@ -1043,21 +1059,19 @@ export class KanbanComponent implements OnInit {
       this.erroNovaTarefa.set(`Responsável não encontrado no sistema: ${desconhecidos.join(', ')}`);
       return;
     }
-    // Com projeto, a etapa é obrigatória (jornada da implantação).
+    // Com projeto, a etapa fixa (card) é obrigatória (jornada da implantação).
     const pidNova = this.novaTarefaProjetoId();
-    if (pidNova !== null && this.novaTarefaEtapaId() == null) {
-      this.erroNovaTarefa.set('Selecione a etapa da tarefa.');
+    if (pidNova !== null && this.novaTarefaProjetoEtapaId() == null) {
+      this.erroNovaTarefa.set('Selecione a etapa do projeto (card).');
       return;
     }
     this.erroNovaTarefa.set(null);
     this.criandoTarefa.set(true);
 
     const responsavelPrincipal = this.novaTarefaResponsavelIds()[0];
-    const etapaNomeNova = this.etapasCriacao().find(e => e.id === this.novaTarefaEtapaId())?.nome;
 
     const req: TarefaCriarRequest = {
       projetoId: pidNova ?? undefined,
-      etapaId: this.novaTarefaEtapaId() ?? undefined,
       projetoEtapaId: this.novaTarefaProjetoEtapaId() ?? undefined,
       colunaKanbanId: colunaId,
       titulo,
@@ -1099,8 +1113,6 @@ export class KanbanComponent implements OnInit {
           arquivada: t.arquivada ?? false,
           chamadoLegadoId: t.chamadoLegadoId,
           dataInclusao: t.dataInclusao,
-          etapaId: t.etapaId ?? this.novaTarefaEtapaId() ?? undefined,
-          etapaNome: t.etapaNome ?? etapaNomeNova,
           projetoEtapaId: t.projetoEtapaId ?? this.novaTarefaProjetoEtapaId() ?? undefined
         }]);
         this.cancelarNovaTarefa();
@@ -1115,11 +1127,71 @@ export class KanbanComponent implements OnInit {
     });
   }
 
-  // Task menu (placeholder)
+  // Task menu
   abrirMenuTarefa(tarefa: TarefaResumo, event: MouseEvent): void {
     event.stopPropagation();
-    // TODO: implementar dropdown de ações da tarefa (editar, excluir, mover, duplicar)
-    console.log('Menu tarefa:', tarefa);
+    this.menuTarefaAberta.set(this.menuTarefaAberta()?.id === tarefa.id ? null : tarefa);
+    this.menuEvent.set(event);
+  }
+
+  fecharMenuTarefa(): void {
+    this.menuTarefaAberta.set(null);
+    this.menuEvent.set(null);
+  }
+
+  private menuEvent = signal<MouseEvent | null>(null);
+
+  calcularTopoMenu(event?: MouseEvent): number {
+    const ev = event ?? this.menuEvent();
+    return ev?.clientY ?? 0;
+  }
+
+  calcularEsquerdaMenu(event?: MouseEvent): number {
+    const ev = event ?? this.menuEvent();
+    return ev?.clientX ?? 0;
+  }
+
+  editarTarefaDoMenu(t: TarefaResumo): void {
+    this.router.navigate(['/implantacao/tarefas', t.id, 'editar']);
+  }
+
+  duplicarTarefa(t: TarefaResumo): void {
+    this.router.navigate(['/implantacao/tarefas/novo'], { queryParams: { tarefaId: t.id } });
+  }
+
+  arquivarTarefaDoMenu(t: TarefaResumo): void {
+    if (t.status !== 'Concluida') {
+      this.toastErro('Apenas tarefas concluídas podem ser arquivadas.');
+      return;
+    }
+    this.tarefasService.arquivar(t.id).subscribe({
+      next: (atualizada: TarefaDetalhe) => {
+        this.tarefas.update(arr => arr.map(x => x.id === t.id ? atualizada : x));
+        this.toastSucesso('Tarefa arquivada');
+      },
+      error: (err: HttpErrorResponse) => this.toastErro(err.error?.mensagem || 'Erro ao arquivar tarefa')
+    });
+  }
+
+  desarquivarTarefaDoMenu(t: TarefaResumo): void {
+    this.tarefasService.desarquivar(t.id).subscribe({
+      next: (atualizada: TarefaDetalhe) => {
+        this.tarefas.update(arr => arr.map(x => x.id === t.id ? atualizada : x));
+        this.toastSucesso('Tarefa desarquivada');
+      },
+      error: (err: HttpErrorResponse) => this.toastErro(err.error?.mensagem || 'Erro ao desarquivar tarefa')
+    });
+  }
+
+  excluirTarefaDoMenu(t: TarefaResumo): void {
+    if (!confirm(`Excluir a tarefa T${t.id} permanentemente?`)) return;
+    this.tarefasService.excluir(t.id).subscribe({
+      next: () => {
+        this.tarefas.update(arr => arr.filter(x => x.id !== t.id));
+        this.toastSucesso('Tarefa excluída');
+      },
+      error: (err: HttpErrorResponse) => this.toastErro(err.error?.mensagem || 'Erro ao excluir tarefa')
+    });
   }
 
   /** Corretor #1: abre o JOTA já situado no contexto desta tarefa. */
@@ -1156,7 +1228,6 @@ export class KanbanComponent implements OnInit {
       dataPrevisao: t.dataPrevisao,
       dataConclusao: t.dataConclusao,
       horasEstimadas: t.horasEstimadas,
-      horasRealizadas: t.horasRealizadas,
       bloqueada: t.bloqueada,
       motivoBloqueio: t.motivoBloqueio,
       usuarioAlteracao: this.auth.getOperadorLogado()
@@ -1265,7 +1336,6 @@ export class KanbanComponent implements OnInit {
       dataPrevisao: tarefa.dataPrevisao,
       dataConclusao: tarefa.dataConclusao,
       horasEstimadas: tarefa.horasEstimadas,
-      horasRealizadas: tarefa.horasRealizadas,
       bloqueada: tarefa.bloqueada,
       motivoBloqueio: tarefa.bloqueadaMotivo,
       usuarioAlteracao: 'admin'
@@ -1508,7 +1578,6 @@ export class KanbanComponent implements OnInit {
         dataPrevisao: undefined,
         dataConclusao: undefined,
         horasEstimadas: undefined,
-        horasRealizadas: undefined,
         bloqueada: false,
         motivoBloqueio: undefined,
         usuarioAlteracao: 'admin'
@@ -1540,7 +1609,6 @@ export class KanbanComponent implements OnInit {
         dataPrevisao: undefined,
         dataConclusao: undefined,
         horasEstimadas: undefined,
-        horasRealizadas: undefined,
         bloqueada: false,
         motivoBloqueio: undefined,
         usuarioAlteracao: 'admin'

@@ -1,0 +1,68 @@
+<section class="coo-dashboard">
+  <app-page-header
+    titulo="Painel COO"
+    descricao="Visão operacional: volume, SLA, qualidade, produtividade e equipes"
+    icone="bi-clipboard-check">
+    <div actions class="coo-dashboard__acoes">
+      <button type="button" class="adm-btn adm-btn--ghost" (click)="atualizar()" [disabled]="loading()">
+        <i class="bi bi-arrow-clockwise" [class.bi-spin]="loading()"></i> Atualizar
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- Loading global -->
+  <div *ngIf="loading()" class="adm-empty">
+    <i class="bi bi-arrow-clockwise bi-spin"></i>
+    <p>Carregando indicadores operacionais...</p>
+  </div>
+
+  <!-- Error global -->
+  <div *ngIf="erro()" class="alert alert-danger" role="alert">
+    {{ erro() }}
+    <button type="button" class="adm-btn adm-btn--ghost adm-btn--icon ms-2" (click)="carregar()">
+      <i class="bi bi-arrow-clockwise"></i> Tentar novamente
+    </button>
+  </div>
+
+  <!-- Conteúdo principal -->
+  <ng-container *ngIf="!loading() && !erro() && dados() as d">
+    <!-- KPIs -->
+    <div class="section-rail">
+      <h2>Indicadores Operacionais</h2>
+      <small>{{ d.cards.length }} KPIs monitorados</small>
+    </div>
+
+    <div class="adm-grid coo-dashboard__kpis">
+      <app-gestor-kpi-card
+        *ngFor="let kpi of d.cards"
+        [kpi]="kpi"
+        [loading]="false"
+        [clickable]="true">
+      </app-gestor-kpi-card>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="section-rail">
+      <h2>Panorama Operacional</h2>
+      <small>{{ d.graficos.length }} gráficos disponíveis</small>
+    </div>
+
+    <div class="coo-dashboard__charts adm-grid">
+      <article class="adm-card coo-dashboard__chart-card" *ngFor="let g of d.graficos">
+        <div class="eyebrow">
+          <span>{{ g.tipo === 'doughnut' ? 'Distribuição' : 'Barras' }}</span>
+        </div>
+        <h2 class="adm-section-title">{{ g.rotulo }}</h2>
+        <div class="coo-dashboard__chart-wrap" [class.coo-dashboard__chart-wrap--donut]="g.tipo === 'doughnut'">
+          <app-gestor-chart [config]="g" [class.gestor-chart--donut]="g.tipo === 'doughnut'"></app-gestor-chart>
+        </div>
+      </article>
+    </div>
+
+    <!-- Atualização -->
+    <p class="coo-dashboard__atualizado">
+      <i class="bi bi-clock"></i>
+      Última atualização: {{ d.atualizadoEm | date:'dd/MM/yyyy HH:mm' }} · auto-refresh a cada 30s
+    </p>
+  </ng-container>
+</section>

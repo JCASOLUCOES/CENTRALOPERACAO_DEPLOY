@@ -1,0 +1,19 @@
+<nav class="gestor-nav" aria-label="Navegação do Módulo Gestor">
+  <ul class="gestor-nav__tabs" role="tablist">
+    <li role="presentation" *ngFor="let painel of paineis">
+      <a role="tab"
+         [routerLink]="['/gestor', painel.id]"
+         routerLinkActive="gestor-nav__tab--active"
+         [attr.aria-selected]="isActive(painel.id)"
+         [attr.aria-controls]="'panel-' + painel.id"
+         class="gestor-nav__tab">
+        <i class="bi {{ painel.icone }}"></i>
+        {{ painel.label }}
+      </a>
+    </li>
+  </ul>
+  <a class="gestor-nav__central" routerLink="/"
+     aria-label="Voltar para a Central de Operação">
+    <i class="bi bi-grid"></i> Central de Operação
+  </a>
+</nav>

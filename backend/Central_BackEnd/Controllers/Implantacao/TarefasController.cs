@@ -25,10 +25,10 @@ public class TarefasController : ControllerBase
         [FromQuery] bool? apenasAtrasadas, [FromQuery] bool? apenasEmAndamento, [FromQuery] bool? apenasConcluidas,
         [FromQuery] bool? apenasVenceHoje, [FromQuery] bool? incluirArquivadas,
         [FromQuery] int? funcaoId, [FromQuery] string? funcaoClassificacao, [FromQuery] string? perfilId,
-        [FromQuery] int? etapaId,
+        [FromQuery] string? perfilModo,
         CancellationToken ct = default)
     {
-        var f = new TarefaFiltro(projetoId, equipe, responsavelId, status, prioridade, tipo, buscar, apenasAtrasadas, apenasEmAndamento, apenasConcluidas, apenasVenceHoje, incluirArquivadas, funcaoId, funcaoClassificacao, perfilId, etapaId);
+        var f = new TarefaFiltro(projetoId, equipe, responsavelId, status, prioridade, tipo, buscar, apenasAtrasadas, apenasEmAndamento, apenasConcluidas, apenasVenceHoje, incluirArquivadas, funcaoId, funcaoClassificacao, perfilId, perfilModo);
         var operador = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         return Ok(await _service.ListarAsync(f, operador, ct));
     }
@@ -204,6 +204,6 @@ public class DashboardController : ControllerBase
     public DashboardController(IDashboardService service) { _service = service; }
 
     [HttpGet]
-    public async Task<ActionResult<DashboardGeral>> Obter([FromQuery] string? equipe, CancellationToken ct = default)
-        => Ok(await _service.ObterAsync(equipe, ct));
+    public async Task<ActionResult<DashboardGeral>> Obter([FromQuery] string? equipe, [FromQuery] int? projetoId, CancellationToken ct = default)
+        => Ok(await _service.ObterAsync(equipe, projetoId, ct));
 }

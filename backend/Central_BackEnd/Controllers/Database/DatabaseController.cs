@@ -181,7 +181,7 @@ public class DatabaseController : ControllerBase
     public async Task<ActionResult<List<ProcedureResumoDto>>> GetProcedures(
         [FromQuery] string? schema = null,
         [FromQuery] string? busca = null,
-        [FromQuery] int take = 200,
+        [FromQuery] int take = 5000,
         CancellationToken ct = default)
     {
         return Ok(await _meta.ListarProceduresAsync(schema, busca, take, ct));
@@ -190,7 +190,7 @@ public class DatabaseController : ControllerBase
     [HttpGet("procedures/search")]
     public async Task<ActionResult<List<ProcedureResumoDto>>> SearchProcedures(
         [FromQuery] string termo,
-        [FromQuery] int take = 50,
+        [FromQuery] int take = 5000,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(termo))

@@ -69,7 +69,8 @@ public record ProjetoCriarRequest(
     DateTime? DataPrevisao,
     DateTime? DataGoLivePrevista,
     int? HorasPlanejadas,
-    string? Observacao);
+    string? Observacao,
+    int? EtapaInicialOrdem = null);
 
 public record ProjetoAtualizarRequest(
     string? Nome,

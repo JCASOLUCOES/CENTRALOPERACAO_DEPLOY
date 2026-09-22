@@ -70,21 +70,26 @@ export interface ProjetoCriarRequest {
   clienteLegadoId?: number;
   responsavelId?: string;
   criadorId: string;
-  colunaKanbanId?: number;
   prioridade: number;
   dataInicio?: string;
   dataPrevisao?: string;
   dataGoLivePrevista?: string;
   horasPlanejadas?: number;
   observacao?: string;
+  /** Ordem (1–9) da etapa em que o projeto inicia; anteriores nascem Concluídas. */
+  etapaInicialOrdem?: number;
 }
 
 export interface ProjetoAtualizarRequest extends ProjetoCriarRequest {
-  progresso: number;
   dataConclusao?: string;
   dataGoLiveReal?: string;
   horasRealizadas?: number;
   usuarioAlteracao: string;
+}
+
+export interface EtapaPadraoResumo {
+  ordem: number;
+  nome: string;
 }
 
 export interface ProjetoMudarStatusRequest {

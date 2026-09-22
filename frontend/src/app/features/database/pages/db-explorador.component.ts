@@ -298,7 +298,7 @@ export class DbExploradorComponent implements OnInit {
 
   ngOnInit(): void {
     this.db.listarTabelas().pipe(catchError(() => of([] as DatabaseTable[]))).subscribe(l => this.tabelas.set(l));
-    this.db.listarProcedures().pipe(catchError(() => of([] as ProcedureResumo[]))).subscribe(l => this.procedures.set(l));
+    this.db.listarProcedures(undefined, undefined, 5000).pipe(catchError(() => of([] as ProcedureResumo[]))).subscribe(l => this.procedures.set(l));
     this.db.listarTriggers().pipe(catchError(() => of([] as Trigger[]))).subscribe(l => this.triggers.set(l));
   }
 

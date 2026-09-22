@@ -30,6 +30,7 @@ import { ProjetoEtapaResumo } from '../../models/projeto.model';
         <span class="checklist-done">{{ etapa.checklistConcluidos }}</span>
         <span class="checklist-sep">/</span>
         <span class="checklist-total">{{ etapa.checklistTotal }}</span>
+        <span class="tarefas-label">checklist</span>
       </div>
       <div class="etapa-atraso" *ngIf="etapa.atrasoDias && etapa.atrasoDias > 0">
         <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> {{ etapa.atrasoDias }}d

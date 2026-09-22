@@ -2,7 +2,7 @@
 
 > Documento vivo do módulo. Cobre **Projetos + Equipe** (Agenda removida no rollback `8956c57`).
 > Para o passo-a-passo de retomada, ver `PLANO_MESTRE.md` na raiz do monorepo.
-> Para a documentação completa, ver `frontend/docs/DOCUMENTACAO-COMPLETA.md` § 6.5.
+> Para a documentação completa, ver `docs/DOCUMENTACAO-COMPLETA.md` § 6.5.
 > Para plano de reimplementação da Agenda, ver `docs/AGENDA-REIMPLEMENTACAO.md`.
 
 ---

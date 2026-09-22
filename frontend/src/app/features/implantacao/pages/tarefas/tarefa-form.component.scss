@@ -252,6 +252,7 @@
 @media (max-width: 768px) {
   .imp-tarefa-form-page { padding: 1rem; }
   .imp-form__grid { grid-template-columns: 1fr; }
+  .imp-form__subgroups { grid-template-columns: 1fr; }
   .imp-form__actions { flex-direction: column-reverse; }
   .imp-form__actions .imp-btn { width: 100%; }
 }
@@ -282,30 +283,93 @@
   border-bottom: 1px solid var(--border-color);
 }
 
-.imp-form__collapsible-toggle {
+/* ===== SUBGRUPOS (Cronograma e acompanhamento) ===== */
+.imp-form__subgroups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.imp-form__subgroup {
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: var(--surface-page);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.imp-form__subgroup-legend {
+  font: 600 0.6875rem/1 var(--font-body);
+  color: var(--text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 0.375rem;
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  background: transparent;
-  border: none;
-  color: var(--text-color);
-  opacity: 0.7;
-  font: 600 0.75rem/1 var(--font-body);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  padding: 0.25rem 0;
-  transition: opacity 0.15s, color 0.15s;
+  opacity: 0.75;
 }
 
-.imp-form__collapsible-toggle:hover {
-  opacity: 1;
-  color: var(--primary-color);
-}
-
-.imp-form__collapsible-toggle i {
+.imp-form__subgroup-legend i {
   font-size: 0.75rem;
+}
+
+/* ===== SWITCH (Bloqueada) ===== */
+.imp-form__switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font: 500 0.875rem/1 var(--font-body);
+  color: var(--text-color);
+  user-select: none;
+}
+
+.imp-form__switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.imp-form__switch-track {
+  position: relative;
+  width: 2.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: var(--border-color);
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.imp-form__switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
   transition: transform 0.15s;
+}
+
+.imp-form__switch input:checked + .imp-form__switch-track {
+  background: var(--primary-color);
+}
+
+.imp-form__switch input:checked + .imp-form__switch-track::after {
+  transform: translateX(1rem);
+}
+
+.imp-form__switch input:focus-visible + .imp-form__switch-track {
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
 }
 
 /* ===== USUARIO / CHAMADO DROPDOWN INTEGRATION ===== */

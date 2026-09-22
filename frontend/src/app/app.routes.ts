@@ -10,6 +10,12 @@ import { adminRoutes } from '@features/admin/admin.routes';
 export const appRoutes: Routes = [
   { path: 'login', component: LoginComponent },
   {
+    path: 'gestor/entrada',
+    loadComponent: () => import('@features/gestor/pages/modulo-entrada/modulo-entrada.component').then(m => m.GestorModuloEntradaComponent),
+    canActivate: [authGuard, adminGuard]
+  },
+  { path: 'modulos', redirectTo: 'gestor/entrada', pathMatch: 'full' },
+  {
     path: '',
     component: MainLayoutComponent,
     canActivate: [authGuard],

@@ -32,6 +32,11 @@ import { ProjetoRetornoDialogComponent } from '../../components/projeto-retorno-
         <span>{{ erroAcao() }}</span>
       </div>
 
+      <div *ngIf="toastMessage()" class="imp-toast" [class.imp-toast--success]="toastType() === 'success'" [class.imp-toast--error]="toastType() === 'error'" role="alert">
+        <i class="bi" [ngClass]="toastType() === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'"></i>
+        <span>{{ toastMessage() }}</span>
+      </div>
+
       <section class="imp-detail__hero">
         <div class="imp-detail__hero-actions">
           <a [routerLink]="['/implantacao/projetos', p.id, 'editar']" class="imp-btn imp-btn--ghost">
@@ -178,6 +183,22 @@ import { ProjetoRetornoDialogComponent } from '../../components/projeto-retorno-
                   <a [routerLink]="['/implantacao/tarefas', t.id, 'editar']" class="imp-table__acao">
                     <i class="bi bi-pencil-square"></i> Editar
                   </a>
+                  <button
+                    *ngIf="!t.arquivada && t.status === 'Concluida'"
+                    type="button"
+                    class="imp-table__acao"
+                    (click)="arquivarTarefa(t)"
+                  >
+                    <i class="bi bi-archive"></i> Arquivar
+                  </button>
+                  <button
+                    *ngIf="t.arquivada"
+                    type="button"
+                    class="imp-table__acao"
+                    (click)="desarquivarTarefa(t)"
+                  >
+                    <i class="bi bi-archive-fill"></i> Desarquivar
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -386,5 +407,48 @@ export class ProjetoDetalheComponent implements OnInit {
       'Bloqueada': 'Bloqueada', 'Bloqueado': 'Bloqueado'
     };
     return m[s] ?? s;
+  }
+
+  arquivarTarefa(t: TarefaResumo): void {
+    if (t.status !== 'Concluida') {
+      this.toastErro('Apenas tarefas concluídas podem ser arquivadas.');
+      return;
+    }
+    this.tarSvc.arquivar(t.id).subscribe({
+      next: (atualizada) => {
+        this.tarefas.update(arr => arr.map(x => x.id === t.id ? atualizada : x));
+        this.toastSucesso('Tarefa arquivada');
+      },
+      error: (err) => this.toastErro(err.error?.mensagem || 'Erro ao arquivar tarefa')
+    });
+  }
+
+  desarquivarTarefa(t: TarefaResumo): void {
+    this.tarSvc.desarquivar(t.id).subscribe({
+      next: (atualizada) => {
+        this.tarefas.update(arr => arr.map(x => x.id === t.id ? atualizada : x));
+        this.toastSucesso('Tarefa desarquivada');
+      },
+      error: (err) => this.toastErro(err.error?.mensagem || 'Erro ao desarquivar tarefa')
+    });
+  }
+
+  // Toast helpers
+  private toastTimeout: any = null;
+  toastMessage = signal<string>('');
+  toastType = signal<'success' | 'error' | 'info'>('info');
+
+  toastSucesso(msg: string): void {
+    this.toastMessage.set(msg);
+    this.toastType.set('success');
+    clearTimeout(this.toastTimeout);
+    this.toastTimeout = setTimeout(() => this.toastMessage.set(''), 3000);
+  }
+
+  toastErro(msg: string): void {
+    this.toastMessage.set(msg);
+    this.toastType.set('error');
+    clearTimeout(this.toastTimeout);
+    this.toastTimeout = setTimeout(() => this.toastMessage.set(''), 5000);
   }
 }

@@ -77,12 +77,13 @@ public class ProjetoService : IProjetoService
         var responsavelNome = p.ResponsavelId == null ? null :
             await _db.Operadores.Where(o => o.OperadorId == p.ResponsavelId).Select(o => o.Nome).FirstOrDefaultAsync(ct);
         var criadorNome = await _db.Operadores.Where(o => o.OperadorId == p.CriadorId).Select(o => o.Nome).FirstOrDefaultAsync(ct);
-        var totalTarefas = await _db.Tarefas.CountAsync(t => t.ProjetoId == id, ct);
-        var tarefasConcluidas = await _db.Tarefas.CountAsync(t => t.ProjetoId == id && t.Status == StatusTarefa.Concluida, ct);
+        var totalTarefas = await _db.Tarefas.CountAsync(t => t.ProjetoId == id && !t.Arquivada, ct);
+        var tarefasConcluidas = await _db.Tarefas.CountAsync(t => t.ProjetoId == id && !t.Arquivada && t.Status == StatusTarefa.Concluida, ct);
         var hoje = DateTime.Today;
-        var tarefasAtrasadas = await _db.Tarefas.CountAsync(t =>
-            t.ProjetoId == id && t.Status != StatusTarefa.Concluida && t.Status != StatusTarefa.Cancelada &&
-            t.DataPrevisao != null && t.DataPrevisao.Value.Date < hoje, ct);
+        var tarefasAtrasadas = await _db.Tarefas
+            .Where(t => t.ProjetoId == id && !t.Arquivada)
+            .OndeAtrasadas(hoje)
+            .CountAsync(ct);
 
         return new ProjetoDetalhe(
             p.Id, p.Codigo, p.Nome, p.Descricao,
@@ -156,7 +157,7 @@ public class ProjetoService : IProjetoService
         if (req.ClienteId.HasValue) p.ClienteId = req.ClienteId.Value;
         if (req.ClienteLegadoId.HasValue) p.ClienteLegadoId = req.ClienteLegadoId.Value;
         if (req.ResponsavelId != null) p.ResponsavelId = req.ResponsavelId;
-        p.ColunaKanbanId = req.ColunaKanbanId;
+        if (req.ColunaKanbanId.HasValue) p.ColunaKanbanId = req.ColunaKanbanId;
         if (req.Prioridade.HasValue) p.Prioridade = (PrioridadeProjeto)req.Prioridade.Value;
         if (req.Progresso.HasValue) p.Progresso = req.Progresso.Value;
         if (req.DataInicio.HasValue) p.DataInicio = req.DataInicio.Value;

@@ -407,7 +407,7 @@ chamadoLegadoId?: number;
 ### Bloco F — Documentação (2 sub-passos, ~5 min) — **Agenda removida**
 
 - **F1.** Atualizar `MODULO-IMPLANTACAO-MAP.md` na raiz do monorepo (cobre Projetos + Equipe + relações TB* — **Agenda removida**)
-- **F2.** Atualizar `frontend/docs/DOCUMENTACAO-COMPLETA.md` § 6.5 — adicionar subseção 6.5.8 (Equipe) — **6.5.7 Agenda removida**
+- **F2.** Atualizar `docs/DOCUMENTACAO-COMPLETA.md` § 6.5 — adicionar subseção 6.5.8 (Equipe) — **6.5.7 Agenda removida**
 
 ### Bloco G — Teste local (1 sub-passo, ~1 min) — **Agenda removida**
 

@@ -53,16 +53,10 @@ public class Tarefa
     [Column("TRF_ChamadoLegadoId")]
     public int? ChamadoLegadoId { get; set; }
 
-    [Column("TRF_EtapaId")]
-    public int? EtapaId { get; set; }
-
-    [ForeignKey("EtapaId")]
-    public Etapa? Etapa { get; set; }
-
     /// <summary>
     /// FK para a etapa FIXA do projeto (tbprojetoEtapa.PEP_Id, jornada de 9 etapas).
     /// Define o contador dinâmico do card (tarefas concluídas vs total).
-    /// NULL = conta só nos totais do projeto/jornada, sem card fixo.
+    /// Obrigatória quando a tarefa tem projeto; NULL só em tarefas sem projeto.
     /// </summary>
     [Column("TRF_ProjetoEtapaId")]
     public int? ProjetoEtapaId { get; set; }

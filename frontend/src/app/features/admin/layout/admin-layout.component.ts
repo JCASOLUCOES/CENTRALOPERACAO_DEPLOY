@@ -5,6 +5,7 @@ import { AuthService } from '@core/services/auth.service';
 import { Router } from '@angular/router';
 import { PerfilUsuario } from '@core/models/auth.model';
 import { APP_VERSION } from '@shared/meta/app-version';
+import { APP_CONFIG } from '@shared/config/app-config';
 
 @Component({
   selector: 'app-admin-layout',
@@ -16,7 +17,8 @@ import { APP_VERSION } from '@shared/meta/app-version';
 export class AdminLayoutComponent implements OnInit {
   perfil: PerfilUsuario | null = null;
   currentUser: import('@core/models/auth.model').Usuario | null = null;
-  versao: string = '';
+  readonly versao = APP_VERSION;
+  readonly appConfig = APP_CONFIG;
 
   constructor(
     private readonly authService: AuthService,
@@ -26,7 +28,6 @@ export class AdminLayoutComponent implements OnInit {
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser() ?? null;
     this.perfil = this.currentUser?.perfil ?? null;
-    this.versao = APP_VERSION;
   }
 
   irParaCentral(): void {
@@ -42,5 +43,14 @@ export class AdminLayoutComponent implements OnInit {
     const partes = this.currentUser.nome.split(' ');
     const inicial = partes[0]?.charAt(0)?.toUpperCase() ?? '';
     return inicial;
+  }
+
+  formatNome(nome: string): string {
+    return nome
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(' ');
   }
 }

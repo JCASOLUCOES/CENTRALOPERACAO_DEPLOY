@@ -1,32 +1,38 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { Observable, of, switchMap } from 'rxjs';
+import { Observable, of, switchMap, filter, take, map } from 'rxjs';
+import { isPlatformBrowser } from '@angular/common';
+import { PLATFORM_ID } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 
 export const authGuard: CanActivateFn = (_route, state): Observable<boolean | import('@angular/router').UrlTree> => {
-  // Durante o prerender (SSR) não há sessão no navegador;
-  // as rotas são geradas estaticamente e a proteção ocorre no client.
-  if (typeof window === 'undefined') {
-    return of(true);
-  }
-
   const authService = inject(AuthService);
   const router = inject(Router);
+  const platformId = inject(PLATFORM_ID);
 
-  if (authService.isAuthenticated()) {
+  // SSR: permite renderização estática; a proteção real ocorre no client
+  if (!isPlatformBrowser(platformId)) {
     return of(true);
   }
 
-  // Access token expirado/ausente → tenta refresh silencioso.
-  // O refresh token está no cookie HttpOnly e é enviado automaticamente.
-  return authService.refreshTokenSingleFlight().pipe(
-    switchMap(novoToken => {
-      if (novoToken) {
+  return authService.authInitialized$.pipe(
+    filter(initialized => initialized),
+    take(1),
+    switchMap(() => {
+      if (authService.isAuthenticated()) {
         return of(true);
       }
-      return of(router.createUrlTree(['/login'], {
-        queryParams: { returnUrl: state.url }
-      }));
+
+      return authService.refreshTokenSingleFlight().pipe(
+        switchMap(novoToken => {
+          if (novoToken) {
+            return of(true);
+          }
+          return of(router.createUrlTree(['/login'], {
+            queryParams: { returnUrl: state.url }
+          }));
+        })
+      );
     })
   );
 };

@@ -51,34 +51,7 @@ END
 DECLARE @tipoClienteId INT = (SELECT TOP 1 TPP_Id FROM IMPL_TipoProjeto WHERE TPP_Codigo = 'CLIENTE');
 DECLARE @tipoCiaaId INT = (SELECT TOP 1 TPP_Id FROM IMPL_TipoProjeto WHERE TPP_Codigo = 'PROJETO_CIAA');
 
--- 4. ETAPAS
-IF NOT EXISTS (SELECT 1 FROM IMPL_Etapa WHERE ETP_Nome = 'KICKOFF')
-BEGIN
-  INSERT IMPL_Etapa (ETP_Nome, ETP_Ordem, ETP_TipoProjetoId, ETP_Concluida, ETP_Cor, ETP_Ativa, ETP_UsuarioInclusao, ETP_DataInclusao) VALUES
-    ('KICKOFF',         1, @tipoClienteId, 0, '#0f4c81', 'admin', GETDATE()),
-    ('PARAMETRIZACAO',  2, @tipoClienteId, 0, '#2563eb', 'admin', GETDATE()),
-    ('TREINAMENTO',     3, @tipoClienteId, 0, '#0ea5e9', 'admin', GETDATE()),
-    ('HOMOLOGACAO',     4, @tipoClienteId, 0, '#7c3aed', 'admin', GETDATE()),
-    ('GO LIVE',         5, @tipoClienteId, 0, '#16a34a', 'admin', GETDATE()),
-    ('ACEITE',          6, @tipoClienteId, 0, '#15803d', 'admin', GETDATE()),
-    ('LEVANTAMENTO',    1, @tipoCiaaId,   0, '#7c3aed', 'admin', GETDATE()),
-    ('DESENHO',         2, @tipoCiaaId,   0, '#a855f7', 'admin', GETDATE()),
-    ('DESENVOLVIMENTO', 3, @tipoCiaaId,   0, '#d97706', 'admin', GETDATE()),
-    ('TESTES',          4, @tipoCiaaId,   0, '#0891b2', 'admin', GETDATE()),
-    ('PUBLICACAO',      6, @tipoCiaaId,   0, '#16a34a', 'admin', GETDATE()),
-    ('MONITORAMENTO',   7, @tipoCiaaId,   0, '#0d9488', 'admin', GETDATE());
-END
-
-DECLARE @etapaKickoff INT = (SELECT TOP 1 ETP_Id FROM IMPL_Etapa WHERE ETP_Nome = 'KICKOFF');
-DECLARE @etapaParam INT = (SELECT TOP 1 ETP_Id FROM IMPL_Etapa WHERE ETP_Nome = 'PARAMETRIZACAO');
-DECLARE @etapaTreinam INT = (SELECT TOP 1 ETP_Id FROM IMPL_Etapa WHERE ETP_Nome = 'TREINAMENTO');
-DECLARE @etapaHomolog INT = (SELECT TOP 1 ETP_Id FROM IMPL_Etapa WHERE ETP_Nome = 'HOMOLOGACAO');
-DECLARE @etapaGoLive INT = (SELECT TOP 1 ETP_Id FROM IMPL_Etapa WHERE ETP_Nome = 'GO LIVE');
-DECLARE @etapaLevant INT = (SELECT TOP 1 ETP_Id FROM IMPL_Etapa WHERE ETP_Nome = 'LEVANTAMENTO');
-DECLARE @etapaDesenho INT = (SELECT TOP 1 ETP_Id FROM IMPL_Etapa WHERE ETP_Nome = 'DESENHO');
-DECLARE @etapaDesenv INT = (SELECT TOP 1 ETP_Id FROM IMPL_Etapa WHERE ETP_Nome = 'DESENVOLVIMENTO');
-DECLARE @etapaTestes INT = (SELECT TOP 1 ETP_Id FROM IMPL_Etapa WHERE ETP_Nome = 'TESTES');
-DECLARE @etapaPublic INT = (SELECT TOP 1 ETP_Id FROM IMPL_Etapa WHERE ETP_Nome = 'PUBLICACAO');
+-- 4. (IMPL_Etapa removida — etapas agora são por projeto em tbprojetoEtapa)
 
 -- 5. CLIENTES
 IF NOT EXISTS (SELECT 1 FROM IMPL_Cliente WHERE CLI_Nome = 'Tech Solutions S/A')
@@ -114,14 +87,14 @@ BEGIN
 
   DECLARE @p1 INT = SCOPE_IDENTITY();
 
-  INSERT IMPL_Tarefa (TRF_ProjetoId, TRF_EtapaId, TRF_ColunaKanbanId, TRF_Ordem, TRF_Titulo, TRF_Descricao, TRF_ResponsavelId, TRF_CriadorId, TRF_Status, TRF_Prioridade, TRF_DataPrevisao, TRF_DataConclusao, TRF_HorasEstimadas, TRF_HorasRealizadas, TRF_Bloqueada, TRF_MotivoBloqueio, TRF_UsuarioInclusao, TRF_DataInclusao) VALUES
-    (@p1, @etapaKickoff,  @colConcluido, 1, 'Kickoff com a diretoria', 'Alinhamento de objetivos, cronograma e stakeholders do projeto.', 'admin', 'admin', 4, 2, DATEADD(DAY, -40, GETDATE()), DATEADD(DAY, -42, GETDATE()), 8, 8, 0, NULL, 'admin', DATEADD(DAY, -45, GETDATE())),
-    (@p1, @etapaParam,    @colConcluido, 2, 'Levantar parâmetros da carteira de cobrança', 'Mapear regras de negócio: faixas de atraso, juros, descontos, distribuição.', 'admin', 'admin', 4, 2, DATEADD(DAY, -25, GETDATE()), DATEADD(DAY, -22, GETDATE()), 24, 28, 0, NULL, 'admin', DATEADD(DAY, -40, GETDATE())),
-    (@p1, @etapaParam,    @colConcluido, 3, 'Importar títulos iniciais (abertura)', 'Carga inicial de 2.500 títulos via planilha de migração.', 'admin', 'admin', 4, 1, DATEADD(DAY, -15, GETDATE()), DATEADD(DAY, -12, GETDATE()), 12, 10, 0, NULL, 'admin', DATEADD(DAY, -30, GETDATE())),
-    (@p1, @etapaParam,    @colAndamento, 4, 'Configurar integrações com Sicoob e Caixa', 'Homologar remessa CNAB 240 e retorno. Validar arquivos com o banco.', 'admin', 'admin', 2, 3, DATEADD(DAY, -3, GETDATE()), NULL, 40, 28, 1, 'Aguardando retorno do banco sobre layout do arquivo de retorno.', 'admin', DATEADD(DAY, -15, GETDATE())),
-    (@p1, @etapaTreinam,  @colAFazer,    5, 'Agendar treinamento com equipe financeira', '2 turmas, 4h cada, focadas em carteira de cobrança e fechamento diário.', 'admin', 'admin', 1, 2, DATEADD(DAY, 10, GETDATE()), NULL, 16, NULL, 0, NULL, 'admin', DATEADD(DAY, -5, GETDATE())),
-    (@p1, @etapaHomolog,  @colAFazer,    6, 'Homologar fluxo completo com cliente', 'Roda 5 títulos do início ao fim, com cliente acompanhando.', 'admin', 'admin', 1, 1, DATEADD(DAY, 15, GETDATE()), NULL, 12, NULL, 0, NULL, 'admin', DATEADD(DAY, -5, GETDATE())),
-    (@p1, @etapaGoLive,   @colBacklog,   7, 'Definir data do go live', 'Confirmar com diretoria a data de entrada em produção.', 'admin', 'admin', 1, 1, DATEADD(DAY, 20, GETDATE()), NULL, 4, NULL, 0, NULL, 'admin', DATEADD(DAY, -2, GETDATE()));
+  INSERT IMPL_Tarefa (TRF_ProjetoId, TRF_ProjetoEtapaId, TRF_ColunaKanbanId, TRF_Ordem, TRF_Titulo, TRF_Descricao, TRF_ResponsavelId, TRF_CriadorId, TRF_Status, TRF_Prioridade, TRF_DataPrevisao, TRF_DataConclusao, TRF_HorasEstimadas, TRF_HorasRealizadas, TRF_Bloqueada, TRF_MotivoBloqueio, TRF_UsuarioInclusao, TRF_DataInclusao) VALUES
+    (@p1, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p1 AND PEP_Ordem = 1),  @colConcluido, 1, 'Kickoff com a diretoria', 'Alinhamento de objetivos, cronograma e stakeholders do projeto.', 'admin', 'admin', 4, 2, DATEADD(DAY, -40, GETDATE()), DATEADD(DAY, -42, GETDATE()), 8, 8, 0, NULL, 'admin', DATEADD(DAY, -45, GETDATE())),
+    (@p1, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p1 AND PEP_Ordem = 2),  @colConcluido, 2, 'Levantar parâmetros da carteira de cobrança', 'Mapear regras de negócio: faixas de atraso, juros, descontos, distribuição.', 'admin', 'admin', 4, 2, DATEADD(DAY, -25, GETDATE()), DATEADD(DAY, -22, GETDATE()), 24, 28, 0, NULL, 'admin', DATEADD(DAY, -40, GETDATE())),
+    (@p1, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p1 AND PEP_Ordem = 2),  @colConcluido, 3, 'Importar títulos iniciais (abertura)', 'Carga inicial de 2.500 títulos via planilha de migração.', 'admin', 'admin', 4, 1, DATEADD(DAY, -15, GETDATE()), DATEADD(DAY, -12, GETDATE()), 12, 10, 0, NULL, 'admin', DATEADD(DAY, -30, GETDATE())),
+    (@p1, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p1 AND PEP_Ordem = 2),  @colAndamento, 4, 'Configurar integrações com Sicoob e Caixa', 'Homologar remessa CNAB 240 e retorno. Validar arquivos com o banco.', 'admin', 'admin', 2, 3, DATEADD(DAY, -3, GETDATE()), NULL, 40, 28, 1, 'Aguardando retorno do banco sobre layout do arquivo de retorno.', 'admin', DATEADD(DAY, -15, GETDATE())),
+    (@p1, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p1 AND PEP_Ordem = 3),  @colAFazer,    5, 'Agendar treinamento com equipe financeira', '2 turmas, 4h cada, focadas em carteira de cobrança e fechamento diário.', 'admin', 'admin', 1, 2, DATEADD(DAY, 10, GETDATE()), NULL, 16, NULL, 0, NULL, 'admin', DATEADD(DAY, -5, GETDATE())),
+    (@p1, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p1 AND PEP_Ordem = 4),  @colAFazer,    6, 'Homologar fluxo completo com cliente', 'Roda 5 títulos do início ao fim, com cliente acompanhando.', 'admin', 'admin', 1, 1, DATEADD(DAY, 15, GETDATE()), NULL, 12, NULL, 0, NULL, 'admin', DATEADD(DAY, -5, GETDATE())),
+    (@p1, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p1 AND PEP_Ordem = 5),  @colBacklog,   7, 'Definir data do go live', 'Confirmar com diretoria a data de entrada em produção.', 'admin', 'admin', 1, 1, DATEADD(DAY, 20, GETDATE()), NULL, 4, NULL, 0, NULL, 'admin', DATEADD(DAY, -2, GETDATE()));
 
   DECLARE @t1 INT = (SELECT TOP 1 TRF_Id FROM IMPL_Tarefa WHERE TRF_Titulo = 'Kickoff com a diretoria' AND TRF_ProjetoId = @p1);
   DECLARE @t4 INT = (SELECT TOP 1 TRF_Id FROM IMPL_Tarefa WHERE TRF_Titulo = 'Configurar integrações com Sicoob e Caixa' AND TRF_ProjetoId = @p1);
@@ -154,13 +127,13 @@ BEGIN
 
   DECLARE @p2 INT = SCOPE_IDENTITY();
 
-  INSERT IMPL_Tarefa (TRF_ProjetoId, TRF_EtapaId, TRF_ColunaKanbanId, TRF_Ordem, TRF_Titulo, TRF_Descricao, TRF_ResponsavelId, TRF_CriadorId, TRF_Status, TRF_Prioridade, TRF_DataPrevisao, TRF_DataConclusao, TRF_HorasEstimadas, TRF_HorasRealizadas, TRF_Bloqueada, TRF_MotivoBloqueio, TRF_UsuarioInclusao, TRF_DataInclusao) VALUES
-    (@p2, @etapaLevant, @colConcluido, 1, 'Mapear categorias de chamados dos últimos 6 meses', 'Amostra de 2.000 chamados para identificar padrões de classificação.', 'admin', 'admin', 4, 2, DATEADD(DAY, -25, GETDATE()), DATEADD(DAY, -23, GETDATE()), 16, 14, 0, NULL, 'admin', DATEADD(DAY, -30, GETDATE())),
-    (@p2, @etapaDesenho, @colConcluido, 2, 'Definir arquitetura do agente (n8n + LLM)', 'Fluxo: webhook → LLM → classificação → router → ticket. Latência alvo: 3s.', 'admin', 'admin', 4, 2, DATEADD(DAY, -20, GETDATE()), DATEADD(DAY, -18, GETDATE()), 12, 14, 0, NULL, 'admin', DATEADD(DAY, -25, GETDATE())),
-    (@p2, @etapaDesenv,  @colAndamento, 3, 'Implementar fluxo principal no n8n', 'Webhook + LLM + tratamento de erros + retry. Logs estruturados.', 'admin', 'admin', 2, 2, DATEADD(DAY, -5, GETDATE()), NULL, 40, 30, 0, NULL, 'admin', DATEADD(DAY, -20, GETDATE())),
-    (@p2, @etapaDesenv,  @colAFazer,    4, 'Construir prompt com few-shot examples', 'Iterar prompt principal até atingir acurácia >85% em validação.', 'admin', 'admin', 1, 2, DATEADD(DAY, 5, GETDATE()), NULL, 20, NULL, 0, NULL, 'admin', DATEADD(DAY, -15, GETDATE())),
-    (@p2, @etapaTestes,  @colAFazer,    5, 'Rodar suite de 200 chamados históricos', 'Comparar classificação do agente vs classificação humana (ground truth).', 'admin', 'admin', 1, 1, DATEADD(DAY, 20, GETDATE()), NULL, 16, NULL, 0, NULL, 'admin', DATEADD(DAY, -10, GETDATE())),
-    (@p2, @etapaPublic,  @colBacklog,   6, 'Publicar agente em produção', 'Deploy com feature flag. Monitorar 1 semana antes de expandir.', 'admin', 'admin', 1, 1, DATEADD(DAY, 40, GETDATE()), NULL, 8, NULL, 0, NULL, 'admin', DATEADD(DAY, -5, GETDATE()));
+  INSERT IMPL_Tarefa (TRF_ProjetoId, TRF_ProjetoEtapaId, TRF_ColunaKanbanId, TRF_Ordem, TRF_Titulo, TRF_Descricao, TRF_ResponsavelId, TRF_CriadorId, TRF_Status, TRF_Prioridade, TRF_DataPrevisao, TRF_DataConclusao, TRF_HorasEstimadas, TRF_HorasRealizadas, TRF_Bloqueada, TRF_MotivoBloqueio, TRF_UsuarioInclusao, TRF_DataInclusao) VALUES
+    (@p2, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p2 AND PEP_Ordem = 1), @colConcluido, 1, 'Mapear categorias de chamados dos últimos 6 meses', 'Amostra de 2.000 chamados para identificar padrões de classificação.', 'admin', 'admin', 4, 2, DATEADD(DAY, -25, GETDATE()), DATEADD(DAY, -23, GETDATE()), 16, 14, 0, NULL, 'admin', DATEADD(DAY, -30, GETDATE())),
+    (@p2, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p2 AND PEP_Ordem = 2), @colConcluido, 2, 'Definir arquitetura do agente (n8n + LLM)', 'Fluxo: webhook → LLM → classificação → router → ticket. Latência alvo: 3s.', 'admin', 'admin', 4, 2, DATEADD(DAY, -20, GETDATE()), DATEADD(DAY, -18, GETDATE()), 12, 14, 0, NULL, 'admin', DATEADD(DAY, -25, GETDATE())),
+    (@p2, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p2 AND PEP_Ordem = 3), @colAndamento, 3, 'Implementar fluxo principal no n8n', 'Webhook + LLM + tratamento de erros + retry. Logs estruturados.', 'admin', 'admin', 2, 2, DATEADD(DAY, -5, GETDATE()), NULL, 40, 30, 0, NULL, 'admin', DATEADD(DAY, -20, GETDATE())),
+    (@p2, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p2 AND PEP_Ordem = 3), @colAFazer,    4, 'Construir prompt com few-shot examples', 'Iterar prompt principal até atingir acurácia >85% em validação.', 'admin', 'admin', 1, 2, DATEADD(DAY, 5, GETDATE()), NULL, 20, NULL, 0, NULL, 'admin', DATEADD(DAY, -15, GETDATE())),
+    (@p2, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p2 AND PEP_Ordem = 4), @colAFazer,    5, 'Rodar suite de 200 chamados históricos', 'Comparar classificação do agente vs classificação humana (ground truth).', 'admin', 'admin', 1, 1, DATEADD(DAY, 20, GETDATE()), NULL, 16, NULL, 0, NULL, 'admin', DATEADD(DAY, -10, GETDATE())),
+    (@p2, (SELECT TOP 1 PEP_Id FROM tbprojetoEtapa WHERE PEP_ProjetoId = @p2 AND PEP_Ordem = 6), @colBacklog,   6, 'Publicar agente em produção', 'Deploy com feature flag. Monitorar 1 semana antes de expandir.', 'admin', 'admin', 1, 1, DATEADD(DAY, 40, GETDATE()), NULL, 8, NULL, 0, NULL, 'admin', DATEADD(DAY, -5, GETDATE()));
 
   DECLARE @t10 INT = (SELECT TOP 1 TRF_Id FROM IMPL_Tarefa WHERE TRF_Titulo = 'Implementar fluxo principal no n8n' AND TRF_ProjetoId = @p2);
 

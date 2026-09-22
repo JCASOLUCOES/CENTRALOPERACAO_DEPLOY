@@ -78,8 +78,8 @@ export class LoginComponent implements OnInit {
   }
 
   /**
-   * Central Executiva é a nova home dos gestores.
-   * Admin com returnUrl genérico ('/' ou vazio) vai para /executivo;
+   * Módulo Gestor é a nova home dos gestores.
+   * Admin com returnUrl genérico ('/' ou vazio) vai para /gestor/entrada;
    * deep-link (ex. /implantacao/kanban) é sempre respeitado;
    * usuário comum segue para a Home atual.
    */
@@ -88,6 +88,6 @@ export class LoginComponent implements OnInit {
     if (alvo !== '/' && alvo !== '') {
       return alvo;
     }
-    return perfil === 'Administrador' ? '/executivo' : '/';
+    return perfil === 'Administrador' ? '/gestor/entrada' : '/';
   }
 }

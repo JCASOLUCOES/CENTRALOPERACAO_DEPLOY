@@ -1,5 +1,5 @@
 <aside class="sidebar" [class.sidebar--collapsed]="collapsed">
-  <section class="section" *ngFor="let section of sections; trackBy: trackByIndex">
+  <section class="section" *ngFor="let section of sections(); trackBy: trackByIndex">
     <header class="section-header">
       <span class="dot"></span>
       <div class="section-info" *ngIf="!collapsed">

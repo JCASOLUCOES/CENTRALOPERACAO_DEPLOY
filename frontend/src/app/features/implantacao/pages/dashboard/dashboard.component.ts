@@ -6,12 +6,14 @@ import { Chart, registerables } from 'chart.js';
 import { DashboardService } from '../../services/dashboard.service';
 import { DashboardGeral } from '../../models/dashboard.model';
 import { TarefasService } from '../../services/tarefas.service';
-import { TarefaResumo } from '../../models/tarefa.model';
+import { TarefaResumo, ehAtrasada } from '../../models/tarefa.model';
+import { ProjetosService } from '../../services/projetos.service';
+import { ProjetoResumo } from '../../models/projeto.model';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 
 Chart.register(...registerables);
 
-type PeriodoProdutividade = '7d' | '30d' | 'tudo';
+type PeriodoProdutividade = 'este-mes' | 'proximo-mes' | 'ultimos-3-meses';
 
 interface LinhaPessoa {
   nome: string;
@@ -42,17 +44,15 @@ interface DiaEvolucao {
         descricao="Acompanhe o progresso geral, métricas e o status consolidado do projeto."
         icone="bi-bar-chart-fill">
         <div actions class="imp-dashboard__header-actions">
-          <select class="adm-search__input" [ngModel]="periodoProd()" (ngModelChange)="aoMudarPeriodoProd($event)" aria-label="Período da produtividade">
-            <option value="7d">Últimos 7 dias</option>
-            <option value="30d">Últimos 30 dias</option>
-            <option value="tudo">Tudo</option>
+          <select class="adm-search__input" [ngModel]="projetoId()" (ngModelChange)="aoMudarProjeto($event)" aria-label="Filtrar por projeto">
+            <option value="">Todos os projetos</option>
+            <optgroup label="Ativos" *ngIf="projetosAtivos().length">
+              <option *ngFor="let p of projetosAtivos()" [value]="p.id">{{ p.codigo }} — {{ p.nome }}</option>
+            </optgroup>
+            <optgroup label="Concluídos" *ngIf="projetosConcluidos().length">
+              <option *ngFor="let p of projetosConcluidos()" [value]="p.id">{{ p.codigo }} — {{ p.nome }}</option>
+            </optgroup>
           </select>
-          <button type="button" class="adm-btn adm-btn--ghost adm-btn--icon" (click)="exportarCsv()" [disabled]="!linhasProd().length">
-            <i class="bi bi-filetype-csv"></i> CSV
-          </button>
-          <button type="button" class="adm-btn adm-btn--ghost adm-btn--icon" (click)="imprimir()">
-            <i class="bi bi-printer"></i> Imprimir / PDF
-          </button>
         </div>
       </app-page-header>
 
@@ -84,7 +84,7 @@ interface DiaEvolucao {
               <i class="bi bi-kanban"></i>
             </span>
             <div>
-              <strong>{{ d.kpis.projetosAtivos ?? 0 }}</strong>
+              <strong>{{ d.kpis.projetosAtivos }}</strong>
               <span>Projetos Ativos</span>
             </div>
           </a>
@@ -94,7 +94,7 @@ interface DiaEvolucao {
               <i class="bi bi-exclamation-triangle"></i>
             </span>
             <div>
-              <strong>{{ d.kpis.projetosAtrasados ?? 0 }}</strong>
+              <strong>{{ d.kpis.projetosAtrasados }}</strong>
               <span>Projetos Atrasados</span>
             </div>
           </a>
@@ -104,7 +104,7 @@ interface DiaEvolucao {
               <i class="bi bi-check-circle"></i>
             </span>
             <div>
-              <strong>{{ d.kpis.projetosConcluidos ?? 0 }}</strong>
+              <strong>{{ d.kpis.projetosConcluidos }}</strong>
               <span>Projetos Finalizados</span>
             </div>
           </a>
@@ -125,7 +125,7 @@ interface DiaEvolucao {
               <i class="bi bi-sparkles"></i>
             </span>
             <div>
-              <strong>{{ d.kpis.tarefasFeatures ?? 0 }}</strong>
+              <strong>{{ d.kpis.tarefasFeatures }}</strong>
               <span>Features</span>
             </div>
           </a>
@@ -135,7 +135,7 @@ interface DiaEvolucao {
               <i class="bi bi-bug-fill"></i>
             </span>
             <div>
-              <strong>{{ d.kpis.tarefasBugs ?? 0 }}</strong>
+              <strong>{{ d.kpis.tarefasBugs }}</strong>
               <span>Bugs</span>
             </div>
           </a>
@@ -145,7 +145,7 @@ interface DiaEvolucao {
               <i class="bi bi-arrow-repeat"></i>
             </span>
             <div>
-              <strong>{{ d.kpis.percentualRetrabalho ?? 0 }}%</strong>
+              <strong>{{ d.kpis.percentualRetrabalho }}%</strong>
               <span>Retrabalho</span>
             </div>
           </a>
@@ -304,7 +304,14 @@ interface DiaEvolucao {
             <h2 class="adm-section-title">
               <i class="bi bi-graph-up"></i> Produtividade
             </h2>
-            <span class="adm-header__desc">SLA, conclusões e produtividade calculados das tarefas reais.</span>
+            <div class="imp-dashboard__prod-controls">
+              <span class="adm-header__desc">SLA, conclusões e produtividade calculados das tarefas reais.</span>
+              <select class="adm-search__input" [ngModel]="periodoProd()" (ngModelChange)="aoMudarPeriodoProd($event)" aria-label="Período da produtividade">
+                <option value="este-mes">Este mês</option>
+                <option value="proximo-mes">Próximo mês</option>
+                <option value="ultimos-3-meses">Últimos 3 meses</option>
+              </select>
+            </div>
           </header>
 
           <div class="adm-stats">
@@ -375,7 +382,9 @@ interface DiaEvolucao {
       padding: 1.5rem;
     }
     .imp-dashboard__header-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-    .imp-dashboard__header-actions .adm-search__input { min-width: 9rem; }
+    .imp-dashboard__header-actions .adm-search__input { min-width: 12rem; }
+    .imp-dashboard__prod-controls { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .imp-dashboard__prod-controls .adm-search__input { min-width: 10rem; }
     /* Produtividade (mesclado do Relatório) */
     .imp-prod { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
     .imp-rel__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
@@ -608,9 +617,16 @@ interface DiaEvolucao {
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private readonly svc = inject(DashboardService);
+  private readonly projetosSvc = inject(ProjetosService);
   dados = signal<DashboardGeral | null>(null);
   loading = signal(true);
   erro = signal<string | null>(null);
+
+  // Filtro por projeto (Visão Geral)
+  projetoId = signal<string>('');
+  projetos = signal<ProjetoResumo[]>([]);
+  projetosAtivos = computed(() => this.projetos().filter(p => p.status !== 'Concluido'));
+  projetosConcluidos = computed(() => this.projetos().filter(p => p.status === 'Concluido'));
 
   barCanvas = viewChild<ElementRef<HTMLCanvasElement>>('barChart');
   donutCanvas = viewChild<ElementRef<HTMLCanvasElement>>('donutChart');
@@ -655,7 +671,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return d.tarefasPorTipo?.find(t => t.tipo === 'Bug')?.total ?? 0;
   });
 
-  ngOnInit(): void { this.carregar(); }
+  ngOnInit(): void {
+    this.projetosSvc.listar({}).subscribe({
+      next: ps => this.projetos.set(ps ?? []),
+      error: () => this.projetos.set([])
+    });
+    this.carregar();
+  }
 
   ngOnDestroy(): void {
     this.barChartInstance?.destroy();
@@ -668,7 +690,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   carregar(): void {
     this.loading.set(true);
     this.erro.set(null);
-    this.svc.obter().subscribe({
+    const pid = this.projetoId() ? Number(this.projetoId()) : null;
+    this.svc.obter(pid).subscribe({
       next: (d) => {
         this.dados.set(d);
         this.loading.set(false);
@@ -683,6 +706,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  aoMudarProjeto(v: string): void {
+    this.projetoId.set(v ?? '');
+    this.carregar();
+  }
+
   tentarNovamente(): void {
     this.carregar();
   }
@@ -691,7 +719,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private readonly tarSvc = inject(TarefasService);
 
-  periodoProd = signal<PeriodoProdutividade>('30d');
+  periodoProd = signal<PeriodoProdutividade>('ultimos-3-meses');
   linhasProd = signal<TarefaResumo[]>([]);
   totalProd = signal(0);
   concluidasProd = signal(0);
@@ -707,7 +735,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private evolucaoChartInstance?: Chart;
 
   private carregarProdutividade(): void {
-    this.tarSvc.listar({}).subscribe({
+    const filtro = this.projetoId() ? { projetoId: Number(this.projetoId()) } : {};
+    this.tarSvc.listar(filtro).subscribe({
       next: t => { this.linhasProd.set(t ?? []); this.recalcularProd(); },
       error: () => this.linhasProd.set([])
     });
@@ -736,8 +765,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private recalcularProd(): void {
     const todas = this.linhasProd();
-    const inicio = this.inicioPeriodoProd(this.periodoProd());
-    const universo = todas.filter(t => !inicio || new Date(t.dataInclusao) >= inicio);
+    const { inicio, fim } = this.intervaloPeriodoProd(this.periodoProd());
+    const universo = todas.filter(t => {
+      const d = new Date(t.dataInclusao);
+      if (inicio && d < inicio) return false;
+      if (fim && d > fim) return false;
+      return true;
+    });
     const concl = universo.filter(t => t.status === 'Concluida');
 
     this.totalProd.set(universo.length);
@@ -779,58 +813,53 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return { label: nomes[n], total: doNivel.length, concluidas: doNivel.filter(t => t.status === 'Concluida').length };
     }));
 
-    const dias = this.periodoProd() === '7d' ? 7 : 30;
-    const serie: DiaEvolucao[] = [];
-    for (let i = dias - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
+    const dias: Date[] = [];
+    if (inicio && fim) {
+      const cur = new Date(inicio);
+      while (cur <= fim && dias.length < 100) {
+        dias.push(new Date(cur));
+        cur.setDate(cur.getDate() + 1);
+      }
+    } else {
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dias.push(d);
+      }
+    }
+    const serie: DiaEvolucao[] = dias.map(d => {
       const chave = d.toDateString();
       const rotulo = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
       const totalDia = todas.filter(t => t.dataConclusao && new Date(t.dataConclusao).toDateString() === chave).length;
-      serie.push({ rotulo, total: totalDia });
-    }
+      return { rotulo, total: totalDia };
+    });
     this.evolucaoProd.set(serie);
     setTimeout(() => this.renderGraficoProd(), 50);
   }
 
-  exportarCsv(): void {
-    const head = 'id;titulo;status;prioridade;responsavel;projeto;criada_em;concluida_em;dias_atraso';
-    const body = this.linhasProd().map(t => [
-      t.id,
-      `"${(t.titulo || '').replace(/"/g, '""')}"`,
-      t.status,
-      t.prioridade,
-      `"${(t.responsavelNome || '').replace(/"/g, '""')}"`,
-      t.projetoCodigo || '',
-      t.dataInclusao || '',
-      t.dataConclusao || '',
-      this.diasAtraso(t)
-    ].join(';'));
-    const blob = new Blob([[head, ...body].join('\r\n')], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `relatorio-produtividade-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  imprimir(): void {
-    window.print();
-  }
-
-  private inicioPeriodoProd(p: PeriodoProdutividade): Date | null {
-    if (p === 'tudo') return null;
-    const d = new Date();
-    d.setDate(d.getDate() - (p === '7d' ? 7 : 30));
-    return d;
+  private intervaloPeriodoProd(p: PeriodoProdutividade): { inicio: Date | null; fim: Date | null } {
+    const agora = new Date();
+    if (p === 'este-mes') {
+      return {
+        inicio: new Date(agora.getFullYear(), agora.getMonth(), 1),
+        fim: new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59, 999)
+      };
+    }
+    if (p === 'proximo-mes') {
+      return {
+        inicio: new Date(agora.getFullYear(), agora.getMonth() + 1, 1),
+        fim: new Date(agora.getFullYear(), agora.getMonth() + 2, 0, 23, 59, 59, 999)
+      };
+    }
+    // ultimos-3-meses: mês atual + 2 anteriores
+    return {
+      inicio: new Date(agora.getFullYear(), agora.getMonth() - 2, 1),
+      fim: new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59, 999)
+    };
   }
 
   private vencidaAberta(t: TarefaResumo): boolean {
-    if (t.status === 'Concluida' || t.status === 'Cancelada') return false;
-    const ref = t.dataEntrega ?? t.dataPrevisao;
-    if (!ref) return false;
-    return new Date(new Date(ref).toDateString()) < new Date(new Date().toDateString());
+    return ehAtrasada(t);
   }
 
   private renderGraficoProd(): void {

@@ -1,0 +1,149 @@
+
+.gestor-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--tools-surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  box-shadow: var(--tools-shadow-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  min-height: 90px;
+  text-decoration: none;
+  color: inherit;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-md);
+    border-color: rgba(15, 76, 129, 0.35);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+  }
+}
+
+.gestor-kpi-card--clickable {
+  cursor: pointer;
+}
+
+.gestor-kpi-card__icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.875rem;
+  height: 2.875rem;
+  border-radius: 0.75rem;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.gestor-kpi-card__conteudo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.gestor-kpi-card__valor {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  font-family: var(--font-display);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gestor-kpi-card__rotulo {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Loading Skeleton */
+.gestor-kpi-card--loading {
+  pointer-events: none;
+}
+
+.gestor-kpi-card__skeleton {
+  background: linear-gradient(90deg, var(--surface-subtle) 25%, var(--border-color) 50%, var(--surface-subtle) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+.gestor-kpi-card__skeleton:first-child {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.75rem;
+}
+
+.gestor-kpi-card__skeleton--small {
+  height: 1.2rem;
+}
+
+.gestor-kpi-card__skeleton--small:first-of-type {
+  width: 60%;
+}
+
+.gestor-kpi-card__skeleton--small:last-of-type {
+  width: 40%;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Error State */
+.gestor-kpi-card--error {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #dc2626;
+
+  i {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+    font-size: 0.85rem;
+  }
+}
+
+.adm-btn--sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  gap: 0.3rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .gestor-kpi-card {
+    padding: 1rem;
+    min-height: auto;
+  }
+
+  .gestor-kpi-card__icone {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.15rem;
+  }
+
+  .gestor-kpi-card__valor {
+    font-size: 1.2rem;
+  }
+}

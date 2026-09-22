@@ -188,7 +188,7 @@ Cabeçalho padrão de página — título + descrição fixos à esquerda, açõ
 | Layout `.page-header` | `flex`, `space-between`, `wrap`, `gap: 1rem`, `min-height: 4.25rem`, `margin-bottom: 0.75rem` |
 
 ### Onde é usado (confirmado no código)
-- **Dashboard** (`dashboard.component.ts:40-57`): `titulo="Visão Geral"`, `descricao="Acompanhe o progresso geral, métricas e o status consolidado do projeto."`, `icone="bi-bar-chart-fill"`; slot com seletor de período (7d/30d/tudo) + botões CSV/Imprimir.
+- **Dashboard** (`dashboard.component.ts`): `titulo="Visão Geral"`, `descricao="Acompanhe o progresso geral, métricas e o status consolidado do projeto."`, `icone="bi-bar-chart-fill"`; slot com select de projeto em optgroups Ativos/Concluídos (CSV/Imprimir removidos em 22/09/2026; período da produtividade migrou para o cabeçalho da seção).
 - **Kanban** (`kanban.component.ts:63-73`): `titulo="Kanban"`, `descricao="Visualize e mova tarefas entre colunas. Atualizações sincronizam com o backend."`, `icone="bi-kanban"`; slot `actions` com select de projeto (contêiner `.imp-kanban__controls`); CSS local de header `.imp-kanban__header` removido.
 - **Projetos** (`projetos.component.ts:17-32`): `titulo="Projetos"`, `descricao="Gerencie a lista de projetos, datas de entrega e atribuições da equipe."`, `icone="bi-folder2-open"`; slot `.imp-header__actions` com Filtros/Resumo/Novo Projeto (único CSS local remanescente, `projetos.component.scss:219`).
 - **Tarefas** (`tarefas.component.ts:19-33`): `titulo="Tarefas"`, `descricao="Liste, filtre e acompanhe o detalhamento de todas as tarefas cadastradas."`, `icone="bi-list-check"`; slot `.tar-header__stats` com badge de atrasadas + Nova tarefa (único CSS local remanescente, `tarefas.component.scss:9`).

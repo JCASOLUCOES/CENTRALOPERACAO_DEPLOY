@@ -39,7 +39,7 @@ export class TarefasService {
   private readonly operadoresSvc = inject(OperadoresService);
   private readonly baseUrl = `${environment.apiBaseUrl}/implantacao/tarefas`;
 
-  listar(filtro: TarefaFiltro): Observable<TarefaResumo[]> {
+listar(filtro: TarefaFiltro): Observable<TarefaResumo[]> {
     let params = new HttpParams();
     if (filtro.projetoId != null) params = params.set("projetoId", String(filtro.projetoId));
     if (filtro.responsavelId) params = params.set("responsavelId", filtro.responsavelId);
@@ -52,8 +52,8 @@ export class TarefasService {
     if (filtro.apenasConcluidas) params = params.set("apenasConcluidas", "true");
     if (filtro.apenasVenceHoje) params = params.set("apenasVenceHoje", "true");
     if (filtro.perfilId) params = params.set("perfilId", filtro.perfilId);
+    if (filtro.perfilModo) params = params.set("perfilModo", filtro.perfilModo);
     if (filtro.incluirArquivadas) params = params.set("incluirArquivadas", "true");
-    if (filtro.etapaId != null) params = params.set("etapaId", String(filtro.etapaId));
     return this.http.get<TarefaResumo[]>(this.baseUrl, { params });
   }
 

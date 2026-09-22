@@ -43,10 +43,8 @@ export class ProjetoFormComponent implements OnInit {
   clienteId = signal<number | null>(null);
   clienteLegadoId = signal<number | null>(null);
   responsavelId = signal<string>('');
-  colunaKanbanId = signal<number | null>(null);
   prioridade = signal(1);
-  status = signal('');
-  progresso = signal<number | null>(0);
+  etapaInicialOrdem = signal(1);
   dataInicio = signal<string>('');
   dataPrevisao = signal<string>('');
   dataConclusao = signal<string>('');
@@ -56,38 +54,21 @@ export class ProjetoFormComponent implements OnInit {
   horasRealizadas = signal<number | null>(null);
   observacao = signal('');
 
-  readonly statusOptions = [
-    { value: 'Backlog', label: 'Backlog' },
-    { value: 'AFazer', label: 'A fazer' },
-    { value: 'EmAndamento', label: 'Em andamento' },
-    { value: 'Homologacao', label: 'Homologação' },
-    { value: 'Concluido', label: 'Concluído' },
-    { value: 'Bloqueado', label: 'Bloqueado' },
-    { value: 'Cancelado', label: 'Cancelado' }
-  ];
-
   // Lookups
   tiposProjeto = signal<TipoProjetoResumo[]>([]);
   clientes = signal<ClienteResumo[]>([]);
   operadores = signal<OperadorResumo[]>([]);
-  colunasKanban = signal<{id: number, nome: string, cor: string}[]>([]);
+  etapasPadrao = signal<{ ordem: number; nome: string }[]>([]);
   proximoCodigo = signal<string>('');
 
   // Computed
   isEdit = computed(() => this.modo() === 'edit');
   titulo = computed(() => this.isEdit() ? 'Editar Projeto' : 'Novo Projeto');
-  podeSalvar = computed(() => {
-    const progresso = this.progresso();
-    const progressoValido =
-      !this.isEdit() || progresso === null || (progresso >= 0 && progresso <= 100);
-
-    return (
-      this.nome().trim().length >= 3 &&
-      this.tipoProjetoId() !== null &&
-      this.responsavelId().trim() !== '' &&
-      progressoValido
-    );
-  });
+  podeSalvar = computed(() =>
+    this.nome().trim().length >= 3 &&
+    this.tipoProjetoId() !== null &&
+    this.responsavelId().trim() !== ''
+  );
 
   async ngOnInit(): Promise<void> {
     await this.carregarLookups();
@@ -95,27 +76,23 @@ export class ProjetoFormComponent implements OnInit {
   }
 
   private async carregarLookups(): Promise<void> {
-    const [tipos, clientes, operadores, colunas, codigo] = await Promise.allSettled([
+    const [tipos, clientes, operadores, etapas, codigo] = await Promise.allSettled([
       this.projSvc.listarTipos().toPromise(),
       this.projSvc.listarClientes().toPromise(),
       this.projSvc.listarOperadores().toPromise(),
-      this.projSvc.listarColunasKanban().toPromise(),
+      this.projSvc.listarEtapasPadrao().toPromise(),
       this.projSvc.obterProximoCodigo().toPromise()
     ]);
 
     this.tiposProjeto.set(tipos.status === 'fulfilled' ? tipos.value ?? [] : []);
     this.clientes.set(clientes.status === 'fulfilled' ? clientes.value ?? [] : []);
     this.operadores.set(operadores.status === 'fulfilled' ? operadores.value ?? [] : []);
-    this.colunasKanban.set(
-      colunas.status === 'fulfilled'
-        ? (colunas.value ?? []).map(c => ({ id: c.id, nome: c.nome, cor: c.cor ?? '#94a3b8' }))
-        : []
-    );
+    this.etapasPadrao.set(etapas.status === 'fulfilled' ? etapas.value ?? [] : []);
 
     const proximo = codigo.status === 'fulfilled' ? codigo.value?.trim() : '';
     this.proximoCodigo.set(proximo ? proximo : '');
 
-    if ([tipos, clientes, operadores, colunas, codigo].some(r => r.status === 'rejected')) {
+    if ([tipos, clientes, operadores, etapas, codigo].some(r => r.status === 'rejected')) {
       this.error.set('Alguns dados auxiliares não puderam ser carregados. Verifique a conexão e tente novamente.');
     }
   }
@@ -168,10 +145,7 @@ export class ProjetoFormComponent implements OnInit {
     this.clienteId.set(p.clienteId ?? null);
     this.clienteLegadoId.set(p.clienteLegadoId ?? p.clienteId ?? null);
     this.responsavelId.set(p.responsavelId ?? '');
-    this.colunaKanbanId.set(p.colunaKanbanId ?? null);
     this.prioridade.set(p.prioridade);
-    this.status.set(p.status ?? '');
-    this.progresso.set(p.progresso ?? 0);
     this.dataInicio.set(this.formatarData(p.dataInicio));
     this.dataPrevisao.set(this.formatarData(p.dataPrevisao));
     this.dataConclusao.set(this.formatarData(p.dataConclusao));
@@ -259,7 +233,6 @@ export class ProjetoFormComponent implements OnInit {
       clienteId: this.clienteId() ?? undefined,
       clienteLegadoId: this.clienteLegadoId() ?? undefined,
       responsavelId: this.responsavelId().trim() || undefined,
-      colunaKanbanId: this.colunaKanbanId() ?? undefined,
       prioridade: this.prioridade(),
       dataInicio: this.dataInicio() || undefined,
       dataPrevisao: this.dataPrevisao() || undefined,
@@ -271,7 +244,6 @@ export class ProjetoFormComponent implements OnInit {
     if (isUpdate) {
       return {
         ...base,
-        progresso: this.progresso() ?? 0,
         dataConclusao: this.dataConclusao() || undefined,
         dataGoLiveReal: this.dataGoLiveReal() || undefined,
         horasRealizadas: this.horasRealizadas() ?? undefined,
@@ -282,7 +254,8 @@ export class ProjetoFormComponent implements OnInit {
 
     return {
       ...base,
-      criadorId: this.auth.getOperadorLogado()
+      criadorId: this.auth.getOperadorLogado(),
+      etapaInicialOrdem: this.etapaInicialOrdem()
     };
   }
 

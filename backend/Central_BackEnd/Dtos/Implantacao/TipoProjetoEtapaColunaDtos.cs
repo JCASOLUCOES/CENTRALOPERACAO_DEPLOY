@@ -23,31 +23,6 @@ public record TipoProjetoAtualizarRequest(
     bool? Ativo,
     string UsuarioAlteracao);
 
-public record EtapaResumo(
-    int Id,
-    string Nome,
-    int Ordem,
-    int? TipoProjetoId,
-    string? Cor,
-    bool Concluida,
-    bool Ativa);
-
-public record EtapaCriarRequest(
-    string Nome,
-    int Ordem,
-    int? TipoProjetoId,
-    string? Cor,
-    string UsuarioInclusao);
-
-public record EtapaAtualizarRequest(
-    string? Nome,
-    int? Ordem,
-    int? TipoProjetoId,
-    string? Cor,
-    bool? Concluida,
-    bool? Ativa,
-    string UsuarioAlteracao);
-
 public record ColunaKanbanResumo(
     int Id,
     string Nome,
@@ -82,19 +57,6 @@ public record TipoProjetoDetalhe(
     bool ClienteObrigatorio,
     bool Ativo,
     int Ordem,
-    string UsuarioInclusao,
-    DateTime DataInclusao,
-    string? UsuarioAlteracao,
-    DateTime? DataAlteracao);
-
-public record EtapaDetalhe(
-    int Id,
-    string Nome,
-    int Ordem,
-    int? TipoProjetoId,
-    string? Cor,
-    bool Concluida,
-    bool Ativa,
     string UsuarioInclusao,
     DateTime DataInclusao,
     string? UsuarioAlteracao,

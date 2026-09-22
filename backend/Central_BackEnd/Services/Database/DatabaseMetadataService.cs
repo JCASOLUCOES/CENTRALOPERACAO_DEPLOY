@@ -322,10 +322,9 @@ LEFT JOIN sys.sql_modules m ON m.object_id = p.object_id
 WHERE p.is_ms_shipped = 0
   AND (@schema IS NULL OR s.name = @schema)
   AND (@busca IS NULL OR p.name LIKE @like)
-ORDER BY s.name, p.name
-OFFSET 0 ROWS FETCH NEXT @take ROWS ONLY";
+ORDER BY s.name, p.name";
 
-        var takeClamped = Math.Clamp(take, 1, 1000);
+        var takeClamped = Math.Clamp(take, 1, 5000);
         var like = string.IsNullOrWhiteSpace(busca) ? null : $"%{busca}%";
 
         var lista = new List<ProcedureResumoDto>();
@@ -334,7 +333,6 @@ OFFSET 0 ROWS FETCH NEXT @take ROWS ONLY";
         cmd.Parameters.AddWithValue("@schema", (object?)schema ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@busca", (object?)like ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@like", (object?)like ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@take", takeClamped);
         await using var r = await cmd.ExecuteReaderAsync(ct);
         while (await r.ReadAsync(ct))
         {

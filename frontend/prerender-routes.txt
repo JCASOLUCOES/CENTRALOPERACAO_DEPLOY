@@ -16,7 +16,6 @@
 /trilhas/infra
 /visao-adm
 /visao-adm/detalhe/1
-/administrativo
 /fraseologia
 /modelo-chamados
 /politica
@@ -40,6 +39,4 @@
 /database/tabela/1/1
 /empresa/onboarding
 /empresa/onboarding/capitulo/1
-/executivo
-/executivo/dashboard
 /login

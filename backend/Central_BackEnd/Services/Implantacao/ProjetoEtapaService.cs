@@ -11,7 +11,7 @@ public interface IProjetoEtapaService
     Task<ProjetoEtapaDetalhe?> ObterEtapaDetalheAsync(int projetoId, int ordem, CancellationToken ct = default);
     Task<ProjetoEtapaDetalhe> AtualizarEtapaAsync(int projetoId, int ordem, ProjetoEtapaAtualizarRequest req, string usuario, CancellationToken ct = default);
     Task<ProjetoEtapaDetalhe> RetornarEtapaAsync(int projetoId, ProjetoEtapaRetornoRequest req, CancellationToken ct = default);
-    Task InicializarEtapasPadraoAsync(int projetoId, CancellationToken ct = default);
+    Task InicializarEtapasPadraoAsync(int projetoId, CancellationToken ct = default, int etapaInicialOrdem = 1);
     Task<ProjetoEtapaDetalhe> AdicionarChecklistItemAsync(int projetoId, int ordem, ProjetoEtapaChecklistItemRequest item, string usuario, CancellationToken ct = default);
     Task<ProjetoEtapaDetalhe> AdicionarDocumentoAsync(int projetoId, int ordem, ProjetoEtapaDocumentoRequest req, string usuario, CancellationToken ct = default);
     Task<ProjetoEtapaDetalhe> AdicionarComentarioAsync(int projetoId, int ordem, ProjetoEtapaComentarioRequest req, string usuario, CancellationToken ct = default);
@@ -19,7 +19,7 @@ public interface IProjetoEtapaService
     /// <summary>
     /// Sincroniza os cards fixos com as tarefas (via Tarefa.ProjetoEtapaId):
     /// contador dinâmico, percentual task-based e conclusão automática com
-    /// desbloqueio da próxima. Nunca reabre etapa concluída.
+    /// desbloqueio da próxima. Reabre apenas a etapa que contém a tarefa reaberta.
     /// </summary>
     Task SincronizarEtapasPorTarefasAsync(int projetoId, string usuario, CancellationToken ct = default);
 }
@@ -30,7 +30,7 @@ public class ProjetoEtapaService : IProjetoEtapaService
     private readonly IAuditoriaImplantacaoService _auditoria;
     private readonly ILogger<ProjetoEtapaService> _logger;
 
-    private static readonly string[] NomesEtapasPadrao = new[]
+    public static IReadOnlyList<string> NomesEtapasPadrao { get; } = new[]
     {
         "KICKOFF",
         "LEVANTAMENTO",
@@ -150,8 +150,27 @@ public class ProjetoEtapaService : IProjetoEtapaService
 
             if (etapa.Estado == "Concluida")
             {
-                // Congela em 100%; nunca reabre sozinho (retorno é manual).
-                if (etapa.Percentual != 100) { etapa.Percentual = 100; mudou = true; }
+                // Concluída e completa: congela em 100%.
+                if (concluidas == daEtapa.Count)
+                {
+                    if (etapa.Percentual != 100) { etapa.Percentual = 100; mudou = true; }
+                    continue;
+                }
+
+                // Reabre SÓ esta etapa (tarefa reabriu); etapas posteriores intactas.
+                etapa.Estado = "EmAndamento";
+                etapa.Percentual = percentual;
+                etapa.DataFimReal = null;
+                etapa.UsuarioAlteracao = usuario;
+                etapa.DataAlteracao = DateTime.Now;
+                etapa.Historico.Add(new ProjetoEtapaHistorico
+                {
+                    Acao = "Reabertura automática por tarefas",
+                    Detalhes = $"Estado: Concluida → EmAndamento | {concluidas}/{daEtapa.Count} tarefas concluídas",
+                    Usuario = usuario,
+                    Data = DateTime.Now
+                });
+                mudou = true;
                 continue;
             }
 
@@ -438,8 +457,11 @@ public class ProjetoEtapaService : IProjetoEtapaService
         return (await ObterEtapaDetalheAsync(projetoId, req.OrdemAlvo, ct))!;
     }
 
-    public async Task InicializarEtapasPadraoAsync(int projetoId, CancellationToken ct = default)
+    public async Task InicializarEtapasPadraoAsync(int projetoId, CancellationToken ct = default, int etapaInicialOrdem = 1)
     {
+        if (etapaInicialOrdem < 1 || etapaInicialOrdem > 9)
+            throw new ArgumentException("Etapa inicial deve estar entre 1 e 9");
+
         var existe = await _db.ProjetoEtapas.AnyAsync(e => e.ProjetoId == projetoId, ct);
         if (existe) return;
 
@@ -447,38 +469,60 @@ public class ProjetoEtapaService : IProjetoEtapaService
         if (projeto == null) throw new ArgumentException("Projeto não encontrado");
 
         var etapas = new List<ProjetoEtapa>();
-        
+        var agora = DateTime.Now;
+
         for (int i = 0; i < 9; i++)
         {
+            var ordem = i + 1;
             var etapa = new ProjetoEtapa
             {
                 ProjetoId = projetoId,
-                Ordem = i + 1,
+                Ordem = ordem,
                 Nome = NomesEtapasPadrao[i],
-                Estado = i == 0 ? "EmAndamento" : "Pendente",
                 Percentual = 0,
                 UsuarioInclusao = projeto.CriadorId,
-                DataInclusao = DateTime.Now
+                DataInclusao = agora
             };
+
+            if (ordem < etapaInicialOrdem)
+            {
+                // Etapas anteriores já foram cumpridas — projeto entra em andamento.
+                etapa.Estado = "Concluida";
+                etapa.Percentual = 100;
+                etapa.DataInicio = agora;
+                etapa.DataFimReal = agora;
+                etapa.Historico.Add(new ProjetoEtapaHistorico
+                {
+                    Acao = "Concluída na criação do projeto",
+                    Detalhes = $"Projeto criado já na etapa {etapaInicialOrdem} ({NomesEtapasPadrao[etapaInicialOrdem - 1]})",
+                    Usuario = projeto.CriadorId,
+                    Data = agora
+                });
+            }
+            else if (ordem == etapaInicialOrdem)
+            {
+                etapa.Estado = "EmAndamento";
+                etapa.DataInicio = agora;
+            }
+            else
+            {
+                etapa.Estado = "Pendente";
+            }
 
             // Adicionar checklist padrão
             for (int j = 0; j < ChecklistsPadrao[i].Length; j++)
             {
+                var concluido = ordem < etapaInicialOrdem;
                 etapa.Checklist.Add(new ProjetoEtapaChecklist
                 {
                     Descricao = ChecklistsPadrao[i][j],
-                    Concluido = false,
+                    Concluido = concluido,
+                    DataConclusao = concluido ? agora : null,
+                    UsuarioConclusao = concluido ? projeto.CriadorId : null,
                     Ordem = j,
                     UsuarioInclusao = projeto.CriadorId,
-                    DataInclusao = DateTime.Now
+                    DataInclusao = agora
                 });
-            }
-
-            // Primeira etapa começa com DataInicio = hoje
-            if (i == 0)
-            {
-                etapa.DataInicio = DateTime.Now;
-                etapa.Estado = "EmAndamento";
             }
 
             etapas.Add(etapa);
@@ -486,6 +530,7 @@ public class ProjetoEtapaService : IProjetoEtapaService
 
         _db.ProjetoEtapas.AddRange(etapas);
         await _db.SaveChangesAsync(ct);
+        await RecalcularProgressoProjetoAsync(projetoId, ct);
     }
 
     public async Task<ProjetoEtapaDetalhe> AdicionarChecklistItemAsync(int projetoId, int ordem, ProjetoEtapaChecklistItemRequest item, string usuario, CancellationToken ct = default)
@@ -594,9 +639,37 @@ public class ProjetoEtapaService : IProjetoEtapaService
         var progresso = (int)Math.Round((concluidas * 100.0 + percentualAtual) / 9.0);
 
         var projeto = await _db.Projetos.FirstOrDefaultAsync(p => p.Id == projetoId, ct);
-        if (projeto != null && projeto.Progresso != progresso)
+        if (projeto == null) return progresso;
+
+        var mudou = false;
+        if (projeto.Progresso != progresso)
         {
             projeto.Progresso = progresso;
+            mudou = true;
+        }
+
+        // Status deriva das etapas (não sobrescreve Cancelado/Bloqueado — estados manuais).
+        if (projeto.Status != StatusProjeto.Cancelado && projeto.Status != StatusProjeto.Bloqueado)
+        {
+            StatusProjeto statusDerivado;
+            if (concluidas >= etapas.Count)
+                statusDerivado = StatusProjeto.Concluido;
+            else if (emAndamento != null || concluidas > 0)
+                statusDerivado = StatusProjeto.EmAndamento;
+            else
+                statusDerivado = StatusProjeto.Backlog;
+
+            if (projeto.Status != statusDerivado)
+            {
+                projeto.Status = statusDerivado;
+                mudou = true;
+                if (statusDerivado == StatusProjeto.Concluido && !projeto.DataConclusao.HasValue)
+                    projeto.DataConclusao = DateTime.Now;
+            }
+        }
+
+        if (mudou)
+        {
             projeto.DataAlteracao = DateTime.Now;
             await _db.SaveChangesAsync(ct);
         }

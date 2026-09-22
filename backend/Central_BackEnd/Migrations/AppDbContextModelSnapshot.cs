@@ -543,68 +543,6 @@ namespace Central_BackEnd.Migrations
                     b.ToTable("IMPL_ComentarioTarefa");
                 });
 
-            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Etapa", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("ETP_Id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Ativa")
-                        .HasColumnType("bit")
-                        .HasColumnName("ETP_Ativa");
-
-                    b.Property<bool>("Concluida")
-                        .HasColumnType("bit")
-                        .HasColumnName("ETP_Concluida");
-
-                    b.Property<string>("Cor")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasColumnName("ETP_Cor");
-
-                    b.Property<DateTime?>("DataAlteracao")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("ETP_DataAlteracao");
-
-                    b.Property<DateTime>("DataInclusao")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("ETP_DataInclusao");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("ETP_Nome");
-
-                    b.Property<int>("Ordem")
-                        .HasColumnType("int")
-                        .HasColumnName("ETP_Ordem");
-
-                    b.Property<int?>("TipoProjetoId")
-                        .HasColumnType("int")
-                        .HasColumnName("ETP_TipoProjetoId");
-
-                    b.Property<string>("UsuarioAlteracao")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("ETP_UsuarioAlteracao");
-
-                    b.Property<string>("UsuarioInclusao")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("ETP_UsuarioInclusao");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TipoProjetoId");
-
-                    b.ToTable("IMPL_Etapa");
-                });
-
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.FuncionarioLegado", b =>
                 {
                     b.Property<int>("FuncionarioId")
@@ -1090,10 +1028,6 @@ namespace Central_BackEnd.Migrations
                         .HasColumnType("nvarchar(4000)")
                         .HasColumnName("TRF_Descricao");
 
-                    b.Property<int?>("EtapaId")
-                        .HasColumnType("int")
-                        .HasColumnName("TRF_EtapaId");
-
                     b.Property<int?>("HorasEstimadas")
                         .HasColumnType("int")
                         .HasColumnName("TRF_HorasEstimadas");
@@ -1156,8 +1090,6 @@ namespace Central_BackEnd.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ColunaKanbanId");
-
-                    b.HasIndex("EtapaId");
 
                     b.HasIndex("ProjetoEtapaId");
 
@@ -1539,16 +1471,6 @@ namespace Central_BackEnd.Migrations
                     b.Navigation("Tarefa");
                 });
 
-            modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Etapa", b =>
-                {
-                    b.HasOne("Central_BackEnd.Models.Implantacao.TipoProjeto", "TipoProjeto")
-                        .WithMany()
-                        .HasForeignKey("TipoProjetoId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("TipoProjeto");
-                });
-
             modelBuilder.Entity("Central_BackEnd.Models.Implantacao.Projeto", b =>
                 {
                     b.HasOne("Central_BackEnd.Models.Implantacao.ClienteLegado", "Cliente")
@@ -1636,15 +1558,10 @@ namespace Central_BackEnd.Migrations
                         .HasForeignKey("ColunaKanbanId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("Central_BackEnd.Models.Implantacao.Etapa", "Etapa")
-                        .WithMany()
-                        .HasForeignKey("EtapaId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("Central_BackEnd.Models.Implantacao.ProjetoEtapa", "ProjetoEtapa")
                         .WithMany()
                         .HasForeignKey("ProjetoEtapaId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Central_BackEnd.Models.Implantacao.Projeto", "Projeto")
                         .WithMany()
@@ -1652,8 +1569,6 @@ namespace Central_BackEnd.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("ColunaKanban");
-
-                    b.Navigation("Etapa");
 
                     b.Navigation("Projeto");
 

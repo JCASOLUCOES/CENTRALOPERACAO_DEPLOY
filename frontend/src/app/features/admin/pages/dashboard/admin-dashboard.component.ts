@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '@core/services/auth.service';
 import { AdminDashboardService, AdminDashboardDto, AdminFuncaoResumo, AdminAlertaResumo } from '../../services/admin-dashboard.service';
 import { KanbanComponent } from '@features/implantacao/pages/kanban/kanban.component';
@@ -11,7 +12,7 @@ type AbaAdmin = 'visao' | 'kanban' | 'alertas';
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, KanbanComponent, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, RouterLink, KanbanComponent, PageHeaderComponent],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss'
 })

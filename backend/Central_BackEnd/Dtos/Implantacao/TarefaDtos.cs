@@ -24,8 +24,6 @@ public record TarefaResumo(
     List<ResponsavelResumo> Responsaveis,
     DateTime DataInclusao,
     bool Arquivada,
-    int? EtapaId = null,
-    string? EtapaNome = null,
     int? ProjetoEtapaId = null,
     string? ProjetoEtapaNome = null);
 
@@ -35,8 +33,6 @@ public record TarefaDetalhe(
     string ProjetoCodigo,
     string ProjetoNome,
     int? ChamadoLegadoId,
-    int? EtapaId,
-    string? EtapaNome,
     int? ProjetoEtapaId,
     string? ProjetoEtapaNome,
     int? ColunaKanbanId,
@@ -70,7 +66,6 @@ public record TarefaDetalhe(
 
 public record TarefaCriarRequest(
     int? ProjetoId,
-    int? EtapaId,
     int? ProjetoEtapaId,
     int? ColunaKanbanId,
     int? ChamadoLegadoId,
@@ -84,10 +79,14 @@ public record TarefaCriarRequest(
     int Ordem,
     DateTime? DataPrevisao,
     DateTime? DataEntrega,
-    int? HorasEstimadas);
+    int? HorasEstimadas,
+    string? Status = null,
+    DateTime? DataConclusao = null,
+    bool? Bloqueada = null,
+    string? MotivoBloqueio = null,
+    List<int>? ChamadoIds = null);
 
 public record TarefaAtualizarRequest(
-    int? EtapaId,
     int? ProjetoEtapaId,
     int? ColunaKanbanId,
     int? ChamadoLegadoId,
@@ -103,10 +102,10 @@ public record TarefaAtualizarRequest(
     DateTime? DataEntrega,
     DateTime? DataConclusao,
     int? HorasEstimadas,
-    int? HorasRealizadas,
     bool Bloqueada,
     string? MotivoBloqueio,
-    string UsuarioAlteracao);
+    string UsuarioAlteracao,
+    List<int>? ChamadoIds = null);
 
 public record TarefaMudarColunaRequest(
     int? ColunaKanbanId,
@@ -140,7 +139,7 @@ public record TarefaFiltro(
     int? FuncaoId = null,
     string? FuncaoClassificacao = null,
     string? PerfilId = null,
-    int? EtapaId = null);
+    string? PerfilModo = null);
 
 public record ResponsavelResumo(
     string OperadorId,

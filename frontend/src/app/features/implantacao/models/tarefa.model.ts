@@ -52,8 +52,6 @@ export interface TarefaResumo {
   responsaveis: ResponsavelResumo[];
   dataInclusao: string;
   arquivada: boolean;
-  etapaId?: number;
-  etapaNome?: string;
   projetoEtapaId?: number;
   projetoEtapaNome?: string;
 }
@@ -72,8 +70,6 @@ export interface TarefaDetalhe {
   projetoCodigo: string;
   projetoNome: string;
   chamadoLegadoId?: number;
-  etapaId?: number;
-  etapaNome?: string;
   projetoEtapaId?: number;
   projetoEtapaNome?: string;
   colunaKanbanId?: number;
@@ -108,7 +104,6 @@ export interface TarefaDetalhe {
 
 export interface TarefaCriarRequest {
   projetoId?: number;
-  etapaId?: number;
   projetoEtapaId?: number;
   colunaKanbanId?: number;
   chamadoLegadoId?: number;
@@ -123,10 +118,14 @@ export interface TarefaCriarRequest {
   dataPrevisao?: string;
   dataEntrega?: string;
   horasEstimadas?: number;
+  status?: string;
+  dataConclusao?: string;
+  bloqueada?: boolean;
+  motivoBloqueio?: string;
+  chamadoIds?: number[];
 }
 
 export interface TarefaAtualizarRequest {
-  etapaId?: number;
   projetoEtapaId?: number;
   colunaKanbanId?: number;
   chamadoLegadoId?: number;
@@ -142,10 +141,10 @@ export interface TarefaAtualizarRequest {
   dataEntrega?: string;
   dataConclusao?: string;
   horasEstimadas?: number;
-  horasRealizadas?: number;
   bloqueada: boolean;
   motivoBloqueio?: string;
   usuarioAlteracao: string;
+  chamadoIds?: number[];
 }
 
 export interface TarefaMudarColunaRequest {
@@ -185,6 +184,29 @@ export interface TarefaFiltro {
   apenasConcluidas?: boolean;
   apenasVenceHoje?: boolean;
   perfilId?: string;
+  perfilModo?: 'incluir' | 'excluir';
   incluirArquivadas?: boolean;
-  etapaId?: number;
+}
+
+/**
+ * Regra única de atraso (espelha o backend):
+ * prazo = dataEntrega ?? dataPrevisao; atrasada se o prazo já passou,
+ * exceto Concluída dentro do prazo (dataConclusao ≤ prazo). Cancelada nunca conta.
+ */
+export function ehAtrasada(t: {
+  status: string;
+  dataEntrega?: string;
+  dataPrevisao?: string;
+  dataConclusao?: string;
+}): boolean {
+  if (t.status === 'Cancelada') return false;
+  const ref = t.dataEntrega ?? t.dataPrevisao;
+  if (!ref) return false;
+  const hoje = new Date(new Date().toDateString()).getTime();
+  const prazo = new Date(new Date(ref).toDateString()).getTime();
+  if (prazo >= hoje) return false;
+  if (t.status === 'Concluida' && t.dataConclusao) {
+    return new Date(new Date(t.dataConclusao).toDateString()).getTime() > prazo;
+  }
+  return true;
 }

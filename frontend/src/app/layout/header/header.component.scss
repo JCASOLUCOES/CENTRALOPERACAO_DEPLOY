@@ -92,8 +92,8 @@
 }
 
 .navbar-brand img {
-  width: 2.875rem;
-  height: 2.875rem;
+  width: 3.5rem;
+  height: 3.5rem;
   object-fit: contain;
   border-radius: 50%;
   padding: 3px;
@@ -309,134 +309,6 @@
 }
 
 /* ======================== */
-/* Navegação principal      */
-/* ======================== */
-
-.top-bar__menu {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.header-nav {
-  display: flex;
-  align-items: stretch;
-  list-style: none;
-  margin: 0 auto;
-  padding: 0 1.25rem;
-  max-width: 73.75rem;
-  width: 100%;
-}
-
-.header-nav li {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.header-nav .nav-link {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  width: 100%;
-  height: 100%;
-  color: var(--text-on-header);
-  font-weight: 500;
-  font-size: 0.88rem;
-  padding: 0.7rem 0.5rem;
-  white-space: nowrap;
-  text-decoration: none;
-  transition: color 0.2s ease;
-
-  i {
-    font-size: 1rem;
-    flex-shrink: 0;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    left: 12%;
-    right: 12%;
-    bottom: 0;
-    height: 3px;
-    border-radius: 999px 999px 0 0;
-    background: transparent;
-    transform: scaleX(0);
-    transform-origin: center;
-    transition: transform 0.2s ease, background-color 0.2s ease;
-  }
-
-  &:hover {
-    color: #fff;
-  }
-
-  &:hover::after {
-    background: rgba(255, 255, 255, 0.4);
-    transform: scaleX(1);
-  }
-
-  &.active {
-    color: #fff;
-    font-weight: 600;
-  }
-
-  &.active::after {
-    background: var(--accent-color);
-    transform: scaleX(1);
-  }
-}
-
-/* ======================== */
-/* Segunda linha            */
-/* ======================== */
-
-.top-bar__meta {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.3rem 1.25rem;
-  min-height: 2.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.top-bar__breadcrumb {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--text-on-header);
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.breadcrumb-link {
-  color: rgba(255, 255, 255, 0.7);
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color 0.2s ease;
-
-  &:hover {
-    color: #fff;
-    text-decoration: underline;
-  }
-}
-
-.breadcrumb-sep {
-  color: rgba(255, 255, 255, 0.45);
-  flex-shrink: 0;
-}
-
-.breadcrumb-current {
-  color: #fff;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ======================== */
 /* Usuário / tema           */
 /* ======================== */
 
@@ -611,7 +483,6 @@
 .icon-btn,
 .theme-toggle,
 .navbar-brand,
-.header-nav .nav-link,
 .user-nav__trigger,
 .global-search__input,
 .global-search__item {
@@ -625,27 +496,9 @@
 /* Responsivo               */
 /* ======================== */
 
-@media (max-width: 1280px) {
-  .header-nav .nav-label {
-    display: none;
-  }
-
-  .header-nav .nav-link {
-    gap: 0;
-  }
-}
-
 @media (max-width: 992px) {
   .top-bar__row {
     padding: 0.5rem 0.9rem;
-  }
-
-  .top-bar__menu {
-    padding: 0 0.9rem;
-  }
-
-  .top-bar__meta {
-    padding: 0.3rem 0.9rem;
   }
 
   .brand-text .title {
@@ -673,10 +526,6 @@
     width: 100%;
   }
 
-  .top-bar__menu {
-    display: none;
-  }
-
   .brand-text small {
     display: none;
   }
@@ -697,4 +546,68 @@
   .global-search__kbd {
     display: none;
   }
+}
+
+/* ======================== */
+/* Skeleton loading (auth initializing) */
+/* ======================== */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.08) 25%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.08) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton--search {
+  width: 100%;
+  max-width: 35rem;
+  height: 2.625rem;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton--btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.6rem;
+}
+
+.skeleton-user {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.25rem 0.9rem 0.25rem 0.3rem;
+}
+
+.skeleton--avatar {
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 50%;
+}
+
+.skeleton--text {
+  width: 8rem;
+  height: 1rem;
+  border-radius: 999px;
+}
+
+.skeleton-search {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }

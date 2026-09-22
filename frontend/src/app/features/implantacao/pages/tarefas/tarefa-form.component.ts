@@ -50,8 +50,6 @@ export class TarefaFormComponent implements OnInit {
   projetoId = signal<number | null>(null);
   chamadoIds = signal<number[]>([]);
 
-  // Campos extras (seção "Mais opções" ou edit)
-  etapaId = signal<number | null>(null);
   /** Etapa FIXA do projeto (card de 9 etapas; alimenta o contador dinâmico). */
   projetoEtapaId = signal<number | null>(null);
   colunaKanbanId = signal<number | null>(null);
@@ -60,15 +58,12 @@ export class TarefaFormComponent implements OnInit {
   dataPrevisao = signal<string>('');
   dataConclusao = signal<string>('');
   horasEstimadas = signal<number | null>(null);
-  horasRealizadas = signal<number | null>(null);
   bloqueada = signal(false);
   motivoBloqueio = signal('');
   chamadoLegadoId = signal<number | null>(null);
-  status = signal<string>('AFazer');
 
   // Lookups
   projetos = signal<{ id: number; codigo: string; nome: string }[]>([]);
-  etapas = signal<{ id: number; nome: string }[]>([]);
   etapasFixas = signal<{ id: number; ordem: number; nome: string; estado: string }[]>([]);
   colunasKanban = signal<{ id: number; nome: string; cor: string }[]>([]);
 
@@ -78,15 +73,6 @@ export class TarefaFormComponent implements OnInit {
     { value: 1, label: 'Média' },
     { value: 2, label: 'Alta' },
     { value: 3, label: 'Urgente' }
-  ];
-
-  statusOptions = [
-    { value: 'Backlog', label: 'Backlog' },
-    { value: 'AFazer', label: 'A Fazer' },
-    { value: 'EmAndamento', label: 'Em Andamento' },
-    { value: 'EmHomologacao', label: 'Em Homologação' },
-    { value: 'Concluida', label: 'Concluída' },
-    { value: 'Cancelada', label: 'Cancelada' }
   ];
 
   tipoOptions = [
@@ -106,7 +92,7 @@ export class TarefaFormComponent implements OnInit {
     this.tipo() <= 1 &&
     this.prioridade() >= 0 &&
     this.prioridade() <= 3 &&
-    (!this.temProjeto() || this.etapaId() !== null) &&
+    (!this.temProjeto() || this.projetoEtapaId() !== null) &&
     (!this.bloqueada() || this.motivoBloqueio().trim().length > 0)
   );
 
@@ -114,9 +100,6 @@ export class TarefaFormComponent implements OnInit {
   private toastTimeout: any = null;
   toastMessage = signal<string>('');
   toastType = signal<'success' | 'error' | 'info'>('info');
-
-  // UI state
-  maisOpcoesAbertas = signal(false);
 
   constructor(
     private readonly tarSvc: TarefasService,
@@ -154,41 +137,6 @@ export class TarefaFormComponent implements OnInit {
     }
   }
 
-  /** Carrega as etapas do fluxo do projeto (tipoProjeto) ou limpa se sem projeto. */
-  private carregarEtapasFluxo(preservarEtapaId?: number | null): void {
-    const pid = this.projetoId();
-    if (pid == null) {
-      this.etapas.set([]);
-      this.etapaId.set(null);
-      return;
-    }
-    this.projSvc.obter(pid).subscribe({
-      next: (p) => {
-        this.tarSvc.listarEtapas(p.tipoProjetoId).subscribe({
-          next: (lista) => {
-            const fluxo = (lista ?? []).map(e => ({ id: e.id, nome: e.nome }));
-            // Preserva etapa salva mesmo fora do fluxo atual (ex.: fluxo mudou).
-            if (preservarEtapaId != null && !fluxo.some(e => e.id === preservarEtapaId)) {
-              this.tarSvc.listarEtapas().subscribe({
-                next: (todas) => {
-                  const achada = (todas ?? []).find(e => e.id === preservarEtapaId);
-                  this.etapas.set(achada ? [...fluxo, { id: achada.id, nome: achada.nome }] : fluxo);
-                  this.etapaId.set(preservarEtapaId);
-                },
-                error: () => { this.etapas.set(fluxo); this.etapaId.set(preservarEtapaId); }
-              });
-            } else {
-              this.etapas.set(fluxo);
-              this.etapaId.set(preservarEtapaId ?? null);
-            }
-          },
-          error: () => { this.etapas.set([]); this.etapaId.set(preservarEtapaId ?? null); }
-        });
-      },
-      error: () => { this.etapas.set([]); this.etapaId.set(preservarEtapaId ?? null); }
-    });
-  }
-
   private verificarModoEdicao(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -199,7 +147,6 @@ export class TarefaFormComponent implements OnInit {
       this.modoAtual.set('create');
       const projetoIdParam = this.route.snapshot.queryParamMap.get('projetoId');
       if (projetoIdParam) this.projetoId.set(Number(projetoIdParam));
-      this.carregarEtapasFluxo();
       this.carregarEtapasFixas();
       // Pre-fill responsavel with logged user
       const operador = this.auth.getOperadorLogadoCompleto();
@@ -234,10 +181,8 @@ export class TarefaFormComponent implements OnInit {
     this.dataEntrega.set(this.formatarData(t.dataEntrega));
     this.responsavelIds.set(t.responsaveis?.map(r => r.operadorId) ?? []);
     this.projetoId.set(t.projetoId ?? null);
-    this.carregarEtapasFluxo(t.etapaId ?? null);
     this.carregarEtapasFixas(t.projetoEtapaId ?? null);
     this.chamadoIds.set(t.chamados?.map(c => c.chamadoId) ?? []);
-    this.etapaId.set(t.etapaId ?? null);
     this.projetoEtapaId.set(t.projetoEtapaId ?? null);
     this.colunaKanbanId.set(t.colunaKanbanId ?? null);
     this.prioridade.set(t.prioridade);
@@ -245,11 +190,9 @@ export class TarefaFormComponent implements OnInit {
     this.dataPrevisao.set(this.formatarData(t.dataPrevisao));
     this.dataConclusao.set(this.formatarData(t.dataConclusao));
     this.horasEstimadas.set(t.horasEstimadas ?? null);
-    this.horasRealizadas.set(t.horasRealizadas ?? null);
     this.bloqueada.set(t.bloqueada);
     this.motivoBloqueio.set(t.motivoBloqueio ?? '');
     this.chamadoLegadoId.set(t.chamadoLegadoId ?? null);
-    this.status.set(t.status ?? 'AFazer');
   }
 
   private formatarData(valor?: string): string {
@@ -260,7 +203,7 @@ export class TarefaFormComponent implements OnInit {
 
   onSubmit(): void {
     if (!this.podeSalvar()) {
-      this.error.set('Preencha os campos obrigatórios: Título, Responsável, Data de Entrega, Etapa (quando há projeto), Prioridade válida e motivo do bloqueio, quando aplicável.');
+      this.error.set('Preencha os campos obrigatórios: Título, Responsável, Data de Entrega, Etapa do projeto (quando há projeto), Prioridade válida e motivo do bloqueio, quando aplicável.');
       return;
     }
 
@@ -286,12 +229,10 @@ export class TarefaFormComponent implements OnInit {
     this.tarSvc.criar(req).pipe(
       finalize(() => this.saving.set(false))
     ).subscribe({
-      next: (t) => {
-        this.preencherFormulario(t);
-        this.modoAtual.set('edit');
-        this.tarefaId.set(t.id);
-        this.toastSucesso('Tarefa criada com sucesso');
-        this.router.navigate(['/implantacao/tarefas', t.id, 'editar']);
+      next: () => {
+        this.router.navigate(['/implantacao/tarefas'], {
+          state: { mensagem: 'Tarefa criada com sucesso' }
+        });
       },
       error: (err) => {
         this.error.set(err.error?.mensagem || 'Erro ao criar tarefa');
@@ -321,7 +262,6 @@ export class TarefaFormComponent implements OnInit {
       next: (t) => {
         this.preencherFormulario(t);
         this.toastSucesso('Tarefa atualizada com sucesso');
-        this.router.navigate(['/implantacao/tarefas', t.id, 'editar']);
       },
       error: (err) => {
         this.error.set(err.error?.mensagem || 'Erro ao atualizar tarefa');
@@ -337,7 +277,6 @@ export class TarefaFormComponent implements OnInit {
       titulo: this.titulo().trim(),
       descricao: this.descricao().trim() || undefined,
       projetoId: projetoId ?? undefined,
-      etapaId: this.etapaId() ?? undefined,
       projetoEtapaId: this.projetoEtapaId() ?? undefined,
       colunaKanbanId: this.colunaKanbanId() ?? undefined,
       responsavelId: responsavelPrincipal,
@@ -348,15 +287,14 @@ export class TarefaFormComponent implements OnInit {
       dataPrevisao: this.dataPrevisao() || undefined,
       dataEntrega: this.dataEntrega() || undefined,
       horasEstimadas: this.horasEstimadas() ?? undefined,
-      chamadoLegadoId: this.chamadoLegadoId() ?? undefined
+      chamadoLegadoId: this.chamadoLegadoId() ?? undefined,
+      chamadoIds: this.chamadoIds()
     };
 
     if (isUpdate) {
       return {
         ...dadosComuns,
-        status: this.status() || undefined,
         dataConclusao: this.dataConclusao() || undefined,
-        horasRealizadas: this.horasRealizadas() ?? undefined,
         bloqueada: this.bloqueada(),
         motivoBloqueio: this.motivoBloqueio().trim() || undefined,
         usuarioAlteracao: this.auth.getOperadorLogado()
@@ -365,6 +303,9 @@ export class TarefaFormComponent implements OnInit {
 
     return {
       ...dadosComuns,
+      dataConclusao: this.dataConclusao() || undefined,
+      bloqueada: this.bloqueada(),
+      motivoBloqueio: this.motivoBloqueio().trim() || undefined,
       criadorId: this.auth.getOperadorLogado()
     };
   }
@@ -379,7 +320,6 @@ export class TarefaFormComponent implements OnInit {
 
   aoMudarProjeto(valor: string | number | null): void {
     this.projetoId.set(valor === null || valor === '' || valor === 'sem-projeto' ? null : Number(valor));
-    this.carregarEtapasFluxo();
     this.carregarEtapasFixas();
   }
 

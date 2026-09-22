@@ -9,8 +9,7 @@
   <div class="admin-header__right">
     <button class="admin-header__user-btn" aria-label="Menu do usuário">
       <span class="admin-header__user-avatar">{{ getIniciais() }}</span>
-      <span class="admin-header__user-name">{{ currentUser?.nome }}</span>
-      <i class="bi bi-chevron-down admin-header__caret" aria-hidden="true"></i>
+      <span class="admin-header__user-name">{{ formatNome(currentUser?.nome ?? '') }}</span>
     </button>
 
     <div class="admin-header__user-dropdown">
@@ -29,5 +28,5 @@
 </main>
 
 <footer class="admin-footer">
-  Central de Operação Actyon · v{{ versao }}
-</footer>
+    {{ appConfig.nomeCurto }} · v{{ versao }}
+  </footer>

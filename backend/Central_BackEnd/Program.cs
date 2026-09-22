@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using Asp.Versioning;
 using Central_BackEnd.Data;
 using Central_BackEnd.Services;
+using Central_BackEnd.Services.Gestor;
 using Central_BackEnd.Services.Implantacao;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
@@ -102,7 +103,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("GestorAccess", policy =>
+        policy.RequireClaim("perfil", "Administrador"));
+});
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRagProxyService, RagProxyService>();
@@ -113,7 +118,6 @@ builder.Services.AddSingleton<BruteForceGuard>();
 
 // Modulo IMPLANTACAO/PROJETOS
 builder.Services.AddScoped<ITipoProjetoService, TipoProjetoService>();
-builder.Services.AddScoped<IEtapaService, EtapaService>();
 builder.Services.AddScoped<IColunaKanbanService, ColunaKanbanService>();
 builder.Services.AddScoped<IProjetoService, ProjetoService>();
 builder.Services.AddScoped<IProjetoEtapaService, ProjetoEtapaService>();
@@ -123,6 +127,9 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<IAgendaService, AgendaService>();
 builder.Services.AddScoped<IAuditoriaImplantacaoService, AuditoriaImplantacaoService>();
+
+// Modulo GESTOR (CEO, CTO, COO)
+builder.Services.AddScoped<IGestorMetricasService, GestorMetricasService>();
 
 // Modulo Banco de Dados (Database Explorer)
 builder.Services.AddSingleton<Central_BackEnd.Services.Database.IDatabaseConnectionService, Central_BackEnd.Services.Database.DatabaseConnectionService>();
@@ -309,31 +316,6 @@ if (app.Environment.IsDevelopment())
             db.SaveChanges();
         }
 
-        // Seed IMPL_Etapa
-        if (!db.Etapas.Any())
-        {
-            var tipoCliente = db.TiposProjeto.FirstOrDefault(t => t.Codigo == "CLIENTE");
-            var tipoCiaa = db.TiposProjeto.FirstOrDefault(t => t.Codigo == "PROJETO_CIAA");
-            db.Etapas.AddRange(
-                // Geral
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "KICKOFF",        Ordem = 1, TipoProjetoId = tipoCliente?.Id, Cor = "#0f4c81", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "PARAMETRIZACAO", Ordem = 2, TipoProjetoId = tipoCliente?.Id, Cor = "#2563eb", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "TREINAMENTO",    Ordem = 3, TipoProjetoId = tipoCliente?.Id, Cor = "#0ea5e9", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "HOMOLOGACAO",   Ordem = 4, TipoProjetoId = tipoCliente?.Id, Cor = "#7c3aed", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "GO LIVE",        Ordem = 5, TipoProjetoId = tipoCliente?.Id, Cor = "#16a34a", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "ACEITE",         Ordem = 6, TipoProjetoId = tipoCliente?.Id, Cor = "#15803d", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                // CIAA
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "LEVANTAMENTO",   Ordem = 1, TipoProjetoId = tipoCiaa?.Id, Cor = "#7c3aed", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "DESENHO",        Ordem = 2, TipoProjetoId = tipoCiaa?.Id, Cor = "#a855f7", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "DESENVOLVIMENTO", Ordem = 3, TipoProjetoId = tipoCiaa?.Id, Cor = "#d97706", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "TESTES",          Ordem = 4, TipoProjetoId = tipoCiaa?.Id, Cor = "#0891b2", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "HOMOLOGACAO",    Ordem = 5, TipoProjetoId = tipoCiaa?.Id, Cor = "#7c3aed", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "PUBLICACAO",     Ordem = 6, TipoProjetoId = tipoCiaa?.Id, Cor = "#16a34a", UsuarioInclusao = "seed", DataInclusao = DateTime.Now },
-                new Central_BackEnd.Models.Implantacao.Etapa { Nome = "MONITORAMENTO",  Ordem = 7, TipoProjetoId = tipoCiaa?.Id, Cor = "#0d9488", UsuarioInclusao = "seed", DataInclusao = DateTime.Now }
-            );
-            db.SaveChanges();
-        }
-
 #if false // Seeds de exemplo DESABILITADOS — base limpa para testes (estruturais acima continuam)
         // Seed IMPL_Projeto: 1 IMPL + 1 CIAA
         if (!db.Projetos.Any())
@@ -377,7 +359,7 @@ if (app.Environment.IsDevelopment())
             db.Tarefas.AddRange(
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p1.Id, EtapaId = db.Etapas.First(e => e.Nome == "KICKOFF").Id,
+                    ProjetoId = p1.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p1.Id && e.Ordem == 1).Id,
                     ColunaKanbanId = colConcluido!.Id, Ordem = 1,
                     Titulo = "Kickoff com a diretoria",
                     Descricao = "Alinhamento de objetivos, cronograma e stakeholders do projeto.",
@@ -391,7 +373,7 @@ if (app.Environment.IsDevelopment())
                 },
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p1.Id, EtapaId = db.Etapas.First(e => e.Nome == "PARAMETRIZACAO").Id,
+                    ProjetoId = p1.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p1.Id && e.Ordem == 2).Id,
                     ColunaKanbanId = colConcluido!.Id, Ordem = 2,
                     Titulo = "Levantar parâmetros da carteira de cobrança",
                     Descricao = "Mapear regras de negócio: faixas de atraso, juros, descontos, distribuição.",
@@ -405,7 +387,7 @@ if (app.Environment.IsDevelopment())
                 },
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p1.Id, EtapaId = db.Etapas.First(e => e.Nome == "PARAMETRIZACAO").Id,
+                    ProjetoId = p1.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p1.Id && e.Ordem == 2).Id,
                     ColunaKanbanId = colConcluido!.Id, Ordem = 3,
                     Titulo = "Importar títulos iniciais (abertura)",
                     Descricao = "Carga inicial de 2.500 títulos via planilha de migração.",
@@ -419,7 +401,7 @@ if (app.Environment.IsDevelopment())
                 },
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p1.Id, EtapaId = db.Etapas.First(e => e.Nome == "PARAMETRIZACAO").Id,
+                    ProjetoId = p1.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p1.Id && e.Ordem == 2).Id,
                     ColunaKanbanId = colAndamento!.Id, Ordem = 4,
                     Titulo = "Configurar integrações com Sicoob e Caixa",
                     Descricao = "Homologar remessa CNAB 240 e retorno. Validar arquivos com o banco.",
@@ -434,7 +416,7 @@ if (app.Environment.IsDevelopment())
                 },
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p1.Id, EtapaId = db.Etapas.First(e => e.Nome == "TREINAMENTO").Id,
+                    ProjetoId = p1.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p1.Id && e.Ordem == 3).Id,
                     ColunaKanbanId = colAFazer!.Id, Ordem = 5,
                     Titulo = "Agendar treinamento com equipe financeira",
                     Descricao = "2 turmas, 4h cada, focadas em carteira de cobrança e fechamento diário.",
@@ -447,7 +429,7 @@ if (app.Environment.IsDevelopment())
                 },
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p1.Id, EtapaId = db.Etapas.First(e => e.Nome == "HOMOLOGACAO").Id,
+                    ProjetoId = p1.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p1.Id && e.Ordem == 4).Id,
                     ColunaKanbanId = colAFazer!.Id, Ordem = 6,
                     Titulo = "Homologar fluxo completo com cliente",
                     Descricao = "Roda 5 títulos do início ao fim, com cliente acompanhando.",
@@ -460,7 +442,7 @@ if (app.Environment.IsDevelopment())
                 },
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p1.Id, EtapaId = db.Etapas.First(e => e.Nome == "GO LIVE").Id,
+                    ProjetoId = p1.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p1.Id && e.Ordem == 5).Id,
                     ColunaKanbanId = colBacklog!.Id, Ordem = 7,
                     Titulo = "Definir data do go live",
                     Descricao = "Confirmar com diretoria a data de entrada em produção.",
@@ -521,7 +503,7 @@ if (app.Environment.IsDevelopment())
             db.Tarefas.AddRange(
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p2.Id, EtapaId = db.Etapas.First(e => e.Nome == "LEVANTAMENTO").Id,
+                    ProjetoId = p2.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p2.Id && e.Ordem == 1).Id,
                     ColunaKanbanId = colConcluido!.Id, Ordem = 1,
                     Titulo = "Mapear categorias de chamados dos últimos 6 meses",
                     Descricao = "Amostra de 2.000 chamados para identificar padrões de classificação.",
@@ -535,7 +517,7 @@ if (app.Environment.IsDevelopment())
                 },
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p2.Id, EtapaId = db.Etapas.First(e => e.Nome == "DESENHO").Id,
+                    ProjetoId = p2.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p2.Id && e.Ordem == 2).Id,
                     ColunaKanbanId = colConcluido!.Id, Ordem = 2,
                     Titulo = "Definir arquitetura do agente (n8n + LLM)",
                     Descricao = "Fluxo: webhook → LLM → classificação → router → ticket. Latência alvo: 3s.",
@@ -549,7 +531,7 @@ if (app.Environment.IsDevelopment())
                 },
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p2.Id, EtapaId = db.Etapas.First(e => e.Nome == "DESENVOLVIMENTO").Id,
+                    ProjetoId = p2.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p2.Id && e.Ordem == 3).Id,
                     ColunaKanbanId = colAndamento!.Id, Ordem = 3,
                     Titulo = "Implementar fluxo principal no n8n",
                     Descricao = "Webhook + LLM + tratamento de erros + retry. Logs estruturados.",
@@ -562,7 +544,7 @@ if (app.Environment.IsDevelopment())
                 },
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p2.Id, EtapaId = db.Etapas.First(e => e.Nome == "DESENVOLVIMENTO").Id,
+                    ProjetoId = p2.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p2.Id && e.Ordem == 3).Id,
                     ColunaKanbanId = colAFazer!.Id, Ordem = 4,
                     Titulo = "Construir prompt com few-shot examples",
                     Descricao = "Iterar prompt principal até atingir acurácia >85% em validação.",
@@ -575,7 +557,7 @@ if (app.Environment.IsDevelopment())
                 },
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p2.Id, EtapaId = db.Etapas.First(e => e.Nome == "TESTES").Id,
+                    ProjetoId = p2.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p2.Id && e.Ordem == 4).Id,
                     ColunaKanbanId = colAFazer!.Id, Ordem = 5,
                     Titulo = "Rodar suite de 200 chamados históricos",
                     Descricao = "Comparar classificação do agente vs classificação humana (ground truth).",
@@ -588,7 +570,7 @@ if (app.Environment.IsDevelopment())
                 },
                 new Central_BackEnd.Models.Implantacao.Tarefa
                 {
-                    ProjetoId = p2.Id, EtapaId = db.Etapas.First(e => e.Nome == "PUBLICACAO").Id,
+                    ProjetoId = p2.Id, ProjetoEtapaId = db.ProjetoEtapas.First(e => e.ProjetoId == p2.Id && e.Ordem == 6).Id,
                     ColunaKanbanId = colBacklog!.Id, Ordem = 6,
                     Titulo = "Publicar agente em produção",
                     Descricao = "Deploy com feature flag. Monitorar 1 semana antes de expandir.",

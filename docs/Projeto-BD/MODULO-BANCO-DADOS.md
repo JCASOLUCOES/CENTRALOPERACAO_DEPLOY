@@ -3,7 +3,7 @@
 > Documentação do módulo Database Explorer da Central de Operação.
 > Inspirado no `projeto_BD.md` da raiz do monorepo. Para o passo-a-passo de
 > implementação, ver `projeto_BD.md` § 46 (Processo de Implementação Obrigatório).
-> Para a documentação completa do sistema, ver `frontend/docs/DOCUMENTACAO-COMPLETA.md` § 6.6.
+> Para a documentação completa do sistema, ver `docs/DOCUMENTACAO-COMPLETA.md` § 6.6.
 
 ---
 

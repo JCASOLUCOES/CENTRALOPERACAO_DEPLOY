@@ -7,7 +7,7 @@ namespace Central_BackEnd.Services.Implantacao;
 
 public interface IDashboardService
 {
-    Task<DashboardGeral> ObterAsync(string? equipe = null, CancellationToken ct = default);
+    Task<DashboardGeral> ObterAsync(string? equipe = null, int? projetoId = null, CancellationToken ct = default);
 }
 
 public class DashboardService : IDashboardService
@@ -19,7 +19,7 @@ public class DashboardService : IDashboardService
         _db = db;
     }
 
-    public async Task<DashboardGeral> ObterAsync(string? equipe = null, CancellationToken ct = default)
+    public async Task<DashboardGeral> ObterAsync(string? equipe = null, int? projetoId = null, CancellationToken ct = default)
     {
         var q = _db.Projetos.AsNoTracking()
             .Include(p => p.TipoProjeto)
@@ -27,19 +27,34 @@ public class DashboardService : IDashboardService
             .Include(p => p.ColunaKanban)
             .Where(p => p.Status != StatusProjeto.Cancelado);
 
+        if (projetoId.HasValue)
+            q = q.Where(p => p.Id == projetoId.Value);
+
         var projetos = await q.ToListAsync(ct);
 
-        // Base queries para tarefas
+        // Base queries para tarefas (arquivadas excluídas — mesma regra dos contadores de etapa)
         var tarefasBase = _db.Tarefas.AsNoTracking()
-            .Where(t => t.Status != StatusTarefa.Cancelada);
+            .Where(t => t.Status != StatusTarefa.Cancelada && !t.Arquivada);
 
-        var tarefasConcluidas = await _db.Tarefas.AsNoTracking()
-            .Where(t => t.Status == StatusTarefa.Concluida && t.DataConclusao.HasValue)
-            .ToListAsync(ct);
+        var tarefasConcluidasQ = _db.Tarefas.AsNoTracking()
+            .Where(t => t.Status == StatusTarefa.Concluida && t.DataConclusao.HasValue && !t.Arquivada);
 
-        var tarefasComHoras = await _db.Tarefas.AsNoTracking()
-            .Where(t => t.HorasRealizadas.HasValue && t.HorasRealizadas > 0)
-            .ToListAsync(ct);
+        var tarefasComHorasQ = _db.Tarefas.AsNoTracking()
+            .Where(t => t.HorasRealizadas.HasValue && t.HorasRealizadas > 0 && !t.Arquivada);
+
+        var horasApontadasQ = _db.Tarefas.Where(t => t.HorasRealizadas.HasValue && !t.Arquivada);
+
+        if (projetoId.HasValue)
+        {
+            var pid = projetoId.Value;
+            tarefasBase = tarefasBase.Where(t => t.ProjetoId == pid);
+            tarefasConcluidasQ = tarefasConcluidasQ.Where(t => t.ProjetoId == pid);
+            tarefasComHorasQ = tarefasComHorasQ.Where(t => t.ProjetoId == pid);
+            horasApontadasQ = horasApontadasQ.Where(t => t.ProjetoId == pid);
+        }
+
+        var tarefasConcluidas = await tarefasConcluidasQ.ToListAsync(ct);
+        var tarefasComHoras = await tarefasComHorasQ.ToListAsync(ct);
 
         // KPIs básicos
         var kpis = new DashboardKpis
@@ -48,9 +63,9 @@ public class DashboardService : IDashboardService
             ProjetosAtrasados = projetos.Count(p => p.DataPrevisao.HasValue && p.DataPrevisao < DateTime.Today && p.Status != StatusProjeto.Concluido && p.Status != StatusProjeto.Cancelado),
             ProjetosConcluidos = projetos.Count(p => p.Status == StatusProjeto.Concluido),
             TarefasAbertas = await tarefasBase.CountAsync(t => t.Status != StatusTarefa.Concluida, ct),
-            TarefasAtrasadas = await tarefasBase.CountAsync(t => (t.DataEntrega ?? t.DataPrevisao).HasValue && (t.DataEntrega ?? t.DataPrevisao)!.Value.Date < DateTime.Today && t.Status != StatusTarefa.Concluida, ct),
+            TarefasAtrasadas = await tarefasBase.OndeAtrasadas(DateTime.Today).CountAsync(ct),
             TarefasConcluidas = await tarefasBase.CountAsync(t => t.Status == StatusTarefa.Concluida, ct),
-            HorasApontadas = await _db.Tarefas.Where(t => t.HorasRealizadas.HasValue).SumAsync(t => t.HorasRealizadas ?? 0, ct),
+            HorasApontadas = await horasApontadasQ.SumAsync(t => t.HorasRealizadas ?? 0, ct),
             
             // Novos KPIs Fase 3
             TarefasFeatures = await tarefasBase.CountAsync(t => t.Tipo == TipoTarefa.Feature, ct),
@@ -94,10 +109,17 @@ public class DashboardService : IDashboardService
             .ToListAsync(ct);
 
         // Horas por Responsável (considera múltiplos responsáveis via IMPL_TarefaResponsavel)
-        var apontamentos = await _db.TarefaApontamentos.AsNoTracking()
+        var apontamentosQ = _db.TarefaApontamentos.AsNoTracking()
             .Include(a => a.Tarefa)
-            .Where(a => a.Tarefa != null)
-            .ToListAsync(ct);
+            .Where(a => a.Tarefa != null);
+
+        if (projetoId.HasValue)
+        {
+            var pid = projetoId.Value;
+            apontamentosQ = apontamentosQ.Where(a => a.Tarefa!.ProjetoId == pid);
+        }
+
+        var apontamentos = await apontamentosQ.ToListAsync(ct);
 
         var responsavelIds = new HashSet<string>(apontamentos.Select(a => a.OperadorId).Distinct());
         // Compatibilidade SQL 2008 (compat 100): sem Contains em lista capturada (OPENJSON).
@@ -121,10 +143,17 @@ public class DashboardService : IDashboardService
             .ToList();
 
         // Adicionar horas estimadas por responsável (baseado nas tarefas onde é responsável principal ou na lista)
-        var tarefasResponsaveis = await _db.TarefaResponsaveis.AsNoTracking()
+        var tarefaResponsaveisQ = _db.TarefaResponsaveis.AsNoTracking()
             .Include(tr => tr.Tarefa)
-            .Where(tr => tr.Tarefa != null)
-            .ToListAsync(ct);
+            .Where(tr => tr.Tarefa != null);
+
+        if (projetoId.HasValue)
+        {
+            var pid = projetoId.Value;
+            tarefaResponsaveisQ = tarefaResponsaveisQ.Where(tr => tr.Tarefa!.ProjetoId == pid);
+        }
+
+        var tarefasResponsaveis = await tarefaResponsaveisQ.ToListAsync(ct);
 
         var estimadasPorResp = tarefasResponsaveis
             .GroupBy(tr => tr.OperadorId)
@@ -140,8 +169,13 @@ public class DashboardService : IDashboardService
             new DashboardPorEquipe { Equipe = "Geral", Ativos = 0, Concluidos = 0, Bloqueados = 0, Atrasados = 0 }
         };
 
-        var proximosPrazo = await _db.Projetos
-            .Where(p => p.DataPrevisao.HasValue && p.DataPrevisao > DateTime.Today && p.Status != StatusProjeto.Concluido && p.Status != StatusProjeto.Cancelado)
+        var proximosPrazoQ = _db.Projetos
+            .Where(p => p.DataPrevisao.HasValue && p.DataPrevisao > DateTime.Today && p.Status != StatusProjeto.Concluido && p.Status != StatusProjeto.Cancelado);
+
+        if (projetoId.HasValue)
+            proximosPrazoQ = proximosPrazoQ.Where(p => p.Id == projetoId.Value);
+
+        var proximosPrazo = await proximosPrazoQ
             .OrderBy(p => p.DataPrevisao)
             .Take(10)
             .Select(p => new ProjetoProximoPrazo

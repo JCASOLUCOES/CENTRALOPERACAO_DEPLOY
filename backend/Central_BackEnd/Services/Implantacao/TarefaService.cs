@@ -45,13 +45,11 @@ public class TarefaService : ITarefaService
     {
         var q = _db.Tarefas.AsNoTracking()
             .Include(t => t.Projeto)
-            .Include(t => t.Etapa)
             .Include(t => t.ProjetoEtapa)
             .Include(t => t.Responsaveis)
             .AsQueryable();
 
         if (f.ProjetoId.HasValue) q = q.Where(t => t.ProjetoId == f.ProjetoId);
-        if (f.EtapaId.HasValue) q = q.Where(t => t.EtapaId == f.EtapaId);
         if (!string.IsNullOrWhiteSpace(f.ResponsavelId))
             q = q.Where(t => t.ResponsavelId == f.ResponsavelId || t.Responsaveis.Any(r => r.OperadorId == f.ResponsavelId));
         if (!string.IsNullOrWhiteSpace(f.Status) && Enum.TryParse<StatusTarefa>(f.Status, out var st))
@@ -71,15 +69,19 @@ public class TarefaService : ITarefaService
         if (!string.IsNullOrWhiteSpace(f.PerfilId))
         {
             var perfilId = f.PerfilId;
-            q = q.Where(t => (t.ResponsavelId != null && _db.Operadores.Any(o => o.OperadorId == t.ResponsavelId && o.PerfilId == perfilId))
-                || t.Responsaveis.Any(r => _db.Operadores.Any(o => o.OperadorId == r.OperadorId && o.PerfilId == perfilId)));
+            var modo = f.PerfilModo ?? "excluir";
+            var criadoresComPerfil = _db.Operadores.Where(o => o.PerfilId == perfilId).Select(o => o.OperadorId);
+            if (modo == "incluir")
+            {
+                q = q.Where(t => t.CriadorId != null && criadoresComPerfil.Contains(t.CriadorId));
+            }
+            else
+            {
+                q = q.Where(t => t.CriadorId == null || !criadoresComPerfil.Contains(t.CriadorId));
+            }
         }
         if (f.ApenasAtrasadas == true)
-        {
-            var hoje = DateTime.Today;
-            q = q.Where(t => t.Status != StatusTarefa.Concluida && t.Status != StatusTarefa.Cancelada &&
-                              (t.DataEntrega ?? t.DataPrevisao) != null && (t.DataEntrega ?? t.DataPrevisao)!.Value.Date < hoje);
-        }
+            q = q.OndeAtrasadas(DateTime.Today);
         if (f.ApenasVenceHoje == true)
         {
             var hoje = DateTime.Today;
@@ -119,7 +121,7 @@ public class TarefaService : ITarefaService
             t.DataPrevisao, t.DataEntrega, (int)t.Tipo, t.DataConclusao, t.Bloqueada, t.MotivoBloqueio,
             t.HorasEstimadas, t.HorasRealizadas,
             t.Responsaveis.Select(r => new ResponsavelResumo(r.OperadorId, operadoresMap.TryGetValue(r.OperadorId, out var n) ? n : r.OperadorId)).ToList(),
-            t.DataInclusao, t.Arquivada, t.EtapaId, t.Etapa != null ? t.Etapa.Nome : null,
+            t.DataInclusao, t.Arquivada,
             t.ProjetoEtapaId, t.ProjetoEtapa != null ? t.ProjetoEtapa.Nome : null)).ToList();
     }
 
@@ -127,7 +129,6 @@ public class TarefaService : ITarefaService
     {
         var t = await _db.Tarefas.AsNoTracking()
             .Include(x => x.Projeto)
-            .Include(x => x.Etapa)
             .Include(x => x.ProjetoEtapa)
             .Include(x => x.ColunaKanban)
             .Include(x => x.Responsaveis)
@@ -215,7 +216,7 @@ public class TarefaService : ITarefaService
         return new TarefaDetalhe(
             t.Id, t.ProjetoId, t.Projeto?.Codigo ?? "", t.Projeto?.Nome ?? "",
             t.ChamadoLegadoId,
-            t.EtapaId, t.Etapa?.Nome, t.ProjetoEtapaId, t.ProjetoEtapa?.Nome, t.ColunaKanbanId, t.ColunaKanban?.Nome,
+            t.ProjetoEtapaId, t.ProjetoEtapa?.Nome, t.ColunaKanbanId, t.ColunaKanban?.Nome,
             t.Titulo, t.Descricao, t.ResponsavelId, respPrincipalNome,
             t.CriadorId, criadorName,
             t.Status.ToString(), (int)t.Prioridade, t.Ordem,
@@ -226,30 +227,14 @@ public class TarefaService : ITarefaService
     }
 
     /// <summary>
-    /// Tarefa com projeto exige etapa do fluxo (etapas ativas do TipoProjeto ou globais).
-    /// Sem projeto, a etapa é opcional.
-    /// </summary>
-    private async Task ValidarEtapaDoFluxoAsync(int? tipoProjetoId, int? etapaId, CancellationToken ct)
-    {
-        if (!etapaId.HasValue)
-            throw new ArgumentException("Etapa obrigatória para tarefas de projeto");
-        var etapa = await _db.Etapas.AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == etapaId.Value, ct);
-        if (etapa == null)
-            throw new ArgumentException("Etapa inexistente");
-        if (!etapa.Ativa)
-            throw new ArgumentException("Etapa inativa para novas tarefas");
-        if (etapa.TipoProjetoId.HasValue && etapa.TipoProjetoId != tipoProjetoId)
-            throw new ArgumentException("Etapa não pertence ao fluxo do projeto");
-    }
-
-    /// <summary>
-    /// Etapa fixa informada deve pertencer ao mesmo projeto da tarefa.
-    /// NULL = sem card fixo (conta só nos totais do projeto/jornada).
+    /// Tarefa com projeto exige etapa fixa (card) do mesmo projeto.
+    /// Sem projeto, a etapa é ignorada/NULL.
     /// </summary>
     private async Task ValidarEtapaFixaAsync(int? projetoId, int? projetoEtapaId, CancellationToken ct)
     {
-        if (!projetoEtapaId.HasValue) return;
+        if (!projetoId.HasValue) return;
+        if (!projetoEtapaId.HasValue)
+            throw new ArgumentException("Etapa do projeto é obrigatória para tarefas de projeto");
         var ok = await _db.ProjetoEtapas.AsNoTracking()
             .AnyAsync(e => e.Id == projetoEtapaId.Value && e.ProjetoId == projetoId, ct);
         if (!ok)
@@ -281,16 +266,13 @@ public class TarefaService : ITarefaService
             throw new ArgumentException("Coluna inexistente");
 
         // ProjetoId é opcional - permite tarefas sem projeto (requisito perfil F).
-        // Com projeto, a etapa é obrigatória e deve pertencer ao fluxo do projeto.
-        int? tipoProjetoId = null;
+        // Com projeto, a etapa fixa (card) é obrigatória e deve pertencer ao projeto.
         if (req.ProjetoId.HasValue)
         {
             var projeto = await _db.Projetos.AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == req.ProjetoId, ct);
             if (projeto == null)
                 throw new ArgumentException("Projeto inexistente");
-            tipoProjetoId = projeto.TipoProjetoId;
-            await ValidarEtapaDoFluxoAsync(tipoProjetoId, req.EtapaId, ct);
             await ValidarEtapaFixaAsync(req.ProjetoId, req.ProjetoEtapaId, ct);
         }
 
@@ -308,27 +290,69 @@ public class TarefaService : ITarefaService
         if (!string.IsNullOrEmpty(respPrincipal) && !await _db.Operadores.AnyAsync(o => o.OperadorId == respPrincipal, ct))
             throw new ArgumentException("Responsavel inexistente");
 
+        StatusTarefa statusInicial = StatusTarefa.AFazer;
+        if (!string.IsNullOrWhiteSpace(req.Status))
+        {
+            if (!Enum.TryParse<StatusTarefa>(req.Status, out var statusInformado) || !Enum.IsDefined(statusInformado))
+                throw new ArgumentException("Status inválido");
+            statusInicial = statusInformado;
+        }
+
+        // Sincronia coluna ↔ status na criação:
+        // - coluna enviada vence o status (deriva o status dela, exceto BLOQUEADO);
+        // - sem coluna, o status informado busca a coluna canônica; default = A FAZER.
+        var colunaId = req.ColunaKanbanId;
+        if (colunaId.HasValue)
+        {
+            var colCriada = await _db.ColunasKanban.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == colunaId.Value, ct);
+            if (colCriada != null)
+            {
+                var stCol = StatusDaColuna(colCriada.Nome);
+                if (stCol.HasValue) statusInicial = stCol.Value;
+            }
+        }
+        else
+        {
+            var colAlvo = await ColunaPorStatusAsync(statusInicial, ct)
+                ?? await ColunaPorStatusAsync(StatusTarefa.AFazer, ct);
+            colunaId = colAlvo?.Id;
+        }
+
+        var chamadosDesejados = (req.ChamadoIds ?? new List<int>())
+            .Concat(req.ChamadoLegadoId.HasValue ? new[] { req.ChamadoLegadoId.Value } : Array.Empty<int>())
+            .Distinct()
+            .ToList();
+        if (chamadosDesejados.Count > 0 &&
+            await _db.Set<ChamadoLegado>().CountAsync(c => chamadosDesejados.Contains(c.Id), ct) != chamadosDesejados.Count)
+            throw new ArgumentException("Chamado legado inexistente");
+
         var t = new Tarefa
         {
             ProjetoId = req.ProjetoId,
-            EtapaId = req.EtapaId,
             ProjetoEtapaId = req.ProjetoEtapaId,
-            ColunaKanbanId = req.ColunaKanbanId,
+            ColunaKanbanId = colunaId,
             ChamadoLegadoId = req.ChamadoLegadoId,
             Titulo = req.Titulo.Trim(),
             Descricao = req.Descricao,
             ResponsavelId = respPrincipal,
             CriadorId = req.CriadorId,
-            Status = StatusTarefa.AFazer,
+            Status = statusInicial,
             Prioridade = (PrioridadeTarefa)req.Prioridade,
             Tipo = (TipoTarefa)req.Tipo,
             Ordem = req.Ordem,
             DataPrevisao = req.DataPrevisao,
             DataEntrega = req.DataEntrega,
+            // Data de conclusão bloqueada na criação: só vale se nascer Concluída.
+            DataConclusao = statusInicial == StatusTarefa.Concluida ? req.DataConclusao : null,
             HorasEstimadas = req.HorasEstimadas,
+            Bloqueada = req.Bloqueada ?? false,
+            MotivoBloqueio = req.Bloqueada == true ? req.MotivoBloqueio : null,
             UsuarioInclusao = req.CriadorId,
             DataInclusao = DateTime.Now
         };
+        if (t.Status == StatusTarefa.Concluida && !t.DataConclusao.HasValue)
+            t.DataConclusao = DateTime.Now;
 
         if (req.ResponsavelIds != null && req.ResponsavelIds.Count > 0)
         {
@@ -355,11 +379,11 @@ public class TarefaService : ITarefaService
             });
         }
 
-        if (req.ChamadoLegadoId.HasValue)
+        foreach (var chamadoId in chamadosDesejados)
         {
             t.Chamados.Add(new TarefaChamado
             {
-                ChamadoId = req.ChamadoLegadoId.Value,
+                ChamadoId = chamadoId,
                 UsuarioInclusao = req.CriadorId,
                 DataInclusao = DateTime.Now
             });
@@ -412,19 +436,11 @@ public class TarefaService : ITarefaService
             }
         }
 
-        // Com projeto, a etapa é obrigatória e deve ser do fluxo do projeto.
+        // Com projeto, a etapa fixa (card) é obrigatória e deve ser do projeto.
         if (t.ProjetoId.HasValue)
-        {
-            var tipoProjetoId = await _db.Projetos.AsNoTracking()
-                .Where(p => p.Id == t.ProjetoId.Value)
-                .Select(p => (int?)p.TipoProjetoId)
-                .FirstOrDefaultAsync(ct);
-            await ValidarEtapaDoFluxoAsync(tipoProjetoId, req.EtapaId, ct);
             await ValidarEtapaFixaAsync(t.ProjetoId, req.ProjetoEtapaId, ct);
-        }
 
-        t.EtapaId = req.EtapaId;
-        t.ProjetoEtapaId = req.ProjetoEtapaId;
+        t.ProjetoEtapaId = t.ProjetoId.HasValue ? req.ProjetoEtapaId : null;
         t.ColunaKanbanId = req.ColunaKanbanId;
         t.ChamadoLegadoId = req.ChamadoLegadoId;
         t.Titulo = req.Titulo.Trim();
@@ -445,14 +461,56 @@ public class TarefaService : ITarefaService
 
         if (req.Bloqueada == false) t.MotivoBloqueio = null;
 
+        // Sincronia status ↔ coluna na atualização:
+        // - status informado move o card para a coluna canônica (se a atual não mapear);
+        // - sem status, a coluna enviada deriva o status (BLOQUEADO mantém o atual).
         if (novoStatus.HasValue)
         {
             t.Status = novoStatus.Value;
-            if (novoStatus.Value == StatusTarefa.Concluida && !req.DataConclusao.HasValue)
+            if (t.Status == StatusTarefa.Concluida)
                 t.DataConclusao ??= DateTime.Now;
+            else if (t.DataConclusao.HasValue && t.Status != StatusTarefa.Concluida)
+                t.DataConclusao = null;
+
+            if (t.ColunaKanbanId.HasValue)
+            {
+                var colAtual = await _db.ColunasKanban.AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == t.ColunaKanbanId, ct);
+                if (colAtual != null && StatusDaColuna(colAtual.Nome) != t.Status && t.Status != StatusTarefa.Cancelada)
+                {
+                    var colAlvo = await ColunaPorStatusAsync(t.Status, ct);
+                    if (colAlvo != null) t.ColunaKanbanId = colAlvo.Id;
+                }
+            }
+            else
+            {
+                var colAlvo = await ColunaPorStatusAsync(t.Status, ct);
+                if (colAlvo != null) t.ColunaKanbanId = colAlvo.Id;
+            }
         }
-        else if (req.DataConclusao.HasValue && t.Status != StatusTarefa.Concluida)
+        else if (t.ColunaKanbanId.HasValue)
+        {
+            var colAtual = await _db.ColunasKanban.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == t.ColunaKanbanId, ct);
+            var stCol = colAtual != null ? StatusDaColuna(colAtual.Nome) : null;
+            if (stCol.HasValue && stCol.Value != t.Status)
+            {
+                var eraConcluida = t.Status == StatusTarefa.Concluida;
+                t.Status = stCol.Value;
+                if (t.Status == StatusTarefa.Concluida)
+                    t.DataConclusao ??= DateTime.Now;
+                else if (eraConcluida)
+                    t.DataConclusao = null;
+            }
+        }
+
+        // Data de conclusão real preenchida → força Concluída + coluna CONCLUIDO.
+        if (t.DataConclusao.HasValue && t.Status != StatusTarefa.Concluida)
+        {
             t.Status = StatusTarefa.Concluida;
+            var colConcluida = await ColunaPorStatusAsync(StatusTarefa.Concluida, ct);
+            if (colConcluida != null) t.ColunaKanbanId = colConcluida.Id;
+        }
 
         // Atualiza múltiplos responsáveis
         if (req.ResponsavelIds != null)
@@ -486,9 +544,36 @@ public class TarefaService : ITarefaService
             });
         }
 
-        // Garante chamado legado na N:N se houver
-        if (req.ChamadoLegadoId.HasValue && !t.Chamados.Any(c => c.ChamadoId == req.ChamadoLegadoId.Value))
+        // Sincroniza chamados relacionados (N:N) quando o payload informa a lista
+        if (req.ChamadoIds != null)
         {
+            // A lista do formulário é a fonte da verdade (ObterAsync já mescla o legado nela)
+            var desejados = req.ChamadoIds.Distinct().ToList();
+            if (desejados.Count > 0 &&
+                await _db.Set<ChamadoLegado>().CountAsync(c => desejados.Contains(c.Id), ct) != desejados.Count)
+                throw new ArgumentException("Chamado legado inexistente");
+
+            foreach (var existente in t.Chamados.Where(c => !desejados.Contains(c.ChamadoId)).ToList())
+                t.Chamados.Remove(existente);
+
+            foreach (var chamadoId in desejados.Where(id => !t.Chamados.Any(c => c.ChamadoId == id)))
+            {
+                t.Chamados.Add(new TarefaChamado
+                {
+                    TarefaId = t.Id,
+                    ChamadoId = chamadoId,
+                    UsuarioInclusao = req.UsuarioAlteracao,
+                    DataInclusao = DateTime.Now
+                });
+            }
+
+            // Se o legado de referência saiu da seleção, limpa a coluna (mesma regra de DesvincularChamadoAsync)
+            if (t.ChamadoLegadoId.HasValue && !desejados.Contains(t.ChamadoLegadoId.Value))
+                t.ChamadoLegadoId = null;
+        }
+        else if (req.ChamadoLegadoId.HasValue && !t.Chamados.Any(c => c.ChamadoId == req.ChamadoLegadoId.Value))
+        {
+            // Compat: payload sem lista → apenas garante o legado na N:N
             t.Chamados.Add(new TarefaChamado
             {
                 TarefaId = t.Id,
@@ -548,9 +633,16 @@ public class TarefaService : ITarefaService
                 {
                     if (t.Bloqueada) { t.Bloqueada = false; t.MotivoBloqueio = null; }
 
-                    if (nome.Contains("CONCLUID")) { t.Status = StatusTarefa.Concluida; t.DataConclusao ??= DateTime.Now; }
-                    else if (nome.Contains("DESENVOLVIMENTO") || nome.Contains("ANDAMENTO") || nome.Contains("HOMOLOG")) t.Status = StatusTarefa.EmAndamento;
-                    else if (nome.Contains("A FAZER") || nome.Contains("BACKLOG")) t.Status = StatusTarefa.AFazer;
+                    var statusColuna = StatusDaColuna(nome);
+                    if (statusColuna.HasValue)
+                    {
+                        var eraConcluida = t.Status == StatusTarefa.Concluida;
+                        t.Status = statusColuna.Value;
+                        if (t.Status == StatusTarefa.Concluida)
+                            t.DataConclusao ??= DateTime.Now;
+                        else if (eraConcluida)
+                            t.DataConclusao = null;
+                    }
                 }
                 await SincronizarAgendaAsync(t, col, ct);
             }
@@ -560,6 +652,31 @@ public class TarefaService : ITarefaService
         await _auditoria.RegistrarAsync("Tarefa", id, "UPDATE", antes, new { t.ColunaKanbanId, t.Ordem, t.Status }, "system", "Tarefa movida para outra coluna", ct);
         await RecalcularJornadaAsync(t.ProjetoId, ct);
         return await ObterAsync(t.Id, ct);
+    }
+
+    /// <summary>Mapeia o nome da coluna canônica para o status correspondente (null = manter).</summary>
+    private static StatusTarefa? StatusDaColuna(string nomeColuna)
+    {
+        var nome = nomeColuna.ToUpperInvariant().Trim();
+        if (nome == "BACKLOG") return StatusTarefa.Backlog;
+        if (nome == "A FAZER" || nome.Contains("A FAZER")) return StatusTarefa.AFazer;
+        if (nome.Contains("HOMOLOG")) return StatusTarefa.EmHomologacao;
+        if (nome.Contains("CONCLUID")) return StatusTarefa.Concluida;
+        if (nome.Contains("DESENVOLVIMENTO") || nome.Contains("ANDAMENTO")) return StatusTarefa.EmAndamento;
+        return null; // BLOQUEADO e colunas desconhecidas: mantém o status
+    }
+
+    /// <summary>Busca a coluna canônica correspondente ao status (por similaridade do nome).</summary>
+    private async Task<ColunaKanban?> ColunaPorStatusAsync(StatusTarefa status, CancellationToken ct)
+    {
+        var cols = await _db.ColunasKanban.AsNoTracking()
+            .Where(c => c.Ativa)
+            .OrderBy(c => c.Ordem)
+            .ToListAsync(ct);
+
+        foreach (var c in cols)
+            if (StatusDaColuna(c.Nome) == status) return c;
+        return null;
     }
 
     private async Task SincronizarAgendaAsync(Tarefa tarefa, ColunaKanban coluna, CancellationToken ct)

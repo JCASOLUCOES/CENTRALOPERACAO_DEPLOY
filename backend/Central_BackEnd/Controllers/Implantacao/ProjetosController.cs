@@ -64,6 +64,12 @@ public class ProjetosController : ControllerBase
         return j == null ? NotFound() : Ok(j);
     }
 
+    [HttpGet("etapas-padrao")]
+    public ActionResult<List<object>> ObterEtapasPadrao()
+        => Ok(ProjetoEtapaService.NomesEtapasPadrao
+            .Select((nome, i) => (object)new { ordem = i + 1, nome })
+            .ToList());
+
     [HttpGet("{id:int}/etapas")]
     public async Task<ActionResult<List<ProjetoEtapaResumo>>> ObterEtapas(int id, CancellationToken ct = default)
     {
@@ -93,8 +99,8 @@ public class ProjetosController : ControllerBase
         try
         {
             var p = await _service.CriarAsync(req, ct);
-            // Inicializar etapas padrão
-            await _etapa.InicializarEtapasPadraoAsync(p.Id, ct);
+            // Inicializar etapas padrão (etapas anteriores à inicial já nascem Concluídas)
+            await _etapa.InicializarEtapasPadraoAsync(p.Id, ct, req.EtapaInicialOrdem ?? 1);
             return CreatedAtAction(nameof(Obter), new { id = p.Id }, p);
         }
         catch (ArgumentException ex) { return BadRequest(new { mensagem = ex.Message }); }
