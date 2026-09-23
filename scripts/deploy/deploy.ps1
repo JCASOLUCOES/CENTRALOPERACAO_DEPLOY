@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$Saida = "deploy",
     [bool]$Publicar = $true,
 
