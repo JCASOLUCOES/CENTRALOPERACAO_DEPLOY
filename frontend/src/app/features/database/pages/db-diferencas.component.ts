@@ -1,14 +1,31 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatabaseService } from '../services/database.service';
-import { DiffResult, DiffItem } from '../models/database.model';
+import { DatabaseTable, DiffResult, DiffItem } from '../models/database.model';
+import { DbSincronizacaoComponent } from '../components/db-sincronizacao.component';
+
+type AbaInterna = 'diff' | 'sincronizacao';
 
 @Component({
   selector: 'app-db-diferencas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DbSincronizacaoComponent],
   template: `
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="abaInterna() === 'diff'" (click)="abaInterna.set('diff')">
+        <i class="bi bi-file-diff"></i> Banco × Documentação
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="abaInterna() === 'sincronizacao'" (click)="abaInterna.set('sincronizacao')">
+        <i class="bi bi-arrow-left-right"></i> Sincronização
+      </button>
+    </li>
+  </ul>
+
+  <div *ngIf="abaInterna() === 'diff'">
   <div class="adm-card p-3">
     <h3 class="adm-card__title">Sincronização de estrutura</h3>
     <p class="adm-card__desc">
@@ -80,6 +97,11 @@ import { DiffResult, DiffItem } from '../models/database.model';
       </ul>
     </div>
   </div>
+  </div>
+
+  <div *ngIf="abaInterna() === 'sincronizacao'">
+    <app-db-sincronizacao [tabelas]="tabelas()"></app-db-sincronizacao>
+  </div>
   `,
   styles: [`
     .db-diff__controles { display: flex; gap: 1rem; align-items: center; margin: 1rem 0; flex-wrap: wrap; }
@@ -101,13 +123,22 @@ import { DiffResult, DiffItem } from '../models/database.model';
     .db-diff__dot--neutra { background: #9ca3b8; }
   `]
 })
-export class DbDiferencasComponent {
+export class DbDiferencasComponent implements OnInit {
   private readonly db = inject(DatabaseService);
+  readonly abaInterna = signal<AbaInterna>('diff');
   readonly resultado = signal<DiffResult | null>(null);
   readonly carregando = signal(false);
   readonly snapshots = signal<string[]>([]);
+  readonly tabelas = signal<DatabaseTable[]>([]);
   limite = 100;
   snapshotNome = '';
+
+  ngOnInit(): void {
+    this.db.listarTabelas().subscribe({
+      next: t => this.tabelas.set(t),
+      error: () => {}
+    });
+  }
 
   comparar(): void {
     this.carregando.set(true);

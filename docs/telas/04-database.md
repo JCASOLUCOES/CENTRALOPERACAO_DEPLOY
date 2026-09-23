@@ -224,15 +224,19 @@ Abas internas [SQL][Criador de Consultas][Favoritos] (mesmo componente `app-db-q
 
 ### 15.7 `DbDiferencasComponent`
 
-**Componente:** `src/app/features/database/pages/db-diferencas.component.ts`
+**Componente:** `src/app/features/database/pages/db-diferencas.component.ts`  
+**Sub-componente:** `src/app/features/database/components/db-sincronizacao.component.ts` (aba "Sincronização")
 
 ### O que faz
-Sincronização de estrutura: compara o schema real do SQL Server com a documentação Markdown institucional (wiki da Central). Controles (limite de itens, "Comparar agora", "Salvar Snapshot"), resumo com 6 stats (tabelas iguais/novas/removidas, colunas novas/removidas/alteradas) + lista de divergências com chip de tipo, status em texto puro e dot CSS, além de ações de snapshot (salvar/listar/comparar).
+Página com 2 sub-abas (`abaInterna: 'diff' | 'sincronizacao'`):
+
+1. **Banco × Documentação** (aba padrão): compara o schema real do SQL Server com a documentação Markdown institucional (wiki da Central). Controles (limite de itens, "Comparar agora", "Salvar Snapshot"), resumo com 6 stats (tabelas iguais/novas/removidas, colunas novas/removidas/alteradas) + lista de divergências com chip de tipo, status em texto puro e dot CSS, além de ações de snapshot (salvar/listar/comparar).
+2. **Sincronização** (`DbSincronizacaoComponent`): compara schema de tabela JCA × arquivo CSV/JSON enviado pelo usuário (parse no backend). Seleciona tabela via dropdown (`listarTabelas()` no `ngOnInit`), envia `FormData` (schema, tabela, arquivo) e exibe resumo (críticos/avisos/compatíveis/match %) + lista de diferenças com filtro "apenas diferenças" + export CSV client-side.
 
 ### Services Injetados
 | Service | Métodos Usados | Finalidade |
 |---------|----------------|------------|
-| `DatabaseService` | `diferencarSchema()`, `salvarSnapshot()`, `listarSnapshots()`, `compararSnapshot()` | Comparação + snapshots |
+| `DatabaseService` | `diferencarSchema()`, `salvarSnapshot()`, `listarSnapshots()`, `compararSnapshot()`, `listarTabelas()`, `compararSchemas()` | Comparação + snapshots + upload de schema |
 
 ### API Endpoints Consumidos
 | Método | Rota (v1) | Service | Descrição |
@@ -241,17 +245,21 @@ Sincronização de estrutura: compara o schema real do SQL Server com a document
 | POST | `/api/v1/database/snapshot` | `DatabaseService.salvarSnapshot()` | Salva snapshot (`{ nome }`) |
 | GET | `/api/v1/database/snapshots` | `DatabaseService.listarSnapshots()` | Lista snapshots |
 | POST | `/api/v1/database/snapshot/comparar` | `DatabaseService.compararSnapshot()` | Compara contra snapshot (`{ nome }`) |
+| GET | `/api/v1/database/tables` | `DatabaseService.listarTabelas()` | Dropdown de tabelas da sub-aba Sincronização |
+| POST | `/api/v1/database/compare-schemas` | `DatabaseService.compararSchemas()` | Upload multipart (`schema`, `tabela`, `arquivo` CSV/JSON) × schema JCA → `SchemaComparisonResultDto` |
 
 ### Banco de Dados
-- **Conecta:** ✅ Sim — schema real do SQL Server × Markdown institucional
+- **Conecta:** ✅ Sim — schema real do SQL Server × Markdown institucional (aba diff) / × arquivo externo (aba Sincronização)
 
 ### Dependências Externas
 - `DatabaseService`
-- `DiffResult`/`DiffItem` em `database/models/database.model.ts` (`badge: '🟢' | '🟡' | '🔴'` = contrato de dados da API, não exibição)
+- `DiffResult`/`DiffItem`, `SchemaComparisonResult`/`SchemaDifference` em `database/models/database.model.ts` (`badge: '🟢' | '🟡' | '🔴'` = contrato de dados da API, não exibição)
+- `DbSincronizacaoComponent` (standalone, template/styles inline, signals)
 
 ### Observações Técnicas
 - Lazy loading em `database.routes.ts:14`
 - IDENTIDADE CLEAN (21/09/2026, confirmado no código): status exibido como label em texto puro (`getStatusLabel()` devolve o próprio status) + dot CSS via `getBadgeClass()` (`.db-diff__dot--verde/--amarela/--vermelha/--neutra`); os cases `🟢🟡🔴` restantes no `switch` são comparação do valor `badge` vindo da API, não emoji na tela
+- Sub-aba Sincronização: IDENTIDADE CLEAN (dots CSS `.db-sync__dot--Critico/--Aviso/--Ok`, sem emojis na exibição); CSV/JSON limitados a 5 MB; export CSV gera `schema-comparacao-{tabela}.csv` client-side
 
 ---
 

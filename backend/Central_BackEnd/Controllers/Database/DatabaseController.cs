@@ -3,6 +3,7 @@ using Central_BackEnd.Dtos.Database;
 using Central_BackEnd.Services.Database;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Diagnostics;
 
 namespace Central_BackEnd.Controllers.Database;
@@ -24,6 +25,7 @@ public class DatabaseController : ControllerBase
     private readonly IDatabaseQueryBuilderService _queryBuilder;
     private readonly IDatabaseSchemaDiffService _diff;
     private readonly IDatabaseSnapshotService _snapshots;
+    private readonly IDatabaseSchemaComparisonService _comparison;
 
     public DatabaseController(
         IDatabaseConnectionService conn,
@@ -33,7 +35,8 @@ public class DatabaseController : ControllerBase
         IDatabaseSearchService search,
         IDatabaseQueryBuilderService queryBuilder,
         IDatabaseSchemaDiffService diff,
-        IDatabaseSnapshotService snapshots)
+        IDatabaseSnapshotService snapshots,
+        IDatabaseSchemaComparisonService comparison)
     {
         _conn = conn;
         _meta = meta;
@@ -43,6 +46,7 @@ public class DatabaseController : ControllerBase
         _queryBuilder = queryBuilder;
         _diff = diff;
         _snapshots = snapshots;
+        _comparison = comparison;
     }
 
     private async Task<(bool Ok, string? Msg, int Ms)> TestarConexaoAsync(CancellationToken ct)
@@ -339,5 +343,32 @@ public class DatabaseController : ControllerBase
         if (req == null || string.IsNullOrWhiteSpace(req.Nome))
             return BadRequest("Nome do snapshot é obrigatório");
         return Ok(await _snapshots.CompararSnapshotAsync(req.Nome, ct));
+    }
+
+    [HttpPost("compare-schemas")]
+    [EnableRateLimiting("validacao")]
+    [RequestSizeLimit(5 * 1024 * 1024)]
+    public async Task<ActionResult<SchemaComparisonResultDto>> CompareSchemas(
+        [FromForm] string schema,
+        [FromForm] string tabela,
+        IFormFile arquivo,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(schema))
+            return BadRequest(new { mensagem = "Schema e obrigatorio" });
+        if (string.IsNullOrWhiteSpace(tabela))
+            return BadRequest(new { mensagem = "Tabela e obrigatoria" });
+        if (arquivo == null || arquivo.Length == 0)
+            return BadRequest(new { mensagem = "Arquivo e obrigatorio" });
+
+        try
+        {
+            var resultado = await _comparison.CompararComArquivoAsync(schema, tabela, arquivo, ct);
+            return Ok(resultado);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { mensagem = ex.Message });
+        }
     }
 }

@@ -242,3 +242,50 @@ export interface DiffItem {
   detalhe?: string;
   badge: '🟢' | '🟡' | '🔴';
 }
+
+// Schema Comparison (upload arquivo x schema JCA)
+export interface SchemaColumnInfo {
+  nome: string;
+  tipo: string;
+  nulo: boolean;
+  ordem: number;
+  tamanho?: number;
+  precisao?: number;
+  escala?: number;
+  valorDefault?: string;
+}
+
+export interface SchemaIndexInfo {
+  nome: string;
+  unique: boolean;
+  colunas: string[];
+}
+
+export interface SchemaFkInfo {
+  nome: string;
+  colunaOrigem: string;
+  tabelaDestino: string;
+  colunaDestino: string;
+}
+
+export interface SchemaDifference {
+  severidade: 'Critico' | 'Aviso' | 'Ok';
+  categoria: 'Coluna' | 'Tipo' | 'Nullable' | 'Indice' | 'Fk' | 'Ordem';
+  campo: string;
+  esperado?: string;
+  encontrado?: string;
+  descricao: string;
+}
+
+export interface SchemaComparisonResult {
+  geradoEm: string;
+  tabela: string;
+  arquivoNome?: string;
+  totalColunasJca: number;
+  totalColunasArquivo: number;
+  criticos: number;
+  avisos: number;
+  oks: number;
+  percentualMatch: number;
+  diferencas: SchemaDifference[];
+}

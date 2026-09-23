@@ -160,6 +160,7 @@ API do Database Explorer — metadados, relacionamentos, execução de queries, 
 | POST | `/api/v1/database/snapshot` | Salvar snapshot (`{ nome }`, retorna o nome) | `DatabaseSnapshotService` |
 | GET | `/api/v1/database/snapshots` | Listar snapshots | `DatabaseSnapshotService` |
 | POST | `/api/v1/database/snapshot/comparar` | Compara snapshot (`{ nome }` → `SchemaDiffDto`) | `DatabaseSnapshotService` |
+| POST | `/api/v1/database/compare-schemas` | Upload multipart `FormData` (`schema`, `tabela`, `arquivo` CSV/JSON ≤ 5 MB) → compara colunas/tipos/nullable/ordem/índices/FKs × schema JCA → `SchemaComparisonResultDto` (`[EnableRateLimiting("validacao")]`, `[RequestSizeLimit(5MB)]`) | `DatabaseSchemaComparisonService` |
 
 ### Banco de Dados
 - `dbActyon_JCA` (SQL Server 192.168.2.154)
@@ -175,12 +176,13 @@ API do Database Explorer — metadados, relacionamentos, execução de queries, 
 - User-secrets em Development
 - `PUT /config` protegido com role Admin
 - `TrustServerCertificate=false` como default em produção
+- `POST /compare-schemas`: rate limit `validacao` (50/min prod), extensões `.csv`/`.json` apenas, 5 MB, parse server-side (não confia em conteúdo do cliente)
 
 ### Observações Técnicas
 - `AppDbContextDesignTimeFactory` para EF Core migrations com SQL Server
 - Configuração via `DatabaseConnectionConfig`
-- Novos services: `DatabaseSchemaDiffService`, `DatabaseSnapshotService`, `DatabaseQueryBuilderService` (avançado)
-- Controller reescrito em 19/09/2026 para a arquitetura de 8 services (`Connection`, `Metadata`, `RelationshipInference`, `Query`, `Search`, `QueryBuilder`, `SchemaDiff`, `Snapshot`); `status`/`test-connection` testam via `OpenAsync` + `SELECT 1` com cronômetro (métodos `TestConnection*` antigos removidos das interfaces)
+- Novos services: `DatabaseSchemaDiffService`, `DatabaseSnapshotService`, `DatabaseQueryBuilderService` (avançado), `DatabaseSchemaComparisonService` (upload CSV/JSON × schema JCA — colunas, tipos, nullable, ordem, índices, FKs; DTOs `SchemaInfoDto`/`SchemaComparisonResultDto`/`SchemaDifferenceDto` em `DatabaseDtos.cs`)
+- Controller reescrito em 19/09/2026 para a arquitetura de 8 services (`Connection`, `Metadata`, `RelationshipInference`, `Query`, `Search`, `QueryBuilder`, `SchemaDiff`, `Snapshot`); `status`/`test-connection` testam via `OpenAsync` + `SELECT 1` com cronômetro (métodos `TestConnection*` antigos removidos das interfaces); 23/09/2026: 9º service `SchemaComparison`
 
 ---
 

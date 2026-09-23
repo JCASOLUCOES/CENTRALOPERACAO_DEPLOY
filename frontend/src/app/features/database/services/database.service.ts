@@ -7,7 +7,8 @@ import {
   DatabaseRelationship, DatabaseSearchResult, DatabaseQueryRequest,
   DatabaseQueryResult, DatabaseStatus, DatabaseConnectionConfig,
   ProcedureResumo, ProcedureDetalhe,
-  Trigger, Dependencia, ProcedureAnalysis, GlobalSearchResult
+  Trigger, Dependencia, ProcedureAnalysis, GlobalSearchResult,
+  SchemaComparisonResult
 } from '../models/database.model';
 
 @Injectable({ providedIn: 'root' })
@@ -141,5 +142,14 @@ export class DatabaseService {
   // Query Builder Avançado
   executarQueryBuilderAvançado(req: any): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/query-builder-advanced`, req);
+  }
+
+  // Comparação de schemas (upload arquivo x schema JCA)
+  compararSchemas(schema: string, tabela: string, arquivo: File): Observable<SchemaComparisonResult> {
+    const fd = new FormData();
+    fd.append('schema', schema);
+    fd.append('tabela', tabela);
+    fd.append('arquivo', arquivo, arquivo.name);
+    return this.http.post<SchemaComparisonResult>(`${this.baseUrl}/compare-schemas`, fd);
   }
 }

@@ -13,9 +13,9 @@
 
 ## HOME (`/`)
 **História:** Como operador, quero uma entrada operacional (o que posso fazer) em vez de um dashboard institucional.
-**Passos:** 1. Acessa `/` e vê saudação com primeiro nome + busca `Ctrl + K`. 2. Clica num acesso rápido (Resolver, Banco, Acessos, Fraseologias, Implantação, Cursos). 3. Volta depois e vê "Continue de onde parou"/"Mais utilizados" preenchidos + agenda de 7 dias.
-**Backend/tabelas:** Somente frontend + `GET /api/v1/agenda/eventos` (compromissos); recentes em `localStorage cc.recentes.v1` (começa vazio, sem mock); sem escrita no backend.
-**Resultado esperado:** Saudação, ações, listas reais de uso e compromissos; estados vazios honestos na primeira visita.
+**Passos:** 1. Acessa `/` e vê a saudação com primeiro nome + o input **"Buscar na Central..."**. 2. Foca/clica no input e confirma que as sugestões abrem no próprio Hero, sem mover o foco para o Header; digita para filtrar o índice local (máximo de 8 resultados) e verifica a mensagem quando não há correspondência. 3. Abre um resultado por clique ou por `ArrowDown`/`ArrowUp` + `Enter`; testa `Escape` e `Tab`. 4. No Header, confere **"Pesquisar qualquer conteúdo..."** e `Ctrl+K`/`Cmd+K` abrindo, focando e selecionando a consulta. 5. Clica num acesso rápido (Resolver, Banco, Acessos, Fraseologias, Implantação, Cursos). 6. Volta depois e vê "Continue de onde parou"/"Mais utilizados" preenchidos + agenda de 7 dias.
+**Backend/tabelas:** Somente frontend + `GET /api/v1/agenda/eventos` (compromissos); busca e recentes são locais (`RecentesService` em `localStorage cc.recentes.v1`, começa vazio, sem mock); sem escrita no backend.
+**Resultado esperado:** Uma origem e um painel por vez, consulta compartilhada, resultados locais navegáveis e semântica `combobox`/`listbox` com status acessível; saudação, ações, listas reais de uso e compromissos mantêm estados vazios honestos na primeira visita.
 
 ## FERRAMENTAS (`/ferramentas`)
 **História:** Como analista de suporte, quero pesquisar e filtrar ferramentas para abrir a ideal no atendimento.
@@ -254,10 +254,11 @@
 **Resultado esperado:** SQL gerado e executado (somente leitura).
 
 ## DATABASE — DIFERENÇAS (`/database/diferencas`)
-**História:** Como operador, quero ver divergências SQL × Markdown (placeholder v2.x).
-**Passos:** 1. Acessa `/database/diferencas`. 2. Lê o "Resumo" e "Diferenças encontradas".
-**Backend/tabelas:** `GET /api/v1/database/tables` (metadados para comparação); `POST /api/v1/database/diff` quando acionado; sem escrita.
-**Resultado esperado:** Lista de divergências ou vazio; funcionalidade marcada como placeholder.
+**História:** Como operador, quero (1) ver divergências banco × documentação Markdown e (2) comparar o schema de uma tabela JCA com um arquivo CSV/JSON de estrutura esperada.
+**Passos (aba Banco × Documentação):** 1. Acessa `/database/diferencas`. 2. Lê o "Resumo" e "Diferenças encontradas". 3. Opcionalmente salva/compara snapshots.
+**Passos (aba Sincronização):** 1. Abre a sub-aba "Sincronização". 2. Seleciona a tabela JCA no dropdown. 3. Envia arquivo `.csv` ou `.json` (≤ 5 MB) com a estrutura esperada. 4. Clica em "Comparar". 5. Lê resumo (críticos/avisos/compatíveis/match %) e lista de diferenças (filtro "apenas diferenças"); opcionalmente exporta CSV.
+**Backend/tabelas:** `GET /api/v1/database/tables` (dropdown de tabelas); `POST /api/v1/database/diff` (aba documentação); `POST /api/v1/database/compare-schemas` (multipart `FormData`: `schema`, `tabela`, `arquivo`; parse CSV/JSON no backend; rate limit `validacao`); sem escrita em dados de negócio.
+**Resultado esperado:** Lista de divergências (ou vazio); na Sincronização, `SchemaComparisonResultDto` com severidades Critico/Aviso/Ok e % match.
 
 ## DATABASE — IA CHAT — ~~REMOVIDA~~ (arquivo `db-ia-chat.component.ts` excluído; sem rota; JOTA global cobre o caso via widget)
 

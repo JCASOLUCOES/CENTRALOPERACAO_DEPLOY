@@ -150,6 +150,7 @@ builder.Services.AddScoped<Central_BackEnd.Services.Database.IDatabaseSearchServ
 builder.Services.AddScoped<Central_BackEnd.Services.Database.IDatabaseQueryBuilderService, Central_BackEnd.Services.Database.DatabaseQueryBuilderService>();
 builder.Services.AddScoped<Central_BackEnd.Services.Database.IDatabaseSchemaDiffService, Central_BackEnd.Services.Database.DatabaseSchemaDiffService>();
 builder.Services.AddScoped<Central_BackEnd.Services.Database.IDatabaseSnapshotService, Central_BackEnd.Services.Database.DatabaseSnapshotService>();
+builder.Services.AddScoped<Central_BackEnd.Services.Database.IDatabaseSchemaComparisonService, Central_BackEnd.Services.Database.DatabaseSchemaComparisonService>();
 
 builder.Services.AddRateLimiter(options =>
 {

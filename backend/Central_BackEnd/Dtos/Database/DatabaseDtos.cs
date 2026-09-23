@@ -226,3 +226,68 @@ public record QueryBuilderAdvancedRequest(
     List<GroupByDto>? GroupBy,
     int? Limite,
     List<CteDto>? Ctes);
+
+/// <summary>
+/// Coluna de schema extraido (JCA ou arquivo externo).
+/// </summary>
+public record SchemaColumnInfoDto(
+    string Nome,
+    string Tipo,
+    bool Nulo,
+    int Ordem,
+    int? Tamanho = null,
+    int? Precisao = null,
+    int? Escala = null,
+    string? ValorDefault = null);
+
+/// <summary>
+/// Indice de schema extraido.
+/// </summary>
+public record SchemaIndexInfoDto(
+    string Nome,
+    bool Unique,
+    List<string> Colunas);
+
+/// <summary>
+/// Foreign key de schema extraido.
+/// </summary>
+public record SchemaFkInfoDto(
+    string Nome,
+    string ColunaOrigem,
+    string TabelaDestino,
+    string ColunaDestino);
+
+/// <summary>
+/// Schema completo de uma tabela (lado JCA ou lado arquivo externo).
+/// </summary>
+public record SchemaInfoDto(
+    string Tabela,
+    List<SchemaColumnInfoDto> Colunas,
+    List<SchemaIndexInfoDto> Indices,
+    List<SchemaFkInfoDto> Fks);
+
+/// <summary>
+/// Uma diferenca individual na comparacao de schemas.
+/// </summary>
+public record SchemaDifferenceDto(
+    string Severidade,     // "Critico" | "Aviso" | "Ok"
+    string Categoria,      // "Coluna" | "Tipo" | "Nullable" | "Indice" | "Fk" | "Ordem"
+    string Campo,
+    string? Esperado,      // lado JCA
+    string? Encontrado,    // lado arquivo
+    string Descricao);
+
+/// <summary>
+/// Resultado consolidado da comparacao de schemas.
+/// </summary>
+public record SchemaComparisonResultDto(
+    DateTime GeradoEm,
+    string Tabela,
+    string? ArquivoNome,
+    int TotalColunasJca,
+    int TotalColunasArquivo,
+    int Criticos,
+    int Avisos,
+    int Oks,
+    decimal PercentualMatch,
+    List<SchemaDifferenceDto> Diferencas);
