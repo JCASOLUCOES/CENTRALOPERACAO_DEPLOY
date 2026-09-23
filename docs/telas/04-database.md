@@ -231,7 +231,7 @@ Abas internas [SQL][Criador de Consultas][Favoritos] (mesmo componente `app-db-q
 Página com 2 sub-abas (`abaInterna: 'diff' | 'sincronizacao'`):
 
 1. **Banco × Documentação** (aba padrão): compara o schema real do SQL Server com a documentação Markdown institucional (wiki da Central). Controles (limite de itens, "Comparar agora", "Salvar Snapshot"), resumo com 6 stats (tabelas iguais/novas/removidas, colunas novas/removidas/alteradas) + lista de divergências com chip de tipo, status em texto puro e dot CSS, além de ações de snapshot (salvar/listar/comparar).
-2. **Sincronização** (`DbSincronizacaoComponent`): compara schema de tabela JCA × arquivo CSV/JSON enviado pelo usuário (parse no backend). Seleciona tabela via dropdown (`listarTabelas()` no `ngOnInit`), envia `FormData` (schema, tabela, arquivo) e exibe resumo (críticos/avisos/compatíveis/match %) + lista de diferenças com filtro "apenas diferenças" + export CSV client-side.
+2. **Sincronização** (`DbSincronizacaoComponent`): compara schema de tabela JCA × arquivo CSV/JSON enviado pelo usuário (parse no backend). Seleciona tabela via dropdown (`listarTabelas()` no `ngOnInit`), envia `FormData` (schema, tabela, arquivo) e exibe resumo (críticos/avisos/compatíveis/match %) + lista de diferenças com filtro "apenas diferenças" + export CSV client-side. Inclui bloco **"Script de exportação (JSON)"** entre controles e alerta: inputs editáveis de schema (default `dbo`) e tabela (auto-fill ao escolher Tabela JCA via `onTabelaJcaChange`; banco externo pode diferir), `<pre>` com T-SSQL gerado ao vivo por `scriptSql()` (CTEs de `sys.columns`/`sys.indexes`/`sys.foreign_keys` + `JSON_QUERY(... FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)` → `{tabela, colunas[], indices[], fks[]}`), botão "Copiar script" (`navigator.clipboard`, feedback "Copiado" 2s via `scriptCopiado` signal) e dica: rodar no SSMS → copiar célula do resultado → salvar `.json` → enviar no upload.
 
 ### Services Injetados
 | Service | Métodos Usados | Finalidade |
@@ -260,6 +260,7 @@ Página com 2 sub-abas (`abaInterna: 'diff' | 'sincronizacao'`):
 - Lazy loading em `database.routes.ts:14`
 - IDENTIDADE CLEAN (21/09/2026, confirmado no código): status exibido como label em texto puro (`getStatusLabel()` devolve o próprio status) + dot CSS via `getBadgeClass()` (`.db-diff__dot--verde/--amarela/--vermelha/--neutra`); os cases `🟢🟡🔴` restantes no `switch` são comparação do valor `badge` vindo da API, não emoji na tela
 - Sub-aba Sincronização: IDENTIDADE CLEAN (dots CSS `.db-sync__dot--Critico/--Aviso/--Ok`, sem emojis na exibição); CSV/JSON limitados a 5 MB; export CSV gera `schema-comparacao-{tabela}.csv` client-side
+- Bloco "Script de exportação": aspas SQL escapadas (`'` → `''` via `litarSql`); placeholders `SEU_SCHEMA`/`SUA_TABELA` antes do preenchimento; script idêntico ao validado em SSMS (parênteses de `ISNULL(STUFF(...))` fechados corretamente antes de `AS colunas`)
 
 ---
 
