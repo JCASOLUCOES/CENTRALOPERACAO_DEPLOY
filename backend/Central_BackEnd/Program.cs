@@ -77,7 +77,17 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) =>
     var env = sp.GetRequiredService<IWebHostEnvironment>();
     if (env.IsDevelopment())
     {
-        options.UseInMemoryDatabase("CentralDev");
+        // Database:UseSqlServer = true  -> SQL Server real (ex.: homolog 192.168.2.154)
+        // Database:UseSqlServer = false -> InMemory (padrao; dados somem ao fechar)
+        var useSqlServer = config.GetValue<bool>("Database:UseSqlServer");
+        if (useSqlServer)
+        {
+            options.UseSqlServer(config.GetConnectionString("DefaultConnection"));
+        }
+        else
+        {
+            options.UseInMemoryDatabase("CentralDev");
+        }
     }
     else
     {

@@ -20,7 +20,7 @@ Workspace operacional interno da JCA Soluções (não só wiki): o usuário entr
 | UI | Bootstrap 5.3 parcial + `bootstrap-icons` (`bi-*`) + ng-bootstrap + CDK + Chart.js |
 | Backend | ASP.NET Core 8 Web API (`backend/Central_BackEnd`), EF Core (InMemory em dev, SQL Server em prod) |
 | Auth | JWT (`cc_refresh` HttpOnly) + Google Sheets (acervo de empresas) + AnythingLLM via `POST /api/rag-proxy/chat` |
-| Pastas | `frontend/` · `backend/` · `docs/` · `scripts/` (monorepo único, branches `main`/`developer`) |
+| Pastas | `frontend/` · `backend/` · `docs/` · `scripts/` (monorepo único, branches `master`/`developer`) |
 
 ## 3. Navegação (sidebar — seções em `header-nav.config.ts`)
 

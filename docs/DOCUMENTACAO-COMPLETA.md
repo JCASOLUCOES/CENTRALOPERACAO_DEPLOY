@@ -61,14 +61,14 @@ não há `.gitmodules`) segue a convenção:
 
 | Branch / Tag | Propósito | Estado atual |
 |---|---|---|
-| `main` | **Produção** — espelho do que está rodando no IIS 192.168.2.130. Recebe merges via PR de `developer` (com aprovação). Branch padrão no GitHub. | `8956c57` |
-| `developer` | **Desenvolvimento** — onde o JCASOLUCOES mexe no dia-a-dia. Sem proteção. | `8956c57` |
-| `sara` | Branch pessoal da Sara (baseada em `developer`). Sem proteção. | — |
-| `samuel` | Branch pessoal do Samuel (baseada em `developer`). Sem proteção. | — |
-| `projeto-implantacao` | Branch **futura** para o módulo IMPLANTAÇÃO/PROJETOS. | — |
-| `v0.7.0`, `v0.8.0`, ... | **Tags** que marcam versões estáveis já em produção (substituem a ideia de "branch backup"). | — |
+| `master` | **Produção / default GitHub** — espelho do IIS 192.168.2.130. Recebe merge de `developer`. | — |
+| `developer` | **Desenvolvimento** — dia a dia. Push direto. | — |
+| `backup-developer-pre-monorepo`, `backup-master-pre-agenda-rollback` | Backups manuais — não usar no fluxo. | — |
+| `v0.7.0`, `v0.8.0`, ... | **Tags** imutáveis (substituem "branch backup"). | — |
 
-**Proteção recomendada de `main`** (configurar via `Settings → Branches → Add rule`):
+> Branches pessoais `sara` / `samuel` / `projeto-implantacao` **removidas**.
+
+**Proteção recomendada de `master`** (configurar via `Settings → Branches → Add rule`):
 
 - ☑ Require a pull request before merging (1 aprovação)
 - ☑ Require conversation resolution before merging
@@ -82,23 +82,31 @@ na raiz cria a branch com 1 comando.
 
 ```bash
 git checkout developer && git pull
-git checkout -b sara && git push -u origin sara
+git checkout -b nova-branch && git push -u origin nova-branch
 ```
 
 **Como versionar uma release:**
 
 ```bash
-# Depois de merge em main:
-git checkout main && git pull
+git checkout master && git pull
 git tag -a v0.X.Y -m "v0.X.Y - descricao"
 git push origin v0.X.Y
 ```
+
+### Pipeline dev → deploy (resumo)
+
+```
+subir interno → validate.ps1 → git commit/push → validate.ps1
+  → deploy.ps1 (empacota + BUILD_INFO) → deploy.ps1 (publica + Backup 1) → smoke.ps1
+```
+
+Detalhes: `docs/DEPLOY.md` § 0 · skills `validar` e `deploy-limpo`.
 
 ### Estrutura de pastas (monorepo `CENTRALOPERACAO_DEPLOY`)
 
 A raiz do monorepo é `Central-Conhecimento-developer/`, que abriga os dois
 subprojetos como pastas do próprio repo (sem submódulos).
-**Branch padrão: `main`** (= produção = espelho do IIS 130);
+**Branch padrão: `master`** (= produção = espelho do IIS 130);
 **branch de dev: `developer`**.
 
 ```
@@ -382,7 +390,8 @@ está em **`docs/DEPLOY.md`**. Resumo:
 9. Teste: frontend `http://192.168.2.130:1010`, Swagger `http://192.168.2.130:1009/swagger`.
 
 No opencode, digitar **"deploy limpo"** aciona a skill `deploy-limpo`, que
-executa o script e confere a saída automaticamente.
+roda o pipeline: `validate.ps1` → empacota com `deploy/BUILD_INFO.txt` →
+publica no IIS (aborta se hash ≠ HEAD) → `scripts/smoke.ps1`.
 
 ---
 
@@ -537,8 +546,9 @@ pacotes de instruções reutilizáveis carregados automaticamente quando relevan
 
 | Skill | Local | Quando dispara |
 |---|---|---|
-| `deploy-limpo` | `.opencode/skills/deploy-limpo/SKILL.md` | Ao pedir "deploy limpo"/"gerar deploy"/"publicar o sistema" — roda `scripts/deploy/deploy.ps1` e publica no IIS |
-| `subir-interno` | `.opencode/skills/subir-interno/SKILL.md` | Ao pedir "subir interno"/"subir local"/"rodar local" — sobe backend (`dotnet run`, porta 1009) e frontend (`npm start`, porta 4200) para testes locais |
+| `deploy-limpo` | `.opencode/skills/deploy-limpo/SKILL.md` | "deploy limpo"/"publicar o sistema" — pipeline 4 estágios (`validate` → empacota+`BUILD_INFO` → publica IIS → `smoke.ps1`) |
+| `validar` | `.opencode/skills/validar/SKILL.md` | "validar"/"validado" — `scripts/validate.ps1` (git status + `dotnet build` + `ng build`); saída 0 = OK |
+| `subir-interno` | `.opencode/skills/subir-interno/SKILL.md` | "subir interno"/"rodar local" — backend :1009 + front :4200 **sem build**; banquinho via `Database:UseSqlServer` (homolog `192.168.2.154`) ou InMemory |
 | `frontend-design` | `.agents/skills/frontend-design/SKILL.md` | Diretrizes de design visual para UI (fonte: `anthropics/skills`, ver `skills-lock.json`) |
 
 ### 12.2. Agents criados (`.opencode/agents/`)

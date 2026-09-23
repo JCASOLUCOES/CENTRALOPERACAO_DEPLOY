@@ -16,6 +16,7 @@ npm start
 - **Porta padrão:** `http://localhost:4200`
 - **Proxy Dev:** `/api` → `http://localhost:1009/api` (config em `proxy.conf.json`)
 - **Build Produção:** `npm run build` (gera `dist/frontend/browser` para IIS)
+- **Fluxo pós-código:** skill `validar` (`scripts/validate.ps1` → `ng build`) → commit → skill `deploy limpo`
 
 ---
 

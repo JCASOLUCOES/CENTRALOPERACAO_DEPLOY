@@ -50,4 +50,4 @@ persistentes de chat, IA no Query Builder. Usar empty-state honesto.
 ## Versionamento e branches
 
 - Fonte única da versão: `frontend/src/app/shared/meta/app-version.ts` (beta `<1.0`).
-- `main` = produção (IIS 192.168.2.130); `developer` = dev; tags `vX.Z.Y` substituem "branch backup".
+- `master` = produção (IIS 192.168.2.130); `developer` = dev; tags `vX.Z.Y` substituem "branch backup".

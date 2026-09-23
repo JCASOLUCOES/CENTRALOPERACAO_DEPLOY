@@ -64,7 +64,24 @@ ng serve
 ```
 Porta padrão: `http://localhost:4200`
 
-**Login Padrão (Dev):** `admin` / `admin123`
+**Login (InMemory):** `admin` / `admin123`  
+**Login (homolog SQL):** usuários reais de `192.168.2.154` / `dbBUSINESS_HML`  
+Interruptor: `appsettings.Development.json` → `Database:UseSqlServer` (`true` = homolog, `false` = InMemory)
+
+### 3. Fluxo ao concluir uma tarefa
+
+```
+subir interno  →  validar  →  git commit/push  →  validar  →  deploy limpo
+   (testa)        (builda)     (grava)            (confere)    (IIS + smoke)
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
+# se OK:
+git add -A; git commit -m "fix: ..."; git push origin developer
+powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
+# skill "deploy limpo" (ou etapas manuais em docs/DEPLOY.md § 0)
+```
 
 ---
 
@@ -107,12 +124,12 @@ Porta padrão: `http://localhost:4200`
 
 ## 🚢 Deploy (Produção)
 
-O deploy é automatizado via script PowerShell que realiza o build, backup e publicação direta no IIS do servidor `192.168.2.130`.
+Pipeline em 4 estágios (detalhe: [`docs/DEPLOY.md`](./docs/DEPLOY.md) § 0):
 
-```powershell
-# Na raiz do repositório:
-.\scripts\deploy\deploy.ps1
-```
+1. **`scripts/validate.ps1`** — git + `dotnet build` + `ng build` (tem que ficar verde)
+2. **`deploy.ps1 -Publicar 0`** — empacota em `deploy/` + `BUILD_INFO.txt` (hash Git)
+3. **`deploy.ps1 -Build 0 -Publicar 1 -Backup 1`** — publica no IIS só se o hash == HEAD
+4. **`scripts/smoke.ps1`** — ping front `:1010` + swagger `:1009`
 
 **Detalhes do Servidor:**
 - **Servidor Web:** 192.168.2.130 (IIS)
@@ -138,7 +155,7 @@ Toda a documentação técnica reside na pasta `/docs` (índice: [`docs/INDEX.md
 ## 🤖 Assistência Opencode (Agents & Skills)
 
 O projeto é otimizado para uso com assistentes de IA (opencode):
-- **Skills:** `deploy-limpo`, `subir-interno`, `frontend-design`.
+- **Skills:** `validar`, `deploy-limpo`, `subir-interno`, `frontend-design`.
 - **Regras:** Definidas no arquivo `AGENTS.md`.
 - **Sync Automático:** O workflow `.github/workflows/docs-sync.yml` mantém o arquivo `TELAS.md` sempre sincronizado com o código-fonte em cada Pull Request.
 

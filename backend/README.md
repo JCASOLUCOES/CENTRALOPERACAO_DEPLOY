@@ -14,7 +14,11 @@ dotnet run
 
 - **Porta padrão:** `http://localhost:1009`
 - **Swagger (Dev):** `http://localhost:1009/swagger` (habilitado via `SwaggerEnabled=true` em `appsettings.Development.json`)
-- **Banco Dev:** InMemory (seed automático estrutural: operador `admin`/`admin123`, funções, 7 colunas, 4 tipos, 13 etapas, 7 tipos de evento). Seeds de exemplo (projetos IMP-0001/CIAA-0001, tarefas e eventos) **desabilitados** via `#if false` em `Program.cs` — a base de testes parte limpa via `scripts/db/wipe-test-data.sql`
+- **Banco Dev:** interruptor `Database:UseSqlServer` em `appsettings.Development.json`:
+  - `true` → SQL Server homolog `192.168.2.154` / `dbBUSINESS_HML` (connection string no mesmo arquivo)
+  - `false` → InMemory (seed automático: operador `admin`/`admin123`, funções, 7 colunas, 4 tipos, 13 etapas, 7 tipos de evento)
+  - Seeds de exemplo (projetos IMP-0001/CIAA-0001, tarefas e eventos) **desabilitados** via `#if false` em `Program.cs`
+- **Fluxo pós-código:** skill `validar` (`scripts/validate.ps1`) → commit → skill `deploy-limpo`
 
 ---
 

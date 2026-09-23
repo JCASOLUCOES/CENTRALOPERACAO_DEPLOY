@@ -4,10 +4,12 @@ Guia prático de como gerar e publicar o sistema **Central de Operação**
 (frontend Angular 18 SSR + backend ASP.NET Core 8) no IIS.
 
 > **Atalho:** digite **"deploy limpo"** no opencode para acionar a skill
-> `deploy-limpo`. O script tem perguntas interativas; para execução sem
-> interação, informe os parâmetros descritos na seção 3.1.
-> **Pendência:** a skill ainda descreve o fluxo anterior (script na raiz,
-> backup automático e limpeza do pacote). Até sua atualização, siga este guia.
+> `deploy-limpo` (pipeline de 4 estágios). Para só conferir se compila, digite
+> **"validar"** (skill `validar` → `scripts/validate.ps1`).
+>
+> **Fluxo obrigatório:** `subir interno` → `validar` → `git commit/push` →
+> `validar` → `deploy limpo` (empacota com `BUILD_INFO` → publica → `smoke.ps1`).
+> **Nunca** publicar sem `validate.ps1` verde no commit atual.
 >
 > **Swagger:** a habilitação do Swagger é controlada pela chave `SwaggerEnabled` no
 > `appsettings.json` do backend (padrão `false` em produção). Para habilitar, defina
@@ -22,10 +24,12 @@ Guia prático de como gerar e publicar o sistema **Central de Operação**
 ```
 Central-Conhecimento-developer/   <- raiz do monorepo único (repo CENTRALOPERACAO_DEPLOY, sem submódulos)
 ├─ scripts/
-│  ├─ deploy/deploy.ps1          <- script de build + publicação no IIS
-│  ├─ deploy/run-dev.bat         <- atalho para ambiente dev local
-│  ├─ git/branch-todos.ps1       <- cria branch no repo
-│  └─ tools/extract-screens.ts   <- extração de metadados p/ docs-sync
+│  ├─ validate.ps1                <- gate de build (dotnet + ng) — skill `validar`
+│  ├─ smoke.ps1                   <- ping pós-deploy (front :1010 + swagger :1009)
+│  ├─ deploy/deploy.ps1           <- build + publicação no IIS (+ BUILD_INFO.txt)
+│  ├─ deploy/run-dev.bat          <- atalho para ambiente dev local
+│  ├─ git/branch-todos.ps1        <- cria branch no repo
+│  └─ tools/extract-screens.ts    <- extração de metadados p/ docs-sync
 ├─ frontend/                      <- código Angular 18 (standalone + SSR)
 │                                  <- direto no monorepo (não é submódulo)
 ├─ backend/                       <- API ASP.NET Core 8
@@ -37,10 +41,24 @@ Central-Conhecimento-developer/   <- raiz do monorepo único (repo CENTRALOPERAC
 ```
 
 > `frontend/` e `backend/` são **pastas do próprio monorepo** — não há
-> `.gitmodules` nem submódulos. Branch padrão: `main`; branch de dev: `developer`.
+> `.gitmodules` nem submódulos. Branch padrão: `master`; branch de dev: `developer`.
 > O script de deploy fica em **`scripts/deploy/deploy.ps1`** (não mais na raiz):
 > ele calcula a raiz do repo subindo **2 níveis** a partir de `$PSScriptRoot`
 > (`scripts/deploy/`).
+
+## 0. Pipeline dev → produção (resumo)
+
+| # | Etapa | Comando |
+|---|---|---|
+| 1 | Testar local (sem build) | skill **`subir interno`** |
+| 2 | Provar que compila | `powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1` |
+| 3 | Gravar no Git | `git add` / `commit` / `push` (branch `developer`) |
+| 4 | Revalidar o commit | mesmo comando do passo 2 |
+| 5 | Empacotar | `deploy.ps1 -BuildFrontend 1 -BuildBackend 1 -Publicar 0` |
+| 6 | Publicar o validado | `deploy.ps1 -BuildFrontend 0 -BuildBackend 0 -Publicar 1 -Backup 1` |
+| 7 | Smoke | `powershell -ExecutionPolicy Bypass -File .\scripts\smoke.ps1` |
+
+O `deploy/` grava **`BUILD_INFO.txt`** (hash + branch do Git). A etapa 6 **aborta** se o hash do pacote ≠ `git rev-parse HEAD`.
 
 ## 1. Pré-requisitos
 
@@ -407,27 +425,25 @@ tag apropriada.**
 ### 7.1. Fluxo recomendado
 
 1. **Desenvolver** em `developer` (push direto permitido).
-2. **Promover para produção**: abrir PR de `developer` → `main`, com
-   aprovação. Merge em `main` (linear history, sem merge commit).
-3. **Taggear a release** em `main`:
+2. **Validar**: `scripts/validate.ps1` verde + commit push.
+3. **Deploy** pelas etapas da § 0 (empacotar → publicar → smoke).
+4. **Promover para produção**: merge `developer` → `master`.
+5. **Taggear a release** em `master`:
    ```bash
-   git checkout main && git pull
+   git checkout master && git pull
    git tag -a v0.X.Y -m "v0.X.Y - descricao"
    git push origin v0.X.Y
    ```
-4. **Fazer deploy** (o `scripts/deploy/deploy.ps1` pega o commit mais recente do branch
-   atual, ou você pode fazer `git checkout v0.7.0` antes de rodar o deploy
-   para fixar a versão).
 
 ### 7.2. Branches
 
-| Branch | Quem pode dar push | Estado atual |
+| Branch | Quem pode dar push | Papel |
 |---|---|---|
-| `main` (produção) | via PR de `developer` (1 aprovação) | `8956c57` |
-| `developer` (dev) | JCASOLUCOES direto | `8956c57` |
-| `sara` | direto | — |
-| `samuel` | direto | — |
-| `projeto-implantacao` | direto (quando existir) | — |
+| `master` (produção / default GitHub) | via merge de `developer` | espelho do IIS / releases |
+| `developer` (dev) | direto | dia a dia |
+| `backup-*` / tags `vX.Y.Z` | não usar no dia a dia | rollback |
+
+> Branches antigas `sara`, `samuel`, `projeto-implantacao` **foram removidas**.
 
 ### 7.3. Tags
 
@@ -446,14 +462,14 @@ redeployar.
 O monorepo é único (sem submódulos), então basta rodar:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\git\branch-todos.ps1 -Branch sara
+powershell -ExecutionPolicy Bypass -File .\scripts\git\branch-todos.ps1 -Branch nova-branch
 ```
 
 Ou manualmente:
 
 ```bash
 git checkout developer && git pull
-git checkout -b sara && git push -u origin sara
+git checkout -b nova-branch && git push -u origin nova-branch
 ```
 
 ### 7.5. Convenção de mensagens de commit
@@ -471,9 +487,10 @@ Exemplo: `feat: busca compartilhada no header`
 ### 7.6. Como deployar uma versão antiga (rollback via tag)
 
 ```bash
-git checkout main && git pull --tags
+git checkout master && git pull --tags
 git checkout v0.7.0
 
-# Rodar o deploy
-powershell -ExecutionPolicy Bypass -File .\scripts\deploy\deploy.ps1
+# Rodar o deploy (empacota + publica o que está no worktree/checkout)
+powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
+powershell -ExecutionPolicy Bypass -Command "& '.\scripts\deploy\deploy.ps1' -BuildFrontend 1 -BuildBackend 1 -Publicar 1 -Backup 1"
 ```

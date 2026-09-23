@@ -24,8 +24,8 @@ Thumbs.db
 .angular/
 .cache/
 
-# Deploy
-deploy/
+# Deploy (apenas a pasta de SAIDA na raiz; scripts/deploy/ e versionado)
+/deploy/
 
 # Logs
 *.log

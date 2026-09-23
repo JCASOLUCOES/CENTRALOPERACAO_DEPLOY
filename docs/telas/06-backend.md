@@ -467,7 +467,7 @@ builder.Services.AddCors(options => {
 
 | Aspecto | Development | Produção |
 |---------|-------------|----------|
-| Banco | `UseInMemoryDatabase` (seed automático) | SQL Server (`appsettings.json` do servidor) |
+| Banco | `Database:UseSqlServer` em `appsettings.Development.json`: `true` → SQL homolog `192.168.2.154`/`dbBUSINESS_HML`; `false` → InMemory (seed) | SQL Server (`appsettings.json` do servidor) |
 | Swagger | `SwaggerEnabled: true` | `SwaggerEnabled: false` |
 | Senha JWT | Chave fraca de propósito | `JWT_KEY` via env var |
 | Seed | 1 operador (admin/admin123), 4 tipos, 13 etapas, 5 colunas, 3 clientes (sem equipes desde 2026-09-12; seeds de exemplo — 2 projetos IMP-0001/CIAA-0001 e 5 eventos — DESABILITADOS via `#if false`; base limpa via `scripts/db/wipe-test-data.sql`) | Nenhum (dados reais) |

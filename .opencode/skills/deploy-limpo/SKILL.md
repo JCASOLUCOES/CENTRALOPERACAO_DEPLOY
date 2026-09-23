@@ -1,83 +1,103 @@
 ---
 name: deploy-limpo
-description: Use when the user types "deploy limpo", "deploy", "gerar deploy", "publicar o sistema" or asks to build and package the Central de Conhecimento frontend+backend for IIS. Runs deploy.ps1 (npm run build + dotnet publish) and publishes directly to the IIS folders with automatic backup and appsettings preservation.
+description: Use when the user types "deploy limpo", "deploy", "gerar deploy", "publicar o sistema" or asks to build and package the Central de Conhecimento frontend+backend for IIS. Runs the 4-stage pipeline: validate.ps1 -> deploy.ps1 build+package (BUILD_INFO) -> deploy.ps1 publish reusing package -> smoke.ps1.
 ---
 
 # Deploy limpo (Central de Conhecimento)
 
-Executa o deploy completo do sistema **Central de Conhecimento** da JCA Soluções:
-build do frontend Angular (SSR) + publish do backend ASP.NET Core 8, empacotando
-em `deploy/` e **publicando direto nas pastas reais do IIS** do servidor
-192.168.2.130 via compartilhamento administrativo `\\192.168.2.130\c$` (a conta
-de acesso é Administrador e o `LocalAccountTokenFilterPolicy` está liberado).
+Pipeline de 4 estágios: **congelar → validar → empacotar → publicar → smoke**.
+Objetivo: só publicar no IIS o que **passou no validate** e está **identificado** no `BUILD_INFO.txt` (hash do Git).
 
-## Localização
+## Pré-requisitos
 
-- Script: `scripts/deploy/deploy.ps1` (NÃO mais na raiz).
-- Frontend: `frontend/` (Angular 18 SSR).
-- Backend: `backend/Central_BackEnd/` (ASP.NET Core 8, .NET 8).
-- Saída local: `deploy/backend/` e `deploy/frontend/`.
-- Publica direto em:
-  - Backend → `C:\inetpub\wwwroot\Suporte_Back`
-  - Frontend → `C:\inetpub\wwwroot\Suporte_Front`
-- Backup do IIS (opcional, `-Backup:$true`) em: `C:\Users\JCASRV-SUP\Documents\Backup_IIS\<timestamp>`
+- Código **commitado** (preferencialmente push em `developer`).
+- `validate` verde no commit atual.
+- Node/npm + SDK .NET 8.
 
-## Passos
+## Pipeline (ordem fixa)
 
-1. **Pré-requisitos**: confirmar Node/npm e SDK do .NET 8 instalados e que não
-   há build pendurado em `dist/` ou `bin/Release`.
-2. **Executar o script** do diretório raiz (o working directory). `-BuildFrontend`,
-   `-BuildBackend` e `-Backup` são `Nullable[bool]` — via `powershell -File`/`-Command`
-   o `$true` chega como string e o bind falha; usar `-Command` com `$` escapado:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -Command "& '.\scripts\deploy\deploy.ps1' -BuildFrontend `$true -BuildBackend `$true -Backup `$true"
-   ```
-   O script:
-   - roda `npm run build` em `frontend/`;
-   - roda `dotnet publish -c Release` em `backend/Central_BackEnd/`;
-   - regenera `deploy/backend` e `deploy/frontend`;
-   - usa a senha padrão `jca@1532` do usuário `JCASRV-SUP` (embutida, sem prompt);
-   - autentica no servidor e conecta em `\\192.168.2.130\c$`;
-   - com `-Backup:$true`, faz backup do IIS atual em `Backup_IIS\<timestamp>`;
-   - publica o backend em `Suporte_Back` usando `app_offline.htm` para liberar o
-     lock do worker e **NUNCA toca em `appsettings*.json`** do servidor;
-   - publica `deploy\frontend\browser` em `Suporte_Front`;
-   - remove o `app_offline.htm` (IIS recarrega sozinho).
-3. **Verificar o resultado**:
-   - "Deploy publicado com sucesso no IIS" deve aparecer.
-   - "appsettings.json do servidor mantido intacto" deve aparecer.
-   - `deploy/backend/Central_BackEnd.dll` e `deploy/frontend/browser/index.html` + `server/server.mjs` existem.
-   - Testes: frontend `http://192.168.2.130:1010` · swagger `http://192.168.2.130:1009/swagger`.
+### 1. Git — congelar
 
-## Parâmetros do script
+```powershell
+git status          # deve estar limpo (ou consciente do que está sujo)
+git rev-parse HEAD  # anote o hash
+```
+
+### 2. Validar (build gate)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
+```
+
+- Saída **0** / `VALIDATE: OK` → segue.
+- Saída **1** → **para aqui**. Corrige, commita, valida de novo.
+
+### 3. Empacotar (NÃO sobe no IIS)
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& '.\scripts\deploy\deploy.ps1' -BuildFrontend 1 -BuildBackend 1 -Publicar 0"
+```
+
+- Gera `deploy/backend/` e `deploy/frontend/`.
+- Grava `deploy/BUILD_INFO.txt` com `GitCommit`, branch, data, usuário.
+
+### 4. Publicar o pacote validado (sem rebuild)
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& '.\scripts\deploy\deploy.ps1' -BuildFrontend 0 -BuildBackend 0 -Publicar 1 -Backup 1"
+```
+
+- **Não** builda de novo — publica o pacote da etapa 3.
+- Confere se `BUILD_INFO.GitCommit` == `git rev-parse HEAD`; se divergir, **aborta**.
+- Backup automático do IIS atual antes do replace.
+- Preserva `appsettings*.json` do servidor.
+
+### 5. Smoke
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke.ps1 -Servidor 192.168.2.130
+```
+
+- Espera frontend `:1010` + swagger `:1009/swagger` responderem.
+
+## Atalho (tudo junto, só quando você tiver certeza)
+
+Se preferir uma tacada só (build + publica + backup), **ainda** rode o validate antes:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
+if ($LASTEXITCODE -eq 0) {
+  powershell -ExecutionPolicy Bypass -Command "& '.\scripts\deploy\deploy.ps1' -BuildFrontend 1 -BuildBackend 1 -Publicar 1 -Backup 1"
+  powershell -ExecutionPolicy Bypass -File .\scripts\smoke.ps1
+}
+```
+
+## Parâmetros do `deploy.ps1`
 
 | Parâmetro | Default | Descrição |
 |---|---|---|
-| `-Publicar` | `$true` | `false` = só empacota em `deploy/` sem publicar |
-| `-ServidorRemoto` | `192.168.2.130` | IP do servidor IIS |
-| `-UsuarioRemoto` | `JCASRV-SUP` | Conta de acesso |
-| `-SenhaRemota` | `jca@1532` (padrão embutido) | Sem prompt na prática |
-| `-BuildFrontend`/`-BuildBackend` | pergunta se omitido | `Nullable[bool]` — passar explícito em automação |
-| `-Backup` | `$false` | `$true` = backup do IIS antes de publicar |
-| `-DestinoBackendRel` | `inetpub\wwwroot\Suporte_Back` | Caminho relativo do backend no IIS |
-| `-DestinoFrontRel` | `inetpub\wwwroot\Suporte_Front` | Caminho relativo do frontend no IIS |
-| `-BackupBaseRel` | `Users\JCASRV-SUP\Documents\Backup_IIS` | Pasta de backups |
-| `-EsperaOffline` | `3` | Segundos após `app_offline.htm` antes do mirror |
+| `-Publicar` | `$true` | `0` = só empacota em `deploy/` |
+| `-BuildFrontend` / `-BuildBackend` | pergunta | `1`/`0` (bool via `-Command` usa `1`/`0` ou `` `$true ``) |
+| `-Backup` | `$false` | `1` = backup do IIS antes de publicar |
+| `-ServidorRemoto` | `192.168.2.130` | IIS |
+| `-TimingLevel` | `0` | `1` = imprime tempos por fase |
 
-Para só empacotar: `powershell -ExecutionPolicy Bypass -Command "& '.\scripts\deploy\deploy.ps1' -BuildFrontend `$true -BuildBackend `$true -Publicar `$false"`
+> Via `powershell -Command`, prefira `-BuildFrontend 1` (aceito como bool) ou `` -BuildFrontend `$true ``.
+> Nunca use `-BuildFrontend $true` sem escape — chega como string e o bind falha.
+
+## Erros e rollback
+
+| Situação | O que fazer |
+|---|---|
+| Validate vermelho | Corrigir código; **não** rodar deploy |
+| `BUILD_INFO diverge do HEAD` | Houve commit depois do build → rode etapa 3 de novo |
+| Smoke falhou logo após deploy | Aguardar 30–60s (IIS) e repetir smoke |
+| Sistema ruim no ar | Restaurar backup em `\\192.168.2.130\c$\Users\JCASRV-SUP\Documents\Backup_IIS\<timestamp>` copiando `backend`/`frontend` de volta (**sem** sobrescrever `appsettings*.json`) |
+| Robocopy código 11 (lock DLL) | `app_offline.htm` fica; aguardar 1–2 min e repetir só o mirror do backend |
 
 ## Observações
 
-- O build é SSR/prerender ("Prerendered N static routes"). Avisos de budget
-  (bundle > 1.05 MB) e de SCSS (`fraseologia`/`acessos`) são esperados.
-- Não edite manualmente `deploy/`; ele é regenerado pelo script.
-- **APPSETTINGS PRESERVADOS**: O script **NUNCA sobrescreve nem apaga** os
-  `appsettings*.json` do servidor. O parâmetro `-Excluir "appsettings*.json"`
-  é aplicado em todas as cópias robocopy. A config real (banco/JWT/Google)
-  fica guardada só no servidor.
-- Rollback: copiar `Backup_IIS\<timestamp>\backend` e `\frontend` de volta para
-  `Suporte_Back` / `Suporte_Front` (sem mexer nos `appsettings*.json`).
-- **Lock da DLL:** se o mirror do backend falhar com robocopy código 11, a espera
-  de 3 s foi insuficiente — aguarde 1–2 min (o `app_offline.htm` é mantido) e repita
-  só o mirror: `robocopy deploy\backend \\192.168.2.130\c$\inetpub\wwwroot\Suporte_Back /MIR /XF appsettings*.json app_offline.htm /MT:8 /R:4 /W:5`
-  (código 3 = OK). Depois remova o `app_offline.htm` e publique o frontend.
+- Build SSR: avisos de budget/SCSS são esperados.
+- `deploy/` é regenerado pelo script — não edite à mão (o `BUILD_INFO.txt` é gerado).
+- Senha do IIS embutida no script (decisão do projeto — risco aceito).
+- **Skills amigas:** `validar` (gate), `subir-interno` (dev local), `smoke` via `scripts/smoke.ps1`.
