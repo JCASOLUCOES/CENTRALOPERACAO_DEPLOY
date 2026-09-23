@@ -18,7 +18,8 @@ import { DatabaseTable, SchemaComparisonResult, SchemaDifference } from '../mode
 
     <div class="db-sync__controles">
       <label>Tabela JCA:
-        <select class="form-select form-select-sm" [(ngModel)]="tabelaSelecionada" [disabled]="carregando()">
+        <select class="form-select form-select-sm" [(ngModel)]="tabelaSelecionada"
+                (ngModelChange)="onTabelaJcaChange($event)" [disabled]="carregando()">
           <option value="">Selecione…</option>
           <option *ngFor="let t of tabelas()" [value]="t.schema + '|' + t.nome">
             {{ t.nomeCompleto }} ({{ t.quantidadeColunas }} colunas)
@@ -45,6 +46,29 @@ import { DatabaseTable, SchemaComparisonResult, SchemaDifference } from '../mode
       <button *ngIf="resultado()" class="btn btn-outline-secondary" (click)="exportarCsv()">
         <i class="bi bi-download"></i> Exportar CSV
       </button>
+    </div>
+
+    <div class="db-sync__script mb-3">
+      <div class="db-sync__script-header">
+        <strong>Script de exportação (JSON)</strong>
+        <div class="db-sync__script-acoes">
+          <input class="form-control form-control-sm db-sync__script-input"
+                 type="text" placeholder="schema" [(ngModel)]="scriptSchema"
+                 aria-label="Schema da tabela no banco externo">
+          <input class="form-control form-control-sm db-sync__script-input"
+                 type="text" placeholder="tabela" [(ngModel)]="scriptTabela"
+                 aria-label="Nome da tabela no banco externo">
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="copiarScript()">
+            <i class="bi" [ngClass]="scriptCopiado() ? 'bi-check-lg' : 'bi-clipboard'"></i>
+            {{ scriptCopiado() ? 'Copiado' : 'Copiar script' }}
+          </button>
+        </div>
+      </div>
+      <pre class="db-sync__script-pre">{{ scriptSql() }}</pre>
+      <small class="text-muted db-sync__script-dica">
+        1. Rode no SSMS do banco externo · 2. Clique na célula do resultado e copie o JSON inteiro ·
+        3. Cole em um arquivo <code>.json</code> e envie acima. O script gera colunas, índices e FKs no formato aceito pelo sistema.
+      </small>
     </div>
 
     <div *ngIf="erro()" class="adm-aviso adm-aviso--erro mb-3">
@@ -149,10 +173,25 @@ import { DatabaseTable, SchemaComparisonResult, SchemaDifference } from '../mode
     }
     .db-sync__val code { font-size: 0.8rem; }
     .db-sync__desc { margin-left: auto; opacity: 0.85; }
+    .db-sync__script { border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.75rem; background: #f8fafc; }
+    .db-sync__script-header {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem; font-size: 0.9rem;
+    }
+    .db-sync__script-acoes { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .db-sync__script-input { width: 9rem; }
+    .db-sync__script-pre {
+      margin: 0; padding: 0.75rem; max-height: 16rem; overflow: auto;
+      font-size: 0.75rem; line-height: 1.4; background: #0f172a; color: #e2e8f0;
+      border-radius: 0.4rem; white-space: pre;
+    }
+    .db-sync__script-dica { display: block; margin-top: 0.5rem; font-size: 0.78rem; }
     @media (max-width: 768px) {
       .db-sync__controles { flex-direction: column; align-items: stretch; }
       .db-sync__controles select { min-width: 0; width: 100%; }
       .db-sync__desc { margin-left: 0; width: 100%; }
+      .db-sync__script-header { flex-direction: column; align-items: stretch; }
+      .db-sync__script-input { width: 100%; }
     }
   `]
 })
@@ -166,9 +205,126 @@ export class DbSincronizacaoComponent {
   readonly carregando = signal(false);
   readonly erro = signal<string | null>(null);
   readonly arquivo = signal<File | null>(null);
+  readonly scriptCopiado = signal(false);
   soDiferencas = true;
 
   tabelaSelecionada = '';
+  scriptSchema = 'dbo';
+  scriptTabela = '';
+
+  onTabelaJcaChange(valor: string): void {
+    if (!valor) return;
+    const [schema, tabela] = valor.split('|');
+    if (schema) this.scriptSchema = schema;
+    if (tabela) this.scriptTabela = tabela;
+  }
+
+  scriptSql(): string {
+    const schema = this.litarSql(this.scriptSchema || 'SEU_SCHEMA');
+    const tabela = this.litarSql(this.scriptTabela || 'SUA_TABELA');
+    return `DECLARE @schema sysname = N'${schema}';
+DECLARE @tabela sysname = N'${tabela}';
+DECLARE @objId int = OBJECT_ID(QUOTENAME(@schema) + N'.' + QUOTENAME(@tabela));
+
+IF @objId IS NULL
+    THROW 50000, 'Tabela nao encontrada. Ajuste @schema / @tabela.', 1;
+
+;WITH colunas AS (
+    SELECT
+        c.name AS nome,
+        ty.name AS tipo,
+        CAST(c.is_nullable AS bit) AS nulo,
+        c.column_id AS ordem,
+        CAST(CASE WHEN c.max_length = -1 THEN NULL ELSE c.max_length END AS int) AS tamanho,
+        CAST(c.precision AS int) AS precisao,
+        CAST(c.scale AS int) AS escala,
+        NULLIF(dc.definition, N'') AS valorDefault
+    FROM sys.columns c
+    JOIN sys.types ty ON c.user_type_id = ty.user_type_id
+    LEFT JOIN sys.default_constraints dc
+        ON dc.parent_object_id = c.object_id
+       AND dc.parent_column_id = c.column_id
+    WHERE c.object_id = @objId
+),
+indices AS (
+    SELECT
+        i.name AS nome,
+        CAST(i.is_unique AS bit) AS [unique],
+        N'[' + ISNULL(
+            STUFF((
+                SELECT N',"' + REPLACE(c.name, N'"', N'\\"') + N'"'
+                FROM sys.index_columns ic
+                JOIN sys.columns c
+                    ON c.object_id = ic.object_id
+                   AND c.column_id = ic.column_id
+                WHERE ic.object_id = i.object_id
+                  AND ic.index_id = i.index_id
+                  AND ic.is_included_column = 0
+                ORDER BY ic.key_ordinal
+                FOR XML PATH(''), TYPE
+            ).value('.', 'nvarchar(max)'), 1, 1, N''),
+            N''
+        ) + N']' AS colunas
+    FROM sys.indexes i
+    WHERE i.object_id = @objId
+      AND i.is_hypothetical = 0
+      AND i.name IS NOT NULL
+),
+fks AS (
+    SELECT
+        fk.name AS nome,
+        cp.name AS colunaOrigem,
+        SCHEMA_NAME(rt.schema_id) + N'.' + rt.name AS tabelaDestino,
+        cr.name AS colunaDestino
+    FROM sys.foreign_keys fk
+    JOIN sys.foreign_key_columns fkc
+        ON fkc.constraint_object_id = fk.object_id
+    JOIN sys.columns cp
+        ON cp.object_id = fkc.parent_object_id
+       AND cp.column_id = fkc.parent_column_id
+    JOIN sys.tables rt
+        ON rt.object_id = fkc.referenced_object_id
+    JOIN sys.columns cr
+        ON cr.object_id = fkc.referenced_object_id
+       AND cr.column_id = fkc.referenced_column_id
+    WHERE fk.parent_object_id = @objId
+)
+SELECT
+    @schema + N'.' + @tabela AS tabela,
+    JSON_QUERY((
+        SELECT * FROM colunas
+        ORDER BY ordem
+        FOR JSON PATH
+    )) AS colunas,
+    JSON_QUERY((
+        SELECT
+            nome,
+            [unique],
+            JSON_QUERY(colunas) AS colunas
+        FROM indices
+        FOR JSON PATH
+    )) AS indices,
+    JSON_QUERY((
+        SELECT * FROM fks
+        FOR JSON PATH
+    )) AS fks
+FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;`;
+  }
+
+  private litarSql(v: string): string {
+    return v.replace(/'/g, "''");
+  }
+
+  copiarScript(): void {
+    if (typeof window === 'undefined') return;
+    const sql = this.scriptSql();
+    navigator.clipboard.writeText(sql).then(() => {
+      this.scriptCopiado.set(true);
+      setTimeout(() => this.scriptCopiado.set(false), 2000);
+    }).catch(() => {
+      this.erro.set('Não foi possível copiar o script automaticamente.');
+    });
+  }
 
   get diferencasVisiveis(): () => SchemaDifference[] {
     return () => {
