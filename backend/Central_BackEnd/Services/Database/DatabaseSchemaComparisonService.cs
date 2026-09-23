@@ -76,8 +76,7 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
 
     private static SchemaInfoDto ParseJson(string json, string nomeArquivo)
     {
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
+        var root = ExtrairRootJson(json);
 
         // Formato: { "tabela": "...", "colunas": [...], "indices": [...], "fks": [...] }
         // ou apenas um array de colunas.
@@ -91,7 +90,7 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
             foreach (var el in root.EnumerateArray())
                 colunas.Add(ParseColunaJson(el));
         }
-        else
+        else if (root.ValueKind == JsonValueKind.Object)
         {
             if (root.TryGetProperty("tabela", out var t))
                 tabela = t.GetString() ?? tabela;
@@ -108,9 +107,133 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
                 foreach (var el in fkEl.EnumerateArray())
                     fks.Add(ParseFkJson(el));
         }
+        else
+        {
+            throw new ArgumentException(
+                "JSON invalido: esperado objeto { tabela, colunas, indices, fks } ou array de colunas.");
+        }
+
+        if (colunas.Count == 0)
+            throw new ArgumentException("JSON nao contem colunas validas (propriedade 'colunas' vazia ou ausente).");
 
         return new SchemaInfoDto(tabela, colunas, indices, fks);
     }
+
+    /// <summary>
+    /// Aceita JSON "limpo", JSON duplo (string com JSON dentro) e envoltório
+    /// estilo CSV/SSMS ("…""…""…"), comuns ao copiar o resultado do FOR JSON.
+    /// </summary>
+    private static JsonElement ExtrairRootJson(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            throw new ArgumentException("Arquivo JSON vazio.");
+
+        JsonElement root;
+        foreach (var candidato in VariantesConteudoJson(json))
+        {
+            if (TentarParseJson(candidato, out root))
+                return DesembrulharJsonSeNecessario(root);
+        }
+
+        throw new ArgumentException(
+            "JSON invalido. Esperado objeto { tabela, colunas, indices, fks } ou array de colunas. " +
+            "Se o SSMS/Excel embrulhou o valor em aspas ou quebrou a linha no meio, copie o JSON limpo começando por '{'.");
+    }
+
+    private static IEnumerable<string> VariantesConteudoJson(string json)
+    {
+        var base0 = RemoverBom(json.Trim());
+        yield return base0;
+
+        // Quebras de linha no meio do JSON (copia quebrada em coluna do SSMS/Excel)
+        var semQuebra = RetirarQuebrasForaDeString(base0);
+        if (!ReferenceEquals(semQuebra, base0) && semQuebra != base0)
+            yield return semQuebra;
+
+        // Artefato: string contendo só CRLF entre ':' e valor literal ("nulo":"\r\n"true)
+        var semAspasQuebra = System.Text.RegularExpressions.Regex.Replace(
+            semQuebra, "\"[\\r\\n]+\"", "");
+        if (semAspasQuebra != semQuebra)
+            yield return semAspasQuebra;
+
+        // Envoltório CSV/SSMS: "…""propriedade"":…""…"
+        if (base0.Length >= 2 && base0[0] == '"' && base0[^1] == '"')
+        {
+            var interno = base0
+                .Substring(1, base0.Length - 2)
+                .Replace("\"\"", "\"");
+            yield return interno;
+
+            var internoLimpo = RetirarQuebrasForaDeString(interno);
+            yield return internoLimpo;
+
+            var internoSemArtefato = System.Text.RegularExpressions.Regex.Replace(
+                internoLimpo, "\"[\\r\\n]+\"", "");
+            yield return internoSemArtefato;
+        }
+    }
+
+    private static string RetirarQuebrasForaDeString(string s)
+    {
+        var sb = new StringBuilder(s.Length);
+        bool emString = false;
+        for (int i = 0; i < s.Length; i++)
+        {
+            var ch = s[i];
+            if (ch == '"' && (i == 0 || s[i - 1] != '\\'))
+                emString = !emString;
+            if (!emString && (ch == '\r' || ch == '\n'))
+                continue;
+            sb.Append(ch);
+        }
+        return sb.ToString();
+    }
+
+    private static JsonElement DesembrulharJsonSeNecessario(JsonElement root)
+    {
+        // JSON duplo: root é string contendo outro JSON
+        if (root.ValueKind != JsonValueKind.String)
+            return root;
+
+        var interno = root.GetString() ?? "";
+        if (string.IsNullOrWhiteSpace(interno))
+            throw new ArgumentException("JSON invalido: conteudo string vazio.");
+
+        interno = RemoverBom(interno.Trim());
+        if (TentarParseJson(interno, out var filho))
+            return DesembrulharJsonSeNecessario(filho);
+
+        if (interno.Length >= 2 && interno[0] == '"' && interno[^1] == '"')
+        {
+            var desescapado = interno
+                .Substring(1, interno.Length - 2)
+                .Replace("\"\"", "\"");
+            if (TentarParseJson(desescapado, out filho))
+                return DesembrulharJsonSeNecessario(filho);
+        }
+
+        throw new ArgumentException(
+            "JSON invalido: o arquivo contem uma string em vez de objeto/array. " +
+            "Salve o resultado do SSMS sem aspas envoltorias.");
+    }
+
+    private static bool TentarParseJson(string conteudo, out JsonElement root)
+    {
+        root = default;
+        try
+        {
+            using var doc = JsonDocument.Parse(conteudo);
+            root = doc.RootElement.Clone();
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static string RemoverBom(string s)
+        => s.Length > 0 && s[0] == '﻿' ? s.TrimStart('﻿') : s;
 
     private static SchemaColumnInfoDto ParseColunaJson(JsonElement el)
     {

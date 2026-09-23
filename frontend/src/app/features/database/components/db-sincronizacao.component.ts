@@ -68,6 +68,8 @@ import { DatabaseTable, SchemaComparisonResult, SchemaDifference } from '../mode
       <small class="text-muted db-sync__script-dica">
         1. Rode no SSMS do banco externo · 2. Clique na célula do resultado e copie o JSON inteiro ·
         3. Cole em um arquivo <code>.json</code> e envie acima. O script gera colunas, índices e FKs no formato aceito pelo sistema.
+        Se o SSMS/Excel embrulhar o valor em aspas (JSON entre aspas com aspas internas duplicadas),
+        o backend dessembrulha automaticamente — prefira colar o JSON limpo começando por <code>&#123;</code>.
       </small>
     </div>
 

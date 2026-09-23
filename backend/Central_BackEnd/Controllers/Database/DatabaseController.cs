@@ -370,5 +370,13 @@ public class DatabaseController : ControllerBase
         {
             return BadRequest(new { mensagem = ex.Message });
         }
+        catch (System.Text.Json.JsonException ex)
+        {
+            return BadRequest(new { mensagem = $"JSON invalido no arquivo: {ex.Message}" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { mensagem = ex.Message });
+        }
     }
 }
