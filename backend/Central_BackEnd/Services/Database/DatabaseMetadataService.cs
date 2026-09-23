@@ -157,22 +157,19 @@ SELECT
     c.is_identity AS IsIdentity,
     ISNULL(dc.definition, '') AS ValorDefault,
     c.collation_name AS Collation,
-    CASE WHEN pk.column_id IS NOT NULL THEN 1 ELSE 0 END AS IsPk,
-    CASE WHEN fk.parent_object_id IS NOT NULL THEN 1 ELSE 0 END AS IsFk
+    CASE WHEN EXISTS (
+        SELECT 1 FROM sys.index_columns ic
+        JOIN sys.indexes i ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+        WHERE ic.object_id = c.object_id AND ic.column_id = c.column_id AND i.is_primary_key = 1
+    ) THEN 1 ELSE 0 END AS IsPk,
+    CASE WHEN EXISTS (
+        SELECT 1 FROM sys.foreign_key_columns fkc
+        WHERE fkc.parent_object_id = c.object_id AND fkc.parent_column_id = c.column_id
+    ) THEN 1 ELSE 0 END AS IsFk
 FROM sys.columns c
 JOIN sys.types ty ON c.user_type_id = ty.user_type_id
 JOIN sys.tables t ON c.object_id = t.object_id
 JOIN sys.schemas s ON t.schema_id = s.schema_id
-LEFT JOIN (
-    SELECT ic.object_id, ic.column_id
-    FROM sys.index_columns ic
-    JOIN sys.indexes i ON ic.object_id = i.object_id AND ic.index_id = i.index_id
-    WHERE i.is_primary_key = 1
-) pk ON pk.object_id = c.object_id AND pk.column_id = c.column_id
-LEFT JOIN (
-    SELECT fkc.parent_object_id, fkc.parent_column_id
-    FROM sys.foreign_key_columns fkc
-) fk ON fk.parent_object_id = c.object_id AND fk.parent_column_id = c.column_id
 LEFT JOIN sys.default_constraints dc ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id
 WHERE t.is_ms_shipped = 0
   AND s.name = @schema AND t.name = @tabela

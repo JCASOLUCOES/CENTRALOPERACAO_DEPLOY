@@ -392,11 +392,16 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
     {
         var difs = new List<SchemaDifferenceDto>();
 
-        var jcaPorNome = jca.Colunas.ToDictionary(c => c.Nome, StringComparer.OrdinalIgnoreCase);
-        var extPorNome = externo.Colunas.ToDictionary(c => c.Nome, StringComparer.OrdinalIgnoreCase);
+        var jcaPorNome = IndexarPorNome(jca.Colunas, c => c.Nome, out _);
+        var extPorNome = IndexarPorNome(externo.Colunas, c => c.Nome, out var extDups);
+
+        foreach (var (nome, qtd) in extDups)
+            difs.Add(new SchemaDifferenceDto("Aviso", "Coluna", nome,
+                null, $"{qtd} ocorrencias",
+                $"Coluna '{nome}' duplicada no arquivo ({qtd} ocorrencias); comparada apenas a primeira."));
 
         // Colunas presentes no JCA mas ausentes no arquivo
-        foreach (var col in jca.Colunas)
+        foreach (var col in jcaPorNome.Values)
         {
             if (!extPorNome.TryGetValue(col.Nome, out var extCol))
             {
@@ -461,7 +466,7 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
         }
 
         // Colunas no arquivo ausentes no JCA
-        foreach (var col in externo.Colunas)
+        foreach (var col in extPorNome.Values)
         {
             if (!jcaPorNome.ContainsKey(col.Nome))
             {
@@ -474,7 +479,11 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
         // Indices (so compara se o arquivo trouxer indices)
         if (externo.Indices.Count > 0)
         {
-            var extIdxPorNome = externo.Indices.ToDictionary(i => i.Nome, StringComparer.OrdinalIgnoreCase);
+            var extIdxPorNome = IndexarPorNome(externo.Indices, i => i.Nome, out var extIdxDups);
+            foreach (var (nome, qtd) in extIdxDups)
+                difs.Add(new SchemaDifferenceDto("Aviso", "Indice", nome,
+                    null, $"{qtd} ocorrencias",
+                    $"Indice '{nome}' duplicado no arquivo ({qtd} ocorrencias); comparado apenas o primeiro."));
             foreach (var idx in jca.Indices)
             {
                 if (!extIdxPorNome.TryGetValue(idx.Nome, out var extIdx))
@@ -504,7 +513,7 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
                         DescreverIndice(idx), DescreverIndice(extIdx),
                         "Indice compativel."));
             }
-            foreach (var idx in externo.Indices)
+            foreach (var idx in extIdxPorNome.Values)
             {
                 if (!jca.Indices.Any(j => string.Equals(j.Nome, idx.Nome, StringComparison.OrdinalIgnoreCase)))
                     difs.Add(new SchemaDifferenceDto("Aviso", "Indice", idx.Nome,
@@ -516,11 +525,15 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
         // FKs (so compara se o arquivo trouxer fks)
         if (externo.Fks.Count > 0)
         {
+            var extFkPorNome = IndexarPorNome(externo.Fks, f => f.Nome, out var extFkDups);
+            foreach (var (nome, qtd) in extFkDups)
+                difs.Add(new SchemaDifferenceDto("Aviso", "Fk", nome,
+                    null, $"{qtd} ocorrencias",
+                    $"FK '{nome}' duplicada no arquivo ({qtd} ocorrencias); comparada apenas a primeira."));
+
             foreach (var fk in jca.Fks)
             {
-                var extFk = externo.Fks.FirstOrDefault(f =>
-                    string.Equals(f.Nome, fk.Nome, StringComparison.OrdinalIgnoreCase));
-                if (extFk == null)
+                if (!extFkPorNome.TryGetValue(fk.Nome, out var extFk))
                 {
                     difs.Add(new SchemaDifferenceDto("Aviso", "Fk", fk.Nome,
                         DescreverFk(fk), null,
@@ -543,7 +556,7 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
                         "FK compativel."));
                 }
             }
-            foreach (var fk in externo.Fks)
+            foreach (var fk in extFkPorNome.Values)
             {
                 if (!jca.Fks.Any(j => string.Equals(j.Nome, fk.Nome, StringComparison.OrdinalIgnoreCase)))
                     difs.Add(new SchemaDifferenceDto("Critico", "Fk", fk.Nome,
@@ -565,6 +578,34 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
             jca.Colunas.Count,
             externo.Colunas.Count,
             criticos, avisos, oks, match, difs);
+    }
+
+    private static Dictionary<string, T> IndexarPorNome<T>(
+        IEnumerable<T> itens, Func<T, string> nomeDe, out List<(string Nome, int Qtd)> duplicados)
+    {
+        var mapa = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
+        var contagem = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var ordem = new List<string>();
+        duplicados = new List<(string, int)>();
+
+        foreach (var item in itens)
+        {
+            var nome = nomeDe(item);
+            if (mapa.ContainsKey(nome))
+            {
+                contagem[nome]++;
+                continue;
+            }
+            mapa[nome] = item;
+            contagem[nome] = 1;
+            ordem.Add(nome);
+        }
+
+        foreach (var nome in ordem)
+            if (contagem[nome] > 1)
+                duplicados.Add((nome, contagem[nome]));
+
+        return mapa;
     }
 
     private static bool TiposIguais(string a, string b)
