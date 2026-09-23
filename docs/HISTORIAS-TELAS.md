@@ -258,7 +258,7 @@
 **Passos (aba Banco × Documentação):** 1. Acessa `/database/diferencas`. 2. Lê o "Resumo" e "Diferenças encontradas". 3. Opcionalmente salva/compara snapshots.
 **Passos (aba Sincronização):** 1. Abre a sub-aba "Sincronização". 2. (Opcional) Usa o bloco "Script de exportação": ajusta schema/tabela (auto-fill pela Tabela JCA), copia o T-SSQL, roda no SSMS do banco externo e salva o JSON da célula em `.json`. 3. Seleciona a tabela JCA no dropdown. 4. Envia arquivo `.csv` ou `.json` (≤ 5 MB) com a estrutura esperada. 5. Clica em "Comparar". 6. Lê resumo (críticos/avisos/compatíveis/match %) e lista de diferenças (filtro "apenas diferenças"); opcionalmente exporta CSV.
 **Backend/tabelas:** `GET /api/v1/database/tables` (dropdown de tabelas); `POST /api/v1/database/diff` (aba documentação); `POST /api/v1/database/compare-schemas` (multipart `FormData`: `schema`, `tabela`, `arquivo`; parse CSV/JSON no backend; rate limit `validacao`); sem escrita em dados de negócio.
-**Resultado esperado:** Lista de divergências (ou vazio); na Sincronização, `SchemaComparisonResultDto` com severidades Critico/Aviso/Ok e % match; bloco de script permite gerar o JSON de exportação (colunas/índices/FKs) no formato aceito pelo upload.
+**Resultado esperado:** Lista de divergências (ou vazio); na Sincronização, `SchemaComparisonResultDto` com severidades Critico/Aviso/Ok e % match (colunas/índices/FKs duplicados no arquivo viram `Aviso`, sem erro); bloco de script permite gerar o JSON de exportação (colunas/índices/FKs) no formato aceito pelo upload.
 
 ## DATABASE — IA CHAT — ~~REMOVIDA~~ (arquivo `db-ia-chat.component.ts` excluído; sem rota; JOTA global cobre o caso via widget)
 

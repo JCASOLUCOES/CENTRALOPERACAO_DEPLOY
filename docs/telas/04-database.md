@@ -261,6 +261,7 @@ Página com 2 sub-abas (`abaInterna: 'diff' | 'sincronizacao'`):
 - IDENTIDADE CLEAN (21/09/2026, confirmado no código): status exibido como label em texto puro (`getStatusLabel()` devolve o próprio status) + dot CSS via `getBadgeClass()` (`.db-diff__dot--verde/--amarela/--vermelha/--neutra`); os cases `🟢🟡🔴` restantes no `switch` são comparação do valor `badge` vindo da API, não emoji na tela
 - Sub-aba Sincronização: IDENTIDADE CLEAN (dots CSS `.db-sync__dot--Critico/--Aviso/--Ok`, sem emojis na exibição); CSV/JSON limitados a 5 MB; export CSV gera `schema-comparacao-{tabela}.csv` client-side
 - Bloco "Script de exportação": aspas SQL escapadas (`'` → `''` via `litarSql`); placeholders `SEU_SCHEMA`/`SUA_TABELA` antes do preenchimento; script idêntico ao validado em SSMS (parênteses de `ISNULL(STUFF(...))` fechados corretamente antes de `AS colunas`)
+- Duplicatas toleradas (23/09/2026): colunas/índices/FKs repetidos no arquivo não abortam a comparação — 1ª ocorrência é comparada e as demais geram diferença `Aviso` ("duplicada no arquivo"); lado JCA usa `CASE WHEN EXISTS` em `ListarColunasAsync` (sem fan-out de FK múltipla no `ToDictionary`)
 
 ---
 
