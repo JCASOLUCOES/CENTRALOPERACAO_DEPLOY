@@ -96,7 +96,7 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
             var whereParts = new List<string>();
             foreach (var wc in req.WhereConditions)
             {
-                whereParts.Add(MontarCondicaoWhereDetalhada(wc, tabelasAlias));
+                whereParts.Add(MontarCondicaoWhereDetalhada(wc, tabelasAlias, tabelasAlias[tabelasValidas[0]]));
             }
             sqlBuilder.Append(string.Join(" ", whereParts));
         }
@@ -363,25 +363,12 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
         return $"[{fallbackAlias}].[{nomeColuna}]";
     }
 
-    private string MontarCondicaoWhereDetalhada(WhereConditionDto wc, Dictionary<string, string> tabelasAlias)
+    private string MontarCondicaoWhereDetalhada(
+        WhereConditionDto wc,
+        Dictionary<string, string> tabelasAlias,
+        string fallbackAlias)
     {
-        string tabelaAlias;
-        string coluna;
-        if (wc.Coluna.Contains("."))
-        {
-            var partes = wc.Coluna.Split('.');
-            var nomeTabela = partes[0];
-            coluna = partes[1];
-            tabelaAlias = tabelasAlias.FirstOrDefault(kvp =>
-                kvp.Key.EndsWith("." + nomeTabela) || kvp.Key == nomeTabela).Value;
-        }
-        else
-        {
-            tabelaAlias = tabelasAlias.Values.First();
-            coluna = wc.Coluna;
-        }
-
-        var colunaRef = $"[{tabelaAlias}].[{coluna}]";
+        var colunaRef = ResolverColunaRef(wc.Coluna, tabelasAlias, fallbackAlias);
         var logica = wc.Logica?.ToUpper() == "OR" ? "OR " : "";
 
         return wc.Operador?.ToUpper() switch
