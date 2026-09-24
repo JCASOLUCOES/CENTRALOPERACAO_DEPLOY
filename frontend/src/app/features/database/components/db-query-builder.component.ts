@@ -4,8 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { DatabaseService } from '../services/database.service';
 import {
-  DatabaseTable, DatabaseColumn, DatabaseRelationship,
-  DatabaseQueryResult
+  DatabaseTable, DatabaseColumn, DatabaseRelationship
 } from '../models/database.model';
 
 /** Tabela dentro da montagem visual. Alias é amigável (C, CL, CI...) e exibido ao usuário. */
@@ -69,7 +68,7 @@ const ETAPAS = [
   { id: 4, rotulo: 'Filtros', icone: 'bi-funnel' },
   { id: 5, rotulo: 'Ordenação', icone: 'bi-arrow-down-up' },
   { id: 6, rotulo: 'Resumo', icone: 'bi-clipboard-check' },
-  { id: 7, rotulo: 'SQL e resultado', icone: 'bi-code' },
+  { id: 7, rotulo: 'SQL', icone: 'bi-code' },
 ];
 
 @Component({
@@ -280,12 +279,6 @@ const ETAPAS = [
             <option [ngValue]="100">100</option><option [ngValue]="500">500</option>
           </select>
         </label>
-        <label>Tempo máximo (s)
-          <select class="form-select form-select-sm" [(ngModel)]="timeout">
-            <option [ngValue]="5">5</option><option [ngValue]="15">15</option>
-            <option [ngValue]="30">30</option><option [ngValue]="60">60</option>
-          </select>
-        </label>
       </div>
 
       <details class="db-qb__avancado">
@@ -310,51 +303,24 @@ const ETAPAS = [
       <div class="db-qb__nav">
         <button class="btn btn-outline-secondary btn-sm" (click)="irParaEtapa(5)"><i class="bi bi-arrow-left"></i> Voltar</button>
         <div class="d-flex gap-2">
-          <button class="btn btn-outline-primary btn-sm" (click)="verSQL()" [disabled]="gerandoSql()">
+          <button class="btn btn-primary btn-sm" (click)="verSQL()" [disabled]="gerandoSql()">
             <i class="bi bi-code"></i> {{ gerandoSql() ? 'Gerando…' : 'Ver SQL' }}
-          </button>
-          <button class="btn btn-success btn-sm" (click)="executar()" [disabled]="carregando() || gerandoSql()">
-            <i class="bi bi-play-fill"></i> {{ carregando() ? 'Executando…' : 'Executar' }}
           </button>
         </div>
       </div>
     </section>
 
-    <!-- ETAPA 7: SQL + resultado -->
+    <!-- ETAPA 7: SQL -->
     <section *ngIf="etapa() === 7" class="db-qb__panel">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <h5 class="mb-0"><i class="bi bi-code"></i> SQL gerado</h5>
         <div class="d-flex gap-2">
           <button class="btn btn-sm btn-outline-secondary" (click)="copiarSQL()"><i class="bi bi-clipboard"></i> Copiar</button>
-          <button class="btn btn-sm btn-success" (click)="executar()" [disabled]="carregando() || gerandoSql()">
-            <i class="bi bi-play-fill"></i> {{ carregando() ? 'Executando…' : 'Executar' }}
-          </button>
         </div>
       </div>
-      <p class="text-muted small">Este SQL foi montado a partir das suas escolhas. Somente leitura — comandos de escrita são bloqueados.</p>
+      <p class="text-muted small">Copie o SQL e execute no SSMS. A interface não roda consultas.</p>
       <div *ngIf="avisoSql()" class="alert alert-warning py-2 small">{{ avisoSql() }}</div>
       <pre class="db-qb__sql">{{ sqlGerado() || 'Gerando SQL…' }}</pre>
-
-      <div *ngIf="resultado()" class="mt-3">
-        <h5><i class="bi bi-table"></i> Resultado</h5>
-        <div *ngIf="!resultado()!.sucesso" class="alert alert-danger"><strong>Erro:</strong> {{ resultado()!.mensagemErro }}</div>
-        <div *ngIf="resultado()!.sucesso">
-          <div class="db-qb__meta mb-2">
-            <span>{{ resultado()!.quantidadeRegistros }} registros</span>
-            <span>{{ resultado()!.duracaoMs }} ms</span>
-          </div>
-          <div class="adm-table-wrap">
-            <table class="adm-table">
-              <thead><tr><th *ngFor="let c of resultado()!.colunas">{{ c }}</th></tr></thead>
-              <tbody>
-                <tr *ngFor="let linha of resultado()!.linhas">
-                  <td *ngFor="let celula of linha">{{ celula === null ? '—' : celula }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
       <div class="db-qb__nav">
         <button class="btn btn-outline-secondary btn-sm" (click)="irParaEtapa(6)"><i class="bi bi-arrow-left"></i> Voltar ao resumo</button>
       </div>
@@ -494,8 +460,6 @@ export class DbQueryBuilderComponent implements OnInit {
   readonly avisoSql = signal<string | null>(null);
   readonly gerandoSql = signal(false);
   readonly carregandoRels = signal(false);
-  readonly resultado = signal<DatabaseQueryResult | null>(null);
-  readonly carregando = signal(false);
   readonly tabelaExpandida = signal<string | null>(null);
   readonly pendente = signal<TabelaRelacionadaItem | null>(null);
   readonly relacaoDetalhe = signal<DatabaseRelationship | null>(null);
@@ -507,7 +471,6 @@ export class DbQueryBuilderComponent implements OnInit {
   modalTabelasAberto = false;
   having = '';
   limite = 100;
-  timeout = 30;
 
   private proximoFiltroId = 1;
 
@@ -1085,31 +1048,6 @@ export class DbQueryBuilderComponent implements OnInit {
     }
   }
 
-  executar(): void {
-    const rodar = () => {
-      const sql = this.sqlGerado();
-      if (!sql) return;
-      this.carregando.set(true);
-      this.db.executarQuery({ sql, limite: this.limite, timeoutSegundos: this.timeout }).subscribe({
-        next: r => {
-          this.resultado.set(r);
-          this.carregando.set(false);
-          this.irParaEtapa(7);
-        },
-        error: () => {
-          this.resultado.set({
-            sucesso: false, colunas: [], linhas: [],
-            quantidadeRegistros: 0, duracaoMs: 0, mensagemErro: 'Falha ao executar consulta.'
-          });
-          this.carregando.set(false);
-          this.irParaEtapa(7);
-        }
-      });
-    };
-    if (!this.sqlGerado()) this.gerarSQL(rodar);
-    else rodar();
-  }
-
   reiniciar(): void {
     this.tabelas.set([]);
     this.relacoes.set([]);
@@ -1120,7 +1058,6 @@ export class DbQueryBuilderComponent implements OnInit {
     this.having = '';
     this.sqlGerado.set('');
     this.avisoSql.set(null);
-    this.resultado.set(null);
     this.etapa.set(1);
   }
 

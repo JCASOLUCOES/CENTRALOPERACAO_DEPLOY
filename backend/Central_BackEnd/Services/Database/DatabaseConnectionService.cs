@@ -86,7 +86,6 @@ public class DatabaseConnectionConfig
 public interface IDatabaseConnectionService
 {
     DatabaseConnectionConfig GetConfig();
-    void UpdateConfig(DatabaseConnectionConfig novo);
     Task<SqlConnection> OpenAsync(CancellationToken ct = default);
     bool IsConfigured();
 }
@@ -108,19 +107,6 @@ public class DatabaseConnectionService : IDatabaseConnectionService
         !string.IsNullOrWhiteSpace(_config.Servidor) &&
         !string.IsNullOrWhiteSpace(_config.Banco) &&
         !string.IsNullOrWhiteSpace(_config.Usuario);
-
-    public void UpdateConfig(DatabaseConnectionConfig novo)
-    {
-        // Atualiza em memoria (para a sessao). Persistencia real e em user-secrets/env var
-        _config.Servidor = novo.Servidor;
-        _config.Porta = novo.Porta;
-        _config.Banco = novo.Banco;
-        _config.Usuario = novo.Usuario;
-        if (!string.IsNullOrEmpty(novo.Senha) && novo.Senha != "***")
-            _config.Senha = novo.Senha;
-        _config.Encrypt = novo.Encrypt;
-        _config.TrustServerCertificate = novo.TrustServerCertificate;
-    }
 
     public async Task<SqlConnection> OpenAsync(CancellationToken ct = default)
     {

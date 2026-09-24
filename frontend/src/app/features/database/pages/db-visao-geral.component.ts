@@ -198,8 +198,8 @@ export class DbVisaoGeralComponent implements OnInit {
   readonly atalhos: Atalho[] = [
     { rota: '../explorador', icone: 'bi-search', titulo: 'Explorar', desc: 'Encontrar tabelas, colunas e objetos.' },
     { rota: '../relacionamentos', icone: 'bi-share', titulo: 'Relacionamentos', desc: 'Explorar relacionamentos entre tabelas.' },
-    { rota: '../consultas', icone: 'bi-terminal', titulo: 'Consultas', desc: 'Executar consultas SELECT.' },
-    { rota: '../diferencas', icone: 'bi-arrow-left-right', titulo: 'Diferenças', desc: 'Comparar banco atual com documentação.' }
+    { rota: '../consultas', icone: 'bi-diagram-3', titulo: 'Consultas', desc: 'Montar consultas e copiar o SQL.' },
+    { rota: '../diferencas', icone: 'bi-arrow-left-right', titulo: 'Diferenças', desc: 'Comparar schema do arquivo com o banco.' }
   ];
 
   ngOnInit(): void {

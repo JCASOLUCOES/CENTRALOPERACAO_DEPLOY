@@ -57,7 +57,7 @@ import { ProcedureDetalhe } from '../models/database.model';
 <div class="modal-footer">
   <button type="button" class="btn btn-light" (click)="fechar()">Fechar</button>
   <button type="button" class="btn btn-primary" (click)="irParaSql()">
-    <i class="bi bi-terminal"></i> Ir para SQL
+    <i class="bi bi-diagram-3"></i> Criar consulta
   </button>
 </div>
   `,
@@ -102,8 +102,7 @@ export class DbProcedureModalComponent {
   fechar(): void { this.activeModal.close(); }
 
   irParaSql(): void {
-    sessionStorage.setItem('db-procedure-prefill', this.procedure.nomeCompleto);
     this.activeModal.close();
-    location.assign('/database/consultas');
+    location.assign('/database/consultas?aba=builder');
   }
 }

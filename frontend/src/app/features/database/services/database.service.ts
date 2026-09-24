@@ -4,8 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   DatabaseInfo, DatabaseTable, DatabaseColumn, DatabaseIndex,
-  DatabaseRelationship, DatabaseSearchResult, DatabaseQueryRequest,
-  DatabaseQueryResult, DatabaseStatus, DatabaseConnectionConfig,
+  DatabaseRelationship, DatabaseSearchResult,
+  DatabaseStatus, DatabaseConnectionConfig,
   ProcedureResumo, ProcedureDetalhe,
   Trigger, Dependencia, ProcedureAnalysis, GlobalSearchResult,
   SchemaComparisonResult
@@ -42,9 +42,10 @@ export class DatabaseService {
     return this.http.get<DatabaseIndex[]>(`${this.baseUrl}/tables/${encodeURIComponent(schema)}/${encodeURIComponent(nome)}/indexes`);
   }
 
-  relacionamentos(schema?: string, incluirPossiveis = false, take = 500): Observable<DatabaseRelationship[]> {
+  relacionamentos(schema?: string, incluirPossiveis = false, take = 500, tabela?: string): Observable<DatabaseRelationship[]> {
     let params = new HttpParams().set('incluirPossiveis', String(incluirPossiveis)).set('take', String(take));
     if (schema) params = params.set('schema', schema);
+    if (tabela) params = params.set('tabela', tabela);
     return this.http.get<DatabaseRelationship[]>(`${this.baseUrl}/relationships`, { params });
   }
 
@@ -63,20 +64,12 @@ export class DatabaseService {
     });
   }
 
-  executarQuery(req: DatabaseQueryRequest): Observable<DatabaseQueryResult> {
-    return this.http.post<DatabaseQueryResult>(`${this.baseUrl}/query`, req);
-  }
-
   testarConexao(): Observable<DatabaseStatus> {
     return this.http.post<DatabaseStatus>(`${this.baseUrl}/test-connection`, {});
   }
 
   obterConfig(): Observable<DatabaseConnectionConfig> {
     return this.http.get<DatabaseConnectionConfig>(`${this.baseUrl}/config`);
-  }
-
-  atualizarConfig(req: DatabaseConnectionConfig): Observable<void> {
-    return this.http.put<void>(`${this.baseUrl}/config`, req);
   }
 
   listarProcedures(schema?: string, busca?: string, take = 5000): Observable<ProcedureResumo[]> {
@@ -88,12 +81,6 @@ export class DatabaseService {
 
   obterProcedure(schema: string, nome: string): Observable<ProcedureDetalhe> {
     return this.http.get<ProcedureDetalhe>(`${this.baseUrl}/procedures/${encodeURIComponent(schema)}/${encodeURIComponent(nome)}`);
-  }
-
-  buscarProcedures(termo: string, take = 5000): Observable<ProcedureResumo[]> {
-    return this.http.get<ProcedureResumo[]>(`${this.baseUrl}/procedures/search`, {
-      params: new HttpParams().set('termo', termo).set('take', String(take))
-    });
   }
 
   listarTriggers(schema?: string, tabela?: string): Observable<Trigger[]> {
@@ -119,24 +106,6 @@ export class DatabaseService {
     return this.http.get<GlobalSearchResult[]>(`${this.baseUrl}/search/global`, {
       params: new HttpParams().set('termo', termo).set('take', String(take))
     });
-  }
-
-  // Dif de schema
-  diferencarSchema(limite: number = 100): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/diff`, { limite });
-  }
-
-  // Snapshot
-  salvarSnapshot(nome: string): Observable<string> {
-    return this.http.post<string>(`${this.baseUrl}/snapshot`, { nome });
-  }
-
-  listarSnapshots(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.baseUrl}/snapshots`);
-  }
-
-  compararSnapshot(nome: string): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/snapshot/comparar`, { nome });
   }
 
   // Query Builder Avançado

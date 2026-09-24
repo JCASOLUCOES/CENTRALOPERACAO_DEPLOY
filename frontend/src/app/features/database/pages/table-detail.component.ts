@@ -268,9 +268,7 @@ export class TableDetailComponent implements OnInit, OnDestroy {
   }
 
   abrirConsultas(): void {
-    const sql = `SELECT TOP ${this.limiteConsulta()} * FROM [${this.schema()}].[${this.tabela()}]`;
-    sessionStorage.setItem('db-query-prefill', sql);
-    this.router.navigate(['/database/consultas']);
+    this.abrirQueryBuilder();
   }
 
   abrirQueryBuilder(): void {
@@ -325,8 +323,7 @@ export class TableDetailComponent implements OnInit, OnDestroy {
 
   gerarEConsultar(): void {
     this.gerarSQL();
-    sessionStorage.setItem('db-query-prefill', this.sqlGerado());
-    this.router.navigate(['/database/consultas']);
+    this.abrirQueryBuilder();
   }
 
   copiarSQL(): void {

@@ -73,37 +73,6 @@ public record RelationshipDto(
     int Score,                  // 0-100
     List<string> Motivos);
 
-public record QueryRequest(
-    string Sql,
-    int? Limite,
-    int? TimeoutSegundos);
-
-public record QueryResultDto(
-    bool Sucesso,
-    List<string> Colunas,
-    List<List<object?>> Linhas,
-    int QuantidadeRegistros,
-    int DuracaoMs,
-    string? MensagemErro);
-
-public record SchemaDiffItemDto(
-    string Tipo,                // "Tabela" | "Coluna" | "TipoAlterado" | "Fk"
-    string Objeto,
-    string Status,              // "Nova" | "Removida" | "Alterada"
-    string? Detalhe);
-
-public record SchemaDiffDto(
-    DateTime GeradoEm,
-    int TabelasIguais,
-    int TabelasNovas,
-    int TabelasRemovidas,
-    int ColunasNovas,
-    int ColunasRemovidas,
-    int ColunasAlteradas,
-    int FksNovas,
-    int FksRemovidas,
-    List<SchemaDiffItemDto> Itens);
-
 public record DatabaseConnectionConfigDto(
     string Servidor,
     int Porta,

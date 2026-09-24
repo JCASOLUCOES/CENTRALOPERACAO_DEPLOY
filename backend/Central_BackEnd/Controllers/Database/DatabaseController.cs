@@ -8,9 +8,6 @@ using System.Diagnostics;
 
 namespace Central_BackEnd.Controllers.Database;
 
-public record DiffRequest(int Limite = 100);
-public record SnapshotRequest(string Nome = "");
-
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/database")]
@@ -20,32 +17,23 @@ public class DatabaseController : ControllerBase
     private readonly IDatabaseConnectionService _conn;
     private readonly IDatabaseMetadataService _meta;
     private readonly IDatabaseRelationshipInferenceService _rels;
-    private readonly IDatabaseQueryService _query;
     private readonly IDatabaseSearchService _search;
     private readonly IDatabaseQueryBuilderService _queryBuilder;
-    private readonly IDatabaseSchemaDiffService _diff;
-    private readonly IDatabaseSnapshotService _snapshots;
     private readonly IDatabaseSchemaComparisonService _comparison;
 
     public DatabaseController(
         IDatabaseConnectionService conn,
         IDatabaseMetadataService meta,
         IDatabaseRelationshipInferenceService rels,
-        IDatabaseQueryService query,
         IDatabaseSearchService search,
         IDatabaseQueryBuilderService queryBuilder,
-        IDatabaseSchemaDiffService diff,
-        IDatabaseSnapshotService snapshots,
         IDatabaseSchemaComparisonService comparison)
     {
         _conn = conn;
         _meta = meta;
         _rels = rels;
-        _query = query;
         _search = search;
         _queryBuilder = queryBuilder;
-        _diff = diff;
-        _snapshots = snapshots;
         _comparison = comparison;
     }
 
@@ -128,6 +116,7 @@ public class DatabaseController : ControllerBase
     [HttpGet("relationships")]
     public async Task<ActionResult<List<RelationshipDto>>> GetRelationships(
         [FromQuery] string? schema = null,
+        [FromQuery] string? tabela = null,
         [FromQuery] bool incluirPossiveis = false,
         [FromQuery] int take = 500,
         CancellationToken ct = default)
@@ -135,6 +124,14 @@ public class DatabaseController : ControllerBase
         var lista = await _rels.ListarConfirmadasAsync(schema, ct);
         if (incluirPossiveis)
             lista.AddRange(await _rels.ListarPossiveisAsync(schema, take, ct));
+        if (!string.IsNullOrWhiteSpace(tabela))
+        {
+            var filtro = tabela.Trim();
+            lista = lista.Where(r =>
+                r.TabelaOrigem.Contains(filtro, StringComparison.OrdinalIgnoreCase) ||
+                r.TabelaDestino.Contains(filtro, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
         return Ok(lista);
     }
 
@@ -171,16 +168,6 @@ public class DatabaseController : ControllerBase
         return Ok(await _search.BuscarAsync(termo, take, ct));
     }
 
-    [HttpPost("query")]
-    public async Task<ActionResult<QueryResultDto>> ExecuteQuery(
-        [FromBody] QueryRequest req,
-        CancellationToken ct = default)
-    {
-        if (req == null || string.IsNullOrWhiteSpace(req.Sql))
-            return BadRequest(new { mensagem = "SQL é obrigatório" });
-        return Ok(await _query.ExecutarAsync(req, ct));
-    }
-
     [HttpGet("procedures")]
     public async Task<ActionResult<List<ProcedureResumoDto>>> GetProcedures(
         [FromQuery] string? schema = null,
@@ -189,17 +176,6 @@ public class DatabaseController : ControllerBase
         CancellationToken ct = default)
     {
         return Ok(await _meta.ListarProceduresAsync(schema, busca, take, ct));
-    }
-
-    [HttpGet("procedures/search")]
-    public async Task<ActionResult<List<ProcedureResumoDto>>> SearchProcedures(
-        [FromQuery] string termo,
-        [FromQuery] int take = 5000,
-        CancellationToken ct = default)
-    {
-        if (string.IsNullOrWhiteSpace(termo))
-            return Ok(new List<ProcedureResumoDto>());
-        return Ok(await _meta.ListarProceduresAsync(null, termo, take, ct));
     }
 
     [HttpGet("procedures/{schema}/{nome}")]
@@ -285,64 +261,12 @@ public class DatabaseController : ControllerBase
             c.Encrypt, c.TrustServerCertificate));
     }
 
-    [HttpPut("config")]
-    public ActionResult UpdateConfig([FromBody] DatabaseConnectionConfigDto req)
-    {
-        if (req == null) return BadRequest(new { mensagem = "Requisicao vazia" });
-        _conn.UpdateConfig(new DatabaseConnectionConfig
-        {
-            Servidor = req.Servidor,
-            Porta = req.Porta,
-            Banco = req.Banco,
-            Usuario = req.Usuario,
-            Senha = req.Senha ?? "",
-            Encrypt = req.Encrypt,
-            TrustServerCertificate = req.TrustServerCertificate
-        });
-        return Ok(new { mensagem = "Configuracao salva. Reinicie a aplicacao para aplicar." });
-    }
-
     [HttpPost("test-connection")]
     public async Task<ActionResult<DatabaseStatusDto>> TestConnection(CancellationToken ct = default)
     {
         var cfg = _conn.GetConfig();
         var (ok, msg, ms) = await TestarConexaoAsync(ct);
         return Ok(new DatabaseStatusDto(ok, cfg.Servidor, cfg.Banco, msg, DateTime.UtcNow, ms));
-    }
-
-    [HttpPost("diff")]
-    public async Task<ActionResult<SchemaDiffDto>> Diff(
-        [FromBody] DiffRequest? req,
-        CancellationToken ct = default)
-    {
-        return Ok(await _diff.CompararAsync(req?.Limite ?? 100, ct));
-    }
-
-    [HttpPost("snapshot")]
-    public async Task<ActionResult<string>> SaveSnapshot(
-        [FromBody] SnapshotRequest? req,
-        CancellationToken ct = default)
-    {
-        if (req == null || string.IsNullOrWhiteSpace(req.Nome))
-            return BadRequest("Nome do snapshot é obrigatório");
-        await _snapshots.SalvarSnapshotAsync(req.Nome, ct);
-        return Ok(req.Nome);
-    }
-
-    [HttpGet("snapshots")]
-    public async Task<ActionResult<List<string>>> ListSnapshots(CancellationToken ct = default)
-    {
-        return Ok(await _snapshots.ListarSnapshotsAsync(ct));
-    }
-
-    [HttpPost("snapshot/comparar")]
-    public async Task<ActionResult<SchemaDiffDto>> CompareSnapshot(
-        [FromBody] SnapshotRequest? req,
-        CancellationToken ct = default)
-    {
-        if (req == null || string.IsNullOrWhiteSpace(req.Nome))
-            return BadRequest("Nome do snapshot é obrigatório");
-        return Ok(await _snapshots.CompararSnapshotAsync(req.Nome, ct));
     }
 
     [HttpPost("compare-schemas")]

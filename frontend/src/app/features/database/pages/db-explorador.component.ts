@@ -99,7 +99,7 @@ type ArvoreTipo = 'tabela' | 'procedure';
             <i class="bi bi-search"></i> Investigar
           </button>
           <button type="button" class="db-btn db-btn--secondary" (click)="abrirConsultasTabela(t)">
-            <i class="bi bi-terminal"></i> Consultar
+            <i class="bi bi-diagram-3"></i> Consultar
           </button>
         </div>
 
@@ -152,7 +152,7 @@ type ArvoreTipo = 'tabela' | 'procedure';
           <span class="adm-badge adm-badge--neutral">{{ p.tipo }}</span>
           <span class="adm-badge adm-badge--neutral">{{ p.quantidadeParametros }} parâmetros</span>
           <button type="button" class="db-btn db-btn--primary" (click)="abrirProcedureNoSql(p)">
-            <i class="bi bi-terminal"></i> Ir para SQL
+            <i class="bi bi-diagram-3"></i> Criar consulta
           </button>
         </header>
 
@@ -325,9 +325,11 @@ export class DbExploradorComponent implements OnInit {
   }
 
   abrirConsultasTabela(t: DatabaseTable): void {
-    const sql = `SELECT TOP 100 * FROM [${t.schema}].[${t.nome}]`;
-    sessionStorage.setItem('db-query-prefill', sql);
-    this.router.navigate(['/database/consultas']);
+    const tabelas = [`${t.schema}.${t.nome}`];
+    sessionStorage.setItem('db-query-builder-tables', JSON.stringify(tabelas));
+    this.router.navigate(['/database/consultas'], {
+      queryParams: { aba: 'builder', tabela: `${t.schema}.${t.nome}` }
+    });
   }
 
   selecionarProcedure(p: ProcedureResumo): void {
@@ -351,9 +353,7 @@ export class DbExploradorComponent implements OnInit {
   }
 
   abrirProcedureNoSql(p: ProcedureResumo): void {
-    // Navega para a aba de consultas com o nome da procedure pré-preenchido
-    sessionStorage.setItem('db-procedure-prefill', p.nomeCompleto);
-    location.assign('/database/consultas');
+    this.router.navigate(['/database/consultas'], { queryParams: { aba: 'builder' } });
   }
 
   selecionarTrigger(g: Trigger): void {

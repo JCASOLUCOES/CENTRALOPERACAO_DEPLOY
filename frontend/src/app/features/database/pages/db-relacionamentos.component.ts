@@ -3,20 +3,28 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DatabaseService } from '../services/database.service';
-import { DatabaseRelationship } from '../models/database.model';
+import { DatabaseRelationship, DatabaseTable } from '../models/database.model';
 
 @Component({
   selector: 'app-db-relacionamentos',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-  <div class="db-rel__filtros adm-pills">
+  <div class="db-rel__selecao">
+    <label class="form-label small mb-1">Tabela</label>
+    <select class="form-select" [(ngModel)]="tabelaSelecionada" (ngModelChange)="aoSelecionarTabela()">
+      <option value="">Selecione uma tabela…</option>
+      <option *ngFor="let t of tabelas()" [value]="t.nomeCompleto">{{ t.nomeCompleto }}</option>
+    </select>
+  </div>
+
+  <div class="db-rel__filtros adm-pills" *ngIf="tabelaSelecionada">
     <button class="adm-pill" [class.adm-pill--ativa]="filtro() === 'todas'" (click)="filtro.set('todas'); recarregar()">Todas</button>
     <button class="adm-pill" [class.adm-pill--ativa]="filtro() === 'confirmadas'" (click)="filtro.set('confirmadas'); recarregar()">Apenas confirmadas</button>
     <button class="adm-pill" [class.adm-pill--ativa]="filtro() === 'possiveis'" (click)="filtro.set('possiveis'); recarregar()">Apenas possíveis</button>
   </div>
 
-  <div class="db-rel__busca">
+  <div class="db-rel__busca" *ngIf="tabelaSelecionada">
     <div class="adm-search">
       <i class="bi bi-search adm-search__icone"></i>
       <input type="text" class="adm-search__input" placeholder="Onde esta coluna e usada? (ex: DEVEDOR_ID)"
@@ -27,13 +35,17 @@ import { DatabaseRelationship } from '../models/database.model';
     </button>
   </div>
 
-  <div *ngIf="carregando()" class="adm-empty">Carregando…</div>
-
-  <div *ngIf="!carregando() && listaFiltrada().length === 0" class="adm-empty">
-    Nenhum relacionamento encontrado com os filtros atuais.
+  <div *ngIf="!tabelaSelecionada && !buscandoPorColuna" class="adm-empty">
+    Selecione uma tabela para ver os relacionamentos dela.
   </div>
 
-  <div *ngIf="!carregando() && listaFiltrada().length > 0" class="adm-table-wrap">
+  <div *ngIf="carregando()" class="adm-empty">Carregando…</div>
+
+  <div *ngIf="tabelaSelecionada && !carregando() && listaFiltrada().length === 0" class="adm-empty">
+    Nenhum relacionamento encontrado para esta tabela com os filtros atuais.
+  </div>
+
+  <div *ngIf="(tabelaSelecionada || buscandoPorColuna) && !carregando() && listaFiltrada().length > 0" class="adm-table-wrap">
     <table class="adm-table">
       <thead>
         <tr>
@@ -51,7 +63,7 @@ import { DatabaseRelationship } from '../models/database.model';
             <span class="db-rel__chip"
               [class.db-rel__chip--confirmada]="r.tipo === 'Confirmada'"
               [class.db-rel__chip--possivel]="r.tipo === 'Possivel'">
-              <i class="bi" [ngClass]="r.tipo === 'Confirmada' ? 'bi-link-45deg' : 'bi-link-45deg'"></i>
+              <i class="bi bi-link-45deg"></i>
               {{ r.tipo }}
             </span>
           </td>
@@ -88,6 +100,7 @@ import { DatabaseRelationship } from '../models/database.model';
   </div>
   `,
   styles: [`
+    .db-rel__selecao { max-width: 28rem; margin-bottom: 1rem; }
     .db-rel__filtros { margin-bottom: 1rem; }
     .db-rel__busca { display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
     .db-rel__busca .adm-search { flex: 1; }
@@ -110,10 +123,13 @@ import { DatabaseRelationship } from '../models/database.model';
 export class DbRelacionamentosComponent implements OnInit {
   private readonly db = inject(DatabaseService);
   private readonly router = inject(Router);
+  readonly tabelas = signal<DatabaseTable[]>([]);
   readonly lista = signal<DatabaseRelationship[]>([]);
   readonly carregando = signal(false);
   readonly filtro = signal<'todas' | 'confirmadas' | 'possiveis'>('todas');
+  tabelaSelecionada = '';
   buscaColuna = '';
+  buscandoPorColuna = false;
 
   readonly listaFiltrada = computed(() => {
     const f = this.filtro();
@@ -122,20 +138,40 @@ export class DbRelacionamentosComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.db.listarTabelas().subscribe({
+      next: t => this.tabelas.set(t),
+      error: () => {}
+    });
+  }
+
+  aoSelecionarTabela(): void {
+    this.buscandoPorColuna = false;
+    this.buscaColuna = '';
+    if (!this.tabelaSelecionada) {
+      this.lista.set([]);
+      return;
+    }
     this.recarregar();
   }
 
   recarregar(): void {
+    if (!this.tabelaSelecionada) return;
+    this.buscandoPorColuna = false;
     this.carregando.set(true);
     const inc = this.filtro() !== 'confirmadas';
-    this.db.relacionamentos(undefined, inc, 1000).subscribe({
+    this.db.relacionamentos(undefined, inc, 500, this.tabelaSelecionada).subscribe({
       next: l => { this.lista.set(l); this.carregando.set(false); },
       error: () => this.carregando.set(false)
     });
   }
 
   buscarColuna(): void {
-    if (!this.buscaColuna.trim()) { this.recarregar(); return; }
+    if (!this.buscaColuna.trim()) {
+      this.buscandoPorColuna = false;
+      this.recarregar();
+      return;
+    }
+    this.buscandoPorColuna = true;
     this.carregando.set(true);
     this.db.usoColuna(this.buscaColuna.trim()).subscribe({
       next: l => { this.lista.set(l); this.carregando.set(false); },

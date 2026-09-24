@@ -82,21 +82,6 @@ export interface DatabaseSearchResult {
   detalhe?: string;
 }
 
-export interface DatabaseQueryRequest {
-  sql: string;
-  limite?: number;
-  timeoutSegundos?: number;
-}
-
-export interface DatabaseQueryResult {
-  sucesso: boolean;
-  colunas: string[];
-  linhas: (string | number | null)[][];
-  quantidadeRegistros: number;
-  duracaoMs: number;
-  mensagemErro?: string;
-}
-
 export interface DatabaseStatus {
   conectado: boolean;
   servidor: string;
@@ -219,28 +204,6 @@ export interface QueryBuilderAdvancedRequest {
   groupBy?: GroupByCondition[];
   limite?: number;
   ctes?: CteDefinition[];
-}
-
-// Diff Result
-export interface DiffResult {
-  tabelasIguais: number;
-  tabelasNovas: number;
-  tabelasRemovidas: number;
-  colunasNovas: number;
-  colunasRemovidas: number;
-  colunasAlteradas: number;
-  fksNovas: number;
-  fksRemovidas: number;
-  itens: DiffItem[];
-}
-
-export interface DiffItem {
-  tipo: 'Tabela' | 'Coluna' | 'TipoAlterado' | 'Fk';
-  objeto: string;
-  coluna?: string;
-  status: 'Nova' | 'Removida' | 'Alterada' | 'Atualizado';
-  detalhe?: string;
-  badge: '🟢' | '🟡' | '🔴';
 }
 
 // Schema Comparison (upload arquivo x schema JCA)
