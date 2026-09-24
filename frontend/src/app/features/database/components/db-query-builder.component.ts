@@ -1043,9 +1043,30 @@ export class DbQueryBuilderComponent implements OnInit {
   }
 
   copiarSQL(): void {
-    if (typeof window !== 'undefined' && this.sqlGerado()) {
-      navigator.clipboard.writeText(this.sqlGerado());
+    if (typeof window === 'undefined') return;
+    const sql = this.sqlGerado();
+    if (!sql) return;
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(sql).catch(() => this.copiarSqlFallback(sql));
+      return;
     }
+    this.copiarSqlFallback(sql);
+  }
+
+  private copiarSqlFallback(texto: string): void {
+    if (typeof document === 'undefined') return;
+    const area = document.createElement('textarea');
+    area.value = texto;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    area.setSelectionRange(0, area.value.length);
+    try {
+      document.execCommand('copy');
+    } catch {
+    }
+    document.body.removeChild(area);
   }
 
   reiniciar(): void {

@@ -320,12 +320,48 @@ FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;`;
   copiarScript(): void {
     if (typeof window === 'undefined') return;
     const sql = this.scriptSql();
-    navigator.clipboard.writeText(sql).then(() => {
-      this.scriptCopiado.set(true);
-      setTimeout(() => this.scriptCopiado.set(false), 2000);
-    }).catch(() => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(sql).then(() => {
+        this.sucessoCopia();
+      }).catch(() => {
+        if (this.copiarFallback(sql)) {
+          this.sucessoCopia();
+        } else {
+          this.erro.set('Não foi possível copiar o script automaticamente.');
+        }
+      });
+      return;
+    }
+    if (this.copiarFallback(sql)) {
+      this.sucessoCopia();
+    } else {
       this.erro.set('Não foi possível copiar o script automaticamente.');
-    });
+    }
+  }
+
+  private sucessoCopia(): void {
+    this.erro.set(null);
+    this.scriptCopiado.set(true);
+    setTimeout(() => this.scriptCopiado.set(false), 2000);
+  }
+
+  private copiarFallback(texto: string): boolean {
+    if (typeof document === 'undefined') return false;
+    const area = document.createElement('textarea');
+    area.value = texto;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    area.setSelectionRange(0, area.value.length);
+    let ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch {
+      ok = false;
+    }
+    document.body.removeChild(area);
+    return ok;
   }
 
   get diferencasVisiveis(): () => SchemaDifference[] {
