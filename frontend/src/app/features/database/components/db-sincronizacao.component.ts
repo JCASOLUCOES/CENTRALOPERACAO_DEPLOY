@@ -22,18 +22,19 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
       <label>Tabela JCA:
         <input type="text" class="form-control form-control-sm db-sync__busca"
                placeholder="Pesquisar tabela…"
-               [(ngModel)]="buscaTabela"
+               [ngModel]="buscaTabela()"
+               (ngModelChange)="buscaTabela.set($event)"
                [disabled]="carregando()"
                aria-label="Pesquisar tabela">
-        <select class="form-select form-select-sm" [(ngModel)]="tabelaSelecionada"
+        <select class="form-select form-select-sm" [ngModel]="tabelaSelecionada()"
                 (ngModelChange)="onTabelaJcaChange($event)" [disabled]="carregando()">
           <option value="">Selecione… ({{ tabelasFiltradas().length }})</option>
           <option *ngFor="let t of tabelasFiltradas()" [value]="t.schema + '|' + t.nome">
             {{ t.nomeCompleto }} ({{ t.quantidadeColunas }} colunas)
           </option>
         </select>
-        <small *ngIf="buscaTabela && tabelasFiltradas().length === 0" class="text-muted">
-          Nenhuma tabela encontrada para "{{ buscaTabela }}".
+        <small *ngIf="buscaTabela() && tabelasFiltradas().length === 0" class="text-muted">
+          Nenhuma tabela encontrada para "{{ buscaTabela() }}".
         </small>
       </label>
 
@@ -48,7 +49,7 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
       </label>
 
       <button class="btn btn-primary" (click)="comparar()"
-        [disabled]="carregando() || !tabelaSelecionada || !arquivo()">
+        [disabled]="carregando() || !tabelaSelecionada() || !arquivo()">
         <i class="bi bi-arrow-left-right"></i>
         {{ carregando() ? 'Comparando…' : 'Comparar' }}
       </button>
@@ -57,7 +58,7 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
         <i class="bi bi-download"></i> Exportar CSV
       </button>
 
-      <button *ngIf="resultado() || arquivo() || tabelaSelecionada" class="btn btn-outline-danger"
+      <button *ngIf="resultado() || arquivo() || tabelaSelecionada()" class="btn btn-outline-danger"
               (click)="limparTudo()" [disabled]="carregando()">
         <i class="bi bi-eraser"></i> Limpar
       </button>
@@ -274,23 +275,30 @@ export class DbSincronizacaoComponent {
   readonly arquivo = signal<File | null>(null);
   readonly scriptCopiado = signal(false);
   readonly filtro = signal<FiltroSeveridade>('Critico');
+  readonly tabelaSelecionada = signal('');
+  readonly buscaTabela = signal('');
 
-  tabelaSelecionada = '';
-  buscaTabela = '';
   scriptSchema = 'dbo';
   scriptTabela = '';
 
   readonly tabelasFiltradas = computed(() => {
-    const q = this.buscaTabela.trim().toLowerCase();
+    const q = this.buscaTabela().trim().toLowerCase();
     const lista = this.tabelas();
     if (!q) return lista;
-    return lista.filter(t =>
+    const filtradas = lista.filter(t =>
       t.nome.toLowerCase().includes(q) ||
       (t.nomeCompleto ?? '').toLowerCase().includes(q) ||
       t.schema.toLowerCase().includes(q));
+    const sel = this.tabelaSelecionada();
+    if (sel && !filtradas.some(t => t.schema + '|' + t.nome === sel)) {
+      const item = lista.find(t => t.schema + '|' + t.nome === sel);
+      if (item) return [item, ...filtradas];
+    }
+    return filtradas;
   });
 
   onTabelaJcaChange(valor: string): void {
+    this.tabelaSelecionada.set(valor);
     if (!valor) return;
     const [schema, tabela] = valor.split('|');
     if (schema) this.scriptSchema = schema;
@@ -302,8 +310,8 @@ export class DbSincronizacaoComponent {
     this.arquivo.set(null);
     this.erro.set(null);
     this.filtro.set('Critico');
-    this.tabelaSelecionada = '';
-    this.buscaTabela = '';
+    this.tabelaSelecionada.set('');
+    this.buscaTabela.set('');
     this.scriptTabela = '';
     if (this.arquivoInput) this.arquivoInput.nativeElement.value = '';
   }
@@ -516,8 +524,9 @@ SELECT
   }
 
   comparar(): void {
-    if (!this.tabelaSelecionada || !this.arquivo()) return;
-    const [schema, tabela] = this.tabelaSelecionada.split('|');
+    const sel = this.tabelaSelecionada();
+    if (!sel || !this.arquivo()) return;
+    const [schema, tabela] = sel.split('|');
     this.carregando.set(true);
     this.erro.set(null);
     this.resultado.set(null);

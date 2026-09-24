@@ -111,6 +111,7 @@ Faixa de status compacta (conectado/desconectado + servidor/banco/versão, com l
 - Lazy loading em `database.routes.ts:10`
 - Schema filter
 - Click para selecionar → carrega colunas + índices
+- Busca global reativa via signal (`busca` signal + `tabelas/procedures/triggersFiltradas` computed — corrigido em 24/09/2026: propriedade comum não invalidava o `computed`)
 
 ---
 
@@ -224,7 +225,7 @@ Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem aba
 
 **Resumo = cards-filtro clicáveis** (padrão **só críticos**): `críticos` | `avisos` | `compatíveis` | `match % · tudo`. Clique no card filtra a lista; clique de novo (ou em `match · tudo`) limpara. Checkbox "Mostrar apenas diferenças" removido. `filtroSeveridade` signal (`'Critico' | 'Aviso' | 'Ok' | null`, default `'Critico'`); numerador `numeroCritico` estável na lista completa da resposta (não renumera ao trocar filtro); coluna `numero` no export CSV.
 
-**Controles:** busca de tabela (`buscaTabela` + `tabelasFiltradas()` case-insensitive sobre nome/schema — 200+ tabelas), file input `accept=".json"` ("Escolher JSON"), botões Comparar / Exportar CSV / **Limpar** (`limparTudo()` zera resultado, arquivo, seleção, filtro, busca e input de arquivo via `ViewChild`).
+**Controles:** busca de tabela **reativa via signal** (`buscaTabela` signal + `tabelasFiltradas` computed — case-insensitive sobre nome/schema; corrigido em 24/09/2026: propriedade comum não invalidava o `computed`, exigindo Ctrl+F5; tabela selecionada sempre permanece visível no `<select>` mesmo fora do match), file input `accept=".json"` ("Escolher JSON"), botões Comparar / Exportar CSV / **Limpar** (`limparTudo()` zera resultado, arquivo, seleção, filtro, busca e input de arquivo via `ViewChild` — busca volta a filtrar imediatamente, sem F5).
 
 **Script de exportação:** inputs de schema + tabela, `<pre>` gerado ao vivo (`scriptSql()`), botão "Copiar script" (clipboard API + fallback `execCommand`). JSON montado com **`FOR XML PATH` + `RAISERROR`** (sem `FOR JSON`/`JSON_QUERY`/`THROW`) — compatível com SQL Server 2005+; saída 1 coluna `nvarchar(max)` (objeto único).
 
@@ -250,7 +251,7 @@ Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem aba
 ### Observações Técnicas
 - Lazy loading em `database.routes.ts:14`
 - Removidos: `POST /diff`, `POST|GET /snapshot(s)`, `POST /snapshot/comparar`, métodos `diferencarSchema`/`salvarSnapshot`/`listarSnapshots`/`compararSnapshot` e modelos `DiffResult`/`DiffItem`; **modo lote** (`compare-schemas-lote`, `compararSchemasLote`, `SchemaComparisonBatchResult`, toggle UI)
-- IDENTIDADE CLEAN: dots CSS `.db-sync__dot--Critico/--Aviso/--Ok`; badge `.db-sync__badge` numerando críticos; cards `.db-sync__stat` com estado ativo por severidade; entrada só JSON ≤ 5 MB; export `schema-comparacao-{tabela}.csv` client-side com colunas `numero,severidade,…`
+- IDENTIDADE CLEAN: dots CSS `.db-sync__dot--Critico/--Aviso/--Ok`; badge `.db-sync__badge` numerando críticos; cards `.db-sync__stat` com estado ativo por severidade; entrada só JSON ≤ 5 MB; export `schema-comparacao-{tabela}.csv` client-side com colunas `numero,severidade,…`; `buscaTabela`/`tabelaSelecionada` signals (busca reativa sem F5)
 - Bloco "Script de exportação": aspas SQL escapadas via `litarSql`; JSON montado via `FOR XML PATH` (2005+); duplicatas no arquivo → `Aviso`, sem abortar
 - Modelos: `SchemaDifference.numeroCritico?` em `database.model.ts`
 

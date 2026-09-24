@@ -18,7 +18,7 @@ type ArvoreTipo = 'tabela' | 'procedure';
   <div class="adm-search db-explorador__busca">
     <i class="bi bi-search adm-search__icone"></i>
     <input type="text" class="adm-search__input" placeholder="Buscar tabela, procedure ou trigger…"
-      [(ngModel)]="busca" (ngModelChange)="onBuscar()">
+      [ngModel]="busca()" (ngModelChange)="busca.set($event)">
   </div>
 
   <div class="db-explorador__layout">
@@ -284,14 +284,14 @@ export class DbExploradorComponent implements OnInit {
 
   readonly gruposAbertos = signal<Set<string>>(new Set(['tabelas', 'procedures']));
 
-  busca = '';
+  readonly busca = signal('');
 
   readonly tabelasFiltradas = computed(() => this.filtrar(this.tabelas(), t => t.nome, t => t.nomeCompleto));
   readonly proceduresFiltradas = computed(() => this.filtrar(this.procedures(), p => p.nome, p => p.nomeCompleto));
   readonly triggersFiltradas = computed(() => this.filtrar(this.triggers(), g => g.nome, g => g.schema + '.' + g.nome));
 
   private filtrar<T>(lista: T[], getNome: (x: T) => string, getFull: (x: T) => string): T[] {
-    const q = (this.busca || '').toLowerCase();
+    const q = this.busca().trim().toLowerCase();
     if (!q) return lista;
     return lista.filter(x => getNome(x).toLowerCase().includes(q) || getFull(x).toLowerCase().includes(q));
   }
@@ -301,8 +301,6 @@ export class DbExploradorComponent implements OnInit {
     this.db.listarProcedures(undefined, undefined, 5000).pipe(catchError(() => of([] as ProcedureResumo[]))).subscribe(l => this.procedures.set(l));
     this.db.listarTriggers().pipe(catchError(() => of([] as Trigger[]))).subscribe(l => this.triggers.set(l));
   }
-
-  onBuscar(): void { /* trigga computed */ }
 
   grupoAberto(g: string): boolean { return this.gruposAbertos().has(g); }
 
