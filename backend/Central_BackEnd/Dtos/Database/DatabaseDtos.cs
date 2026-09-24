@@ -178,7 +178,7 @@ public record CteDto(
     string Nome,
     string Sql);
 
-// Request atualizado com WHERE, ORDER BY, GROUP BY, CTEs
+// Request atualizado com WHERE, ORDER BY, GROUP BY, HAVING, CTEs
 public record QueryBuilderAdvancedRequest(
     List<string> Tabelas,
     List<string> Colunas,
@@ -187,7 +187,8 @@ public record QueryBuilderAdvancedRequest(
     List<OrderByDto>? OrderBy,
     List<GroupByDto>? GroupBy,
     int? Limite,
-    List<CteDto>? Ctes);
+    List<CteDto>? Ctes,
+    string? Having = null);
 
 /// <summary>
 /// Coluna de schema extraido (JCA ou arquivo externo).

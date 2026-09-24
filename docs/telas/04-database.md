@@ -187,7 +187,7 @@ Diagrama SVG próprio com layout BFS, profundidade 1-5, setas: azul contínua (c
 **Componente:** `src/app/features/database/pages/db-consultas.component.ts`
 
 ### O que faz
-Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem abas SQL livre / Favoritos, sem Executar e sem JOTA SQL Assistant. Aviso no topo: montar no Criador e **copiar o SQL para o SSMS**. Wizard em 7 etapas (Tabela → Campos → Relacionamentos → Filtros → Ordenação → Resumo → **SQL** com Copiar), aliases amigáveis, operadores em linguagem simples, SQL via `POST /query-builder-advanced` (fallback local), GROUP BY/HAVING em "Opções avançadas", modal de tabela relacionada com confiança. Pré-preenchimento via `?tabela=`, `?tabelas=`, `?caminho=`, `?origem=`/`?destino=` ou `sessionStorage` (`db-query-builder-tables`). Query param `aba=builder` (ou legado `builder=true`) ainda cai na rota `consultas`.
+Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem abas SQL livre / Favoritos, sem Executar e sem JOTA SQL Assistant. Aviso no topo: montar no Criador e **copiar o SQL para o SSMS**. Wizard em 7 etapas (Tabela → Campos → Relacionamentos → Filtros → Ordenação → Resumo → **SQL** com Copiar), aliases amigáveis, operadores em linguagem simples, SQL via `POST /query-builder-advanced` (fallback local), **HAVING** conectado ao request (exige GROUP BY), modal de tabela relacionada com confiança. Pré-preenchimento via `?tabela=`, `?tabelas=`, `?caminho=`, `?origem=`/`?destino=` ou `sessionStorage` (`db-query-builder-tables`). Query param `aba=builder` (ou legado `builder=true`) ainda cai na rota `consultas`. **Navegação (24/09/2026):** etapa 2 liberada só com tabela; campos exigidos para sair da etapa 2 (corrige deadlock que travava na 1ª fase).
 
 ### Services Injetados
 | Service | Métodos Usados | Finalidade |
@@ -212,6 +212,7 @@ Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem aba
 - Lazy loading em `database.routes.ts:13`
 - Removidos: `POST /database/query`, `DatabaseFavoritosService`, histórico em `localStorage`, Executar/resultados, painel JOTA
 - `TableDetailComponent.abrirQueryBuilder()` / `gerarEConsultar()` → "Abrir no Criador"; `abrirQueryBuilderComRelacionamento()` usa `?caminho=origem,destino`; Explorador/Procedure modal → `db-query-builder-tables` / `?aba=builder`
+- Correções 24/09/2026: navegação da etapa 1→2 (deadlock `etapaValida(2)` exigia campos antes da etapa 2); backend `FROM`/`JOIN` com `[schema].[tabela]`; ORDER BY/GROUP BY resolvendo `Tabela.Coluna`; HAVING enviado e gerado; fallback local quando `sqlGerado` vazio; BETWEEN exige valor2
 
 ---
 

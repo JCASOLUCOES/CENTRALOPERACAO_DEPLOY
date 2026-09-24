@@ -36,15 +36,15 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
             return new DatabaseQueryBuilderResult("", new(), new(), "Nenhuma tabela selecionada");
 
         if (req.Tabelas.Count > 5)
-            return new DatabaseQueryBuilderResult("", new(), new(), "Máximo de 5 tabelas permitidas por consulta");
+            return new DatabaseQueryBuilderResult("", new(), new(), "Mï¿½ximo de 5 tabelas permitidas por consulta");
 
         var tabelasValidas = await ValidarTabelasAsync(req.Tabelas, ct);
         if (tabelasValidas.Count == 0)
-            return new DatabaseQueryBuilderResult("", new(), new(), "Nenhuma tabela válida encontrada");
+            return new DatabaseQueryBuilderResult("", new(), new(), "Nenhuma tabela vï¿½lida encontrada");
 
         var sqlBuilder = new System.Text.StringBuilder();
         var joinsUsados = new List<RelationshipDto>();
-        // Aliases amigáveis e determinísticos (ex.: TBCHAMADO -> C, TBCLIENTE -> CL)
+        // Aliases amigï¿½veis e determinï¿½sticos (ex.: TBCHAMADO -> C, TBCLIENTE -> CL)
         var tabelasAlias = GerarAliases(tabelasValidas);
 
         // 1. CTEs (WITH ...)
@@ -69,7 +69,7 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
         sqlBuilder.Append($"SELECT {topClause}{colunasSelect}");
 
         // 3. FROM com JOINs
-        sqlBuilder.Append($"\nFROM [{tabelasValidas[0]}] AS [{tabelasAlias[tabelasValidas[0]]}]");
+        sqlBuilder.Append($"\nFROM {QualificarTabela(tabelasValidas[0])} AS [{tabelasAlias[tabelasValidas[0]]}]");
 
         if (req.Tabelas.Count > 1 && req.Relacionamentos != null && req.Relacionamentos.Count > 0)
         {
@@ -89,7 +89,7 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
             joinsUsados = joinsUsadosResult;
         }
 
-        // 4. WHERE com condições
+        // 4. WHERE com condiï¿½ï¿½es
         if (req.WhereConditions != null && req.WhereConditions.Count > 0)
         {
             sqlBuilder.Append("\nWHERE ");
@@ -101,25 +101,28 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
             sqlBuilder.Append(string.Join(" ", whereParts));
         }
 
-        // 5. GROUP BY com agregações
+        // 5. GROUP BY
         if (req.GroupBy != null && req.GroupBy.Count > 0)
         {
             sqlBuilder.Append("\nGROUP BY ");
             var groupParts = new List<string>();
             foreach (var gb in req.GroupBy)
             {
-                var tabelaRef = req.Tabelas.FirstOrDefault(t => t.EndsWith("." + gb.Coluna) || t == gb.Coluna);
-                var alias = tabelaRef != null && tabelasAlias.ContainsKey(tabelaRef)
-                    ? tabelasAlias[tabelaRef]
-                    : tabelasAlias[req.Tabelas[0]];
-                groupParts.Add($"[{alias}].[{gb.Coluna}]");
+                groupParts.Add(ResolverColunaRef(gb.Coluna, tabelasAlias, tabelasAlias[tabelasValidas[0]]));
             }
             sqlBuilder.Append(string.Join(", ", groupParts));
         }
 
-        // 6. HAVING (se houver agregações com filtro no GROUP BY)
-        // Se o usuário especificou GROUP BY com agregações implícitas, HAVING pode ser adicionado
-        // Aqui suportamos HAVING básico via GroupByDto.Agregacao não nula (exemplo simples)
+        // 6. HAVING (apos GROUP BY; entrada simples do usuario, copiada para o SSMS)
+        var having = req.Having?.Trim().TrimEnd(';');
+        if (!string.IsNullOrWhiteSpace(having))
+        {
+            if (having.Contains(';') || having.Contains('\n') || having.Contains('\r'))
+                return new DatabaseQueryBuilderResult("", new(), new(), "Condicao HAVING invalida");
+            if (req.GroupBy == null || req.GroupBy.Count == 0)
+                return new DatabaseQueryBuilderResult("", new(), new(), "HAVING exige ao menos um campo em GROUP BY");
+            sqlBuilder.Append($"\nHAVING {having}");
+        }
 
         // 7. ORDER BY
         if (req.OrderBy != null && req.OrderBy.Count > 0)
@@ -128,9 +131,8 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
             var orderParts = new List<string>();
             foreach (var ob in req.OrderBy)
             {
-                var tabelaRef = req.Tabelas.FirstOrDefault(t => t.EndsWith("." + ob.Coluna) || t == ob.Coluna);
-                var alias = tabelaRef != null ? tabelasAlias[tabelaRef] : tabelasAlias[req.Tabelas[0]];
-                orderParts.Add($"[{alias}].[{ob.Coluna}] {(ob.Ascendente ? "ASC" : "DESC")}");
+                var colunaRef = ResolverColunaRef(ob.Coluna, tabelasAlias, tabelasAlias[tabelasValidas[0]]);
+                orderParts.Add($"{colunaRef} {(ob.Ascendente ? "ASC" : "DESC")}");
             }
             sqlBuilder.Append(string.Join(", ", orderParts));
         }
@@ -162,7 +164,7 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
         var grafo = new Dictionary<string, List<(string destino, string colOrigem, string colDestino, string tipo)>>();
         foreach (var t in tabelas) grafo[t] = new List<(string, string, string, string)>();
 
-        // Usar relacionamentos confirmados primeiro, depois possíveis
+        // Usar relacionamentos confirmados primeiro, depois possï¿½veis
         var todosRels = relacionamentos
             .Where(r => tabelas.Contains(r.TabelaOrigem) && tabelas.Contains(r.TabelaDestino))
             .OrderBy(r => r.Tipo == "Confirmada" ? 0 : 1)
@@ -170,7 +172,7 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
             .ToList();
 
         var joinsUsados = new List<RelationshipDto>();
-        var tabelasConectadas = new HashSet<string> { tabelas[0] }; // Começa da primeira tabela
+        var tabelasConectadas = new HashSet<string> { tabelas[0] }; // Comeï¿½a da primeira tabela
         var joins = new List<(string origem, string destino, string colOrigem, string colDestino, string tipo)>();
 
         // BFS para conectar todas as tabelas
@@ -189,7 +191,7 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
                 fila.Enqueue(rel.TabelaDestino);
             }
 
-            // Também verificar relacionamentos inversos
+            // Tambï¿½m verificar relacionamentos inversos
             foreach (var rel in todosRels.Where(r => r.TabelaDestino == atual && tabelas.Contains(r.TabelaOrigem) && !tabelasConectadas.Contains(r.TabelaOrigem)))
             {
                 tabelasConectadas.Add(rel.TabelaOrigem);
@@ -199,13 +201,13 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
             }
         }
 
-        // Se não conseguiu conectar todas, tentar relacionamentos possíveis restantes
+        // Se nï¿½o conseguiu conectar todas, tentar relacionamentos possï¿½veis restantes
         if (tabelasConectadas.Count < tabelas.Count)
         {
             var faltando = tabelas.Where(t => !tabelasConectadas.Contains(t)).ToList();
             foreach (var t in faltando)
             {
-                // Tentar conectar a qualquer tabela já conectada
+                // Tentar conectar a qualquer tabela jï¿½ conectada
                 foreach (var conectada in tabelasConectadas)
                 {
                     var rel = todosRels.FirstOrDefault(r => 
@@ -237,12 +239,12 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
                 // Por simplicidade, usar * para cada tabela
                 new[] { $"[{GetAlias(tabelas, t)}].*" }));
 
-        var sqlGerado = $"SELECT {colunasSelect} FROM [{tabelas[0]}] AS [{GetAlias(tabelas, tabelas[0])}]";
+        var sqlGerado = $"SELECT {colunasSelect} FROM {QualificarTabela(tabelas[0])} AS [{GetAlias(tabelas, tabelas[0])}]";
 
         foreach (var j in joins)
         {
             var tipoJoin = j.tipo == "Confirmada" ? "INNER JOIN" : "LEFT JOIN";
-            sqlGerado += $"\n  {tipoJoin} [{j.destino}] AS [{GetAlias(tabelas, j.destino)}] ON [{GetAlias(tabelas, j.origem)}].[{j.colOrigem}] = [{GetAlias(tabelas, j.destino)}].[{j.colDestino}]";
+            sqlGerado += $"\n  {tipoJoin} {QualificarTabela(j.destino)} AS [{GetAlias(tabelas, j.destino)}] ON [{GetAlias(tabelas, j.origem)}].[{j.colOrigem}] = [{GetAlias(tabelas, j.destino)}].[{j.colDestino}]";
         }
 
         return (sqlGerado, joinsUsados.DistinctBy(r => (r.TabelaOrigem, r.ColunaOrigem, r.TabelaDestino, r.ColunaDestino)).ToList());
@@ -271,8 +273,8 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
     }
 
     /// <summary>
-    /// Aliases amigáveis e determinísticos (ex.: TBCHAMADO -> C, TBCLIENTE -> CL, TBCHAMADO_ITENS -> CI).
-    /// A mesma entrada sempre gera os mesmos aliases, então chamadas independentes a <see cref="GetAlias"/>
+    /// Aliases amigï¿½veis e determinï¿½sticos (ex.: TBCHAMADO -> C, TBCLIENTE -> CL, TBCHAMADO_ITENS -> CI).
+    /// A mesma entrada sempre gera os mesmos aliases, entï¿½o chamadas independentes a <see cref="GetAlias"/>
     /// permanecem consistentes entre si.
     /// </summary>
     private static Dictionary<string, string> GerarAliases(List<string> tabelas)
@@ -319,6 +321,48 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
         return mapa[tabelas[0]];
     }
 
+    /// <summary>
+    /// Qualifica "schema.tabela" como [schema].[tabela] (nunca [schema.tabela]).
+    /// </summary>
+    private static string QualificarTabela(string tabela)
+    {
+        var partes = tabela.Split('.');
+        if (partes.Length == 2)
+            return $"[{partes[0]}].[{partes[1]}]";
+        return $"[{tabela}]";
+    }
+
+    /// <summary>
+    /// Resolve "Tabela.Coluna" ou "Coluna" para "[alias].[coluna]".
+    /// Aceita tabela com ou sem schema ("dbo.TB.X" nao ocorre; o front manda "TB.X").
+    /// </summary>
+    private static string ResolverColunaRef(
+        string colunaRef,
+        Dictionary<string, string> tabelasAlias,
+        string fallbackAlias)
+    {
+        if (string.IsNullOrWhiteSpace(colunaRef))
+            return $"[{fallbackAlias}].[]";
+        if (!colunaRef.Contains('.'))
+            return $"[{fallbackAlias}].[{colunaRef}]";
+
+        var partes = colunaRef.Split('.');
+        var nomeColuna = partes[^1];
+        var nomeTabela = partes[^2];
+        foreach (var kvp in tabelasAlias)
+        {
+            var chave = kvp.Key;
+            var nomeTabelaChave = chave.Split('.').Last();
+            if (chave.EndsWith("." + nomeTabela, StringComparison.OrdinalIgnoreCase) ||
+                chave.Equals(nomeTabela, StringComparison.OrdinalIgnoreCase) ||
+                nomeTabelaChave.Equals(nomeTabela, StringComparison.OrdinalIgnoreCase))
+            {
+                return $"[{kvp.Value}].[{nomeColuna}]";
+            }
+        }
+        return $"[{fallbackAlias}].[{nomeColuna}]";
+    }
+
     private string MontarCondicaoWhereDetalhada(WhereConditionDto wc, Dictionary<string, string> tabelasAlias)
     {
         string tabelaAlias;
@@ -360,7 +404,7 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
     private static string EscaparSql(string? valor)
     {
         if (string.IsNullOrEmpty(valor)) return "NULL";
-        // Escapar aspas simples para segurança
+        // Escapar aspas simples para seguranï¿½a
         return $"'{valor.Replace("'", "''")}'";
     }
 }

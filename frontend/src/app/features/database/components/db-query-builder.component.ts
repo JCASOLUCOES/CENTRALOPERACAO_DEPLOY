@@ -897,15 +897,14 @@ export class DbQueryBuilderComponent implements OnInit {
   etapaValida(id: number): boolean {
     if (id === 1) return this.tabelas().length >= 1;
     if (id === 2) return this.tabelas().length >= 1 && this.totalCampos() >= 1;
-    return this.etapaValida(2);
+    return this.tabelas().length >= 1 && this.totalCampos() >= 1;
   }
 
   podeIrPara(id: number): boolean {
     if (id <= this.etapa()) return true;
-    for (let i = 1; i < id; i++) {
-      if (i <= 2 && !this.etapaValida(i)) return false;
-    }
-    return this.etapaValida(2);
+    if (id === 2) return this.etapaValida(1);
+    if (id > 2) return this.etapaValida(2);
+    return this.etapaValida(id);
   }
 
   irParaEtapa(id: number): void {
@@ -946,7 +945,9 @@ export class DbQueryBuilderComponent implements OnInit {
       }
     }
     const where = this.filtros()
-      .filter(f => f.coluna && (!this.precisaValor(f) || f.valor !== ''))
+      .filter(f => f.coluna &&
+        (!this.precisaValor(f) || f.valor !== '') &&
+        (!this.precisaValor2(f) || f.valor2 !== ''))
       .map(f => {
         const def = this.defOperador(f.operador);
         const tabela = this.nomeTabelaPorAlias(f.tabelaAlias);
@@ -981,6 +982,7 @@ export class DbQueryBuilderComponent implements OnInit {
       OrderBy: orderBy,
       GroupBy: groupBy,
       Limite: this.limite,
+      Having: this.having.trim() || null,
       Ctes: []
     };
   }
@@ -994,8 +996,14 @@ export class DbQueryBuilderComponent implements OnInit {
     this.gerandoSql.set(true);
     this.db.executarQueryBuilderAvançado(this.montarRequisicao()).subscribe({
       next: (r: { sqlGerado?: string; aviso?: string }) => {
-        this.sqlGerado.set(r?.sqlGerado ?? '');
-        this.avisoSql.set(r?.aviso ?? null);
+        const sql = (r?.sqlGerado ?? '').trim();
+        if (sql) {
+          this.sqlGerado.set(sql);
+          this.avisoSql.set(r?.aviso ?? null);
+        } else {
+          this.sqlGerado.set(this.montarSQLLocal());
+          this.avisoSql.set(r?.aviso || 'Servidor não gerou SQL — usando montagem local.');
+        }
         this.gerandoSql.set(false);
         depois?.();
       },
@@ -1036,6 +1044,13 @@ export class DbQueryBuilderComponent implements OnInit {
       return `${ref} ${def.sql} '${f.valor}'`;
     });
     if (wheres.length > 0) sql += `\nWHERE ${wheres.join(' AND ')}`;
+    if (this.agruparPor().length > 0) {
+      sql += `\nGROUP BY ${this.agruparPor().map(g => {
+        const [alias, ...resto] = g.split('.');
+        return `${alias}.${resto.join('.')}`;
+      }).join(', ')}`;
+      if (this.having.trim()) sql += `\nHAVING ${this.having.trim()}`;
+    }
     if (this.ordenacoes().length > 0) {
       sql += `\nORDER BY ${this.ordenacoes().map(o => `${o.tabelaAlias}.${o.coluna} ${o.direcao}`).join(', ')}`;
     }
