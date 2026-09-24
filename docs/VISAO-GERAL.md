@@ -80,7 +80,7 @@ endpoints desde 24/09/2026), `RagProxy` (`POST /chat`
 ## 8. Checklist — nova tela
 
 1. Rota em `features.routes.ts` (ou módulo `.routes.ts`) + guard (`authGuard`, `adminGuard` se admin).
-2. Link na sidebar (seção correta) + label em `BREADCRUMB_LABELS` (`header.component.ts`).
+2. Link na sidebar (seção correta) + label em `BREADCRUMB_LABELS` / `BREADCRUMB_PATTERNS` (`breadcrumb.component.ts`).
 3. Componente standalone + service dedicado (reutilizar existentes antes de criar).
 4. Dados reais ou empty-state honesto — nunca mockar comportamento.
 5. Registrar em `TELAS.md` (§ nova ou existente) + história em `HISTORIAS-TELAS.md`

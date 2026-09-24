@@ -6,11 +6,12 @@ import { Router } from '@angular/router';
 import { PerfilUsuario } from '@core/models/auth.model';
 import { APP_VERSION } from '@shared/meta/app-version';
 import { APP_CONFIG } from '@shared/config/app-config';
+import { BreadcrumbComponent } from '@layout/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, BreadcrumbComponent],
   templateUrl: './admin-layout.component.html',
   styleUrl: './admin-layout.component.scss',
 })
