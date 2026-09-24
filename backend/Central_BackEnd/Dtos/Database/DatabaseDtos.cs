@@ -253,3 +253,14 @@ public record SchemaComparisonResultDto(
     int Oks,
     decimal PercentualMatch,
     List<SchemaDifferenceDto> Diferencas);
+
+/// <summary>
+/// Resultado consolidado da comparacao em lote (varias tabelas).
+/// </summary>
+public record SchemaComparisonBatchResultDto(
+    string? ArquivoNome,
+    int TotalTabelas,
+    int TotalCriticos,
+    int TotalAvisos,
+    int TotalOks,
+    List<SchemaComparisonResultDto> Resultados);

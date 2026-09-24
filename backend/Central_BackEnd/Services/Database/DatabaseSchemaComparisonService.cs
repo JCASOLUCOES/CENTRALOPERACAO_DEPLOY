@@ -10,6 +10,9 @@ public interface IDatabaseSchemaComparisonService
 {
     Task<SchemaComparisonResultDto> CompararComArquivoAsync(
         string schema, string tabela, IFormFile arquivo, CancellationToken ct = default);
+
+    Task<SchemaComparisonBatchResultDto> CompararLoteComArquivoAsync(
+        IFormFile arquivo, CancellationToken ct = default);
 }
 
 public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
@@ -31,6 +34,52 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
     public async Task<SchemaComparisonResultDto> CompararComArquivoAsync(
         string schema, string tabela, IFormFile arquivo, CancellationToken ct = default)
     {
+        ValidarArquivo(arquivo);
+        var ext = Path.GetExtension(arquivo.FileName ?? "").ToLowerInvariant();
+
+        var jca = await ExtrairSchemaJcaAsync(schema, tabela, ct);
+        var externo = await LerArquivoAsync(arquivo, ext, ct);
+        return Comparar(jca, externo, arquivo.FileName);
+    }
+
+    public async Task<SchemaComparisonBatchResultDto> CompararLoteComArquivoAsync(
+        IFormFile arquivo, CancellationToken ct = default)
+    {
+        ValidarArquivo(arquivo);
+        var ext = Path.GetExtension(arquivo.FileName ?? "").ToLowerInvariant();
+        if (ext != ".json")
+            throw new ArgumentException("Lote aceita apenas arquivos .json (array de tabelas).");
+
+        using var reader = new StreamReader(arquivo.OpenReadStream(), Encoding.UTF8);
+        var conteudo = await reader.ReadToEndAsync(ct);
+        var tabelas = ParseJsonLote(conteudo, arquivo.FileName ?? "lote.json");
+
+        var resultados = new List<SchemaComparisonResultDto>();
+        foreach (var externa in tabelas)
+        {
+            var (schema, nome) = SplitNomeTabela(externa.Tabela);
+            try
+            {
+                var jca = await ExtrairSchemaJcaAsync(schema, nome, ct);
+                resultados.Add(Comparar(jca, externa, arquivo.FileName));
+            }
+            catch (ArgumentException ex)
+            {
+                resultados.Add(ResultadoTabelaAusente(externa, arquivo.FileName, ex.Message));
+            }
+        }
+
+        return new SchemaComparisonBatchResultDto(
+            arquivo.FileName,
+            resultados.Count,
+            resultados.Sum(r => r.Criticos),
+            resultados.Sum(r => r.Avisos),
+            resultados.Sum(r => r.Oks),
+            resultados);
+    }
+
+    private static void ValidarArquivo(IFormFile arquivo)
+    {
         if (arquivo == null || arquivo.Length == 0)
             throw new ArgumentException("Arquivo e obrigatorio.");
         if (arquivo.Length > TamanhoMaximoBytes)
@@ -38,10 +87,59 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
         var ext = Path.GetExtension(arquivo.FileName ?? "").ToLowerInvariant();
         if (!ExtencoesAceitas.Contains(ext))
             throw new ArgumentException("Apenas arquivos .csv ou .json sao aceitos.");
+    }
 
-        var jca = await ExtrairSchemaJcaAsync(schema, tabela, ct);
-        var externo = await LerArquivoAsync(arquivo, ext, ct);
-        return Comparar(jca, externo, arquivo.FileName);
+    private static (string Schema, string Nome) SplitNomeTabela(string tabela)
+    {
+        var limpo = (tabela ?? "").Replace("[", "").Replace("]", "").Trim();
+        if (string.IsNullOrEmpty(limpo))
+            throw new ArgumentException("Item do lote sem nome de tabela (propriedade 'tabela').");
+        var idx = limpo.IndexOf('.');
+        if (idx > 0 && idx < limpo.Length - 1)
+            return (limpo[..idx].Trim(), limpo[(idx + 1)..].Trim());
+        return ("dbo", limpo);
+    }
+
+    private static SchemaComparisonResultDto ResultadoTabelaAusente(
+        SchemaInfoDto externa, string? nomeArquivo, string mensagem)
+    {
+        var difs = new List<SchemaDifferenceDto>
+        {
+            new("Critico", "Coluna", externa.Tabela, null, null, mensagem)
+        };
+        return new SchemaComparisonResultDto(
+            DateTime.UtcNow, externa.Tabela, nomeArquivo, 0, 0, 1, 0, 0, 0m, difs);
+    }
+
+    private static List<SchemaInfoDto> ParseJsonLote(string json, string nomeArquivo)
+    {
+        var root = ExtrairRootJson(json);
+        var lista = new List<SchemaInfoDto>();
+
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var el in root.EnumerateArray())
+            {
+                if (el.ValueKind != JsonValueKind.Object)
+                    throw new ArgumentException(
+                        "JSON de lote: cada item deve ser um objeto { tabela, colunas, indices, fks }.");
+                lista.Add(ParseJsonObject(el, nomeArquivo));
+            }
+        }
+        else if (root.ValueKind == JsonValueKind.Object)
+        {
+            lista.Add(ParseJsonObject(root, nomeArquivo));
+        }
+        else
+        {
+            throw new ArgumentException(
+                "JSON de lote invalido: esperado array de objetos { tabela, colunas, indices, fks }.");
+        }
+
+        if (lista.Count == 0)
+            throw new ArgumentException("JSON de lote vazio (nenhuma tabela).");
+
+        return lista;
     }
 
     private async Task<SchemaInfoDto> ExtrairSchemaJcaAsync(string schema, string tabela, CancellationToken ct)
@@ -78,40 +176,45 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
     {
         var root = ExtrairRootJson(json);
 
-        // Formato: { "tabela": "...", "colunas": [...], "indices": [...], "fks": [...] }
-        // ou apenas um array de colunas.
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            var colunas = new List<SchemaColumnInfoDto>();
+            foreach (var el in root.EnumerateArray())
+                colunas.Add(ParseColunaJson(el));
+            if (colunas.Count == 0)
+                throw new ArgumentException("JSON nao contem colunas validas (propriedade 'colunas' vazia ou ausente).");
+            return new SchemaInfoDto(nomeArquivo, colunas,
+                new List<SchemaIndexInfoDto>(), new List<SchemaFkInfoDto>());
+        }
+
+        if (root.ValueKind == JsonValueKind.Object)
+            return ParseJsonObject(root, nomeArquivo);
+
+        throw new ArgumentException(
+            "JSON invalido: esperado objeto { tabela, colunas, indices, fks } ou array de colunas.");
+    }
+
+    private static SchemaInfoDto ParseJsonObject(JsonElement root, string nomeArquivo)
+    {
         string tabela = nomeArquivo;
+        if (root.TryGetProperty("tabela", out var t))
+            tabela = t.GetString() ?? tabela;
+
         var colunas = new List<SchemaColumnInfoDto>();
         var indices = new List<SchemaIndexInfoDto>();
         var fks = new List<SchemaFkInfoDto>();
 
-        if (root.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var el in root.EnumerateArray())
+        if (root.TryGetProperty("colunas", out var cols) && cols.ValueKind == JsonValueKind.Array)
+            foreach (var el in cols.EnumerateArray())
                 colunas.Add(ParseColunaJson(el));
-        }
-        else if (root.ValueKind == JsonValueKind.Object)
-        {
-            if (root.TryGetProperty("tabela", out var t))
-                tabela = t.GetString() ?? tabela;
 
-            if (root.TryGetProperty("colunas", out var cols) && cols.ValueKind == JsonValueKind.Array)
-                foreach (var el in cols.EnumerateArray())
-                    colunas.Add(ParseColunaJson(el));
+        if (root.TryGetProperty("indices", out var idx) && idx.ValueKind == JsonValueKind.Array)
+            foreach (var el in idx.EnumerateArray())
+                indices.Add(ParseIndiceJson(el));
 
-            if (root.TryGetProperty("indices", out var idx) && idx.ValueKind == JsonValueKind.Array)
-                foreach (var el in idx.EnumerateArray())
-                    indices.Add(ParseIndiceJson(el));
-
-            if (root.TryGetProperty("fks", out var fkEl) && fkEl.ValueKind == JsonValueKind.Array)
-                foreach (var el in fkEl.EnumerateArray())
-                    fks.Add(ParseFkJson(el));
-        }
-        else
-        {
-            throw new ArgumentException(
-                "JSON invalido: esperado objeto { tabela, colunas, indices, fks } ou array de colunas.");
-        }
+        if (root.TryGetProperty("fks", out var fkEl) && fkEl.ValueKind == JsonValueKind.Array)
+            foreach (var el in fkEl.EnumerateArray())
+                fks.Add(ParseFkJson(el));
 
         if (colunas.Count == 0)
             throw new ArgumentException("JSON nao contem colunas validas (propriedade 'colunas' vazia ou ausente).");

@@ -220,7 +220,13 @@ Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem aba
 **Sub-componente:** `src/app/features/database/components/db-sincronizacao.component.ts` (aba "Sincronização")
 
 ### O que faz
-**Só a sub-aba Sincronização** (aba "Banco × Documentação" e snapshots removidos em 23/09/2026, `640bbf6`). `DbDiferencasComponent` carrega `listarTabelas()` e repassa via `@Input tabelas` ao `DbSincronizacaoComponent`: compara schema de tabela JCA × arquivo CSV/JSON enviado (parse no backend). Exibe resumo (críticos/avisos/compatíveis/match %) + lista de diferenças com filtro "apenas diferenças" + export CSV client-side. Inclui bloco **"Script de exportação (JSON)"**: inputs de schema (default `dbo`) e tabela (auto-fill via `onTabelaJcaChange`), `<pre>` com T-SSQL gerado ao vivo por `scriptSql()` (CTEs de `sys.columns`/`sys.indexes`/`sys.foreign_keys` + `JSON_QUERY(... FOR JSON PATH)`), botão "Copiar script" e dica SSMS → célula → `.json` → upload.
+**Só a sub-aba Sincronização** (aba "Banco × Documentação" e snapshots removidos em 23/09/2026, `640bbf6`). `DbDiferencasComponent` carrega `listarTabelas()` e repassa via `@Input tabelas` ao `DbSincronizacaoComponent`: compara schema de tabela JCA × arquivo CSV/JSON enviado (parse no backend). Exibe resumo (críticos/avisos/compatíveis/match %) + lista de diferenças com filtro "apenas diferenças" + **numerador sequencial nas críticas** (badge 1, 2, 3… estável no lote todo; coluna `numero` no export CSV) + export CSV client-side.
+
+**Modos:** toggle **Uma tabela** | **Lote (várias tabelas)**.
+- *Uma tabela:* `POST /compare-schemas` (multipart `schema`, `tabela`, `arquivo`).
+- *Lote:* JSON array `[{ tabela, colunas, indices, fks }, …]` → `POST /compare-schemas-lote`; cada `tabela` no formato `schema.nome` é comparada com o JCA (ausente → 1 crítico com a mensagem); resumo global + blocos por tabela.
+
+**Script de exportação:** inputs de schema (+ tabela ou lista opcional `Tab1, Tab2` no modo lote), `<pre>` gerado ao vivo (`scriptSqlUnica()` / `scriptSqlLote()`), botão "Copiar script" (fallback `execCommand`). Ambos os scripts montam o JSON com **`FOR XML PATH` + `RAISERROR`** (sem `FOR JSON`/`JSON_QUERY`/`THROW`) — compatíveis com SQL Server 2005+ e qualquer compatibility level. Saída: 1 coluna `nvarchar(max)` (objeto único ou array de tabelas).
 
 ### Services Injetados
 | Service | Métodos Usados | Finalidade |
@@ -232,6 +238,7 @@ Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem aba
 |--------|-----------|---------|-----------|
 | GET | `/api/v1/database/tables` | `DatabaseService.listarTabelas()` | Tabelas do dropdown |
 | POST | `/api/v1/database/compare-schemas` | `DatabaseService.compararSchemas()` | Upload multipart (`schema`, `tabela`, `arquivo` CSV/JSON) × schema JCA → `SchemaComparisonResultDto` |
+| POST | `/api/v1/database/compare-schemas-lote` | `DatabaseService.compararSchemasLote()` | Upload multipart (`arquivo` só `.json` array de tabelas) → `SchemaComparisonBatchResultDto` (resumo global + 1 resultado por tabela) |
 
 ### Banco de Dados
 - **Conecta:** ✅ Sim — schema real do SQL Server × arquivo externo (Sincronização)
@@ -244,8 +251,9 @@ Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem aba
 ### Observações Técnicas
 - Lazy loading em `database.routes.ts:14`
 - Removidos: `POST /diff`, `POST|GET /snapshot(s)`, `POST /snapshot/comparar`, métodos `diferencarSchema`/`salvarSnapshot`/`listarSnapshots`/`compararSnapshot` e modelos `DiffResult`/`DiffItem`
-- IDENTIDADE CLEAN: dots CSS `.db-sync__dot--Critico/--Aviso/--Ok`; CSV/JSON ≤ 5 MB; export `schema-comparacao-{tabela}.csv` client-side
-- Bloco "Script de exportação": aspas SQL escapadas via `litarSql`; duplicatas no arquivo → `Aviso`, sem abortar
+- IDENTIDADE CLEAN: dots CSS `.db-sync__dot--Critico/--Aviso/--Ok`; badge `.db-sync__badge` numerando críticos; CSV/JSON ≤ 5 MB; export `schema-comparacao-{tabela|lote}.csv` client-side com colunas `tabela,numero,severidade,…`
+- Bloco "Script de exportação": aspas SQL escapadas via `litarSql`; JSON montado via `FOR XML PATH` (2005+); duplicatas no arquivo → `Aviso`, sem abortar
+- Modelos: `SchemaDifference.numeroCritico?`, `SchemaComparisonBatchResult` em `database.model.ts`
 
 ---
 

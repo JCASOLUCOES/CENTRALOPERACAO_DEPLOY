@@ -281,4 +281,33 @@ public class DatabaseController : ControllerBase
             return BadRequest(new { mensagem = ex.Message });
         }
     }
+
+    [HttpPost("compare-schemas-lote")]
+    [EnableRateLimiting("validacao")]
+    [RequestSizeLimit(5 * 1024 * 1024)]
+    public async Task<ActionResult<SchemaComparisonBatchResultDto>> CompareSchemasLote(
+        IFormFile arquivo,
+        CancellationToken ct = default)
+    {
+        if (arquivo == null || arquivo.Length == 0)
+            return BadRequest(new { mensagem = "Arquivo e obrigatorio" });
+
+        try
+        {
+            var resultado = await _comparison.CompararLoteComArquivoAsync(arquivo, ct);
+            return Ok(resultado);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { mensagem = ex.Message });
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            return BadRequest(new { mensagem = $"JSON invalido no arquivo: {ex.Message}" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { mensagem = ex.Message });
+        }
+    }
 }

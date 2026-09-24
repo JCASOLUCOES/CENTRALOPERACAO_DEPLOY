@@ -230,6 +230,7 @@ export interface SchemaDifference {
   esperado?: string;
   encontrado?: string;
   descricao: string;
+  numeroCritico?: number;
 }
 
 export interface SchemaComparisonResult {
@@ -243,4 +244,13 @@ export interface SchemaComparisonResult {
   oks: number;
   percentualMatch: number;
   diferencas: SchemaDifference[];
+}
+
+export interface SchemaComparisonBatchResult {
+  arquivoNome?: string;
+  totalTabelas: number;
+  totalCriticos: number;
+  totalAvisos: number;
+  totalOks: number;
+  resultados: SchemaComparisonResult[];
 }
