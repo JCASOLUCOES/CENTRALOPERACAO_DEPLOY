@@ -245,12 +245,3 @@ export interface SchemaComparisonResult {
   percentualMatch: number;
   diferencas: SchemaDifference[];
 }
-
-export interface SchemaComparisonBatchResult {
-  arquivoNome?: string;
-  totalTabelas: number;
-  totalCriticos: number;
-  totalAvisos: number;
-  totalOks: number;
-  resultados: SchemaComparisonResult[];
-}
