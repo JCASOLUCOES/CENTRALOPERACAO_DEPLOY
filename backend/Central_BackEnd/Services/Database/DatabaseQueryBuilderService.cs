@@ -386,25 +386,35 @@ public class DatabaseQueryBuilderService : IDatabaseQueryBuilderService
 
         return wc.Operador?.ToUpper() switch
         {
-            "=" => $"{logica}{colunaRef} = '{EscaparSql(wc.Valor)}'",
-            "<>" => $"{logica}{colunaRef} <> '{EscaparSql(wc.Valor)}'",
+            "=" => $"{logica}{colunaRef} = {EscaparSql(wc.Valor)}",
+            "<>" => $"{logica}{colunaRef} <> {EscaparSql(wc.Valor)}",
             ">" => $"{logica}{colunaRef} > {EscaparSql(wc.Valor)}",
             "<" => $"{logica}{colunaRef} < {EscaparSql(wc.Valor)}",
             ">=" => $"{logica}{colunaRef} >= {EscaparSql(wc.Valor)}",
             "<=" => $"{logica}{colunaRef} <= {EscaparSql(wc.Valor)}",
-            "LIKE" => $"{logica}{colunaRef} LIKE '{EscaparSql(wc.Valor)}'",
-            "IN" => $"{logica}{colunaRef} IN ({EscaparSql(wc.Valor)})",
+            "LIKE" => $"{logica}{colunaRef} LIKE {EscaparSql(wc.Valor)}",
+            "IN" => $"{logica}{colunaRef} IN ({MontarListaIn(wc.Valor)})",
             "IS NULL" => $"{logica}{colunaRef} IS NULL",
             "IS NOT NULL" => $"{logica}{colunaRef} IS NOT NULL",
             "BETWEEN" => $"{logica}{colunaRef} BETWEEN {EscaparSql(wc.Valor)} AND {EscaparSql(wc.Valor2)}",
-            _ => $"{logica}{colunaRef} = '{EscaparSql(wc.Valor)}'"
+            _ => $"{logica}{colunaRef} = {EscaparSql(wc.Valor)}"
         };
     }
 
     private static string EscaparSql(string? valor)
     {
         if (string.IsNullOrEmpty(valor)) return "NULL";
-        // Escapar aspas simples para seguran�a
+        // Escapar aspas simples para seguranca
         return $"'{valor.Replace("'", "''")}'";
     }
+
+    private static string MontarListaIn(string? valor)
+    {
+        if (string.IsNullOrWhiteSpace(valor)) return "NULL";
+        var itens = valor
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(EscaparSql);
+        return string.Join(", ", itens);
+    }
 }
+
