@@ -329,10 +329,11 @@ try {
     $publicacaoBackendOk = $true
 }
 finally {
-    if (-not $offlinePreexistente -and -not $publicacaoBackendOk -and (Test-Path -LiteralPath $offline)) {
+    if (-not $publicacaoBackendOk -and -not $offlinePreexistente -and (Test-Path -LiteralPath $offline)) {
         Write-Timing -Mensagem "app_offline.htm mantido: backend publicado parcialmente, IIS continua offline."
-    } elseif (-not $offlinePreexistente -and $publicacaoBackendOk -and (Test-Path -LiteralPath $offline)) {
+    } elseif ($publicacaoBackendOk -and (Test-Path -LiteralPath $offline)) {
         Remove-Item -LiteralPath $offline -Force
+        Write-Timing -Mensagem "app_offline.htm removido: IIS volta a servir o backend."
     }
 }
 Write-Timing -Mensagem "Fase 7 concluida: backend publicado"
