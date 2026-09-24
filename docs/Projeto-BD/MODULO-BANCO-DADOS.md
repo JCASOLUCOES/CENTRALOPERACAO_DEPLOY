@@ -83,9 +83,10 @@ dotnet run
 
 ---
 
-## 4. Endpoints (`/api/v1/database`) — 21
+## 4. Endpoints (`/api/v1/database`) — 19
 
 > Enxugamento 23/09/2026 (`640bbf6`): removidos `POST /query`, `GET /procedures/search`, `PUT /config`, `POST /diff`, `POST /snapshot`, `GET /snapshots`, `POST /snapshot/comparar` (services Query/SchemaDiff/Snapshot apagados).
+> Enxugamento 24/09/2026: removidos `POST /test-connection` (usa `GET /status`) e `GET /search/global` (usa `GET /search`); `BuscarGlobalAsync`/`GlobalSearchResultDto` apagados.
 
 | Método | Rota | Descrição |
 |---|---|---|
@@ -105,8 +106,6 @@ dotnet run
 | GET | `/database/triggers?schema=&tabela=` | Lista triggers (filtro por schema/tabela) |
 | GET | `/database/triggers/{schema}/{nome}` | Detalhe trigger: evento, momento, corpo, ações, tabelas afetadas |
 | GET | `/database/tables/{schema}/{nome}/dependencies` | Dependências: procs, triggers, views, FKs, functions que referenciam a tabela |
-| GET | `/database/search/global?termo=&take=` | Busca global unificada (tabelas, colunas, views, procs, functions, triggers) |
-| POST | `/database/test-connection` | Testa conexão sem persistir |
 | GET | `/database/config` | Lê config (senha mascarada `***`) |
 | POST | `/database/query-builder-advanced` | Gera SQL do Criador (WHERE, ORDER BY, GROUP BY, HAVING, CTEs) |
 | POST | `/database/compare-schemas` | Upload multipart (≤ 5 MB, `.csv`/`.json`) × schema JCA (`SchemaComparisonResultDto`) |

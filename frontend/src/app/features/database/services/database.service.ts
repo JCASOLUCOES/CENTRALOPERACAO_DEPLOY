@@ -7,7 +7,7 @@ import {
   DatabaseRelationship, DatabaseSearchResult,
   DatabaseStatus, DatabaseConnectionConfig,
   ProcedureResumo, ProcedureDetalhe,
-  Trigger, Dependencia, ProcedureAnalysis, GlobalSearchResult,
+  Trigger, Dependencia, ProcedureAnalysis,
   SchemaComparisonResult
 } from '../models/database.model';
 
@@ -65,7 +65,7 @@ export class DatabaseService {
   }
 
   testarConexao(): Observable<DatabaseStatus> {
-    return this.http.post<DatabaseStatus>(`${this.baseUrl}/test-connection`, {});
+    return this.http.get<DatabaseStatus>(`${this.baseUrl}/status`);
   }
 
   obterConfig(): Observable<DatabaseConnectionConfig> {
@@ -100,12 +100,6 @@ export class DatabaseService {
 
   analisarProcedure(schema: string, nome: string): Observable<ProcedureAnalysis> {
     return this.http.get<ProcedureAnalysis>(`${this.baseUrl}/procedures/${encodeURIComponent(schema)}/${encodeURIComponent(nome)}/analysis`);
-  }
-
-  buscarGlobal(termo: string, take = 200): Observable<GlobalSearchResult[]> {
-    return this.http.get<GlobalSearchResult[]>(`${this.baseUrl}/search/global`, {
-      params: new HttpParams().set('termo', termo).set('take', String(take))
-    });
   }
 
   // Query Builder Avançado

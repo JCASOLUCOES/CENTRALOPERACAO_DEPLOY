@@ -127,7 +127,7 @@ segura de conexão.
 | `/database/diferencas` | `DbDiferencasComponent` | Só **Sincronização** (`DbSincronizacaoComponent`): upload CSV/JSON × schema JCA via `POST /database/compare-schemas`, resumo críticos/avisos/match %, filtro diferenças, export CSV client-side + bloco "Script de exportação" com T-SSQL JSON copiável; duplicatas no arquivo → `Aviso`, sem erro (aba "Banco × Documentação" e snapshots removidos em 23/09/2026) |
 | `/database/configuracao` | `DbConfiguracaoComponent` | Leitura da conexão (servidor/porta/banco/usuário/senha mascarada) + Testar conexão (somente leitura; `PUT /config` removido) |
 
-**Endpoints backend (`/api/v1/database`)** — 21 endpoints, ver `MODULO-BANCO-DADOS.md` § 4.
+**Endpoints backend (`/api/v1/database`)** — 19 endpoints, ver `MODULO-BANCO-DADOS.md` § 4.
 
 **Segurança**: senha nunca é logada, retornada em claro ou commitada. Leitura via
 env var (`DB_EXPLORER_*`) em produção, user-secrets em Development. Sem execução de

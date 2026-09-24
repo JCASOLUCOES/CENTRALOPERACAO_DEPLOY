@@ -10,6 +10,8 @@
 > `DatabaseSnapshotService` e `PUT /config` apagados. As tabelas/markers ✅ abaixo
 > são o **histórico** da fase original (Fases 1–4) e não refletem o estado atual —
 > fonte atual: `MODULO-BANCO-DADOS.md` § 4 e `docs/telas/06-backend.md` § 17.4.
+> **Atualização 24/09/2026:** fusão conservadora — `POST /test-connection` →
+> `GET /status`; `GET /search/global` → `GET /search`; backend em **19 endpoints**.
 
 ---
 
@@ -49,7 +51,7 @@
 | Aba Query Builder no Shell | `database-shell.component.ts` | ✅ |
 
 **Funcionalidades da Busca Global:**
-- Debounce 250ms, usa `buscarGlobal()` + fallback `buscar()`
+- Debounce 250ms, usa `buscar()` (único; `buscarGlobal` removido em 24/09/2026)
 - Abas: Todas, Tabelas, Colunas, Procedures, Triggers, Views
 - Navegação direta para TableDetail ou Explorador
 - Exemplos clicáveis (IDDEVEDOR, TBTITULO, PRC_, TR_)
@@ -178,7 +180,6 @@ backend/Central_BackEnd/
 | GET | `/graph` | `DatabaseRelationshipInferenceService` |
 | GET | `/column-usage` | `DatabaseRelationshipInferenceService` |
 | GET | `/search` | `DatabaseSearchService` |
-| GET | `/search/global` | `DatabaseMetadataService` |
 | GET | `/procedures` | `DatabaseMetadataService` |
 | GET | `/procedures/{schema}/{name}` | `DatabaseMetadataService` |
 | GET | `/procedures/search` | `DatabaseSearchService` |
@@ -186,7 +187,6 @@ backend/Central_BackEnd/
 | GET | `/triggers` | `DatabaseMetadataService` |
 | GET | `/triggers/{schema}/{name}` | `DatabaseMetadataService` |
 | POST | `/query` | `DatabaseQueryService` |
-| POST | `/test-connection` | `DatabaseConnectionService` |
 | GET | `/config` | `DatabaseConnectionService` |
 | PUT | `/config` (Admin) | `DatabaseConnectionService` |
 | POST | `/query-builder` | `DatabaseQueryBuilderService` |

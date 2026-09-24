@@ -225,20 +225,6 @@ public class DatabaseController : ControllerBase
         return Ok(analysis);
     }
 
-    [HttpGet("search/global")]
-    public async Task<ActionResult<List<GlobalSearchResultDto>>> GlobalSearch(
-        [FromQuery] string termo,
-        [FromQuery] int take = 200,
-        CancellationToken ct = default)
-    {
-        if (string.IsNullOrWhiteSpace(termo))
-            return Ok(new List<GlobalSearchResultDto>());
-        var resultados = await _search.BuscarAsync(termo, take, ct);
-        return Ok(resultados
-            .Select(r => new GlobalSearchResultDto(r.Tipo, r.Schema ?? "", r.Objeto, r.Coluna, r.Detalhe))
-            .ToList());
-    }
-
     [HttpPost("query-builder-advanced")]
     public async Task<ActionResult<Central_BackEnd.Dtos.Database.DatabaseQueryBuilderResult>> QueryBuilderAdvanced(
         [FromBody] QueryBuilderAdvancedRequest req,
@@ -259,14 +245,6 @@ public class DatabaseController : ControllerBase
             c.Servidor, c.Porta, c.Banco, c.Usuario,
             string.IsNullOrEmpty(c.Senha) ? null : "***",
             c.Encrypt, c.TrustServerCertificate));
-    }
-
-    [HttpPost("test-connection")]
-    public async Task<ActionResult<DatabaseStatusDto>> TestConnection(CancellationToken ct = default)
-    {
-        var cfg = _conn.GetConfig();
-        var (ok, msg, ms) = await TestarConexaoAsync(ct);
-        return Ok(new DatabaseStatusDto(ok, cfg.Servidor, cfg.Banco, msg, DateTime.UtcNow, ms));
     }
 
     [HttpPost("compare-schemas")]

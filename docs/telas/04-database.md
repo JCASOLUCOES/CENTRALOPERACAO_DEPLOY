@@ -33,7 +33,7 @@ Shell com 7 abas (Visão Geral, Explorador, Relacionamentos, Diagrama, Consultas
 ### Observações Técnicas
 - Lazy loading em `database.routes.ts:9`
 - Rotas em `database.routes.ts`: `ia-chat` removida; `query-builder` é redirect para `consultas`
-- Busca global (`db-global-search.component.ts`): sem bloco inicial de dicas/exemplos; barra compacta quando vazia (categorias e resultados só aparecem após digitar)
+- Busca global (`db-global-search.component.ts`): sem bloco inicial de dicas/exemplos; barra compacta quando vazia (categorias e resultados só aparecem após digitar); desde 24/09/2026 usa só `GET /search` (`buscarGlobal`/`search/global` removidos)
 - Sem execução de SQL no servidor (endpoint `POST /query` removido em 23/09/2026); Consultas = só gerar/copiar SQL
 - Header via `app-page-header` — Lote B (confirmado no código, `database-shell.component.html:2-6`): `titulo="Banco de Dados"`, `descricao="Explorador em tempo real do SQL Server Actyon — tabelas, colunas, relacionamentos e consultas SELECT. Somente leitura."`, `icone="bi-hdd-network-fill"`; banner de status (`.db-shell__status`) continua abaixo do header, sem slot `actions`.
 
@@ -56,7 +56,7 @@ Faixa de status compacta (conectado/desconectado + servidor/banco/versão, com l
 |--------|-----------|---------|-----------|
 | GET | `/api/v1/database/info` | `DatabaseService.info()` | Info servidor + contadores (tabelas, colunas, PKs, FKs, índices, views, procedures, functions, triggers) |
 | GET | `/api/v1/database/relationships` | `DatabaseService.relacionamentos()` | Resumo de relacionamentos (confirmadas × possíveis) |
-| POST | `/api/v1/database/test-connection` | `DatabaseService.testarConexao()` | Testar conexão (card Conexão) |
+| GET | `/api/v1/database/status` | `DatabaseService.testarConexao()` | Testar conexão (card Conexão; `POST /test-connection` removido 24/09/2026) |
 
 ### Banco de Dados
 - **Conecta:** ✅ Sim — metadados via `sys.*` views
@@ -264,7 +264,7 @@ Apenas leitura + Testar conexão (form de edição e `PUT /config` removidos do 
 ### API Endpoints Consumidos
 | Método | Rota (v1) | Service | Descrição |
 |--------|-----------|---------|-----------|
-| POST | `/api/v1/database/test-connection` | `DatabaseService.testarConexao()` | Testa conexão |
+| GET | `/api/v1/database/status` | `DatabaseService.testarConexao()` | Testa conexão (mesmo `GET /status` do shell; `POST /test-connection` removido 24/09/2026) |
 | GET | `/api/v1/database/config` | `DatabaseService.obterConfig()` | Obtém config (senha mascarada `***`) |
 
 ### Banco de Dados

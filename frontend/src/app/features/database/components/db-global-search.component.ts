@@ -3,7 +3,7 @@ import { Component, inject, signal, computed, OnDestroy, OnInit } from '@angular
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DatabaseService } from '../services/database.service';
-import { GlobalSearchResult, DatabaseSearchResult } from '../models/database.model';
+import { DatabaseSearchResult } from '../models/database.model';
 
 type GlobalSearchTab = 'global' | 'tabelas' | 'colunas' | 'procedures' | 'triggers' | 'views';
 
@@ -368,43 +368,19 @@ export class DbGlobalSearchComponent implements OnInit, OnDestroy {
     }
     this.carregando.set(true);
 
-    // Busca global (tudo)
-    this.db.buscarGlobal(q, 50).subscribe({
-      next: (res: GlobalSearchResult[]) => {
-        const itens = this.mapearResultadosGlobais(res);
+    this.db.buscar(q, 50).subscribe({
+      next: (res: DatabaseSearchResult[]) => {
+        const itens = this.mapearResultadosSimples(res);
         this.resultadosCache.set(itens);
         this.atualizarContadores();
         this.carregando.set(false);
       },
       error: () => {
-        // Fallback: busca simples
-        this.db.buscar(q, 50).subscribe({
-          next: (res: DatabaseSearchResult[]) => {
-            const itens = this.mapearResultadosSimples(res);
-            this.resultadosCache.set(itens);
-            this.atualizarContadores();
-            this.carregando.set(false);
-          },
-          error: () => {
-            this.resultadosCache.set([]);
-            this.atualizarContadores();
-            this.carregando.set(false);
-          }
-        });
+        this.resultadosCache.set([]);
+        this.atualizarContadores();
+        this.carregando.set(false);
       }
     });
-  }
-
-  private mapearResultadosGlobais(res: GlobalSearchResult[]): SearchResultItem[] {
-    return res.map(r => ({
-      tipo: r.tipo,
-      schema: r.schema,
-      objeto: r.objeto,
-      coluna: r.coluna,
-      detalhe: r.detalhe,
-      icone: this.iconePorTipo(r.tipo),
-      rota: this.rotaPorTipo(r.tipo, r.schema, r.objeto)
-    }));
   }
 
   private mapearResultadosSimples(res: DatabaseSearchResult[]): SearchResultItem[] {

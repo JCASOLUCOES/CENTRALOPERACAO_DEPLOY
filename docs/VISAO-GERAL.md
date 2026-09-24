@@ -73,8 +73,8 @@ nunca simular; usar empty-state honesto.
 `Auth` (`/auth/login|refresh|logout|me`), `Agenda` (`/agenda/eventos|tipos|funcoes|
 operadores`), `Acessos` (+ auditoria de visualização), `Implantacao/*` (projetos,
 tarefas, dashboard, admin-dashboard só `Role Administrador`, etapas, tipos-projeto,
-colunas-kanban), `Database/*` (só leitura + query-builder/compare-schemas; 21
-endpoints desde 23/09/2026), `RagProxy` (`POST /chat`
+colunas-kanban), `Database/*` (só leitura + query-builder/compare-schemas; 19
+endpoints desde 24/09/2026), `RagProxy` (`POST /chat`
 — único endpoint; sem `/sessions`).
 
 ## 8. Checklist — nova tela

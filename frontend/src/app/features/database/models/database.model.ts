@@ -159,14 +159,6 @@ export interface ProcedureAnalysis {
   fluxoIdentificado: string[];
 }
 
-export interface GlobalSearchResult {
-  tipo: string;
-  schema: string;
-  objeto: string;
-  coluna?: string;
-  detalhe?: string;
-}
-
 // WHERE Condition
 export interface WhereCondition {
   coluna: string;

@@ -155,13 +155,6 @@ public record ProcedureAnalysisDto(
     string Explicacao,
     List<string> FluxoIdentificado);
 
-public record GlobalSearchResultDto(
-    string Tipo,        // Tabela, Coluna, Procedure, Trigger, View
-    string Schema,
-    string Objeto,
-    string? Coluna,
-    string? Detalhe);
-
 // WHERE condition DTO
 public record WhereConditionDto(
     string Coluna,
