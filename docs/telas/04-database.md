@@ -220,9 +220,11 @@ Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem aba
 **Sub-componente:** `src/app/features/database/components/db-sincronizacao.component.ts` (aba "Sincronização")
 
 ### O que faz
-**Só a sub-aba Sincronização** (aba "Banco × Documentação" e snapshots removidos em 23/09/2026, `640bbf6`; modo lote removido em 24/09/2026). `DbDiferencasComponent` carrega `listarTabelas()` e repassa via `@Input tabelas` ao `DbSincronizacaoComponent`: compara schema de **uma** tabela JCA × arquivo CSV/JSON enviado (parse no backend, `POST /compare-schemas`).
+**Só a sub-aba Sincronização** (aba "Banco × Documentação" e snapshots removidos em 23/09/2026, `640bbf6`; modo lote removido em 24/09/2026). `DbDiferencasComponent` carrega `listarTabelas()` e repassa via `@Input tabelas` ao `DbSincronizacaoComponent`: compara schema de **uma** tabela JCA × arquivo **JSON** enviado (parse no backend, `POST /compare-schemas`; entrada CSV removida em 24/09/2026 — só `.json`).
 
 **Resumo = cards-filtro clicáveis** (padrão **só críticos**): `críticos` | `avisos` | `compatíveis` | `match % · tudo`. Clique no card filtra a lista; clique de novo (ou em `match · tudo`) limpara. Checkbox "Mostrar apenas diferenças" removido. `filtroSeveridade` signal (`'Critico' | 'Aviso' | 'Ok' | null`, default `'Critico'`); numerador `numeroCritico` estável na lista completa da resposta (não renumera ao trocar filtro); coluna `numero` no export CSV.
+
+**Controles:** busca de tabela (`buscaTabela` + `tabelasFiltradas()` case-insensitive sobre nome/schema — 200+ tabelas), file input `accept=".json"` ("Escolher JSON"), botões Comparar / Exportar CSV / **Limpar** (`limparTudo()` zera resultado, arquivo, seleção, filtro, busca e input de arquivo via `ViewChild`).
 
 **Script de exportação:** inputs de schema + tabela, `<pre>` gerado ao vivo (`scriptSql()`), botão "Copiar script" (clipboard API + fallback `execCommand`). JSON montado com **`FOR XML PATH` + `RAISERROR`** (sem `FOR JSON`/`JSON_QUERY`/`THROW`) — compatível com SQL Server 2005+; saída 1 coluna `nvarchar(max)` (objeto único).
 
@@ -235,7 +237,7 @@ Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem aba
 | Método | Rota (v1) | Service | Descrição |
 |--------|-----------|---------|-----------|
 | GET | `/api/v1/database/tables` | `DatabaseService.listarTabelas()` | Tabelas do dropdown |
-| POST | `/api/v1/database/compare-schemas` | `DatabaseService.compararSchemas()` | Upload multipart (`schema`, `tabela`, `arquivo` CSV/JSON) × schema JCA → `SchemaComparisonResultDto` |
+| POST | `/api/v1/database/compare-schemas` | `DatabaseService.compararSchemas()` | Upload multipart (`schema`, `tabela`, `arquivo` só `.json`) × schema JCA → `SchemaComparisonResultDto` |
 
 ### Banco de Dados
 - **Conecta:** ✅ Sim — schema real do SQL Server × arquivo externo (Sincronização)
@@ -248,7 +250,7 @@ Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem aba
 ### Observações Técnicas
 - Lazy loading em `database.routes.ts:14`
 - Removidos: `POST /diff`, `POST|GET /snapshot(s)`, `POST /snapshot/comparar`, métodos `diferencarSchema`/`salvarSnapshot`/`listarSnapshots`/`compararSnapshot` e modelos `DiffResult`/`DiffItem`; **modo lote** (`compare-schemas-lote`, `compararSchemasLote`, `SchemaComparisonBatchResult`, toggle UI)
-- IDENTIDADE CLEAN: dots CSS `.db-sync__dot--Critico/--Aviso/--Ok`; badge `.db-sync__badge` numerando críticos; cards `.db-sync__stat` com estado ativo por severidade; CSV/JSON ≤ 5 MB; export `schema-comparacao-{tabela}.csv` client-side com colunas `numero,severidade,…`
+- IDENTIDADE CLEAN: dots CSS `.db-sync__dot--Critico/--Aviso/--Ok`; badge `.db-sync__badge` numerando críticos; cards `.db-sync__stat` com estado ativo por severidade; entrada só JSON ≤ 5 MB; export `schema-comparacao-{tabela}.csv` client-side com colunas `numero,severidade,…`
 - Bloco "Script de exportação": aspas SQL escapadas via `litarSql`; JSON montado via `FOR XML PATH` (2005+); duplicatas no arquivo → `Aviso`, sem abortar
 - Modelos: `SchemaDifference.numeroCritico?` em `database.model.ts`
 

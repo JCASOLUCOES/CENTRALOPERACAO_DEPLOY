@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal, input, output } from '@angular/core';
+import { Component, inject, signal, input, output, computed, ViewChild, ElementRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatabaseService } from '../services/database.service';
 import { DatabaseTable, SchemaComparisonResult, SchemaDifference } from '../models/database.model';
@@ -14,25 +14,33 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
   <div class="adm-card p-3">
     <h3 class="adm-card__title">Comparação de Schemas</h3>
     <p class="adm-card__desc">
-      Envie um arquivo <strong>CSV</strong> ou <strong>JSON</strong> com a estrutura esperada de uma tabela
+      Envie um arquivo <strong>JSON</strong> com a estrutura esperada de uma tabela
       e compare com o <strong>schema real do banco JCA</strong> (colunas, tipos, nullable, índices e FKs).
     </p>
 
     <div class="db-sync__controles">
       <label>Tabela JCA:
+        <input type="text" class="form-control form-control-sm db-sync__busca"
+               placeholder="Pesquisar tabela…"
+               [(ngModel)]="buscaTabela"
+               [disabled]="carregando()"
+               aria-label="Pesquisar tabela">
         <select class="form-select form-select-sm" [(ngModel)]="tabelaSelecionada"
                 (ngModelChange)="onTabelaJcaChange($event)" [disabled]="carregando()">
-          <option value="">Selecione…</option>
-          <option *ngFor="let t of tabelas()" [value]="t.schema + '|' + t.nome">
+          <option value="">Selecione… ({{ tabelasFiltradas().length }})</option>
+          <option *ngFor="let t of tabelasFiltradas()" [value]="t.schema + '|' + t.nome">
             {{ t.nomeCompleto }} ({{ t.quantidadeColunas }} colunas)
           </option>
         </select>
+        <small *ngIf="buscaTabela && tabelasFiltradas().length === 0" class="text-muted">
+          Nenhuma tabela encontrada para "{{ buscaTabela }}".
+        </small>
       </label>
 
       <label class="db-sync__file">
-        <input type="file" accept=".csv,.json" (change)="onArquivo($event)" [disabled]="carregando()">
+        <input type="file" accept=".json" #arquivoInput (change)="onArquivo($event)" [disabled]="carregando()">
         <span *ngIf="!arquivo()" class="db-sync__file-placeholder">
-          <i class="bi bi-upload"></i> Escolher CSV ou JSON
+          <i class="bi bi-upload"></i> Escolher JSON
         </span>
         <span *ngIf="arquivo()" class="db-sync__file-name">
           <i class="bi bi-file-earmark-text"></i> {{ arquivo()!.name }}
@@ -47,6 +55,11 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
 
       <button *ngIf="resultado()" class="btn btn-outline-secondary" (click)="exportarCsv()">
         <i class="bi bi-download"></i> Exportar CSV
+      </button>
+
+      <button *ngIf="resultado() || arquivo() || tabelaSelecionada" class="btn btn-outline-danger"
+              (click)="limparTudo()" [disabled]="carregando()">
+        <i class="bi bi-eraser"></i> Limpar
       </button>
     </div>
 
@@ -83,9 +96,8 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
     </div>
 
     <div *ngIf="!carregando() && !resultado() && !erro()" class="adm-empty">
-      Selecione uma tabela, envie o arquivo e clique em <strong>Comparar</strong>.
+      Selecione uma tabela, envie o arquivo <strong>JSON</strong> e clique em <strong>Comparar</strong>.
       <br><small class="text-muted">
-        CSV: cabeçalho com <code>nome,tipo,nulo</code> (opcionais: ordem, tamanho, precisao, escala, valorDefault).
         JSON: objeto com <code>colunas[]</code>, <code>indices[]</code>, <code>fks[]</code> — ou apenas array de colunas.
       </small>
     </div>
@@ -174,6 +186,7 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
     .db-sync__controles { display: flex; gap: 1rem; align-items: flex-end; margin: 1rem 0; flex-wrap: wrap; }
     .db-sync__controles label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; font-weight: 600; }
     .db-sync__controles select { min-width: 16rem; }
+    .db-sync__busca { min-width: 16rem; }
     .db-sync__file { position: relative; cursor: pointer; }
     .db-sync__file input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
     .db-sync__file-placeholder,
@@ -239,7 +252,8 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
     .db-sync__script-dica { display: block; margin-top: 0.5rem; font-size: 0.78rem; }
     @media (max-width: 768px) {
       .db-sync__controles { flex-direction: column; align-items: stretch; }
-      .db-sync__controles select { min-width: 0; width: 100%; }
+      .db-sync__controles select,
+      .db-sync__busca { min-width: 0; width: 100%; }
       .db-sync__desc { margin-left: 0; width: 100%; }
       .db-sync__script-header { flex-direction: column; align-items: stretch; }
       .db-sync__script-input { width: 100%; }
@@ -248,6 +262,8 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
 })
 export class DbSincronizacaoComponent {
   private readonly db = inject(DatabaseService);
+
+  @ViewChild('arquivoInput') arquivoInput?: ElementRef<HTMLInputElement>;
 
   readonly tabelas = input<DatabaseTable[]>([]);
   readonly fechado = output<void>();
@@ -260,14 +276,36 @@ export class DbSincronizacaoComponent {
   readonly filtro = signal<FiltroSeveridade>('Critico');
 
   tabelaSelecionada = '';
+  buscaTabela = '';
   scriptSchema = 'dbo';
   scriptTabela = '';
+
+  readonly tabelasFiltradas = computed(() => {
+    const q = this.buscaTabela.trim().toLowerCase();
+    const lista = this.tabelas();
+    if (!q) return lista;
+    return lista.filter(t =>
+      t.nome.toLowerCase().includes(q) ||
+      (t.nomeCompleto ?? '').toLowerCase().includes(q) ||
+      t.schema.toLowerCase().includes(q));
+  });
 
   onTabelaJcaChange(valor: string): void {
     if (!valor) return;
     const [schema, tabela] = valor.split('|');
     if (schema) this.scriptSchema = schema;
     if (tabela) this.scriptTabela = tabela;
+  }
+
+  limparTudo(): void {
+    this.resultado.set(null);
+    this.arquivo.set(null);
+    this.erro.set(null);
+    this.filtro.set('Critico');
+    this.tabelaSelecionada = '';
+    this.buscaTabela = '';
+    this.scriptTabela = '';
+    if (this.arquivoInput) this.arquivoInput.nativeElement.value = '';
   }
 
   alternarFiltro(f: FiltroSeveridade): void {
@@ -461,14 +499,16 @@ SELECT
     if (!input.files || input.files.length === 0) return;
     const f = input.files[0];
     const ext = f.name.toLowerCase().split('.').pop();
-    if (ext !== 'csv' && ext !== 'json') {
-      this.erro.set('Apenas arquivos .csv ou .json são aceitos.');
+    if (ext !== 'json') {
+      this.erro.set('Apenas arquivos .json são aceitos.');
       this.arquivo.set(null);
+      input.value = '';
       return;
     }
     if (f.size > 5 * 1024 * 1024) {
       this.erro.set('Arquivo excede o limite de 5 MB.');
       this.arquivo.set(null);
+      input.value = '';
       return;
     }
     this.erro.set(null);

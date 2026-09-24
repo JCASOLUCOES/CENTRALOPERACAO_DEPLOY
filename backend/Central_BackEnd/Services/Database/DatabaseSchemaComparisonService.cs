@@ -17,7 +17,7 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
     private readonly IDatabaseMetadataService _metadata;
     private readonly ILogger<DatabaseSchemaComparisonService> _logger;
 
-    private static readonly string[] ExtencoesAceitas = { ".csv", ".json" };
+    private static readonly string[] ExtencoesAceitas = { ".json" };
     private const long TamanhoMaximoBytes = 5 * 1024 * 1024; // 5 MB
 
     public DatabaseSchemaComparisonService(
@@ -32,10 +32,9 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
         string schema, string tabela, IFormFile arquivo, CancellationToken ct = default)
     {
         ValidarArquivo(arquivo);
-        var ext = Path.GetExtension(arquivo.FileName ?? "").ToLowerInvariant();
 
         var jca = await ExtrairSchemaJcaAsync(schema, tabela, ct);
-        var externo = await LerArquivoAsync(arquivo, ext, ct);
+        var externo = await LerArquivoAsync(arquivo, ct);
         return Comparar(jca, externo, arquivo.FileName);
     }
 
@@ -47,7 +46,7 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
             throw new ArgumentException("Arquivo excede o limite de 5 MB.");
         var ext = Path.GetExtension(arquivo.FileName ?? "").ToLowerInvariant();
         if (!ExtencoesAceitas.Contains(ext))
-            throw new ArgumentException("Apenas arquivos .csv ou .json sao aceitos.");
+            throw new ArgumentException("Apenas arquivos .json sao aceitos.");
     }
 
     private async Task<SchemaInfoDto> ExtrairSchemaJcaAsync(string schema, string tabela, CancellationToken ct)
@@ -70,14 +69,11 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
             fks.Select(f => new SchemaFkInfoDto(f.Nome, f.ColunaOrigem, f.TabelaDestino, f.ColunaDestino)).ToList());
     }
 
-    private async Task<SchemaInfoDto> LerArquivoAsync(IFormFile arquivo, string ext, CancellationToken ct)
+    private async Task<SchemaInfoDto> LerArquivoAsync(IFormFile arquivo, CancellationToken ct)
     {
         using var reader = new StreamReader(arquivo.OpenReadStream(), Encoding.UTF8);
         var conteudo = await reader.ReadToEndAsync(ct);
-
-        if (ext == ".json")
-            return ParseJson(conteudo, arquivo.FileName ?? "arquivo.json");
-        return ParseCsv(conteudo, arquivo.FileName ?? "arquivo.csv");
+        return ParseJson(conteudo, arquivo.FileName ?? "arquivo.json");
     }
 
     private static SchemaInfoDto ParseJson(string json, string nomeArquivo)
@@ -303,100 +299,6 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
         if (v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var n)) return n;
         if (v.ValueKind == JsonValueKind.String && int.TryParse(v.GetString(), out var s)) return s;
         return null;
-    }
-
-    private static SchemaInfoDto ParseCsv(string conteudo, string nomeArquivo)
-    {
-        var linhas = conteudo
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
-            .Select(l => l.TrimEnd('\r'))
-            .Where(l => !string.IsNullOrWhiteSpace(l))
-            .ToList();
-        if (linhas.Count == 0)
-            throw new ArgumentException("CSV vazio.");
-
-        var header = SplitCsvLine(linhas[0]);
-        var mapa = header
-            .Select((h, i) => (h: Normalizar(h), i))
-            .ToDictionary(x => x.h, x => x.i, StringComparer.OrdinalIgnoreCase);
-
-        int ColIdx(params string[] nomes)
-        {
-            foreach (var n in nomes)
-                if (mapa.TryGetValue(Normalizar(n), out var idx)) return idx;
-            return -1;
-        }
-
-        int iNome = ColIdx("nome", "name", "coluna", "column");
-        int iTipo = ColIdx("tipo", "type", "datatype");
-        int iNulo = ColIdx("nulo", "nullable", "null", "permite_nulo");
-        int iOrdem = ColIdx("ordem", "order", "ordinal");
-        int iTam = ColIdx("tamanho", "length", "max_length");
-        int iPrec = ColIdx("precisao", "precision");
-        int iEsc = ColIdx("escala", "scale");
-        int iDef = ColIdx("valorDefault", "default", "default_value");
-
-        if (iNome < 0)
-            throw new ArgumentException("CSV precisa de coluna 'nome' (ou 'name'/'column').");
-
-        var colunas = new List<SchemaColumnInfoDto>();
-        for (int li = 1; li < linhas.Count; li++)
-        {
-            var campos = SplitCsvLine(linhas[li]);
-            string nome = iNome < campos.Length ? campos[iNome].Trim() : "";
-            if (string.IsNullOrWhiteSpace(nome)) continue;
-            string tipo = iTipo >= 0 && iTipo < campos.Length ? campos[iTipo].Trim() : "";
-            bool nulo = iNulo >= 0 && iNulo < campos.Length && ParseBool(campos[iNulo]);
-            int ordem = iOrdem >= 0 && iOrdem < campos.Length && int.TryParse(campos[iOrdem], out var o) ? o : colunas.Count + 1;
-            int? tam = iTam >= 0 && iTam < campos.Length && int.TryParse(campos[iTam], out var t) ? t : null;
-            int? prec = iPrec >= 0 && iPrec < campos.Length && int.TryParse(campos[iPrec], out var p) ? p : null;
-            int? esc = iEsc >= 0 && iEsc < campos.Length && int.TryParse(campos[iEsc], out var e) ? e : null;
-            string? def = iDef >= 0 && iDef < campos.Length ? campos[iDef].Trim() : null;
-            colunas.Add(new SchemaColumnInfoDto(nome, tipo, nulo, ordem, tam, prec, esc,
-                string.IsNullOrWhiteSpace(def) ? null : def));
-        }
-
-        if (colunas.Count == 0)
-            throw new ArgumentException("CSV nao contem colunas validas.");
-
-        return new SchemaInfoDto(nomeArquivo, colunas, new List<SchemaIndexInfoDto>(), new List<SchemaFkInfoDto>());
-    }
-
-    private static string Normalizar(string s)
-        => new string(s.Trim().ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
-
-    private static bool ParseBool(string s)
-    {
-        s = s.Trim().ToLowerInvariant();
-        return s is "true" or "1" or "sim" or "s" or "y" or "yes" or "not null" or "notnull";
-    }
-
-    private static string[] SplitCsvLine(string linha)
-    {
-        var result = new List<string>();
-        var sb = new StringBuilder();
-        bool inQuotes = false;
-        for (int i = 0; i < linha.Length; i++)
-        {
-            char ch = linha[i];
-            if (ch == '"')
-            {
-                if (inQuotes && i + 1 < linha.Length && linha[i + 1] == '"')
-                {
-                    sb.Append('"');
-                    i++;
-                }
-                else inQuotes = !inQuotes;
-            }
-            else if (ch == ',' && !inQuotes)
-            {
-                result.Add(sb.ToString());
-                sb.Clear();
-            }
-            else sb.Append(ch);
-        }
-        result.Add(sb.ToString());
-        return result.ToArray();
     }
 
     private static SchemaComparisonResultDto Comparar(SchemaInfoDto jca, SchemaInfoDto externo, string? nomeArquivo)
