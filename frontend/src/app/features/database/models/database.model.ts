@@ -225,7 +225,7 @@ export interface SchemaFkInfo {
 
 export interface SchemaDifference {
   severidade: 'Critico' | 'Aviso' | 'Ok';
-  categoria: 'Coluna' | 'Tipo' | 'Nullable' | 'Indice' | 'Fk' | 'Ordem';
+  categoria: 'Coluna' | 'Tipo' | 'Nullable' | 'Indice' | 'Fk' | 'Ordem' | 'Tabela';
   campo: string;
   esperado?: string;
   encontrado?: string;
@@ -244,4 +244,34 @@ export interface SchemaComparisonResult {
   oks: number;
   percentualMatch: number;
   diferencas: SchemaDifference[];
+}
+
+export type BulkTableStatus = 'Ok' | 'Diferencas' | 'SomenteArquivo' | 'SomenteBanco';
+
+export interface BulkTableComparison {
+  tabela: string;
+  status: BulkTableStatus;
+  criticos: number;
+  avisos: number;
+  oks: number;
+  percentualMatch: number;
+  totalColunasJca: number;
+  totalColunasArquivo: number;
+  diferencas: SchemaDifference[];
+}
+
+export interface BulkSchemaComparisonResult {
+  geradoEm: string;
+  arquivoNome?: string;
+  totalTabelasArquivo: number;
+  totalTabelasBanco: number;
+  tabelasOk: number;
+  tabelasComDiferenca: number;
+  somenteArquivo: number;
+  somenteBanco: number;
+  criticos: number;
+  avisos: number;
+  oks: number;
+  percentualMatch: number;
+  tabelas: BulkTableComparison[];
 }

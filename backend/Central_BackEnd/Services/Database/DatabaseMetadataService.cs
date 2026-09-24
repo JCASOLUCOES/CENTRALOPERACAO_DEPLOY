@@ -12,6 +12,7 @@ public interface IDatabaseMetadataService
     Task<List<ColumnDto>> ListarColunasAsync(string schema, string nome, CancellationToken ct = default);
     Task<List<IndexDto>> ListarIndicesAsync(string schema, string nome, CancellationToken ct = default);
     Task<List<ForeignKeyDto>> ListarForeignKeysAsync(string? schema, string? nomeTabela, CancellationToken ct = default);
+    Task<Dictionary<string, SchemaInfoDto>> ExtrairSchemasAsync(CancellationToken ct = default);
     Task<List<ProcedureResumoDto>> ListarProceduresAsync(string? schema, string? busca, int take, CancellationToken ct = default);
     Task<ProcedureDetalheDto?> ObterProcedureAsync(string schema, string nome, CancellationToken ct = default);
     Task<List<TriggerDto>> ListarTriggersAsync(string? schema, string? nomeTabela, CancellationToken ct = default);
@@ -276,6 +277,128 @@ ORDER BY Origem, FkName";
                 r.IsDBNull(6) ? null : r.GetString(6)));
         }
         return lista;
+    }
+
+    public async Task<Dictionary<string, SchemaInfoDto>> ExtrairSchemasAsync(CancellationToken ct = default)
+    {
+        var mapa = new Dictionary<string, SchemaInfoDto>(StringComparer.OrdinalIgnoreCase);
+
+        const string sqlTabelas = @"
+SELECT s.name, t.name
+FROM sys.tables t
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE t.is_ms_shipped = 0
+ORDER BY s.name, t.name";
+
+        const string sqlColunas = @"
+SELECT s.name, t.name, c.column_id, c.name, ty.name, c.is_nullable,
+       c.max_length, c.precision, c.scale, ISNULL(dc.definition, N'')
+FROM sys.columns c
+JOIN sys.types ty ON c.user_type_id = ty.user_type_id
+JOIN sys.tables t ON c.object_id = t.object_id
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+LEFT JOIN sys.default_constraints dc
+    ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id
+WHERE t.is_ms_shipped = 0
+ORDER BY s.name, t.name, c.column_id";
+
+        const string sqlIndices = @"
+SELECT s.name, t.name, i.name, i.is_unique,
+    STUFF((SELECT N',' + c.name
+           FROM sys.index_columns ic
+           JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+           WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id
+             AND ic.is_included_column = 0
+           ORDER BY ic.key_ordinal
+           FOR XML PATH('')), 1, 1, '') AS Colunas
+FROM sys.indexes i
+JOIN sys.tables t ON i.object_id = t.object_id
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE t.is_ms_shipped = 0
+  AND i.is_hypothetical = 0
+  AND i.index_id > 0
+  AND i.name IS NOT NULL
+ORDER BY s.name, t.name, i.name";
+
+        const string sqlFks = @"
+SELECT sP.name, tP.name, fk.name, cP.name,
+       sR.name + N'.' + tR.name, cR.name
+FROM sys.foreign_keys fk
+JOIN sys.tables tP ON fk.parent_object_id = tP.object_id
+JOIN sys.schemas sP ON tP.schema_id = sP.schema_id
+JOIN sys.tables tR ON fk.referenced_object_id = tR.object_id
+JOIN sys.schemas sR ON tR.schema_id = sR.schema_id
+JOIN sys.foreign_key_columns fkc ON fkc.constraint_object_id = fk.object_id
+JOIN sys.columns cP ON cP.object_id = fkc.parent_object_id AND cP.column_id = fkc.parent_column_id
+JOIN sys.columns cR ON cR.object_id = fkc.referenced_object_id AND cR.column_id = fkc.referenced_column_id
+WHERE tP.is_ms_shipped = 0
+ORDER BY sP.name, tP.name, fk.name";
+
+        await using var c = await _conn.OpenAsync(ct);
+
+        await using (var cmd = new SqlCommand(sqlTabelas, c))
+        await using (var r = await cmd.ExecuteReaderAsync(ct))
+        {
+            while (await r.ReadAsync(ct))
+            {
+                var full = $"{r.GetString(0)}.{r.GetString(1)}";
+                mapa[full] = new SchemaInfoDto(full,
+                    new List<SchemaColumnInfoDto>(),
+                    new List<SchemaIndexInfoDto>(),
+                    new List<SchemaFkInfoDto>());
+            }
+        }
+
+        await using (var cmd = new SqlCommand(sqlColunas, c))
+        await using (var r = await cmd.ExecuteReaderAsync(ct))
+        {
+            while (await r.ReadAsync(ct))
+            {
+                var full = $"{r.GetString(0)}.{r.GetString(1)}";
+                if (!mapa.TryGetValue(full, out var info)) continue;
+                var tam = r.IsDBNull(6) ? (int?)null : (int)r.GetInt16(6);
+                if (tam == -1) tam = null;
+                var def = r.GetString(9);
+                info.Colunas.Add(new SchemaColumnInfoDto(
+                    r.GetString(3),
+                    r.GetString(4),
+                    r.GetBoolean(5),
+                    r.GetInt32(2),
+                    tam,
+                    r.IsDBNull(7) ? null : (int?)r.GetByte(7),
+                    r.IsDBNull(8) ? null : (int?)r.GetByte(8),
+                    string.IsNullOrEmpty(def) ? null : def));
+            }
+        }
+
+        await using (var cmd = new SqlCommand(sqlIndices, c))
+        await using (var r = await cmd.ExecuteReaderAsync(ct))
+        {
+            while (await r.ReadAsync(ct))
+            {
+                var full = $"{r.GetString(0)}.{r.GetString(1)}";
+                if (!mapa.TryGetValue(full, out var info)) continue;
+                var cols = r.IsDBNull(4)
+                    ? new List<string>()
+                    : r.GetString(4).Split(',').ToList();
+                info.Indices.Add(new SchemaIndexInfoDto(
+                    r.GetString(2), r.GetBoolean(3), cols));
+            }
+        }
+
+        await using (var cmd = new SqlCommand(sqlFks, c))
+        await using (var r = await cmd.ExecuteReaderAsync(ct))
+        {
+            while (await r.ReadAsync(ct))
+            {
+                var full = $"{r.GetString(0)}.{r.GetString(1)}";
+                if (!mapa.TryGetValue(full, out var info)) continue;
+                info.Fks.Add(new SchemaFkInfoDto(
+                    r.GetString(2), r.GetString(3), r.GetString(4), r.GetString(5)));
+            }
+        }
+
+        return mapa;
     }
 
     private async Task<int> ContarRegistrosAsync(SqlConnection c, string schema, string nome, CancellationToken ct)

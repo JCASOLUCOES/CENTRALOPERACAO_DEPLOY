@@ -254,3 +254,36 @@ public record SchemaComparisonResultDto(
     int Oks,
     decimal PercentualMatch,
     List<SchemaDifferenceDto> Diferencas);
+
+/// <summary>
+/// Comparacao de uma tabela no modo banco inteiro.
+/// Status: "Ok" | "Diferencas" | "SomenteArquivo" | "SomenteBanco".
+/// </summary>
+public record BulkTableComparisonDto(
+    string Tabela,
+    string Status,
+    int Criticos,
+    int Avisos,
+    int Oks,
+    decimal PercentualMatch,
+    int TotalColunasJca,
+    int TotalColunasArquivo,
+    List<SchemaDifferenceDto> Diferencas);
+
+/// <summary>
+/// Resultado consolidado da comparacao de banco inteiro (arquivo x banco conectado).
+/// </summary>
+public record BulkSchemaComparisonResultDto(
+    DateTime GeradoEm,
+    string? ArquivoNome,
+    int TotalTabelasArquivo,
+    int TotalTabelasBanco,
+    int TabelasOk,
+    int TabelasComDiferenca,
+    int SomenteArquivo,
+    int SomenteBanco,
+    int Criticos,
+    int Avisos,
+    int Oks,
+    decimal PercentualMatch,
+    List<BulkTableComparisonDto> Tabelas);

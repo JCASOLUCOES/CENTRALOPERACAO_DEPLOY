@@ -8,7 +8,7 @@ import {
   DatabaseStatus, DatabaseConnectionConfig,
   ProcedureResumo, ProcedureDetalhe,
   Trigger, Dependencia, ProcedureAnalysis,
-  SchemaComparisonResult
+  SchemaComparisonResult, BulkSchemaComparisonResult
 } from '../models/database.model';
 
 @Injectable({ providedIn: 'root' })
@@ -114,5 +114,12 @@ export class DatabaseService {
     fd.append('tabela', tabela);
     fd.append('arquivo', arquivo, arquivo.name);
     return this.http.post<SchemaComparisonResult>(`${this.baseUrl}/compare-schemas`, fd);
+  }
+
+  // Comparação de banco inteiro (arquivo com N tabelas x banco conectado)
+  compararBancoInteiro(arquivo: File): Observable<BulkSchemaComparisonResult> {
+    const fd = new FormData();
+    fd.append('arquivo', arquivo, arquivo.name);
+    return this.http.post<BulkSchemaComparisonResult>(`${this.baseUrl}/compare-schemas-bulk`, fd);
   }
 }

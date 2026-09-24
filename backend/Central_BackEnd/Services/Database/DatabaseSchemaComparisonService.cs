@@ -10,6 +10,8 @@ public interface IDatabaseSchemaComparisonService
 {
     Task<SchemaComparisonResultDto> CompararComArquivoAsync(
         string schema, string tabela, IFormFile arquivo, CancellationToken ct = default);
+    Task<BulkSchemaComparisonResultDto> CompararBancoInteiroAsync(
+        IFormFile arquivo, CancellationToken ct = default);
 }
 
 public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
@@ -19,6 +21,7 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
 
     private static readonly string[] ExtencoesAceitas = { ".json" };
     private const long TamanhoMaximoBytes = 5 * 1024 * 1024; // 5 MB
+    private const long TamanhoMaximoBulkBytes = 20 * 1024 * 1024; // 20 MB (banco inteiro)
 
     public DatabaseSchemaComparisonService(
         IDatabaseMetadataService metadata,
@@ -31,19 +34,246 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
     public async Task<SchemaComparisonResultDto> CompararComArquivoAsync(
         string schema, string tabela, IFormFile arquivo, CancellationToken ct = default)
     {
-        ValidarArquivo(arquivo);
+        ValidarArquivo(arquivo, TamanhoMaximoBytes);
 
         var jca = await ExtrairSchemaJcaAsync(schema, tabela, ct);
         var externo = await LerArquivoAsync(arquivo, ct);
         return Comparar(jca, externo, arquivo.FileName);
     }
 
-    private static void ValidarArquivo(IFormFile arquivo)
+    public async Task<BulkSchemaComparisonResultDto> CompararBancoInteiroAsync(
+        IFormFile arquivo, CancellationToken ct = default)
+    {
+        ValidarArquivo(arquivo, TamanhoMaximoBulkBytes);
+
+        using var reader = new StreamReader(arquivo.OpenReadStream(), Encoding.UTF8);
+        var conteudo = await reader.ReadToEndAsync(ct);
+        var externas = ParseBulkJson(conteudo, arquivo.FileName ?? "arquivo.json");
+
+        var jcaMap = await _metadata.ExtrairSchemasAsync(ct);
+
+        var porChaveJca = new Dictionary<string, SchemaInfoDto>(StringComparer.OrdinalIgnoreCase);
+        var nomesBanco = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in jcaMap)
+        {
+            porChaveJca[kv.Key] = kv.Value;
+            var ponto = kv.Key.IndexOf('.');
+            nomesBanco.Add(ponto >= 0 ? kv.Key[(ponto + 1)..] : kv.Key);
+        }
+
+        var tabelas = new List<BulkTableComparisonDto>();
+        var matchedJca = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        int somenteArquivo = 0, somenteBanco = 0, tabelasOk = 0, tabelasDif = 0;
+
+        foreach (var ext in externas)
+        {
+            var chave = ResolverChaveJca(ext.Tabela, porChaveJca, nomesBanco);
+            if (chave == null)
+            {
+                somenteArquivo++;
+                var dif = new SchemaDifferenceDto("Critico", "Tabela", ext.Tabela,
+                    null, $"{ext.Colunas.Count} colunas",
+                    "Tabela existe no arquivo mas nao existe no banco conectado.");
+                tabelas.Add(new BulkTableComparisonDto(ext.Tabela, "SomenteArquivo",
+                    1, 0, 0, 0m, 0, ext.Colunas.Count, new List<SchemaDifferenceDto> { dif }));
+                continue;
+            }
+
+            matchedJca.Add(chave);
+            var r = Comparar(jcaMap[chave], ext, ext.Tabela);
+            var status = r.Criticos + r.Avisos > 0 ? "Diferencas" : "Ok";
+            if (status == "Ok") tabelasOk++; else tabelasDif++;
+            tabelas.Add(new BulkTableComparisonDto(r.Tabela, status,
+                r.Criticos, r.Avisos, r.Oks, r.PercentualMatch,
+                r.TotalColunasJca, r.TotalColunasArquivo, r.Diferencas));
+        }
+
+        foreach (var kv in jcaMap)
+        {
+            if (matchedJca.Contains(kv.Key)) continue;
+            somenteBanco++;
+            var dif = new SchemaDifferenceDto("Critico", "Tabela", kv.Key,
+                $"{kv.Value.Colunas.Count} colunas", null,
+                "Tabela existe no banco conectado mas nao existe no arquivo.");
+            tabelas.Add(new BulkTableComparisonDto(kv.Key, "SomenteBanco",
+                1, 0, 0, 0m, kv.Value.Colunas.Count, 0,
+                new List<SchemaDifferenceDto> { dif }));
+        }
+
+        int criticos = tabelas.Sum(t => t.Criticos);
+        int avisos = tabelas.Sum(t => t.Avisos);
+        int oks = tabelas.Sum(t => t.Oks);
+        int total = criticos + avisos + oks;
+        decimal match = total == 0 ? 100m : Math.Round((decimal)oks / total * 100m, 1);
+
+        return new BulkSchemaComparisonResultDto(
+            DateTime.UtcNow,
+            arquivo.FileName,
+            externas.Count,
+            jcaMap.Count,
+            tabelasOk,
+            tabelasDif,
+            somenteArquivo,
+            somenteBanco,
+            criticos,
+            avisos,
+            oks,
+            match,
+            tabelas);
+    }
+
+    private static string? ResolverChaveJca(
+        string tabelaArquivo,
+        Dictionary<string, SchemaInfoDto> porChaveJca,
+        HashSet<string> nomesBanco)
+    {
+        if (string.IsNullOrWhiteSpace(tabelaArquivo)) return null;
+        var t = tabelaArquivo.Trim();
+        if (porChaveJca.ContainsKey(t)) return t;
+
+        var ponto = t.IndexOf('.');
+        var nome = ponto >= 0 ? t[(ponto + 1)..] : t;
+        var schemaPadrao = ponto >= 0 ? t[..ponto] : "dbo";
+        var candidata = $"{schemaPadrao}.{nome}";
+        if (porChaveJca.ContainsKey(candidata)) return candidata;
+
+        if (nomesBanco.Contains(nome))
+        {
+            foreach (var k in porChaveJca.Keys)
+            {
+                var p = k.IndexOf('.');
+                if (p >= 0 && string.Equals(k[(p + 1)..], nome, StringComparison.OrdinalIgnoreCase))
+                    return k;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Parse de arquivo com N tabelas: objeto {tabelas:[...]}, array de objetos
+    /// de tabela, embrulho Excel/SSMS ou JSON Lines (uma linha por tabela).
+    /// </summary>
+    private static List<SchemaInfoDto> ParseBulkJson(string conteudo, string nomeArquivo)
+    {
+        if (string.IsNullOrWhiteSpace(conteudo))
+            throw new ArgumentException("Arquivo JSON vazio.");
+
+        var base0 = RemoverBom(conteudo.Trim());
+        if (base0.Length >= 2 && base0[0] == '"' && base0[^1] == '"')
+            base0 = base0.Substring(1, base0.Length - 2).Replace("\"\"", "\"");
+
+        if (TentarParseJson(base0, out var root))
+        {
+            var lista = ExtrairTabelasDeRoot(root, nomeArquivo);
+            if (lista.Count > 0) return lista;
+        }
+
+        var tabelas = new List<SchemaInfoDto>();
+        foreach (var linha in base0.Split('\n'))
+        {
+            var l = RemoverBom(linha.Trim()).TrimEnd('\r');
+            if (l.Length == 0) continue;
+            if (l.Length >= 2 && l[0] == '"' && l[^1] == '"')
+                l = l.Substring(1, l.Length - 2).Replace("\"\"", "\"");
+            if (!TentarParseJson(l, out var el)) continue;
+            try
+            {
+                if (el.ValueKind == JsonValueKind.Object)
+                {
+                    if (el.TryGetProperty("tabelas", out var filhas) && filhas.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var f in filhas.EnumerateArray())
+                            tabelas.Add(ParseJsonObject(f, nomeArquivo));
+                        continue;
+                    }
+                    tabelas.Add(ParseJsonObject(el, nomeArquivo));
+                }
+                else if (el.ValueKind == JsonValueKind.Array)
+                {
+                    tabelas.AddRange(ExtrairTabelasDeRoot(el, nomeArquivo));
+                }
+            }
+            catch (ArgumentException)
+            {
+            }
+        }
+
+        if (tabelas.Count == 0)
+            throw new ArgumentException(
+                "JSON invalido para banco inteiro. Esperado objeto {tabelas:[...]}, " +
+                "array de objetos de tabela ou JSON Lines (uma linha por tabela).");
+        return tabelas;
+    }
+
+    private static List<SchemaInfoDto> ExtrairTabelasDeRoot(JsonElement root, string nomeArquivo)
+    {
+        var lista = new List<SchemaInfoDto>();
+        if (root.ValueKind == JsonValueKind.String)
+        {
+            var interno = root.GetString() ?? "";
+            if (TentarParseJson(interno, out var filho))
+                return ExtrairTabelasDeRoot(filho, nomeArquivo);
+            return lista;
+        }
+        if (root.ValueKind == JsonValueKind.Object)
+        {
+            if (root.TryGetProperty("tabelas", out var filhas) && filhas.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var f in filhas.EnumerateArray())
+                    lista.Add(ParseJsonObject(f, nomeArquivo));
+                return lista;
+            }
+            if (PossuiPropriedade(root, "tabela", "colunas", "columns"))
+            {
+                lista.Add(ParseJsonObject(root, nomeArquivo));
+                return lista;
+            }
+            var qtdProps = root.EnumerateObject().Count();
+            if (qtdProps == 1)
+            {
+                var interno = DesembrulharArrayEmbrulhado(root, nomeArquivo);
+                if (TentarParseJson(interno, out var filho))
+                    return ExtrairTabelasDeRoot(filho, nomeArquivo);
+            }
+            return lista;
+        }
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            if (root.GetArrayLength() == 0) return lista;
+            var p0 = root[0];
+            if (p0.ValueKind == JsonValueKind.Object
+                && !PossuiPropriedade(p0, "nome", "name")
+                && !PossuiPropriedade(p0, "colunas", "columns"))
+            {
+                var interno = DesembrulharArrayEmbrulhado(p0, nomeArquivo);
+                if (TentarParseJson(interno, out var filho))
+                    return ExtrairTabelasDeRoot(filho, nomeArquivo);
+                return lista;
+            }
+            foreach (var el in root.EnumerateArray())
+            {
+                if (el.ValueKind != JsonValueKind.Object) continue;
+                if (!PossuiPropriedade(el, "tabela", "colunas", "columns"))
+                {
+                    if (PossuiPropriedade(el, "nome", "name"))
+                        throw new ArgumentException(
+                            "Arquivo parece conter uma lista de colunas, nao tabelas. " +
+                            "Use a comparacao de tabela unica ou exporte com o script de banco inteiro.");
+                    continue;
+                }
+                lista.Add(ParseJsonObject(el, nomeArquivo));
+            }
+            return lista;
+        }
+        return lista;
+    }
+
+    private static void ValidarArquivo(IFormFile arquivo, long tamanhoMaximo)
     {
         if (arquivo == null || arquivo.Length == 0)
             throw new ArgumentException("Arquivo e obrigatorio.");
-        if (arquivo.Length > TamanhoMaximoBytes)
-            throw new ArgumentException("Arquivo excede o limite de 5 MB.");
+        if (arquivo.Length > tamanhoMaximo)
+            throw new ArgumentException($"Arquivo excede o limite de {tamanhoMaximo / (1024 * 1024)} MB.");
         var ext = Path.GetExtension(arquivo.FileName ?? "").ToLowerInvariant();
         if (!ExtencoesAceitas.Contains(ext))
             throw new ArgumentException("Apenas arquivos .json sao aceitos.");
@@ -82,6 +312,28 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
 
         if (root.ValueKind == JsonValueKind.Array)
         {
+            var primeiro = root.GetArrayLength() > 0 ? root[0] : default;
+
+            if (primeiro.ValueKind == JsonValueKind.Object
+                && !PossuiPropriedade(primeiro, "nome", "name")
+                && !PossuiPropriedade(primeiro, "colunas", "columns"))
+            {
+                var desembrulhado = DesembrulharArrayEmbrulhado(primeiro, nomeArquivo);
+                return ParseJson(desembrulhado, nomeArquivo);
+            }
+
+            if (primeiro.ValueKind == JsonValueKind.Object
+                && PossuiPropriedade(primeiro, "colunas", "columns"))
+            {
+                var tabelas = new List<SchemaInfoDto>();
+                foreach (var el in root.EnumerateArray())
+                    tabelas.Add(ParseJsonObject(el, nomeArquivo));
+                if (tabelas.Count == 1)
+                    return tabelas[0];
+                throw new ArgumentException(
+                    $"Arquivo contem {tabelas.Count} tabelas. Use a comparacao de banco inteiro.");
+            }
+
             var colunas = new List<SchemaColumnInfoDto>();
             foreach (var el in root.EnumerateArray())
                 colunas.Add(ParseColunaJson(el));
@@ -92,11 +344,76 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
         }
 
         if (root.ValueKind == JsonValueKind.Object)
+        {
+            if (root.TryGetProperty("tabelas", out var tabelasEl) && tabelasEl.ValueKind == JsonValueKind.Array)
+            {
+                if (tabelasEl.GetArrayLength() == 1)
+                    return ParseJsonObject(tabelasEl[0], nomeArquivo);
+                throw new ArgumentException(
+                    $"Arquivo contem {tabelasEl.GetArrayLength()} tabelas. Use a comparacao de banco inteiro.");
+            }
+
+            if (!PossuiPropriedade(root, "nome", "name")
+                && !PossuiPropriedade(root, "colunas", "columns"))
+            {
+                var desembrulhado = DesembrulharArrayEmbrulhado(root, nomeArquivo);
+                return ParseJson(desembrulhado, nomeArquivo);
+            }
+
             return ParseJsonObject(root, nomeArquivo);
+        }
 
         throw new ArgumentException(
             "JSON invalido: esperado objeto { tabela, colunas, indices, fks } ou array de colunas.");
     }
+
+    private static bool PossuiPropriedade(JsonElement el, params string[] nomes)
+    {
+        foreach (var n in nomes)
+            if (el.TryGetProperty(n, out _))
+                return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Desembrulha objeto/array com uma unica propriedade string cujo valor e JSON
+    /// interno (artefato Excel/SSMS: [{ "": "{\"tabela\":...}" }]).
+    /// </summary>
+    private static string DesembrulharArrayEmbrulhado(JsonElement el, string nomeArquivo)
+    {
+        string? candidato = null;
+        foreach (var prop in el.EnumerateObject())
+        {
+            if (prop.Value.ValueKind != JsonValueKind.String)
+                return NotEmbrulhado(el, nomeArquivo);
+            if (candidato != null)
+                return NotEmbrulhado(el, nomeArquivo);
+            candidato = prop.Value.GetString();
+        }
+
+        if (string.IsNullOrWhiteSpace(candidato))
+            return NotEmbrulhado(el, nomeArquivo);
+
+        var interno = RemoverBom(candidato.Trim());
+        if (interno.Length >= 2 && interno[0] == '"' && interno[^1] == '"')
+            interno = interno.Substring(1, interno.Length - 2).Replace("\"\"", "\"");
+        try
+        {
+            using var doc = JsonDocument.Parse(interno);
+            return doc.RootElement.GetRawText();
+        }
+        catch (JsonException)
+        {
+            throw new ArgumentException(
+                "JSON invalido: propriedade string nao contem JSON valido. " +
+                $"Cole o JSON limpo comecando por '{{'. (arquivo: {nomeArquivo})");
+        }
+    }
+
+    private static string NotEmbrulhado(JsonElement el, string nomeArquivo)
+        => throw new ArgumentException(
+            "JSON nao contem colunas validas (propriedade 'colunas' vazia ou ausente). " +
+            $"(arquivo: {nomeArquivo}, propriedades: {string.Join(", ", el.EnumerateObject().Select(p => p.Name))})");
 
     private static SchemaInfoDto ParseJsonObject(JsonElement root, string nomeArquivo)
     {
