@@ -121,18 +121,18 @@ segura de conexão.
 | `/database` | `DatabaseShellComponent` | Shell com 7 abas + banner de status (verde conectado / vermelho desconectado); header via `app-page-header` (Lote B): `titulo="Banco de Dados"`, `icone="bi-hdd-network-fill"`, status continua abaixo |
 | `/database/visao-geral` | `DbVisaoGeralComponent` | 9 cards (servidor, tabelas, colunas, PKs, FKs, índices, views, procedures, functions, triggers) + detalhes |
 | `/database/explorador` | `DbExploradorComponent` | Árvore de tabelas + painel de detalhe (colunas + índices) + busca global |
-| `/database/relacionamentos` | `DbRelacionamentosComponent` | Confirmados (linha azul contínua) × Possíveis (linha violeta tracejada) com score e motivos + busca por coluna |
+| `/database/relacionamentos` | `DbRelacionamentosComponent` | Dropdown de tabela → só vínculos dela (`GET /relationships?tabela=`): Confirmadas × Possíveis com score/motivos + pills e busca por coluna após a seleção |
 | `/database/diagrama` | `DbDiagramaComponent` | SVG próprio, layout BFS, profundidade 1-5, setas: azul contínua / violeta tracejada |
-| `/database/consultas` | `DbConsultasComponent` | Editor SQL (SELECT/WITH), paginação 25/50/100/500, timeout 5/15/30/60s |
-| `/database/diferencas` | `DbDiferencasComponent` | 2 sub-abas: **Banco × Documentação** (comparação real via `POST /database/diff` + snapshots; IDENTIDADE CLEAN 21/09/2026: labels em texto puro + dots CSS via `getBadgeClass()`; `badge 🟢🟡🔴` do model é contrato de dados da API, não exibição) e **Sincronização** (`DbSincronizacaoComponent`: upload CSV/JSON × schema JCA via `POST /database/compare-schemas`, resumo críticos/avisos/match %, filtro diferenças, export CSV client-side + bloco "Script de exportação" com T-SSQL JSON colunas/índices/FKs copiável; duplicatas no arquivo → `Aviso`, sem erro; IDENTIDADE CLEAN: dots CSS `.db-sync__dot--*`) |
-| `/database/configuracao` | `DbConfiguracaoComponent` | Form de conexão (servidor/porta/banco/usuário/senha mascarada) + Testar conexão + Salvar |
+| `/database/consultas` | `DbConsultasComponent` | Só o Criador de Consultas (wizard 7 etapas, etapa final "SQL" com Copiar; SQL livre/favoritos/Executar removidos em 23/09/2026) |
+| `/database/diferencas` | `DbDiferencasComponent` | Só **Sincronização** (`DbSincronizacaoComponent`): upload CSV/JSON × schema JCA via `POST /database/compare-schemas`, resumo críticos/avisos/match %, filtro diferenças, export CSV client-side + bloco "Script de exportação" com T-SSQL JSON copiável; duplicatas no arquivo → `Aviso`, sem erro (aba "Banco × Documentação" e snapshots removidos em 23/09/2026) |
+| `/database/configuracao` | `DbConfiguracaoComponent` | Leitura da conexão (servidor/porta/banco/usuário/senha mascarada) + Testar conexão (somente leitura; `PUT /config` removido) |
 
-**Endpoints backend (`/api/v1/database`)** — 15 endpoints, ver `MODULO-BANCO-DADOS.md` § 4.
+**Endpoints backend (`/api/v1/database`)** — 21 endpoints, ver `MODULO-BANCO-DADOS.md` § 4.
 
-**Segurança**: senha nunca é logada, retornada pela API ou commitada. Leitura via
-env var (`DB_EXPLORER_*`) em produção, user-secrets em Development. SELECT-only com
-regex server-side bloqueando INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE/CREATE/EXEC.
-Transação ReadUncommitted + ROLLBACK explícito. Timeout 1-120s. Limite 1-5000.
+**Segurança**: senha nunca é logada, retornada em claro ou commitada. Leitura via
+env var (`DB_EXPLORER_*`) em produção, user-secrets em Development. Sem execução de
+SQL no servidor (endpoint `POST /query` removido em 23/09/2026); o Criador de
+Consultas só gera/copía SQL (execução no SSMS do usuário).
 
 **Mapa completo**: `MODULO-BANCO-DADOS.md` na raiz do monorepo.
 

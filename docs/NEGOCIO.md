@@ -37,7 +37,7 @@ persistentes de chat, IA no Query Builder. Usar empty-state honesto.
 - **Implantação:** projetos `PRJ-XXXX`; prioridades 0–3; status Backlog→…→Concluido/Bloqueado/Cancelado; Kanban DnD (`PATCH .../coluna`) sincroniza Agenda quando coluna é Reunião/Treinamento/Marco de Entrega; colunas `padrao` não excluíveis (máx 8).
 - **Agenda:** CRUD com 409 `CONFLICT_HORARIOS` (sobreposição do responsável); editar/excluir/mover = só dono ou admin (403); criar aceita terceiros; filtros `responsavelId`/`funcaoId`/escopo Meus-Geral.
 - **Acessos:** Google Sheets (16 col); visualização exige senha mestra e gera auditoria em `AuditoriaAcessos`; credenciais expiram em 5 min no cliente.
-- **Database Explorer:** somente leitura; `POST /query` só `SELECT`/`WITH` (regex bloqueia DML/DDL); config via env/user-secrets.
+- **Database Explorer:** somente leitura; sem execução de SQL no servidor desde 23/09/2026 (Criador gera/copía); config via env/user-secrets.
 - **JOTA:** único endpoint `POST /api/rag-proxy/chat` (workspace `suporte`); sem `/sessions`; erro honesto, sem resposta fake.
 - **Módulo Gestor:** home pós-login admin; painéis CEO/CTO/COO; acesso via dropdown do usuário e pós-login; docs em `telas/07-gestao.md`.
 

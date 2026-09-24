@@ -83,37 +83,33 @@ dotnet run
 
 ---
 
-## 4. Endpoints (`/api/v1/database`)
+## 4. Endpoints (`/api/v1/database`) — 21
+
+> Enxugamento 23/09/2026 (`640bbf6`): removidos `POST /query`, `GET /procedures/search`, `PUT /config`, `POST /diff`, `POST /snapshot`, `GET /snapshots`, `POST /snapshot/comparar` (services Query/SchemaDiff/Snapshot apagados).
 
 | Método | Rota | Descrição |
 |---|---|---|
 | GET | `/database/status` | Conectado/Servidor/Banco/Última consulta |
 | GET | `/database/info` | Info completa: contadores (tabelas, colunas, PKs, FKs, índices, views, procedures, functions, triggers) + versão SQL Server |
-| GET | `/database/tables?schema=` | Lista todas as tabelas (com qtd de registros) |
+| GET | `/database/tables?schema=&filtro=` | Lista tabelas (filtro opcional por nome) |
 | GET | `/database/tables/{schema}/{nome}` | Detalhe de uma tabela |
 | GET | `/database/tables/{schema}/{nome}/columns` | Colunas com tipo, nulidade, PK/FK, default, collation |
 | GET | `/database/tables/{schema}/{nome}/indexes` | Índices (únicos/não, colunas) |
-| GET | `/database/relationships?schema=&incluirPossiveis=` | FKs confirmadas + (opcional) inferidas |
+| GET | `/database/relationships?schema=&tabela=&incluirPossiveis=` | FKs confirmadas + (opcional) inferidas; `tabela` filtra origem/destino (case-insensitive) |
 | GET | `/database/column-usage?coluna=X` | Onde a coluna X é usada |
 | GET | `/database/graph?tabela=X&profundidade=N&incluirPossiveis=` | Grafo BFS (1-5 níveis) |
 | GET | `/database/search?termo=X` | Busca global (tabela/coluna/view/proc/func/trigger) |
 | GET | `/database/procedures?schema=&busca=&take=` | Lista procedures (com preview 200 chars do corpo) |
 | GET | `/database/procedures/{schema}/{nome}` | Detalhe: corpo completo + parâmetros (input/output) |
-| GET | `/database/procedures/search?termo=&take=` | Busca textual no nome e preview de procedures |
 | GET | `/database/procedures/{schema}/{nome}/analysis` | Análise automática: tabelas usadas, procs chamadas, ações, fluxo |
 | GET | `/database/triggers?schema=&tabela=` | Lista triggers (filtro por schema/tabela) |
 | GET | `/database/triggers/{schema}/{nome}` | Detalhe trigger: evento, momento, corpo, ações, tabelas afetadas |
 | GET | `/database/tables/{schema}/{nome}/dependencies` | Dependências: procs, triggers, views, FKs, functions que referenciam a tabela |
 | GET | `/database/search/global?termo=&take=` | Busca global unificada (tabelas, colunas, views, procs, functions, triggers) |
-| POST | `/database/query` | Executa SELECT (somente leitura) |
 | POST | `/database/test-connection` | Testa conexão sem persistir |
-| GET | `/database/config` | Lê config (senha mascarada) |
-| PUT | `/database/config` | Atualiza config em memória da sessão (requer role Admin) |
-| POST | `/database/query-builder` | Query Builder básico (tabelas + colunas + JOINs) |
-| POST | `/database/query-builder-advanced` | Query Builder avançado (WHERE, ORDER BY, GROUP BY, HAVING, CTEs, LIMIT) |
-| POST | `/database/diff` | Comparação schema real vs documentação Markdown |
-| POST | `/database/snapshot` | Salvar snapshot do schema atual |
-| GET | `/database/snapshots` | Listar snapshots salvos |
+| GET | `/database/config` | Lê config (senha mascarada `***`) |
+| POST | `/database/query-builder-advanced` | Gera SQL do Criador (WHERE, ORDER BY, GROUP BY, HAVING, CTEs) |
+| POST | `/database/compare-schemas` | Upload multipart (≤ 5 MB, `.csv`/`.json`) × schema JCA (`SchemaComparisonResultDto`) |
 
 ## 4.1. Banco fixo: `dbActyon_JCA`
 
@@ -130,16 +126,23 @@ Shell com 7 abas + banner de status (verde conectado / vermelho desconectado):
 | Aba | Função |
 |---|---|
 | **Visão Geral** | Cards com contadores + detalhes da conexão (servidor, banco, versão, usuário, última consulta, duração) |
-| **Explorador** | Árvore lateral de tabelas + painel de detalhe (colunas, índices, metadados) + busca global |
-| **Relacionamentos** | Tabela com tipo (Confirmada linha contínua / Possível tracejada), score, motivos. Filtros: Todas / Confirmadas / Possíveis + busca por coluna |
+| **Explorador** | Árvore lateral de tabelas + painel de detalhe (colunas, índices, metadados) + busca global; botões "Consultar"/"Criar consulta" abrem o Criador pré-preenchido |
+| **Relacionamentos** | Dropdown de tabela → só vínculos dela: tipo (Confirmada/Possível), score, motivos; pills Todas/Confirmadas/Possíveis + busca por coluna **após** seleção |
 | **Diagrama** | SVG próprio com layout BFS (raiz no centro, colunas por profundidade). Setas: azul contínua (confirmada) / violeta tracejada (possível). Profundidade 1-5 |
-| **Consultas** | Editor SQL (SELECT/WITH) com timeout configurável e paginação. Resultado em tabela |
-| **Diferenças** | Resumo (X tabelas iguais, Y novas, Z removidas...) + lista de divergências. Placeholder — integração com diff real de Markdown em v2.x |
-| **Configuração** | Form com servidor/porta/banco/usuário/senha mascarada/encrypt/trust + botão Testar conexão |
+| **Consultas** | Só o Criador de Consultas (wizard 7 etapas; etapa final "SQL" com **Copiar** para o SSMS). Sem editor livre, favoritos nem Executar |
+| **Diferenças** | Só **Sincronização**: upload CSV/JSON × schema JCA + bloco "Script de exportação" (T-SSQL JSON). Sem aba "Banco × Documentação" nem snapshots |
+| **Configuração** | Leitura da conexão (servidor/porta/banco/usuário/senha mascarada/encrypt/trust) + botão Testar conexão (somente leitura) |
 
 ---
 
-## 6. Segurança do Query (camadas)
+## 6. Segurança do Query (camadas) — histórico
+
+> **Desde 23/09/2026 (`640bbf6`):** não há mais execução de SQL no backend
+> (`POST /database/query`, `DatabaseQueryService`, regex SELECT-only,
+> ReadUncommitted e limite 1–5000 foram removidos). O Criador de Consultas
+> **gera/copía** SQL; a execução acontece no SSMS do usuário.
+
+Camadas que valiam enquanto o endpoint existia:
 
 1. **Frontend**: textarea, sem autocomplete, sem preview destrutivo
 2. **Validação de tamanho**: 1-5000 registros, 1-120s timeout
@@ -150,8 +153,6 @@ Shell com 7 abas + banner de status (verde conectado / vermelho desconectado):
 6. **Timeout via `CommandTimeout`**: erro -2 do SqlClient vira mensagem amigável
 7. **Limite automático via `TOP`**: envelopa SELECT com `TOP N` se ausente
 8. **Log de auditoria**: registra a consulta (sem senha) para investigação
-
-> **Não confie só no frontend.** O backend **sempre** valida.
 
 ---
 
@@ -177,17 +178,14 @@ e **nunca** devem ser tratados como FKs reais sem validação manual.
 
 ## 8. Próximos passos (v2.x)
 
-- [ ] **Snapshot do banco** (§ 26 do `projeto_BD.md`): salvar metadados
-      completos num JSON para comparar versões no tempo
-- [ ] **Diff real com Markdown** (§ 23-25 do `projeto_BD.md`): hoje é placeholder
-- [ ] **Gerador de SQL** (§ 19 do `projeto_BD.md`): hoje não há UI para isso
-      (criação de SELECT a partir das tabelas selecionadas)
-- [ ] **MCP server** (§ 28 do `projeto_BD.md`): expor os 5 services
-      (`DatabaseMetadataService`, `DatabaseRelationshipService`,
-      `DatabaseQueryService`, `DatabaseSchemaDiffService`, `DatabaseSnapshotService`)
+- [x] **Gerador de SQL** (§ 19 do `projeto_BD.md`): Criador de Consultas em `/database/consultas` (gera/copía; sem execução no sistema desde 23/09/2026)
+- [x] **Diff/snapshot** — implementados e **removidos** no enxugamento 23/09/2026 (`640bbf6`); permanece só `compare-schemas` (upload)
+- [ ] **MCP server** (§ 28 do `projeto_BD.md`): expor os services restantes
+      (`DatabaseMetadataService`, `DatabaseRelationshipInferenceService`,
+      `DatabaseQueryBuilderService`, `DatabaseSchemaComparisonService`,
+      `DatabaseConnectionService`, `DatabaseSearchService`)
       via protocolo MCP para o Agente IA consumir
 - [ ] **Filtros do diagrama** (§ 17 do `projeto_BD.md`): zoom, centralizar, expandir
-- [ ] **Status da documentação** (§ 39 do `projeto_BD.md`): badges 🟢/🟡/🔴 por tabela
 - [ ] **Search em procedures** (§ 12.6 do `projeto_BD.md`): parser de `sys.sql_modules`
 
 ---

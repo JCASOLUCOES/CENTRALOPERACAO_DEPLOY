@@ -1,7 +1,7 @@
 # Auditoria de Endpoints Backend vs Frontend
 
-**Data:** 2026-09-21  
-**Total Backend Endpoints:** 95  
+**Data:** 2026-09-21 (Database revisado em 2026-09-23 — `640bbf6`)  
+**Total Backend Endpoints:** 89 (Database: 21 desde 23/09/2026)  
 **Total Frontend Chamadas Mapeadas:** ~120 (algumas duplicadas/overloads)
 
 ---
@@ -10,7 +10,7 @@
 
 | Categoria | Backend | Frontend Usa | Não Usados | % Cobertura |
 |-----------|---------|--------------|------------|-------------|
-| Database | 27 | 26 | 1 | 96% |
+| Database | 21 | 21 | 0 | 100% |
 | Implantação - Projetos | 22 | 20 | 2 | 91% |
 | Implantação - Tarefas | 19 | 19 | 0 | 100% |
 | Implantação - TiposProjeto | 5 | 1 | 4 | 20% |
@@ -22,7 +22,7 @@
 | Acessos | 3 | 3 | 0 | 100% |
 | Auth | 4 | 4 | 0 | 100% |
 | RagProxy | 1 | 5* | 0* | - |
-| **TOTAL** | **95** | **~120** | **14** | **85%** |
+| **TOTAL** | **89** | **~120** | **7** | **92%** |
 
 *RagProxy: Frontend chama endpoints que NÃO EXISTEM no backend (ver seção "Endpoints Frontend Sem Backend")
 
@@ -63,10 +63,8 @@
 | GET | `/implantacao/projetos/{id}/etapas` | Endpoint existe mas não chamado diretamente (usa `obterEtapasProjeto` que chama `/projetos/{projetoId}/etapas`) |
 | PUT | `/implantacao/projetos/{id}/etapas/{ordem}` | **CONFLITO**: Frontend chama `PUT /implantacao/projetos/{projetoId}/etapas/{ordem}` mas backend tem `PUT /implantacao/projetos/{id}/etapas/{ordem:int}` - **verificar se rota bate** |
 
-### 5. DatabaseController (1 não usado)
-| Método | Endpoint | Motivo |
-|--------|----------|--------|
-| POST | `/database/query-builder-advanced` | Service tem método `executarQueryBuilderAvançado` mas não encontrado uso na UI |
+### 5. DatabaseController
+> **23/09/2026 (`640bbf6`):** módulo enxugado — removidos do backend 7 endpoints (`POST /query`, `GET /procedures/search`, `PUT /config`, `POST /diff`, `POST /snapshot`, `GET /snapshots`, `POST /snapshot/comparar`). Database agora: **21 endpoints, 21 usados pelo FE (100%)**. `query-builder-advanced` é usado pelo Criador de Consultas (`db-query-builder.component.ts`).
 
 ---
 
@@ -108,7 +106,7 @@ O frontend chama 4 endpoints que **NÃO EXISTEM** no `RagProxyController`:
 5. **Remover endpoints não usados do EtapasController** (POST, PUT, DELETE) - ou criar gestão de etapas globais
 
 ### Prioridade Baixa
-6. **DatabaseController** - Verificar uso de `query-builder-advanced` na UI
+6. ~~**DatabaseController** — Verificar uso de `query-builder-advanced` na UI~~ (em uso pelo Criador de Consultas; 7 endpoints mortos removidos em 23/09/2026)
 7. **Documentar** no Swagger/OpenAPI quais endpoints são "internos/fixos" vs "públicos para UI"
 
 ---
@@ -122,7 +120,7 @@ O frontend chama 4 endpoints que **NÃO EXISTEM** no `RagProxyController`:
 | ProjetosService | `implantacao/services/projetos.service.ts` | 20 endpoints |
 | TarefasService | `implantacao/services/tarefas.service.ts` | 18 endpoints |
 | AgendaService | `agenda/services/agenda.service.ts` | 10 endpoints |
-| DatabaseService | `database/services/database.service.ts` | 26 endpoints |
+| DatabaseService | `database/services/database.service.ts` | 21 endpoints |
 | AuthService | `core/services/auth.service.ts` | 4 endpoints |
 | AcessosService | `services/acessos.service.ts` | 3 endpoints |
 | AdminDashboardService | `admin/services/admin-dashboard.service.ts` | 1 endpoint |

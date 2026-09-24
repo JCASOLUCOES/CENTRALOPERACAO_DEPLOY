@@ -128,61 +128,50 @@ Gestão de acessos de empresas via Google Sheets (listagem, validação de senha
 **Controller:** `Controllers/Database/DatabaseController.cs`
 
 ### O que faz
-API do Database Explorer — metadados, relacionamentos, execução de queries, configuração de conexão, procedimentos armazenados, triggers, dependências, análise de procedures, diff de schema e snapshots.
+API do Database Explorer — metadados, relacionamentos, busca, config (leitura), procedures, triggers, dependências, análise de procedures, query builder (geração de SQL) e comparação de schema via upload. **21 endpoints** (enxugamento 23/09/2026, `640bbf6`: removidos `POST /query`, `GET /procedures/search`, `PUT /config`, `POST /diff`, `POST /snapshot`, `GET /snapshots`, `POST /snapshot/comparar`; services `DatabaseQueryService`/`DatabaseSchemaDiffService`/`DatabaseSnapshotService` deletados).
 
 ### Endpoints
 | Método | Rota | Descrição | Service |
 |--------|------|-----------|---------|
 | GET | `/api/v1/database/status` | Status de conexão | `DatabaseConnectionService` |
 | GET | `/api/v1/database/info` | Info do servidor | `DatabaseMetadataService` |
-| GET | `/api/v1/database/tables` | Lista tabelas | `DatabaseMetadataService` |
+| GET | `/api/v1/database/tables` | Lista tabelas (`?schema=`, `?filtro=`) | `DatabaseMetadataService` |
 | GET | `/api/v1/database/tables/{schema}/{name}` | Detalhe tabela | `DatabaseMetadataService` |
 | GET | `/api/v1/database/tables/{schema}/{name}/columns` | Colunas | `DatabaseMetadataService` |
 | GET | `/api/v1/database/tables/{schema}/{name}/indexes` | Índices | `DatabaseMetadataService` |
 | GET | `/api/v1/database/tables/{schema}/{name}/dependencies` | Dependências da tabela | `DatabaseMetadataService` |
-| GET | `/api/v1/database/relationships` | Relacionamentos | `DatabaseRelationshipInferenceService` |
+| GET | `/api/v1/database/relationships?tabela=` | Relacionamentos (filtro opcional por tabela, case-insensitive em origem/destino) | `DatabaseRelationshipInferenceService` |
 | GET | `/api/v1/database/graph` | Grafo BFS | `DatabaseRelationshipInferenceService` |
 | GET | `/api/v1/database/column-usage` | Uso de coluna | `DatabaseRelationshipInferenceService` |
 | GET | `/api/v1/database/search` | Busca global | `DatabaseSearchService` |
 | GET | `/api/v1/database/search/global` | Busca global unificada (mapeada p/ `GlobalSearchResultDto`) | `DatabaseSearchService` |
-| GET | `/api/v1/database/procedures` | Lista procedures | `DatabaseMetadataService` |
+| GET | `/api/v1/database/procedures` | Lista procedures (`?busca=`) | `DatabaseMetadataService` |
 | GET | `/api/v1/database/procedures/{schema}/{name}` | Detalhe procedure | `DatabaseMetadataService` |
-| GET | `/api/v1/database/procedures/search` | Busca procedures (`ListarProceduresAsync` com `busca=termo`) | `DatabaseMetadataService` |
 | GET | `/api/v1/database/procedures/{schema}/{name}/analysis` | Análise procedure | `DatabaseMetadataService` |
 | GET | `/api/v1/database/triggers` | Lista triggers | `DatabaseMetadataService` |
 | GET | `/api/v1/database/triggers/{schema}/{name}` | Detalhe trigger | `DatabaseMetadataService` |
-| POST | `/api/v1/database/query` | Executa query SELECT | `DatabaseQueryService` |
+| POST | `/api/v1/database/query-builder-advanced` | Gera SQL do Criador (WHERE, ORDER BY, GROUP BY, CTEs) | `DatabaseQueryBuilderService` |
+| GET | `/api/v1/database/config` | Configuração (senha mascarada) | `DatabaseConnectionService` |
 | POST | `/api/v1/database/test-connection` | Testa conexão | `DatabaseConnectionService` |
-| GET | `/api/v1/database/config` | Configuração | `DatabaseConnectionService` |
-| PUT | `/api/v1/database/config` | Salva configuração (requer role Admin) | `DatabaseConnectionService` |
-| POST | `/api/v1/database/query-builder-advanced` | Query Builder avançado (WHERE, ORDER BY, GROUP BY, CTEs) | `DatabaseQueryBuilderService` |
-| POST | `/api/v1/database/diff` | Diff schema (`{ limite }`) | `DatabaseSchemaDiffService` |
-| POST | `/api/v1/database/snapshot` | Salvar snapshot (`{ nome }`, retorna o nome) | `DatabaseSnapshotService` |
-| GET | `/api/v1/database/snapshots` | Listar snapshots | `DatabaseSnapshotService` |
-| POST | `/api/v1/database/snapshot/comparar` | Compara snapshot (`{ nome }` → `SchemaDiffDto`) | `DatabaseSnapshotService` |
-| POST | `/api/v1/database/compare-schemas` | Upload multipart `FormData` (`schema`, `tabela`, `arquivo` CSV/JSON ≤ 5 MB) → compara colunas/tipos/nullable/ordem/índices/FKs × schema JCA → `SchemaComparisonResultDto` (`[EnableRateLimiting("validacao")]`, `[RequestSizeLimit(5MB)]`) | `DatabaseSchemaComparisonService` |
+| POST | `/api/v1/database/compare-schemas` | Upload multipart `FormData` (`schema`, `tabela`, `arquivo` CSV/JSON ≤ 5 MB) → colunas/tipos/nullable/ordem/índices/FKs × schema JCA → `SchemaComparisonResultDto` (`[EnableRateLimiting("validacao")]`, `[RequestSizeLimit(5MB)]`) | `DatabaseSchemaComparisonService` |
 
 ### Banco de Dados
 - `dbActyon_JCA` (SQL Server 192.168.2.154)
 - Metadados via `sys.*` views
 - `sys.foreign_keys` para relacionamentos
-- Procedures para execução
 
 ### Segurança
-- SELECT-only (regex bloqueia DML/DDL + OPENROWSET/OPENDATASOURCE/xp_cmdshell/sp_/xp_/WAITFOR DELAY/SHUTDOWN/RECONFIGURE)
 - Senha via env var `DB_EXPLORER_SENHA`
-- Transação ReadUncommitted + ROLLBACK explícito
-- Timeout 1-120s, Limite 1-5000
 - User-secrets em Development
-- `PUT /config` protegido com role Admin
 - `TrustServerCertificate=false` como default em produção
 - `POST /compare-schemas`: rate limit `validacao` (50/min prod), extensões `.csv`/`.json` apenas, 5 MB, parse server-side (não confia em conteúdo do cliente)
+- Sem execução de SQL arbitrário no servidor (endpoint `POST /query` removido; SELECT-only restava só no serviço de query)
 
 ### Observações Técnicas
 - `AppDbContextDesignTimeFactory` para EF Core migrations com SQL Server
-- Configuração via `DatabaseConnectionConfig`
-- Novos services: `DatabaseSchemaDiffService`, `DatabaseSnapshotService`, `DatabaseQueryBuilderService` (avançado), `DatabaseSchemaComparisonService` (upload CSV/JSON × schema JCA — colunas, tipos, nullable, ordem, índices, FKs; DTOs `SchemaInfoDto`/`SchemaComparisonResultDto`/`SchemaDifferenceDto` em `DatabaseDtos.cs`)
-- Controller reescrito em 19/09/2026 para a arquitetura de 8 services (`Connection`, `Metadata`, `RelationshipInference`, `Query`, `Search`, `QueryBuilder`, `SchemaDiff`, `Snapshot`); `status`/`test-connection` testam via `OpenAsync` + `SELECT 1` com cronômetro (métodos `TestConnection*` antigos removidos das interfaces); 23/09/2026: 9º service `SchemaComparison`
+- Configuração via `DatabaseConnectionConfig` (`GetConfig` somente leitura; `UpdateConfig` removido)
+- Services: `Connection`, `Metadata`, `RelationshipInference`, `Search`, `QueryBuilder`, `SchemaComparison` (6); `Query`, `SchemaDiff`, `Snapshot` deletados em 23/09/2026
+- DI em `Program.cs` enxuta (sem registros de query/diff/snapshot)
 
 ---
 
@@ -427,7 +416,7 @@ API da Agenda V2 (MVP) — gerencia eventos, tipos de evento e participantes. Ro
 | `SegurancaHelper` | Comparação senha em tempo constante | SHA-256 |
 | `ProjetoServico` | CRUD projetos + geração código | `ProximoCodigoAsync()` (sem args, prefixo fixo `PRJ`) |
 | `DashboardService` | KPIs agregados | `porEquipe` = stub único `Geral`; `EquipeNome` = `"Geral"` (pós-remoção de Equipes) |
-| `DatabaseService` | Database Explorer endpoints | 14 endpoints |
+| `DatabaseService` | Database Explorer endpoints | 21 endpoints (23/09/2026) |
 | `LegacyDataService` | Dados legados | Read-only |
 | `AgendaService` | CRUD Agenda V2 (eventos, tipos, participantes, funções) + validação de conflito de horários (Fase 1) | `IAgendaService` / `AgendaService` (`FimEfetivo()`, `QueryConflito()`, `ObterConflitosAsync()`, `ValidarSemConflitoAsync()` → `ConflictException`/`CONFLICT_HORARIOS`/409; `ListarEventosAsync(..., funcaoId?)` filtra por `Operador.FuncaoId` via subquery; `ListarFuncoesAsync()` retorna funções ativas com operadores ativos) |
 | `TarefaService` | CRUD tarefas + jornada + contador por etapa fixa + sincronia coluna↔status | `ValidarEtapaFixaAsync` (etapa fixa do mesmo projeto); `RecalcularJornadaAsync` → `SincronizarEtapasPorTarefasAsync` (criar/atualizar/mover-coluna/concluir/arquivar/excluir); `Projeto.Progresso` no fórmula-fixa; `StatusDaColuna`/`ColunaPorStatusAsync` (mapa coluna→status e status→coluna, 22/09/2026); `OndeAtrasadas()` no filtro `apenasAtrasadas` |

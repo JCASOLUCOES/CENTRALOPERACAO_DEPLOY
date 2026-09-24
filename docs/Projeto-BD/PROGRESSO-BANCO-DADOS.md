@@ -4,6 +4,13 @@
 **Branch:** `developer`  
 **Último commit:** Fases 3-4 concluídas (projeto finalizado)
 
+> **Atualização 23/09/2026 (`640bbf6`):** enxugamento — removidos SQL livre,
+> favoritos, Executar, aba "Banco × Documentação" e snapshots. Backend saiu de
+> 28 → **21 endpoints**; services `DatabaseQueryService`/`DatabaseSchemaDiffService`/
+> `DatabaseSnapshotService` e `PUT /config` apagados. As tabelas/markers ✅ abaixo
+> são o **histórico** da fase original (Fases 1–4) e não refletem o estado atual —
+> fonte atual: `MODULO-BANCO-DADOS.md` § 4 e `docs/telas/06-backend.md` § 17.4.
+
 ---
 
 ## ✅ FASE 1 — Desbloquear Investigação (CONCLUÍDA)

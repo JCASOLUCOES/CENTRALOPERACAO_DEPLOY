@@ -54,9 +54,10 @@ dashboard/cadastros), Agenda, Acessos, Database Explorer, Admin (facade
 `forkJoin`, zero endpoint novo), JOTA via proxy. **Estáticos (`*.data.ts` + HTML):**
 ferramentas, cursos, trilhas, SQL, fraseologia, FAQ, stack, política, onboarding,
 procedimentos/Visão ADM. **Local (`localStorage`, por usuário):** recentes
-(`cc.recentes.v1`), favoritos/históricos de Visão ADM e Database, tema, colunas do kanban.
+(`cc.recentes.v1`), favoritos/contador da Visão ADM, tema, colunas do kanban.
 **Não existe:** métricas globais de acesso, busca server-side, sessões persistentes
-de chat, IA no Query Builder — nunca simular; usar empty-state honesto.
+de chat, execução de SQL no Query Builder (só gerar/copiar), IA no Query Builder —
+nunca simular; usar empty-state honesto.
 
 ## 6. Design System (`frontend/src/styles.scss`, `:root` + `[data-theme="dark"]`)
 
@@ -74,7 +75,8 @@ de chat, IA no Query Builder — nunca simular; usar empty-state honesto.
 `Auth` (`/auth/login|refresh|logout|me`), `Agenda` (`/agenda/eventos|tipos|funcoes|
 operadores`), `Acessos` (+ auditoria de visualização), `Implantacao/*` (projetos,
 tarefas, dashboard, admin-dashboard só `Role Administrador`, etapas, tipos-projeto,
-colunas-kanban), `Database/*` (só leitura + diff/snapshot), `RagProxy` (`POST /chat`
+colunas-kanban), `Database/*` (só leitura + query-builder/compare-schemas; 21
+endpoints desde 23/09/2026), `RagProxy` (`POST /chat`
 — único endpoint; sem `/sessions`).
 
 ## 8. Checklist — nova tela

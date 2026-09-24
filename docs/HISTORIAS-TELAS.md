@@ -211,21 +211,21 @@
 
 ## DATABASE — SHELL (`/database` → `/database/visao-geral`)
 **História:** Como operador, quero navegar pelas abas do Database Explorer com status de conexão visível.
-**Passos:** 1. Acessa `/database` (redireciona para `visao-geral`). 2. Clica nas abas: "Explorador", "Relacionamentos", "Diagrama", "Consultas", "Query Builder", "Diferenças", "IA Chat", "Configuração". 3. Observa o banner verde (conectado) / vermelho (desconectado).
+**Passos:** 1. Acessa `/database` (redireciona para `visao-geral`). 2. Clica nas abas: "Explorador", "Relacionamentos", "Diagrama", "Consultas", "Diferenças", "Configuração" (`query-builder` redireciona para `consultas`; IA Chat removida). 3. Observa o banner verde (conectado) / vermelho (desconectado).
 **Backend/tabelas:** `GET /api/v1/database/status`; `GET /api/v1/database/info`; metadados do SQL Server (`dbActyon_JCA`); sem escrita.
 **Resultado esperado:** Abas trocam o conteúdo; banner reflete a conectividade real.
 
 ## DATABASE — EXPLORADOR (`/database/explorador`)
 **História:** Como operador, quero buscar tabelas/procedures e ver colunas + índices para entender o schema.
-**Passos:** 1. Digita em "Buscar tabela, coluna ou procedure…". 2. Clica numa tabela (carrega colunas + índices) ou procedure (abre modal). 3. Clica em "Consultas" (ícone) para pular à aba Consultas com a tabela.
+**Passos:** 1. Digita em "Buscar tabela, coluna ou procedure…". 2. Clica numa tabela (carrega colunas + índices) ou procedure (abre modal). 3. Clica em "Consultar" (ícone) para abrir o Criador de Consultas com a tabela pré-preenchida.
 **Backend/tabelas:** `GET /api/v1/database/tables`; `GET /api/v1/database/tables/{schema}/{name}/columns`; `GET /api/v1/database/tables/{schema}/{name}/indexes`; `GET /api/v1/database/procedures`; `GET /api/v1/database/procedures/{schema}/{name}`; `GET /api/v1/database/search`; views `sys.tables`, `sys.columns`, `sys.indexes`, `sys.procedures`; sem escrita.
 **Resultado esperado:** Árvore filtrada; painel mostra colunas/índices; modal de procedure exibe definição.
 
 ## DATABASE — DETALHE DE TABELA (`/database/tabela/:schema/:tabela`)
 **História:** Como operador, quero ver colunas, FKs, dados de exemplo e navegar entre tabelas relacionadas.
-**Passos:** 1. Abre `/database/tabela/:schema/:tabela`. 2. Alterna as abas (inclui "Relacionamentos"). 3. Clica numa FK destino para navegar à tabela relacionada. 4. Clica em "Query Builder" ou "Executar".
-**Backend/tabelas:** `GET /api/v1/database/tables/{schema}/{name}` (+ `/columns`, `/indexes`, `/dependencies`); `POST /api/v1/database/query` (somente `SELECT` — regex server-side bloqueia DML/DDL); metadados `sys.*`; sem escrita.
-**Resultado esperado:** Detalhe + amostra exibidos; navegação por FK funciona; queries não-SELECT são rejeitadas.
+**Passos:** 1. Abre `/database/tabela/:schema/:tabela`. 2. Alterna as abas (inclui "Relacionamentos"). 3. Clica numa FK destino para navegar à tabela relacionada. 4. Clica em "Abrir no Criador" (gera SELECT de exemplo e navega para o Criador de Consultas).
+**Backend/tabelas:** `GET /api/v1/database/tables/{schema}/{name}` (+ `/columns`, `/indexes`, `/dependencies`); `GET /api/v1/database/graph` (relacionadas no Criador); metadados `sys.*`; sem escrita; sem execução de SQL no servidor.
+**Resultado esperado:** Detalhe + amostra exibidos; navegação por FK funciona; "Abrir no Criador" pré-preenche o wizard.
 
 ## DATABASE — VISÃO GERAL (`/database/visao-geral`)
 **História:** Como operador, quero ver os 9 cards de métricas do banco para ter o panorama.
@@ -234,39 +234,32 @@
 **Resultado esperado:** Cards com totais + detalhes; nenhuma escrita.
 
 ## DATABASE — RELACIONAMENTOS (`/database/relacionamentos`)
-**História:** Como operador, quero ver relacionamentos confirmados × possíveis com score para mapear JOINs.
-**Passos:** 1. Acessa `/database/relacionamentos`. 2. Clica em "Buscar". 3. Filtra por coluna.
-**Backend/tabelas:** `GET /api/v1/database/relationships`; `GET /api/v1/database/column-usage`; `sys.foreign_keys` + inferência (score 0–99%, BFS até 5 níveis); sem escrita.
-**Resultado esperado:** Linha azul contínua (confirmado) × violeta tracejada (possível) com score e motivos.
+**História:** Como operador, quero escolher uma tabela e ver só os vínculos dela com score para mapear JOINs.
+**Passos:** 1. Acessa `/database/relacionamentos`. 2. Escolhe a tabela no dropdown (empty state até a seleção). 3. Filtra por pill (Todas/Confirmadas/Possíveis) e/ou busca a usagem de uma coluna.
+**Backend/tabelas:** `GET /api/v1/database/tables`; `GET /api/v1/database/relationships?tabela=` (filtro case-insensitive em origem/destino); `GET /api/v1/database/column-usage`; `sys.foreign_keys` + inferência (score 0–99%); sem escrita.
+**Resultado esperado:** Só linhas da tabela escolhida; chip Confirmada × Possível com score e motivos.
 
 ## DATABASE — DIAGRAMA — ~~REMOVIDA~~ (arquivo `db-diagrama.component.ts` excluído; sem rota)
 
-## DATABASE — CONSULTAS (`/database/consultas`)
-**História:** Como operador, quero executar `SELECT` com paginação e timeout para consultar dados.
-**Passos:** 1. Acessa `/database/consultas`. 2. Escreve o SQL (só `SELECT`/`WITH`). 3. Ajusta paginação (25/50/100/500) e timeout (5/15/30/60s). 4. Clica em "Executar" ("Executando…" durante a carga); "Sair do Query Builder" sai do modo assistido; "Consultas Recentes" reaproveita SQL.
-**Backend/tabelas:** `POST /api/v1/database/query` (`DatabaseService.executarQuery()`); transação ReadUncommitted + ROLLBACK; limite 1–5000; tabelas-alvo lidas conforme o `SELECT`.
-**Resultado esperado:** Resultado paginado; DML/DDL rejeitado pelo regex server-side.
+## DATABASE — CONSULTAS / CRIADOR (`/database/consultas`)
+**História:** Como operador, quero montar o `SELECT` sem escrever JOIN/WHERE e copiar o SQL para o SSMS (sem executar no sistema).
+**Passos:** 1. Acessa `/database/consultas` (só o Criador; SQL livre/favoritos removidos em 23/09/2026) ou "Criar consulta"/"Abrir no Criador" a partir de tabela/relacionamento (pré-preenche). 2. Escolhe a tabela principal. 3. Marca campos (badges PK/FK, busca, todos/limpar). 4. Adiciona tabelas relacionadas (Confirmada/Sugerida + confiança; JOIN automático). 5. Filtros em linguagem simples e ordenação. 6. Confere o resumo. 7. Vê o SQL e clica em "Copiar".
+**Backend/tabelas:** `POST /api/v1/database/query-builder-advanced` (gera SQL, aliases amigáveis); `GET /api/v1/database/tables`; `GET /api/v1/database/graph`; sem escrita; **sem** `POST /database/query`.
+**Resultado esperado:** SQL gerado e copiado; execução acontece fora do sistema (SSMS).
 
-## DATABASE — QUERY BUILDER (`/database/consultas`, aba Criador de Consultas)
-**História:** Como operador, quero montar o `SELECT` sem escrever JOIN/WHERE para consultar com segurança.
-**Passos:** 1. Acessa `/database/consultas` (aba Criador de Consultas) ou "Criar consulta" a partir de uma tabela/relacionamento (pré-preenche tabela principal ou caminho). 2. Escolhe a tabela principal. 3. Marca campos (badges PK/FK, busca, todos/limpar). 4. Adiciona tabelas relacionadas (Confirmada/Sugerida + confiança + evidências; JOIN automático). 5. Adiciona filtros em linguagem simples e ordenação. 6. Confere o resumo. 7. Vê o SQL (copiar), executa e lê o resultado.
-**Backend/tabelas:** `POST /api/v1/database/query-builder-advanced` (gera SQL, aliases amigáveis); `POST /api/v1/database/query` (executa, somente leitura); `GET /api/v1/database/tables`; `GET /api/v1/database/graph`; sem escrita.
-**Resultado esperado:** SQL gerado e executado (somente leitura).
-
-## DATABASE — DIFERENÇAS (`/database/diferencas`)
-**História:** Como operador, quero (1) ver divergências banco × documentação Markdown e (2) comparar o schema de uma tabela JCA com um arquivo CSV/JSON de estrutura esperada.
-**Passos (aba Banco × Documentação):** 1. Acessa `/database/diferencas`. 2. Lê o "Resumo" e "Diferenças encontradas". 3. Opcionalmente salva/compara snapshots.
-**Passos (aba Sincronização):** 1. Abre a sub-aba "Sincronização". 2. (Opcional) Usa o bloco "Script de exportação": ajusta schema/tabela (auto-fill pela Tabela JCA), copia o T-SSQL, roda no SSMS do banco externo e salva o JSON da célula em `.json`. 3. Seleciona a tabela JCA no dropdown. 4. Envia arquivo `.csv` ou `.json` (≤ 5 MB) com a estrutura esperada. 5. Clica em "Comparar". 6. Lê resumo (críticos/avisos/compatíveis/match %) e lista de diferenças (filtro "apenas diferenças"); opcionalmente exporta CSV.
-**Backend/tabelas:** `GET /api/v1/database/tables` (dropdown de tabelas); `POST /api/v1/database/diff` (aba documentação); `POST /api/v1/database/compare-schemas` (multipart `FormData`: `schema`, `tabela`, `arquivo`; parse CSV/JSON no backend; rate limit `validacao`); sem escrita em dados de negócio.
-**Resultado esperado:** Lista de divergências (ou vazio); na Sincronização, `SchemaComparisonResultDto` com severidades Critico/Aviso/Ok e % match (colunas/índices/FKs duplicados no arquivo viram `Aviso`, sem erro); bloco de script permite gerar o JSON de exportação (colunas/índices/FKs) no formato aceito pelo upload.
+## DATABASE — DIFERENÇAS / SINCRONIZAÇÃO (`/database/diferencas`)
+**História:** Como operador, quero comparar o schema de uma tabela JCA com um arquivo CSV/JSON de estrutura esperada.
+**Passos:** 1. Acessa `/database/diferencas` (só Sincronização; aba "Banco × Documentação" e snapshots removidos em 23/09/2026). 2. (Opcional) Usa o bloco "Script de exportação": ajusta schema/tabela, copia o T-SSQL, roda no SSMS do banco externo e salva o JSON da célula. 3. Seleciona a tabela JCA. 4. Envia `.csv` ou `.json` (≤ 5 MB). 5. Clica em "Comparar". 6. Lê resumo (críticos/avisos/compatíveis/match %) e lista de diferenças; exporta CSV se quiser.
+**Backend/tabelas:** `GET /api/v1/database/tables`; `POST /api/v1/database/compare-schemas` (multipart; rate limit `validacao`); **sem** `POST /diff` e **sem** `/snapshot(s)`.
+**Resultado esperado:** `SchemaComparisonResultDto` com severidades Critico/Aviso/Ok e % match (duplicados no arquivo → `Aviso`); script de exportação gera o JSON no formato do upload.
 
 ## DATABASE — IA CHAT — ~~REMOVIDA~~ (arquivo `db-ia-chat.component.ts` excluído; sem rota; JOTA global cobre o caso via widget)
 
 ## DATABASE — CONFIGURAÇÃO (`/database/configuracao`)
 **História:** Como administrador, quero testar a conexão do Explorer para validar o acesso.
 **Passos:** 1. Acessa `/database/configuracao`. 2. Lê o aviso "Configuração gerenciada pelo administrador (variáveis de ambiente / user-secrets)". 3. Clica em "Testar conexão" ("Testando…" durante o teste).
-**Backend/tabelas:** `POST /api/v1/database/test-connection`; `GET /api/v1/database/config`; `PUT /api/v1/database/config` (requer role Admin); senha via env `DB_EXPLORER_SENHA`, nunca logada; sem escrita em dados de negócio.
-**Resultado esperado:** Teste indica sucesso/falha; config real vem de env/user-secrets, não do form.
+**Backend/tabelas:** `POST /api/v1/database/test-connection`; `GET /api/v1/database/config` (leitura; senha mascarada; `PUT /config` removido em 23/09/2026); senha via env `DB_EXPLORER_SENHA`, nunca logada; sem escrita em dados de negócio.
+**Resultado esperado:** Teste indica sucesso/falha; config real vem de env/user-secrets; interface é somente leitura.
 
 ## EMPRESA (`/empresa` → redirect)
 **História:** Como operador, quero abrir a área da empresa e cair no onboarding.
