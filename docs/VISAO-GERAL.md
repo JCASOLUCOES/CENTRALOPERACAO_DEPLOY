@@ -30,11 +30,9 @@ Implantação (Visão geral, Projetos, Kanban, Tarefas) · Ferramentas
 (Banco de Dados, Acessos, Central de Utilidades) · Conhecimento (Cursos, FAQ, Stack) ·
 JCA (Empresa, Onboarding, Políticas, Procedimentos `/visao-adm`, Kanban ADM
 `hasRole('F')` → `/implantacao/kanban?perfil=F`) · Administração
-(Gestão da Central `/admin/dashboard` só Administrador).
-Módulo Gestor (`/gestor/entrada`) é acessado pelo dropdown do usuário (admin)
-e após login como Administrador — sem item fixo na sidebar.
-Central Executiva (`/executivo`) e `/administrativo` estão **desativados**
-(rotas comentadas em `features.routes.ts`).
+(shell `/admin`; rota `/admin/dashboard` sem ativação no menu).
+Módulo Gestor e Central Executiva **removidos** em 24/09/2026 (`e87d763`);
+página `/chat` e link `/suporte` também removidos.
 JOTA é widget global (`<app-jota-widget>` no `MainLayout`), não item de menu.
 
 ## 4. Auth e permissões (`core/`)
@@ -43,9 +41,9 @@ JOTA é widget global (`<app-jota-widget>` no `MainLayout`), não item de menu.
 - `authGuard`: qualquer autenticado (com refresh silencioso). `adminGuard`: **só
   `Administrador`** (perfil `F` é barrado aqui, embora `hasRole()` o trate como
   super-usuário — links admin na sidebar usam `ehAdministrador()` estrito).
-- Pós-login: admin sem deep-link → `/gestor/entrada`; demais → `/`.
-- Exceção conhecida: rotas `/executivo` e `/administrativo` estão comentadas
-  (código-fonte de `features/executivo/` permanece no repo, sem rota ativa).
+- Pós-login: sem deep-link → `/` (Home); deep-link (`returnUrl`) sempre respeitado.
+- `/administrativo` permanece desativada (rota comentada); Kanban ADM via `?perfil=F`.
+  Módulo Gestor e `features/executivo/` foram **removidos** do repo (24/09/2026).
 
 ## 5. De onde vêm os dados
 

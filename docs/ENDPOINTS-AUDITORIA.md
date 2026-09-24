@@ -1,7 +1,7 @@
 # Auditoria de Endpoints Backend vs Frontend
 
-**Data:** 2026-09-21 (Database revisado em 2026-09-23 — `640bbf6`)  
-**Total Backend Endpoints:** 89 (Database: 21 desde 23/09/2026)  
+**Data:** 2026-09-21 (Database revisado em 2026-09-23 — `640bbf6`; Gestor removido em 2026-09-24 — `e87d763`)  
+**Total Backend Endpoints:** 85 (Database: 21 desde 23/09/2026; −4 Gestor em 24/09/2026)  
 **Total Frontend Chamadas Mapeadas:** ~120 (algumas duplicadas/overloads)
 
 ---
@@ -22,7 +22,7 @@
 | Acessos | 3 | 3 | 0 | 100% |
 | Auth | 4 | 4 | 0 | 100% |
 | RagProxy | 1 | 5* | 0* | - |
-| **TOTAL** | **89** | **~120** | **7** | **92%** |
+| **TOTAL** | **85** | **~120** | **7** | **92%** |
 
 *RagProxy: Frontend chama endpoints que NÃO EXISTEM no backend (ver seção "Endpoints Frontend Sem Backend")
 
@@ -65,6 +65,9 @@
 
 ### 5. DatabaseController
 > **23/09/2026 (`640bbf6`):** módulo enxugado — removidos do backend 7 endpoints (`POST /query`, `GET /procedures/search`, `PUT /config`, `POST /diff`, `POST /snapshot`, `GET /snapshots`, `POST /snapshot/comparar`). Database agora: **21 endpoints, 21 usados pelo FE (100%)**. `query-builder-advanced` é usado pelo Criador de Consultas (`db-query-builder.component.ts`).
+
+### 6. GestorController — REMOVIDO (2026-09-24, `e87d763`)
+> Removidos **4 endpoints**: `GET /gestor/metricas`, `GET /gestor/ceo/metricas`, `GET /gestor/cto/metricas`, `GET /gestor/coo/metricas`. Pasta `Controllers/Gestor/`, `Services/Gestor/`, `Dtos/Gestor/` e DI/policy `GestorAccess` excluídas do `Program.cs`.
 
 ---
 

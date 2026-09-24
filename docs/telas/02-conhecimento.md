@@ -216,7 +216,7 @@ Exibe detalhes completos de um curso específico (descrição, plataforma, link,
 **Componente:** `src/app/features/trilhas/trilhas.component.ts` (+ `.html`/`.scss`)
 
 ### O que faz
-Página "Como resolver esse problema?" — guia de atendimento do CRM Actyon em 8 seções (acordeão). Tem filtro de seções por palavra-chave, 3 exemplos rápidos clicáveis e CTA para o JOTA (`/chat`) quando nada corresponde.
+Página "Como resolver esse problema?" — guia de atendimento do CRM Actyon em 8 seções (acordeão). Tem filtro de seções por palavra-chave e 3 exemplos rápidos clicáveis (CTA `/chat` removido em 24/09/2026 — `e87d763`).
 
 ### Services Injetados
 | Service | Métodos Usados | Finalidade |
@@ -237,8 +237,8 @@ Página "Como resolver esse problema?" — guia de atendimento do CRM Actyon em 
 
 ### Observações Técnicas
 - Redesign `.tdh` (8 seções: classificação, diagnóstico, documentos, plano-ação, comunicação, fechamento, fluxo-resumido, exemplos-práticos; `secoesMeta` com `chaves` de busca)
-- Filtro: `filtro` + `secoesVisiveis()` (título + chaves, case-insensitive); vazio → "Nenhuma seção corresponde. Tente outro termo ou pergunte ao JOTA" (link `/chat`)
-- Exemplos rápidos (`exemplosRapidos`, 3 fixos: Lentidão no CRM, Erro 500 geral, Usuário sem acesso → abrem `exemplos-praticos`) + card CTA "Não achou? Pergunte ao JOTA com o contexto" (`/chat`)
+- Filtro: `filtro` + `secoesVisiveis()` (título + chaves, case-insensitive); vazio → "Nenhuma seção corresponde. Tente outro termo." (sem link `/chat`)
+- Exemplos rápidos (`exemplosRapidos`, 3 fixos: Lentidão no CRM, Erro 500 geral, Usuário sem acesso → abrem `exemplos-praticos`); card CTA JOTA removido em 24/09/2026
 
 ---
 

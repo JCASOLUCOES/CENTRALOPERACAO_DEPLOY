@@ -7,18 +7,17 @@
 - **Login:** `POST /api/v1/auth/login` → access token **só em memória** + refresh em cookie HttpOnly `cc_refresh` (4h com "Lembrar acesso").
 - **Perfis:** `Usuario | Editor | Administrador | Suporte | F`.
 - **Guards:** `authGuard` = qualquer autenticado; `adminGuard` = **só `Administrador`** (perfil `F` é barrado no guard; `hasRole('F')` é super-usuário só em menus que o declararem).
-- **Pós-login:** deep-link (`returnUrl`) sempre respeitado; admin genérico → **`/gestor/entrada`**; demais → `/`.
+- **Pós-login:** deep-link (`returnUrl`) sempre respeitado; sem deep-link → **`/`** (Home, qualquer perfil).
 - **Brute force / rate limit** no backend; senha da planilha de acessos é separada (mestra).
 
 ## Pós-login e módulos ativos
 
 | Perfil | Destino genérico |
 |---|---|
-| Administrador | `/gestor/entrada` (Módulo Gestor) |
-| Demais | `/` (Home operacional) |
+| Qualquer (sem deep-link) | `/` (Home operacional) |
 
-**Desativado (rota comentada):** `/executivo` (Central Executiva) e `/administrativo`.
-Código-fonte de `features/executivo/` permanece no repo; Kanban ADM do menu usa
+**Removidos (24/09/2026, `e87d763`):** Módulo Gestor (`/gestor/entrada` + painéis CEO/CTO/COO),
+Central Executiva (`features/executivo/`), página `/chat`. Kanban ADM do menu usa
 `/implantacao/kanban?perfil=F` (query param, não rota `/administrativo`).
 
 ## Fontes de verdade dos dados
@@ -38,8 +37,7 @@ persistentes de chat, IA no Query Builder. Usar empty-state honesto.
 - **Agenda:** CRUD com 409 `CONFLICT_HORARIOS` (sobreposição do responsável); editar/excluir/mover = só dono ou admin (403); criar aceita terceiros; filtros `responsavelId`/`funcaoId`/escopo Meus-Geral.
 - **Acessos:** Google Sheets (16 col); visualização exige senha mestra e gera auditoria em `AuditoriaAcessos`; credenciais expiram em 5 min no cliente.
 - **Database Explorer:** somente leitura; sem execução de SQL no servidor desde 23/09/2026 (Criador gera/copía); config via env/user-secrets.
-- **JOTA:** único endpoint `POST /api/rag-proxy/chat` (workspace `suporte`); sem `/sessions`; erro honesto, sem resposta fake.
-- **Módulo Gestor:** home pós-login admin; painéis CEO/CTO/COO; acesso via dropdown do usuário e pós-login; docs em `telas/07-gestao.md`.
+- **JOTA:** único endpoint `POST /api/rag-proxy/chat` (workspace `suporte`); sem `/sessions`; erro honesto, sem resposta fake; só widget flutuante (página `/chat` removida).
 
 ## Design e UX obrigatórios
 

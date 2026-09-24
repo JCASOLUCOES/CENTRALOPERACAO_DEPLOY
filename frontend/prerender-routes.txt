@@ -7,7 +7,6 @@
 /ferramentas/detalhe/1
 /stack
 /agenda
-/chat
 /cursos
 /cursos/detalhe/1
 /trilhas/resolver

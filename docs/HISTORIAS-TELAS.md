@@ -3,13 +3,13 @@
 > Documento de QA/histórias de usuário, uma seção por tela. Cada história foi verificada no código (componente `.ts` + template `.html` + rotas + service quando houver).
 > Rotas confirmadas em `frontend/src/app/app.routes.ts` (`/login`), `frontend/src/app/features.routes.ts`, `frontend/src/app/features/implantacao/implantacao.routes.ts` e `frontend/src/app/features/database/database.routes.ts`.
 > Nota de escopo: o fluxo Kanban→Agenda está **fora de escopo** e não é coberto aqui.
-> Rotas **desativadas**: `/executivo` e `/administrativo` (comentadas em `features.routes.ts` — seções marcadas abaixo).
+> Rotas **desativadas/removidas**: `/administrativo` (comentada); `/chat`, `/gestor/entrada`, `/executivo` e `features/executivo|gestor` **removidos** em 24/09/2026 (`e87d763` — seções marcadas abaixo).
 
 ## LOGIN (`/login`)
 **História:** Como operador, quero entrar com usuário e senha para acessar o sistema.
 **Passos:** 1. Preenche os campos "Usuário" (`#usuario`) e "Senha" (`#senha`). 2. Marca "Lembrar meu acesso" se quiser sessão de 4h. 3. Clica em "Entrar".
 **Backend/tabelas:** `POST /api/v1/auth/login` (retorna accessToken + user); `POST /api/v1/auth/refresh` (cookie HttpOnly `cc_refresh`); tabelas `TBOPERADOR` + `RefreshTokens` (via backend).
-**Resultado esperado:** Login válido redireciona: admin sem deep-link → **`/gestor/entrada`**; demais → `/`; sessão expirada exibe "Sua sessão expirou"; access token fica somente em memória; deep-link (`returnUrl`) é respeitado.
+**Resultado esperado:** Login válido redireciona: deep-link (`returnUrl`) respeitado; senão **`/`** (Home, qualquer perfil); sessão expirada exibe "Sua sessão expirou"; access token fica somente em memória.
 
 ## HOME (`/`)
 **História:** Como operador, quero uma entrada operacional (o que posso fazer) em vez de um dashboard institucional.
@@ -103,9 +103,9 @@
 
 ## TRILHAS (`/trilhas/resolver`)
 **História:** Como operador, quero descrever o problema e cair direto na seção certa do guia (ou nos exemplos práticos).
-**Passos:** 1. Acessa `/trilhas/resolver`. 2. Digita no filtro ("erro 500", "lentidão") e vê só as seções correspondentes. 3. Clica num exemplo rápido (abre a seção 8 e rola até o conteúdo) ou no CTA do JOTA.
+**Passos:** 1. Acessa `/trilhas/resolver`. 2. Digita no filtro ("erro 500", "lentidão") e vê só as seções correspondentes. 3. Clica num exemplo rápido (abre a seção 8 e rola até o conteúdo).
 **Backend/tabelas:** Somente frontend — filtro `secoesVisiveis()` sobre conteúdo estático; sem escrita, sem IA simulada.
-**Resultado esperado:** Filtro reduz o índice; exemplos abrem a seção correta; CTA navega para `/chat`.
+**Resultado esperado:** Filtro reduz o índice; exemplos abrem a seção correta; estado vazio sugere outro termo (sem link `/chat`, removido).
 
 ## TRILHA-SQL (`/trilhas/sql`)
 **História:** Como operador, quero copiar comandos SQL de diagnóstico para investigar o banco.
@@ -279,26 +279,23 @@
 **Backend/tabelas:** Somente leitura local — `CAPITULOS`/`CapituloOnboarding` em `onboarding-data`; sem escrita.
 **Resultado esperado:** Conteúdo do capítulo + navegação sequencial; id inexistente mostra vazio.
 
-## CHAT — JOTA (`/chat`)
-**História:** Como operador, quero conversar com o JOTA em página cheia (sessões, TTS) sobre suporte.
-**Passos:** 1. Acessa `/chat` (`JotaComponent`). 2. Envia mensagem (`workspaceId 'suporte'`, `mode 'query'`). 3. Lê resposta + documentos referenciados.
-**Backend/tabelas:** `POST /api/rag-proxy/chat` (`JotaChatService`); endpoints `/sessions*` inexistentes no backend (lista de sessões falha silenciosa); sem escrita local.
-**Resultado esperado:** Resposta real do proxy; sem respostas mockadas no frontend.
+## CHAT — JOTA (`/chat`) — ~~REMOVIDA~~ (24/09/2026, `e87d763`)
+**Status:** página removida (`chat.routes.ts`, `jota.component.*`, `rag-chat-widget.component.*`); rota `chat` (redirect `/`) também removida. JOTA segue só no widget flutuante.
 
 ## JOTA — WIDGET GLOBAL (FAB em todo o `MainLayout`)
 **História:** Como operador, quero chamar o JOTA de qualquer tela sem sair do contexto.
-**Passos:** 1. Clica no FAB (canto inferior direito). 2. Digita e envia no painel. 3. Expande para `/chat` se precisar de sessão completa.
+**Passos:** 1. Clica no FAB (canto inferior direito). 2. Digita e envia no painel.
 **Backend/tabelas:** Mesmo `POST /api/rag-proxy/chat`; `sessionId` em memória; erro mostra indisponibilidade honesta; sem escrita.
-**Resultado esperado:** Painel abre/fecha, histórico da conversa na sessão, erro sem fake.
+**Resultado esperado:** Painel abre/fecha, histórico da conversa na sessão, erro sem fake; sem link para página cheia.
 
-## CENTRAL EXECUTIVA (`/executivo`, `/executivo/dashboard`) — ~~DESATIVADA~~
-**Status:** rota **comentada** em `features.routes.ts`; código-fonte em `features/executivo/` permanece no repo. Não acessível via URL. Home dos gestores = **Módulo Gestor** `/gestor/entrada` (ver `telas/07-gestao.md`).
+## CENTRAL EXECUTIVA (`/executivo`) — ~~REMOVIDA~~ (24/09/2026, `e87d763`)
+**Status:** código-fonte em `features/executivo/` **excluído** do repo (rota já estava comentada antes). Deep-link `?projetoId=` do Kanban permanece por conta própria.
 
-## ADMINISTRAÇÃO — GESTÃO DA CENTRAL (`/admin/dashboard`)
-**História:** Como administrador, quero os indicadores operacionais e acesso às telas de gestão.
-**Passos:** 1. Abre `/admin/dashboard` (link "Gestão da Central", só Administrador). 2. Filtra por função e navega para kanban/tarefas/projetos/cadastros do shell `/admin`.
-**Backend/tabelas:** `GET /api/v1/admin/dashboard` (`AdminDashboardService`); sem escrita.
-**Resultado esperado:** KPIs + por função + alertas; refresh a cada 30s.
+## MÓDULO GESTOR (`/gestor/entrada`) — ~~REMOVIDO~~ (24/09/2026, `e87d763`)
+**Status:** `features/gestor/` + backend Gestor (4 endpoints) **excluídos**; item "Trocar Painel" removido do dropdown; login sem deep-link → `/`.
+
+## ADMINISTRAÇÃO — GESTÃO DA CENTRAL (`/admin/dashboard`) — ~~SEM ROTA ATIVA~~
+**Status:** import/rota do `AdminDashboardComponent` já estavam comentados em `admin.routes.ts`; em 24/09/2026 o import e a linha comentada da rota foram removidos. Service/backend (`GET /api/v1/admin/dashboard`) **permanecem** no código (decisão de não tocar). Não há link de menu para esta tela.
 
 ## ADMINISTRATIVO — KANBAN ADM (`/administrativo`) — ~~DESATIVADA~~
 **Status:** rota **comentada** em `features.routes.ts`. O link "Kanban ADM" da sidebar usa `/implantacao/kanban?perfil=F` (query param no `KanbanComponent`), não a rota `/administrativo`.

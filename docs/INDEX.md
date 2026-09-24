@@ -13,7 +13,7 @@
 | Arquitetura, JWT, versionamento, deploy IIS, segurança | [`DOCUMENTACAO-COMPLETA.md`](./DOCUMENTACAO-COMPLETA.md) |
 | Google Sheets, tabelas SQL, Database Explorer | [`integracoes-bd.md`](./integracoes-bd.md) |
 | Módulo Implantação / Projetos | [`implantacao.md`](./implantacao.md) |
-| Módulos frontend (Agenda, Central Executiva desativada) | [`frontend-modulos.md`](./frontend-modulos.md) |
+| Módulos frontend (Agenda; Gestor/Central Executiva removidos) | [`frontend-modulos.md`](./frontend-modulos.md) |
 | Publicação, rollback, Swagger no IIS | [`DEPLOY.md`](./DEPLOY.md) |
 | Fluxo JWT passo a passo | [`backend-auth-integracao.md`](./backend-auth-integracao.md) |
 | Auditoria endpoints usados/não usados | [`ENDPOINTS-AUDITORIA.md`](./ENDPOINTS-AUDITORIA.md) |

@@ -88,7 +88,7 @@ View Kanban com drag-and-drop (`@angular/cdk`), colunas configuráveis, reordena
 - Botão "Perguntar ao JOTA sobre esta tarefa" no drawer (Corretor #1, via `ChatContextoService`)
 - Faixa de métricas do quadro (Corretor #5): total, concluídas, atrasadas, urgentes abertas e sem responsável (`metricas()`)
 - Seção "Responsáveis" no drawer com `app-usuario-dropdown` + "Salvar responsáveis" (Corretor #5, preserva demais campos via `atualizar()` + recarrega detalhe)
-- Deep-link `?projetoId=X` (`kanban.component.ts:695-698`, via `ActivatedRoute.snapshot.queryParamMap` no `ngOnInit`): pré-seleciona o projeto no filtro (só aceita valor numérico `/^\d+$/`), usado pelos links "Kanban" de cada card de projeto da Central Executiva (`/implantacao/kanban?projetoId={id}`)
+- Deep-link `?projetoId=X` (`kanban.component.ts`, via `ActivatedRoute.snapshot.queryParamMap` no `ngOnInit`): pré-seleciona o projeto no filtro (só aceita valor numérico `/^\d+$/`); origem legada era a Central Executiva (removida em 24/09/2026), o query param permanece para qualquer link interno
 - IDENTIDADE CLEAN (21/09/2026, confirmado no código) + `app-page-header` (confirmado no código): header via componente reutilizável `PageHeaderComponent` (`kanban.component.ts:63-73` — `titulo="Kanban"`, `descricao="Visualize e mova tarefas entre colunas. Atualizações sincronizam com o backend."`, `icone="bi-kanban"`; slot `actions` com select de projeto no contêiner `.imp-kanban__controls`); CSS local de header `.imp-kanban__header` removido (sem ocorrência no frontend); título com `<i class="bi bi-kanban">`, sem emoji
 
 ### Fluxo de Persistência e Comunicação com o Banco de Dados
