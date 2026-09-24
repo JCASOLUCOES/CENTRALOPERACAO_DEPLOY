@@ -17,13 +17,11 @@ const MAX_ITENS = 30;
 /** Rótulos por prefixo de rota (mesma base do breadcrumb do header). */
 const TITULOS: { prefixo: string; titulo: string; tipo: string }[] = [
   { prefixo: '/agenda', titulo: 'Agenda', tipo: 'Ferramenta' },
-  { prefixo: '/chat', titulo: 'JOTA', tipo: 'Ferramenta' },
   { prefixo: '/implantacao/kanban', titulo: 'Kanban', tipo: 'Implantação' },
   { prefixo: '/implantacao/projetos', titulo: 'Projetos', tipo: 'Implantação' },
   { prefixo: '/implantacao/tarefas', titulo: 'Tarefas', tipo: 'Implantação' },
   { prefixo: '/implantacao/dashboard', titulo: 'Visão geral da Implantação', tipo: 'Implantação' },
   { prefixo: '/implantacao', titulo: 'Implantação', tipo: 'Implantação' },
-  { prefixo: '/admin/dashboard', titulo: 'Gestão da Central', tipo: 'Administração' },
   { prefixo: '/database', titulo: 'Banco de Dados', tipo: 'Ferramenta' },
   { prefixo: '/ferramentas/acessos', titulo: 'Acessos', tipo: 'Ferramenta' },
   { prefixo: '/ferramentas/faq', titulo: 'FAQ', tipo: 'Conhecimento' },

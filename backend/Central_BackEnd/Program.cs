@@ -4,7 +4,6 @@ using System.Threading.RateLimiting;
 using Asp.Versioning;
 using Central_BackEnd.Data;
 using Central_BackEnd.Services;
-using Central_BackEnd.Services.Gestor;
 using Central_BackEnd.Services.Implantacao;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
@@ -113,11 +112,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("GestorAccess", policy =>
-        policy.RequireClaim("perfil", "Administrador"));
-});
+builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRagProxyService, RagProxyService>();
@@ -137,9 +132,6 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<IAgendaService, AgendaService>();
 builder.Services.AddScoped<IAuditoriaImplantacaoService, AuditoriaImplantacaoService>();
-
-// Modulo GESTOR (CEO, CTO, COO)
-builder.Services.AddScoped<IGestorMetricasService, GestorMetricasService>();
 
 // Modulo Banco de Dados (Database Explorer)
 builder.Services.AddSingleton<Central_BackEnd.Services.Database.IDatabaseConnectionService, Central_BackEnd.Services.Database.DatabaseConnectionService>();

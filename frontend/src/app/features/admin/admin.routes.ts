@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 import { KanbanComponent } from '../implantacao/pages/kanban/kanban.component';
 import { TarefasComponent } from '../implantacao/pages/tarefas/tarefas.component';
 import { ProjetosComponent } from '../implantacao/pages/projetos/projetos.component';
-import { AdminDashboardComponent } from './pages/dashboard/admin-dashboard.component';
 import { TiposProjetoComponent } from './pages/cadastros/tipos-projeto.component';
 import { TipoProjetoFormComponent } from './pages/cadastros/tipo-projeto-form.component';
 import { EtapasComponent } from './pages/cadastros/etapas.component';
@@ -38,6 +37,4 @@ export const adminRoutes: Routes = [
     path: 'projetos',
     component: ProjetosComponent,
   },
-  // Rota removida temporariamente (Gestão da Central):
-  // { path: 'dashboard', component: AdminDashboardComponent },
 ];

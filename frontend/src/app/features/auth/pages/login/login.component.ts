@@ -78,16 +78,14 @@ export class LoginComponent implements OnInit {
   }
 
   /**
-   * Módulo Gestor é a nova home dos gestores.
-   * Admin com returnUrl genérico ('/' ou vazio) vai para /gestor/entrada;
-   * deep-link (ex. /implantacao/kanban) é sempre respeitado;
-   * usuário comum segue para a Home atual.
+   * Deep-link (returnUrl ≠ '/'/vazio) sempre respeitado;
+   * senão qualquer perfil cai na Home '/'.
    */
-  private resolverDestino(perfil?: string): string {
+  private resolverDestino(_perfil?: string): string {
     const alvo = this.returnUrl?.trim() || '/';
     if (alvo !== '/' && alvo !== '') {
       return alvo;
     }
-    return perfil === 'Administrador' ? '/gestor/entrada' : '/';
+    return '/';
   }
 }

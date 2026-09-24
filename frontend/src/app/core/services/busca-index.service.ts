@@ -33,7 +33,6 @@ const PAGINAS: ResultadoBusca[] = [
   { titulo: 'Acessos das empresas', tipo: 'Ferramenta', rota: '/ferramentas/acessos', icone: 'bi-building' },
   { titulo: 'Central de Utilidades', tipo: 'Ferramenta', rota: '/ferramentas', icone: 'bi-tools' },
   { titulo: 'Agenda', tipo: 'Ferramenta', rota: '/agenda', icone: 'bi-calendar-week' },
-  { titulo: 'JOTA — assistente', tipo: 'Ferramenta', rota: '/chat', icone: 'bi-chat-dots' },
   { titulo: 'FAQ', tipo: 'Conhecimento', rota: '/ferramentas/faq', icone: 'bi-question-circle' },
   { titulo: 'Stack', tipo: 'Conhecimento', rota: '/stack', icone: 'bi-stack' },
   { titulo: 'Cursos', tipo: 'Conhecimento', rota: '/cursos', icone: 'bi-mortarboard' },

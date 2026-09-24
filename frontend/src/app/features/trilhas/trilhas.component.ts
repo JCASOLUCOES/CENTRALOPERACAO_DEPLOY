@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 
 interface SecaoMeta {
   id: string;
@@ -19,7 +18,7 @@ interface ExemploRapido {
 @Component({
   selector: 'app-trilhas',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './trilhas.component.html',
   styleUrl: './trilhas.component.scss'
 })

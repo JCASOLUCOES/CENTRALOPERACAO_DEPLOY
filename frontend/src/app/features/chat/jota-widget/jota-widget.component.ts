@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { catchError, of, Subscription } from 'rxjs';
 import { JotaChatService } from '../jota-chat.service';
 import { ChatContextoService } from '../chat-contexto.service';
@@ -20,7 +19,7 @@ interface Msg {
 @Component({
   selector: 'app-jota-widget',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './jota-widget.component.html',
   styleUrl: './jota-widget.component.scss'
 })
@@ -86,7 +85,7 @@ export class JotaWidgetComponent implements OnInit, OnDestroy {
       .subscribe(res => {
         this.enviando.set(false);
         if (!res) {
-          this.erro.set('JOTA indisponível no momento. Tente de novo ou use a página de atendimento.');
+          this.erro.set('JOTA indisponível no momento. Tente de novo em instantes.');
         } else {
           this.sessionId = res.sessionId;
           this.mensagens.update(arr => [...arr, { papel: 'jota', texto: res.resposta, docs: res.documentos }]);

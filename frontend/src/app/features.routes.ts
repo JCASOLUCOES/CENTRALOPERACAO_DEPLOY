@@ -1,12 +1,6 @@
 import { Routes } from "@angular/router";
-import { adminGuard } from "@core/guards/admin.guard";
 
 export const featuresRoutes: Routes = [
-  {
-    path: "gestor",
-    canActivate: [adminGuard],
-    loadChildren: () => import("@features/gestor/gestor.routes").then((m) => m.gestorRoutes)
-  },
   {
     path: "",
     loadComponent: () => import("@features/home/home.component").then((m) => m.HomeComponent)
@@ -41,11 +35,6 @@ export const featuresRoutes: Routes = [
   {
     path: "agenda",
     loadComponent: () => import("@features/agenda/agenda.component").then((m) => m.AgendaComponent)
-  },
-  {
-    path: "chat",
-    redirectTo: "/",
-    pathMatch: "full"
   },
   {
     path: "cursos",
@@ -118,7 +107,6 @@ export const featuresRoutes: Routes = [
       }
     ]
   },
-  // Rotas removidas temporariamente (Painel do Diretor / Gestão da Central):
-  // { path: "executivo", canActivate: [adminGuard], loadChildren: () => import("@features/executivo/executivo.routes").then((m) => m.executivoRoutes) },
+  // Rota desativada temporariamente (Kanban ADM via path próprio):
   // { path: "administrativo", loadComponent: () => import("@features/implantacao/pages/kanban/kanban.component").then((m) => m.KanbanComponent), data: { perfilFilter: "F" } },
 ];
