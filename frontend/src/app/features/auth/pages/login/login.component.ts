@@ -46,7 +46,7 @@ export class LoginComponent implements OnInit {
       if (sessaoExpirada === 'true') {
         sessionStorage.removeItem('sessaoExpirada');
         this.sessaoExpirada = true;
-        this.errorMessage = 'Sua sessão expirou. Por favor, faça login novamente.';
+        this.errorMessage = 'Sessão expirada. Faça login para retornar à operação.';
       }
     }
   }

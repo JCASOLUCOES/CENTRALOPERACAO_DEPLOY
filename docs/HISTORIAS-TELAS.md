@@ -9,7 +9,7 @@
 **História:** Como operador, quero entrar com usuário e senha para acessar o sistema.
 **Passos:** 1. Preenche os campos "Usuário" (`#usuario`) e "Senha" (`#senha`). 2. Marca "Lembrar meu acesso" se quiser sessão de 4h. 3. Clica em "Entrar".
 **Backend/tabelas:** `POST /api/v1/auth/login` (retorna accessToken + user); `POST /api/v1/auth/refresh` (cookie HttpOnly `cc_refresh`); tabelas `TBOPERADOR` + `RefreshTokens` (via backend).
-**Resultado esperado:** Login válido redireciona: deep-link (`returnUrl`) respeitado; senão **`/`** (Home, qualquer perfil); sessão expirada exibe "Sua sessão expirou"; access token fica somente em memória.
+**Resultado esperado:** Login válido redireciona: deep-link (`returnUrl`) respeitado; senão **`/`** (Home, qualquer perfil); sessão expirada exibe "Sessão expirada. Faça login para retornar à operação."; access token fica somente em memória. Hero: "Sua base operacional" + lista de benefícios (projetos, agenda, credenciais, ferramentas).
 
 ## HOME (`/`)
 **História:** Como operador, quero uma entrada operacional (o que posso fazer) em vez de um dashboard institucional.
