@@ -8,7 +8,7 @@ import {
   BulkSchemaComparisonResult, BulkTableComparison, BulkTableStatus
 } from '../models/database.model';
 
-type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
+type FiltroSeveridade = 'Critico' | 'Aviso' | null;
 
 @Component({
   selector: 'app-db-sincronizacao',
@@ -165,13 +165,10 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
           <strong class="db-sync__num text-warning">{{ r.avisos }}</strong>
           <span>avisos</span>
         </button>
-        <button type="button" class="adm-stat db-sync__stat"
-                [class.db-sync__stat--on]="filtro() === 'Ok'"
-                [class.db-sync__stat--ok]="filtro() === 'Ok'"
-                (click)="alternarFiltro('Ok')">
+        <div class="adm-stat db-sync__stat db-sync__stat--estatico">
           <strong class="db-sync__num text-success">{{ r.oks }}</strong>
-          <span>compatíveis</span>
-        </button>
+          <span>compatíveis · só contagem</span>
+        </div>
         <button type="button" class="adm-stat db-sync__stat"
                 [class.db-sync__stat--on]="filtro() === null"
                 (click)="alternarFiltro(null)">
@@ -191,9 +188,6 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
         </ng-container>
         <ng-container *ngIf="filtro() === 'Aviso'">
           Nenhum aviso. Clique em <strong>críticos</strong> ou <strong>match · tudo</strong>.
-        </ng-container>
-        <ng-container *ngIf="filtro() === 'Ok'">
-          Nenhuma coluna compatível no filtro atual.
         </ng-container>
         <ng-container *ngIf="filtro() === null">
           Nenhuma diferença encontrada. Os schemas estão compatíveis.
@@ -244,13 +238,10 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
           <strong class="db-sync__num text-warning">{{ rb.avisos }}</strong>
           <span>avisos</span>
         </button>
-        <button type="button" class="adm-stat db-sync__stat"
-                [class.db-sync__stat--on]="filtroBulk() === 'Ok'"
-                [class.db-sync__stat--ok]="filtroBulk() === 'Ok'"
-                (click)="alternarFiltroBulk('Ok')">
+        <div class="adm-stat db-sync__stat db-sync__stat--estatico">
           <strong class="db-sync__num text-success">{{ rb.tabelasOk }}</strong>
-          <span>tabelas ok</span>
-        </button>
+          <span>tabelas ok · só contagem</span>
+        </div>
         <button type="button" class="adm-stat db-sync__stat"
                 [class.db-sync__stat--on]="filtroBulk() === null"
                 (click)="alternarFiltroBulk(null)">
@@ -278,11 +269,8 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
         <ng-container *ngIf="filtroBulk() === 'Aviso'">
           Nenhuma tabela com avisos. Clique em <strong>críticos</strong> ou <strong>match · tudo</strong>.
         </ng-container>
-        <ng-container *ngIf="filtroBulk() === 'Ok'">
-          Nenhuma tabela 100% compatível no filtro atual.
-        </ng-container>
         <ng-container *ngIf="filtroBulk() === null">
-          Nenhuma tabela encontrada no resultado.
+          Todas as tabelas estão 100% compatíveis.
         </ng-container>
       </div>
 
@@ -309,7 +297,7 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
             <div *ngIf="t.diferencas.length === 0" class="db-sync__bulk-sem">
               Tabela 100% compatível — nenhuma diferença.
             </div>
-            <div *ngFor="let d of t.diferencas" class="db-sync__item"
+            <div *ngFor="let d of diferencasTabela(t)" class="db-sync__item"
                  [ngClass]="'db-sync__item--' + severidadeClass(d.severidade)">
               <span *ngIf="d.numeroCritico" class="db-sync__badge" [attr.data-critico]="d.numeroCritico">
                 {{ d.numeroCritico }}
@@ -373,6 +361,8 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
       font: inherit; color: inherit;
     }
     .db-sync__stat:hover { background: rgba(15, 23, 42, 0.04); }
+    .db-sync__stat--estatico { cursor: default; }
+    .db-sync__stat--estatico:hover { background: transparent; }
     .db-sync__stat--on { background: #f1f5f9; border-color: #334155; }
     .db-sync__stat--on.db-sync__stat--critico { background: #fee2e2; border-color: #dc2626; }
     .db-sync__stat--on.db-sync__stat--aviso { background: #fef3c7; border-color: #d97706; }
@@ -546,7 +536,6 @@ export class DbSincronizacaoComponent {
     switch (this.filtro()) {
       case 'Critico': return 'críticos';
       case 'Aviso': return 'avisos';
-      case 'Ok': return 'compatíveis';
       default: return 'tudo';
     }
   }
@@ -559,8 +548,7 @@ export class DbSincronizacaoComponent {
     switch (this.filtroBulk()) {
       case 'Critico': return 'tabelas com críticos';
       case 'Aviso': return 'tabelas com avisos';
-      case 'Ok': return 'tabelas compatíveis';
-      default: return 'todas as tabelas';
+      default: return 'tabelas com diferenças';
     }
   }
 
@@ -568,19 +556,21 @@ export class DbSincronizacaoComponent {
     const rb = this.resultadoBulk();
     if (!rb) return [];
     const f = this.filtroBulk();
-    let lista = rb.tabelas;
+    let lista = rb.tabelas.filter(t => t.status !== 'Ok');
     if (f === 'Critico') {
       lista = lista.filter(t => t.criticos > 0 || t.status === 'SomenteArquivo' || t.status === 'SomenteBanco');
     } else if (f === 'Aviso') {
       lista = lista.filter(t => t.avisos > 0);
-    } else if (f === 'Ok') {
-      lista = lista.filter(t => t.status === 'Ok');
     }
     const ordem: Record<string, number> = { SomenteArquivo: 0, SomenteBanco: 1, Diferencas: 2, Ok: 3 };
     return [...lista].sort((a, b) =>
       (ordem[a.status] ?? 9) - (ordem[b.status] ?? 9) ||
       b.criticos - a.criticos ||
       a.tabela.localeCompare(b.tabela));
+  }
+
+  diferencasTabela(t: BulkTableComparison): SchemaDifference[] {
+    return t.diferencas.filter(d => d.severidade !== 'Ok');
   }
 
   toggleExpand(nome: string): void {
@@ -893,9 +883,10 @@ ORDER BY tb.schemaNome, tb.nome;`;
   diferencasVisiveis(): SchemaDifference[] {
     const r = this.resultado();
     if (!r) return [];
+    const semOk = r.diferencas.filter(d => d.severidade !== 'Ok');
     const f = this.filtro();
-    if (f === null) return r.diferencas;
-    return r.diferencas.filter(d => d.severidade === f);
+    if (f === null) return semOk;
+    return semOk.filter(d => d.severidade === f);
   }
 
   onArquivo(ev: Event): void {
@@ -969,8 +960,8 @@ ORDER BY tb.schemaNome, tb.nome;`;
   }
 
   private marcarBulkNumeros(rb: BulkSchemaComparisonResult): void {
-    let n = 0;
     for (const t of rb.tabelas) {
+      let n = 0;
       for (const d of t.diferencas) {
         if (d.severidade === 'Critico') {
           n++;
@@ -997,11 +988,12 @@ ORDER BY tb.schemaNome, tb.nome;`;
   exportarCsv(): void {
     const rb = this.resultadoBulk();
     if (this.modo() === 'banco' && rb) {
-      const header = 'tabela,status,severidade,categoria,campo,esperado,encontrado,descricao';
+      const header = 'tabela,status,numero,severidade,categoria,campo,esperado,encontrado,descricao';
       const linhas: string[] = [];
       for (const t of rb.tabelas) {
         for (const d of t.diferencas) {
-          linhas.push([t.tabela, t.status, d.severidade, d.categoria, d.campo, d.esperado ?? '', d.encontrado ?? '', d.descricao]
+          if (d.severidade === 'Ok') continue;
+          linhas.push([t.tabela, t.status, d.numeroCritico ?? '', d.severidade, d.categoria, d.campo, d.esperado ?? '', d.encontrado ?? '', d.descricao]
             .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
         }
       }
@@ -1012,7 +1004,7 @@ ORDER BY tb.schemaNome, tb.nome;`;
     const r = this.resultado();
     if (!r) return;
     const header = 'numero,severidade,categoria,campo,esperado,encontrado,descricao';
-    const linhas = r.diferencas.map(d =>
+    const linhas = r.diferencas.filter(d => d.severidade !== 'Ok').map(d =>
       [d.numeroCritico ?? '', d.severidade, d.categoria, d.campo, d.esperado ?? '', d.encontrado ?? '', d.descricao]
         .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
     const csv = [header, ...linhas].join('\r\n');
