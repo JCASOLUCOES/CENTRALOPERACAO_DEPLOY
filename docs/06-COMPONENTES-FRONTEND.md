@@ -443,6 +443,8 @@ O contexto de tarefa é incorporado à mensagem e o histórico é mantido por ta
 
 `DatabaseShellComponent` carrega status e informações gerais. Páginas e componentes internos chamam `DatabaseService` para metadados, relações, busca, procedures, triggers, consultas geradas, comparação de schemas e scripts de correção. O estado visual fica nos componentes; o serviço é a única porta HTTP do módulo.
 
+`DbSincronizacaoComponent` executa a comparação (modo tabela única ou banco inteiro) e monta o resumo com cards de severidade. `críticos` e `avisos` filtram a listagem; `compatíveis`/`tabelas ok` são indicadores estáticos de contagem — itens `Ok` não aparecem em nenhuma listagem nem no CSV, somente nos contadores e no percentual de match. No modo banco inteiro, os cards escolhem quais tabelas são listadas e a expansão de cada tabela mostra sempre as diferenças `Aviso` + `Crítico` (nunca `Ok`); a numeração das críticas (`numeroCritico`) reinicia por tabela (1, 2, 3… local). O export CSV client-side exclui itens `Ok` e traz a coluna `numero` nos dois modos (no banco inteiro com a numeração local). O filtro ativo é `'Critico' | 'Aviso' | null` e o componente também gera o script de exportação JSON para o SSMS.
+
 `DbScriptsCorrecaoComponent` recebe o resultado da comparação (tabela única ou bulk) e expõe três abas (Criação, Alterações, Índices e FKs) com cards por script: severidade, SQL com realce próprio, copiar, validar (estático) e consulta de verificação. O rodapé mostra resumo/impacto e `RevisaoManual`; as ações exportam o conjunto como arquivo `.sql` (Blob) ou copiam tudo. Ele é montado dentro de `DbSincronizacaoComponent` e limpa os scripts gerados sempre que a comparação muda.
 
 ## 11. Recursos removidos e código dormente
