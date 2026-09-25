@@ -314,6 +314,35 @@ public class DatabaseController : ControllerBase
         }
     }
 
+    [HttpPost("compare-procedures")]
+    [EnableRateLimiting("validacao")]
+    [RequestSizeLimit(20 * 1024 * 1024)]
+    public async Task<ActionResult<ProceduresComparisonResultDto>> CompareProcedures(
+        IFormFile arquivo,
+        CancellationToken ct = default)
+    {
+        if (arquivo == null || arquivo.Length == 0)
+            return BadRequest(new { mensagem = "Arquivo e obrigatorio" });
+
+        try
+        {
+            var resultado = await _comparison.CompararProceduresAsync(arquivo, ct);
+            return Ok(resultado);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { mensagem = ex.Message });
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            return BadRequest(new { mensagem = $"JSON invalido no arquivo: {ex.Message}" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { mensagem = ex.Message });
+        }
+    }
+
     [HttpPost("generate-correction-scripts")]
     [EnableRateLimiting("validacao")]
     [RequestSizeLimit(25 * 1024 * 1024)]

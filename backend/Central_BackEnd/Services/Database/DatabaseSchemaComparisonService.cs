@@ -12,6 +12,8 @@ public interface IDatabaseSchemaComparisonService
         string schema, string tabela, IFormFile arquivo, CancellationToken ct = default);
     Task<BulkSchemaComparisonResultDto> CompararBancoInteiroAsync(
         IFormFile arquivo, CancellationToken ct = default);
+    Task<ProceduresComparisonResultDto> CompararProceduresAsync(
+        IFormFile arquivo, CancellationToken ct = default);
 }
 
 public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
@@ -127,6 +129,74 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
             oks,
             match,
             tabelas);
+    }
+
+    /// <summary>
+    /// Compara o corpo das procedures do banco conectado com o arquivo enviado.
+    /// Somente leitura: nao gera scripts de correcao (JCA vence em divergencias;
+    /// procedures ausentes no banco sao apenas sinalizadas).
+    /// </summary>
+    public async Task<ProceduresComparisonResultDto> CompararProceduresAsync(
+        IFormFile arquivo, CancellationToken ct = default)
+    {
+        ValidarArquivo(arquivo, TamanhoMaximoBulkBytes);
+
+        using var reader = new StreamReader(arquivo.OpenReadStream(), Encoding.UTF8);
+        var conteudo = await reader.ReadToEndAsync(ct);
+        var externas = ParseProceduresJson(conteudo, arquivo.FileName ?? "arquivo.json");
+
+        var banco = await _metadata.ListarCorposProceduresAsync(ct);
+
+        var porChaveBanco = new Dictionary<string, ProcedureCorpoDto>(StringComparer.OrdinalIgnoreCase);
+        foreach (var b in banco)
+            porChaveBanco.TryAdd($"{b.Schema}.{b.Nome}", b);
+
+        var itens = new List<ProcedureComparisonDto>();
+        var processadas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        int totalArquivo = 0;
+
+        foreach (var ext in externas)
+        {
+            var chave = $"{ext.Schema}.{ext.Nome}";
+            if (!processadas.Add(chave)) continue;
+            totalArquivo++;
+
+            if (porChaveBanco.TryGetValue(chave, out var b))
+            {
+                var status = NormalizarCorpo(b.Corpo) == NormalizarCorpo(ext.Corpo)
+                    ? "Compativel"
+                    : "Divergente";
+                itens.Add(new ProcedureComparisonDto(b.Schema, b.Nome, status, b.Corpo, ext.Corpo));
+            }
+            else
+            {
+                itens.Add(new ProcedureComparisonDto(ext.Schema, ext.Nome,
+                    "SomenteArquivo", null, ext.Corpo));
+            }
+        }
+
+        foreach (var b in banco)
+        {
+            var chave = $"{b.Schema}.{b.Nome}";
+            if (processadas.Contains(chave)) continue;
+            itens.Add(new ProcedureComparisonDto(b.Schema, b.Nome, "SomenteBanco", b.Corpo, null));
+        }
+
+        itens = itens
+            .OrderBy(i => i.Schema, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(i => i.Nome, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return new ProceduresComparisonResultDto(
+            DateTime.UtcNow,
+            arquivo.FileName,
+            banco.Count,
+            totalArquivo,
+            itens.Count(i => i.Status == "Compativel"),
+            itens.Count(i => i.Status == "Divergente"),
+            itens.Count(i => i.Status == "SomenteBanco"),
+            itens.Count(i => i.Status == "SomenteArquivo"),
+            itens);
     }
 
     private static string? ResolverChaveJca(
@@ -273,6 +343,191 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
             return lista;
         }
         return lista;
+    }
+
+    /// <summary>
+    /// Parse de arquivo de procedures: objeto {procedures:[...]}, array de objetos,
+    /// objeto unico {schema,nome,corpo}, embrulho Excel/SSMS ou JSON Lines
+    /// (uma linha por procedure).
+    /// </summary>
+    private static List<ProcedureCorpoDto> ParseProceduresJson(string conteudo, string nomeArquivo)
+    {
+        if (string.IsNullOrWhiteSpace(conteudo))
+            throw new ArgumentException("Arquivo JSON vazio.");
+
+        var base0 = RemoverBom(conteudo.Trim());
+        if (base0.Length >= 2 && base0[0] == '"' && base0[^1] == '"')
+            base0 = base0.Substring(1, base0.Length - 2).Replace("\"\"", "\"");
+
+        var procs = new List<ProcedureCorpoDto>();
+
+        if (TentarParseJson(base0, out var root))
+            ExtrairProceduresDeRoot(root, nomeArquivo, procs);
+
+        if (procs.Count == 0)
+        {
+            foreach (var linha in base0.Split('\n'))
+            {
+                var l = RemoverBom(linha.Trim()).TrimEnd('\r');
+                if (l.Length == 0) continue;
+                if (l.Length >= 2 && l[0] == '"' && l[^1] == '"')
+                    l = l.Substring(1, l.Length - 2).Replace("\"\"", "\"");
+                if (!TentarParseJson(l, out var el)) continue;
+                try
+                {
+                    ExtrairProceduresDeRoot(el, nomeArquivo, procs);
+                }
+                catch (ArgumentException)
+                {
+                }
+            }
+        }
+
+        if (procs.Count == 0)
+            throw new ArgumentException(
+                "JSON invalido para procedures. Esperado objeto {procedures:[...]}, " +
+                "array de objetos de procedure, objeto {schema,nome,corpo} " +
+                "ou JSON Lines (uma linha por procedure).");
+        return procs;
+    }
+
+    private static void ExtrairProceduresDeRoot(
+        JsonElement root, string nomeArquivo, List<ProcedureCorpoDto> destino)
+    {
+        switch (root.ValueKind)
+        {
+            case JsonValueKind.String:
+            {
+                var interno = root.GetString() ?? "";
+                if (TentarParseJson(interno, out var filho))
+                    ExtrairProceduresDeRoot(filho, nomeArquivo, destino);
+                break;
+            }
+            case JsonValueKind.Object:
+            {
+                if (root.TryGetProperty("procedures", out var filhas)
+                    && filhas.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var f in filhas.EnumerateArray())
+                        destino.Add(ParseProcElement(f, nomeArquivo));
+                    break;
+                }
+                if (PossuiPropriedade(root, "nome", "name"))
+                {
+                    destino.Add(ParseProcElement(root, nomeArquivo));
+                    break;
+                }
+                if (root.EnumerateObject().Count() == 1)
+                {
+                    var interno = DesembrulharProc(root, nomeArquivo);
+                    if (TentarParseJson(interno, out var filho))
+                        ExtrairProceduresDeRoot(filho, nomeArquivo, destino);
+                }
+                break;
+            }
+            case JsonValueKind.Array:
+            {
+                if (root.GetArrayLength() == 0) break;
+                var p0 = root[0];
+                if (p0.ValueKind == JsonValueKind.Object
+                    && !PossuiPropriedade(p0, "nome", "name")
+                    && p0.EnumerateObject().Count() == 1)
+                {
+                    var interno = DesembrulharProc(p0, nomeArquivo);
+                    if (TentarParseJson(interno, out var filho))
+                    {
+                        ExtrairProceduresDeRoot(filho, nomeArquivo, destino);
+                        break;
+                    }
+                }
+                foreach (var el in root.EnumerateArray())
+                {
+                    if (el.ValueKind != JsonValueKind.Object) continue;
+                    destino.Add(ParseProcElement(el, nomeArquivo));
+                }
+                break;
+            }
+        }
+    }
+
+    private static ProcedureCorpoDto ParseProcElement(JsonElement el, string nomeArquivo)
+    {
+        if (el.ValueKind != JsonValueKind.Object)
+            throw new ArgumentException($"Elemento de procedure invalido. (arquivo: {nomeArquivo})");
+
+        var nome = LerTexto(el, "nome", "name", "Nome", "Name");
+        if (string.IsNullOrWhiteSpace(nome))
+            throw new ArgumentException($"Procedure sem nome. (arquivo: {nomeArquivo})");
+
+        var schema = LerTexto(el, "schema", "Schema", "esquema");
+        if (string.IsNullOrWhiteSpace(schema)) schema = "dbo";
+
+        var corpo = LerTexto(el, "corpo", "Corpo", "definition", "Definition", "body", "Body");
+        if (corpo == null)
+            throw new ArgumentException(
+                $"Procedure '{nome}' sem corpo/definition. (arquivo: {nomeArquivo})");
+
+        return new ProcedureCorpoDto(schema.Trim(), nome.Trim(), corpo);
+    }
+
+    private static string? LerTexto(JsonElement el, params string[] nomes)
+    {
+        foreach (var n in nomes)
+        {
+            if (!el.TryGetProperty(n, out var v)) continue;
+            return v.ValueKind switch
+            {
+                JsonValueKind.String => v.GetString(),
+                JsonValueKind.Null => null,
+                _ => v.GetRawText()
+            };
+        }
+        return null;
+    }
+
+    private static string DesembrulharProc(JsonElement el, string nomeArquivo)
+    {
+        string? candidato = null;
+        foreach (var prop in el.EnumerateObject())
+        {
+            if (prop.Value.ValueKind != JsonValueKind.String || candidato != null)
+                throw new ArgumentException(
+                    "JSON de procedures nao reconhecido (propriedade string unica esperada). " +
+                    $"(arquivo: {nomeArquivo})");
+            candidato = prop.Value.GetString();
+        }
+
+        if (string.IsNullOrWhiteSpace(candidato))
+            throw new ArgumentException(
+                $"JSON de procedures vazio ao desembrulhar. (arquivo: {nomeArquivo})");
+
+        var interno = RemoverBom(candidato.Trim());
+        if (interno.Length >= 2 && interno[0] == '"' && interno[^1] == '"')
+            interno = interno.Substring(1, interno.Length - 2).Replace("\"\"", "\"");
+        try
+        {
+            using var doc = JsonDocument.Parse(interno);
+            return doc.RootElement.GetRawText();
+        }
+        catch (JsonException)
+        {
+            throw new ArgumentException(
+                "JSON invalido: propriedade string nao contem JSON valido. " +
+                $"Cole o JSON limpo comecando por '[' ou '{{'. (arquivo: {nomeArquivo})");
+        }
+    }
+
+    /// <summary>
+    /// Normaliza corpo de procedure para comparacao: fim de linha unico,
+    /// trim de espacos a direita por linha e trim final. Comparacao sensivel a caixa.
+    /// </summary>
+    private static string NormalizarCorpo(string? corpo)
+    {
+        var s = (corpo ?? "").Replace("\r\n", "\n").Replace('\r', '\n');
+        var linhas = s.Split('\n');
+        for (var i = 0; i < linhas.Length; i++)
+            linhas[i] = linhas[i].TrimEnd();
+        return string.Join("\n", linhas).TrimEnd();
     }
 
     private static void ValidarArquivo(IFormFile arquivo, long tamanhoMaximo)

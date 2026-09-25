@@ -15,6 +15,7 @@ public interface IDatabaseMetadataService
     Task<Dictionary<string, SchemaInfoDto>> ExtrairSchemasAsync(CancellationToken ct = default);
     Task<List<ProcedureResumoDto>> ListarProceduresAsync(string? schema, string? busca, int take, CancellationToken ct = default);
     Task<ProcedureDetalheDto?> ObterProcedureAsync(string schema, string nome, CancellationToken ct = default);
+    Task<List<ProcedureCorpoDto>> ListarCorposProceduresAsync(CancellationToken ct = default);
     Task<List<TriggerDto>> ListarTriggersAsync(string? schema, string? nomeTabela, CancellationToken ct = default);
     Task<TriggerDto?> ObterTriggerAsync(string schema, string nome, CancellationToken ct = default);
     Task<List<DependencyDto>> ListarDependenciasAsync(string schema, string nomeTabela, CancellationToken ct = default);
@@ -550,6 +551,33 @@ ORDER BY pm.parameter_id";
             }
         }
         return head with { Parametros = parametros };
+    }
+
+    public async Task<List<ProcedureCorpoDto>> ListarCorposProceduresAsync(CancellationToken ct = default)
+    {
+        var sql = @"
+SELECT
+    s.name AS SchemaName,
+    p.name AS Nome,
+    CONVERT(NVARCHAR(MAX), m.definition) AS Corpo
+FROM sys.procedures p
+JOIN sys.schemas s ON p.schema_id = s.schema_id
+LEFT JOIN sys.sql_modules m ON m.object_id = p.object_id
+WHERE p.is_ms_shipped = 0
+ORDER BY s.name, p.name";
+
+        var lista = new List<ProcedureCorpoDto>();
+        await using var c = await _conn.OpenAsync(ct);
+        await using var cmd = new SqlCommand(sql, c);
+        await using var r = await cmd.ExecuteReaderAsync(ct);
+        while (await r.ReadAsync(ct))
+        {
+            lista.Add(new ProcedureCorpoDto(
+                r.GetString(0),
+                r.GetString(1),
+                r.IsDBNull(2) ? "" : r.GetString(2)));
+        }
+        return lista;
     }
 
     public async Task<List<TriggerDto>> ListarTriggersAsync(string? schema, string? nomeTabela, CancellationToken ct = default)

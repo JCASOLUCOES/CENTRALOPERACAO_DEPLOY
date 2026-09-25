@@ -7,8 +7,9 @@ namespace Central_BackEnd.Services.Database;
 
 /// <summary>
 /// Gera scripts SQL de correcao a partir da comparacao de schemas.
-/// DIRECAO: o ARQUIVO e o alvo - o banco JCA e ajustado para ficar igual ao arquivo.
-/// O que existe apenas no banco vira script comentado (nunca executado automaticamente).
+/// DIRECAO: somente CRIACOES definidas pelo ARQUIVO (tabela/coluna/indice/FK que
+/// existem no arquivo e nao no banco JCA). Divergencias de definicao e objetos
+/// presentes apenas no banco seguem o PADRAO DO BANCO CONECTADO: nenhum script.
 /// NUNCA executa nada no banco; apenas monta, classifica o risco e valida estaticamente.
 /// </summary>
 public interface ISqlScriptGeneratorService
@@ -47,7 +48,8 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         if (string.IsNullOrWhiteSpace(resultado.Tabela))
             throw new ArgumentException("Tabela do resultado da comparacao e obrigatoria.");
 
-        var acc = new Acc(opcoes);
+        var acc = new Acc();
+        acc.RegistrarTabela(resultado.Tabela);
         ProcessarTabela(acc, resultado.Tabela, resultado.Diferencas,
             resultado.SchemaArquivo, resultado.SchemaJca);
         return Finalizar(acc);
@@ -60,9 +62,10 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         if (resultado.Tabelas == null || resultado.Tabelas.Count == 0)
             throw new ArgumentException("Resultado da comparacao nao contem tabelas para gerar scripts.");
 
-        var acc = new Acc(opcoes);
+        var acc = new Acc();
         foreach (var t in resultado.Tabelas)
         {
+            acc.RegistrarTabela(t.Tabela);
             switch (t.Status)
             {
                 case "SomenteArquivo":
@@ -71,9 +74,7 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
                 case "Diferencas":
                     ProcessarTabela(acc, t.Tabela, t.Diferencas, t.SchemaArquivo, t.SchemaJca);
                     break;
-                case "SomenteBanco":
-                    GerarExclusaoTabela(acc, t.Tabela);
-                    break;
+                // "SomenteBanco": padrao do banco conectado - nenhuma acao gerada.
             }
         }
         return Finalizar(acc);
@@ -92,21 +93,15 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
             .Where(d => d.Severidade != "Ok" && !EhDuplicada(d))
             .ToList();
 
-        // Sem o schema do arquivo nao da para montar criacoes/alteracoes com seguranca.
+        // Sem o schema do arquivo nao da para montar criacoes com seguranca.
         if (arquivo == null || arquivo.Colunas.Count == 0)
         {
-            foreach (var d in uteis)
-                if (d.Categoria == "Coluna" && d.Esperado != null && d.Encontrado == null)
-                    GerarDropColuna(a, tabela, d.Campo);
-
-            if (uteis.Any(d => d.Categoria != "Coluna"))
-                a.RevisaoManual.Add(
-                    $"'{tabela}': resultado sem o schema do arquivo; refaca a comparacao " +
-                    "para gerar criacoes, alteracoes de tipo, indices e FKs.");
+            a.RevisaoManual.Add(
+                $"'{tabela}': sem definicao no arquivo; nenhuma criacao foi gerada. " +
+                "Divergencias e itens presentes apenas no banco seguem o padrao do banco conectado.");
             return;
         }
 
-        var arqPorNome = PorNome(arquivo.Colunas, c => c.Nome);
         var jcaPorNome = jca != null ? PorNome(jca.Colunas, c => c.Nome) : null;
 
         // 1) ADD COLUMN: coluna no arquivo ausente no banco JCA
@@ -116,82 +111,37 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
             if (!vistos.Add(col.Nome)) continue; // coluna duplicada no arquivo: usa so a primeira
             bool existeNoBanco = jcaPorNome != null
                 ? jcaPorNome.ContainsKey(col.Nome)
-                : difs.Any(d => d.Categoria == "Coluna"
+                : uteis.Any(d => d.Categoria == "Coluna"
                     && d.Campo.Equals(col.Nome, StringComparison.OrdinalIgnoreCase)
                     && d.Esperado != null);
             if (!existeNoBanco)
                 GerarAddColuna(a, tabela, col);
         }
 
-        // 2) DROP COLUMN: coluna so no banco (existe no JCA, nao no arquivo)
-        foreach (var d in uteis)
-            if (d.Categoria == "Coluna" && d.Esperado != null && d.Encontrado == null)
-                GerarDropColuna(a, tabela, d.Campo);
-
-        // 3) ALTER COLUMN / ALTER TYPE: tipos e nullability divergentes
-        var alvos = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-        foreach (var d in uteis)
-        {
-            if (d.Categoria != "Tipo" && d.Categoria != "Nullable") continue;
-            if (jcaPorNome != null && !jcaPorNome.ContainsKey(d.Campo)) continue;
-            alvos.TryGetValue(d.Campo, out bool tinhaTipo);
-            alvos[d.Campo] = tinhaTipo || d.Categoria == "Tipo";
-        }
-        foreach (var par in alvos)
-        {
-            var campo = par.Key;
-            var mudouTipo = par.Value;
-            if (!arqPorNome.TryGetValue(campo, out var alvo))
-            {
-                a.RevisaoManual.Add(
-                    $"'{tabela}': diferenca de tipo/nullable na coluna '{campo}' " +
-                    "sem definicao correspondente no arquivo.");
-                continue;
-            }
-            SchemaColumnInfoDto? atual = null;
-            jcaPorNome?.TryGetValue(campo, out atual);
-            var difTipo = uteis.FirstOrDefault(d =>
-                d.Categoria == "Tipo" && d.Campo.Equals(campo, StringComparison.OrdinalIgnoreCase));
-            GerarAlterColuna(a, tabela, alvo, atual, mudouTipo, difTipo);
-        }
-
-        // 4) Indices (so ha diferencas de indice quando o arquivo traz indices)
+        // 2) Indices novos: somente os que existem no arquivo e nao no banco.
+        //    Indice divergente ou presente apenas no banco segue o padrao do banco (sem script).
         if (arquivo.Indices.Count > 0)
         {
             foreach (var d in uteis.Where(x => x.Categoria == "Indice"))
             {
+                if (d.Esperado != null || d.Encontrado == null) continue;
                 var alvoIdx = arquivo.Indices.FirstOrDefault(i =>
                     i.Nome.Equals(d.Campo, StringComparison.OrdinalIgnoreCase));
-                if (d.Esperado != null && d.Encontrado == null)
-                    GerarIndice(a, tabela, d.Campo, IndiceModo.Remover, null);
-                else if (d.Esperado == null && d.Encontrado != null)
-                {
-                    if (alvoIdx != null) GerarIndice(a, tabela, d.Campo, IndiceModo.Novo, alvoIdx);
-                }
-                else if (alvoIdx != null)
-                {
-                    GerarIndice(a, tabela, d.Campo, IndiceModo.Divergente, alvoIdx);
-                }
+                if (alvoIdx != null)
+                    GerarIndice(a, tabela, d.Campo, alvoIdx, d.Severidade);
             }
         }
 
-        // 5) Foreign keys (so ha diferencas de FK quando o arquivo traz fks)
+        // 3) Foreign keys novas: somente as que existem no arquivo e nao no banco.
         if (arquivo.Fks.Count > 0)
         {
             foreach (var d in uteis.Where(x => x.Categoria == "Fk"))
             {
+                if (d.Esperado != null || d.Encontrado == null) continue;
                 var alvoFk = arquivo.Fks.FirstOrDefault(f =>
                     f.Nome.Equals(d.Campo, StringComparison.OrdinalIgnoreCase));
-                if (d.Esperado != null && d.Encontrado == null)
-                    GerarFk(a, tabela, d.Campo, IndiceModo.Remover, null);
-                else if (d.Esperado == null && d.Encontrado != null)
-                {
-                    if (alvoFk != null) GerarFk(a, tabela, d.Campo, IndiceModo.Novo, alvoFk);
-                }
-                else if (alvoFk != null)
-                {
-                    GerarFk(a, tabela, d.Campo, IndiceModo.Divergente, alvoFk);
-                }
+                if (alvoFk != null)
+                    GerarFk(a, tabela, d.Campo, alvoFk, d.Severidade);
             }
         }
     }
@@ -242,44 +192,21 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         var partes = new List<string>(comentarios) { stmt };
         var dto = Montar("CREATE_TABLE", "Info", tabela,
             $"Cria a tabela {nome} no banco JCA (somente no arquivo).",
-            partes, false, null, ConsultaTabela(tabela));
-        Adicionar(a, dto, false, null);
+            partes, ConsultaTabela(tabela), tabela, "Critico");
+        Adicionar(a, dto);
 
         // Indices (alem da PK) e FKs da nova tabela
         foreach (var idx in arquivo.Indices)
         {
             if (ReferenceEquals(idx, pk)) continue;
-            GerarIndice(a, tabela, idx.Nome, IndiceModo.Novo, idx, novaTabela: true);
+            GerarIndice(a, tabela, idx.Nome, idx, "Critico", novaTabela: true);
         }
         foreach (var fk in arquivo.Fks)
-            GerarFk(a, tabela, fk.Nome, IndiceModo.Novo, fk, novaTabela: true);
+            GerarFk(a, tabela, fk.Nome, fk, "Critico", novaTabela: true);
     }
 
     // =====================================================================
-    // Exclusao de tabela (somente no banco)
-    // =====================================================================
-
-    private void GerarExclusaoTabela(Acc a, string tabela)
-    {
-        var nome = Qualificar(tabela);
-        var stmt = $"DROP TABLE {nome};";
-        var partes = new List<string>
-        {
-            $"-- ATENCAO: a tabela {nome} existe no banco conectado mas nao no arquivo.",
-            "-- Executar significa excluir a tabela e TODOS os dados dela.",
-            "-- Revise antes; o bloco de backup abaixo roda automaticamente (se habilitado).",
-            BlocoBackupTabela(a, tabela),
-            "-- Descomente a linha abaixo somente apos a revisao:",
-            Comentar(stmt)
-        };
-        var dto = Montar("DROP_TABLE", "Critico", tabela,
-            $"Remove a tabela {nome} (existe so no banco). Script comentado; descomente para executar.",
-            partes, true, OpcoesExclusaoTabela(tabela), ConsultaTabela(tabela));
-        Adicionar(a, dto, true, null);
-    }
-
-    // =====================================================================
-    // Colunas: ADD / DROP / ALTER
+    // Colunas: ADD
     // =====================================================================
 
     private void GerarAddColuna(Acc a, string tabela, SchemaColumnInfoDto col)
@@ -301,138 +228,18 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         var sev = col.Nulo ? "Info" : "Aviso";
         var dto = Montar("ADD_COLUMN", sev, col.Nome,
             $"Adiciona a coluna '{col.Nome}' em {nome} com a definicao do arquivo.",
-            partes, false, null, ConsultaColuna(tabela, col.Nome));
-        Adicionar(a, dto, false, null);
-    }
-
-    private void GerarDropColuna(Acc a, string tabela, string coluna)
-    {
-        var nome = Qualificar(tabela);
-        var stmt = $"ALTER TABLE {nome} DROP COLUMN {Bracket(coluna)};";
-        var partes = new List<string>
-        {
-            $"-- ATENCAO: exclusao da coluna '{coluna}' em {nome}.",
-            "-- O arquivo nao possui esta coluna: os dados dela serao perdidos.",
-            BlocoBackupColuna(a, tabela, coluna),
-            "-- Descomente a linha abaixo somente apos a revisao:",
-            Comentar(stmt)
-        };
-        var dto = Montar("DROP_COLUMN", "Critico", coluna,
-            $"Remove a coluna '{coluna}' de {nome} (existe no banco, nao no arquivo). Script comentado.",
-            partes, true, OpcoesExclusaoColuna(tabela, coluna), ConsultaColuna(tabela, coluna));
-        Adicionar(a, dto, true, null);
-    }
-
-    private void GerarAlterColuna(Acc a, string tabela, SchemaColumnInfoDto alvo,
-        SchemaColumnInfoDto? atual, bool mudouTipo, SchemaDifferenceDto? difTipo)
-    {
-        var nome = Qualificar(tabela);
-        var alvoInfo = InfoDe(alvo);
-        var alvoSql = TipoSql(alvo, out bool padrao);
-
-        TipoInfo atualInfo;
-        string atualTxt;
-        if (atual != null)
-        {
-            atualInfo = InfoDe(atual);
-            atualTxt = TipoSql(atual, out _);
-        }
-        else if (mudouTipo)
-        {
-            atualInfo = ParseTipo(difTipo?.Esperado);
-            atualTxt = difTipo?.Esperado ?? "desconhecido";
-        }
-        else
-        {
-            atualInfo = alvoInfo;
-            atualTxt = "(desconhecido)";
-        }
-
-        var (def, _) = DefinicaoColuna(alvo);
-        var classe = mudouTipo || atualInfo.Base != alvoInfo.Base || atualInfo.Tamanho != alvoInfo.Tamanho
-            ? Classificar(atualInfo, alvoInfo)
-            : Classe.Compativel;
-        if (!mudouTipo && atual == null)
-            classe = Classe.Compativel; // so nullable e conhecido: conversao nao aplicavel
-
-        var tipo = mudouTipo ? "ALTER_TYPE" : "ALTER_COLUMN";
-        var stmt = $"ALTER TABLE {nome} ALTER COLUMN {Bracket(alvo.Nome)} {def};";
-
-        if (classe == Classe.Compativel)
-        {
-            var comentarios = new List<string>
-            {
-                $"-- Ajusta a coluna '{alvo.Nome}' em {nome} para a definicao do arquivo: {def}.",
-                $"-- Tipo atual no banco: {atualTxt} | Tipo alvo (arquivo): {alvoSql}."
-            };
-            if (padrao)
-                comentarios.Add("-- Tamanho/precisao nao informado no arquivo: valor padrao aplicado (ajuste manualmente).");
-            if (!alvo.Nulo && (atual == null || atual.Nulo))
-                comentarios.Add("-- Atencao: a coluna passa a NOT NULL; registros com NULL farao o ALTER falhar.");
-            if (!alvo.Nulo)
-                comentarios.Add($"-- Cheque nulos antes: SELECT COUNT(*) FROM {nome} WHERE {Bracket(alvo.Nome)} IS NULL;");
-
-            var partes = new List<string>(comentarios) { stmt };
-            var dto = Montar(tipo, "Aviso", alvo.Nome,
-                $"Altera a coluna '{alvo.Nome}' em {nome} de '{atualTxt}' para '{alvoSql}' (definicao do arquivo).",
-                partes, false, null, ConsultaColuna(tabela, alvo.Nome));
-            Adicionar(a, dto, false, null);
-            return;
-        }
-
-        bool incompativel = classe == Classe.Incompativel;
-        string motivo = incompativel
-            ? $"a conversao '{atualTxt}' -> '{alvoSql}' exige recriacao/conversao manual da coluna."
-            : $"a nova definicao '{alvoSql}' e mais restritiva que '{atualTxt}' (possivel perda/truncamento).";
-
-        var cabs = new List<string>
-        {
-            $"-- ATENCAO: alteracao destrutiva da coluna '{alvo.Nome}' em {nome}.",
-            $"-- Motivo: {motivo}",
-            $"-- Tipo atual no banco: {atualTxt} | Tipo alvo (arquivo): {alvoSql}."
-        };
-        if (!alvo.Nulo)
-            cabs.Add("-- Atencao: NOT NULL em tabela populada exige nulos tratados antes do ALTER.");
-        cabs.Add(BlocoBackupColuna(a, tabela, alvo.Nome));
-        cabs.Add("-- Descomente a linha abaixo somente apos a revisao:");
-        cabs.Add(Comentar(stmt));
-
-        var revisao = incompativel
-            ? $"'{tabela}.{alvo.Nome}': {motivo} Script gerado comentado."
-            : null;
-
-        var dtoAlt = Montar(tipo, "Critico", alvo.Nome,
-            $"Altera a coluna '{alvo.Nome}' em {nome} de '{atualTxt}' para '{alvoSql}'. Script comentado.",
-            cabs, true, OpcoesMigracaoColuna(tabela, alvo), ConsultaColuna(tabela, alvo.Nome));
-        Adicionar(a, dtoAlt, true, revisao);
+            partes, ConsultaColuna(tabela, col.Nome), tabela, "Critico");
+        Adicionar(a, dto);
     }
 
     // =====================================================================
     // Indices
     // =====================================================================
 
-    private void GerarIndice(Acc a, string tabela, string nomeIndice, IndiceModo modo,
-        SchemaIndexInfoDto? alvo, bool novaTabela = false)
+    private void GerarIndice(Acc a, string tabela, string nomeIndice,
+        SchemaIndexInfoDto alvo, string severidadeOrigem, bool novaTabela = false)
     {
         var nome = Qualificar(tabela);
-
-        if (modo == IndiceModo.Remover)
-        {
-            var stmt = $"DROP INDEX {Bracket(nomeIndice)} ON {nome};";
-            var partes = new List<string>
-            {
-                $"-- ATENCAO: o indice '{nomeIndice}' existe no banco mas nao no arquivo.",
-                "-- Descomente a linha abaixo somente apos a revisao:",
-                Comentar(stmt)
-            };
-            var dto = Montar("DROP_INDEX", "Aviso", nomeIndice,
-                $"Remove o indice '{nomeIndice}' de {nome} (nao esta no arquivo). Script comentado.",
-                partes, false, OpcoesRenomearIndice(tabela, nomeIndice), ConsultaIndice(tabela, nomeIndice));
-            Adicionar(a, dto, true, null);
-            return;
-        }
-
-        if (alvo == null) return;
         var criar = SqlIndice(alvo, nome);
         var cabecalho = new List<string>
         {
@@ -444,29 +251,11 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         else
             cabecalho.Add("-- Execute apos os scripts de coluna (aba Alteracoes).");
 
-        if (modo == IndiceModo.Novo)
-        {
-            var partesNovo = new List<string>(cabecalho) { criar };
-            var dtoNovo = Montar("CREATE_INDEX", "Info", nomeIndice,
-                $"Cria o indice '{nomeIndice}' em {nome}.",
-                partesNovo, false, null, ConsultaIndice(tabela, nomeIndice));
-            Adicionar(a, dtoNovo, false, null);
-            return;
-        }
-
-        // Divergente: ja existe no banco com definicao diferente
-        var stmtDrop = $"DROP INDEX {Bracket(nomeIndice)} ON {nome};";
-        var partesDiv = new List<string>(cabecalho)
-        {
-            "-- O indice ja existe no banco com definicao diferente da arquivo.",
-            "-- Descomente a linha abaixo para remover a versao atual antes de recriar:",
-            Comentar(stmtDrop),
-            criar
-        };
-        var dtoDiv = Montar("CREATE_INDEX", "Aviso", nomeIndice,
-            $"Recria o indice '{nomeIndice}' em {nome} (definicao divergente; drop comentado incluido).",
-            partesDiv, false, OpcoesNovoNomeIndice(alvo, nomeIndice, tabela), ConsultaIndice(tabela, nomeIndice));
-        Adicionar(a, dtoDiv, false, null);
+        var partes = new List<string>(cabecalho) { criar };
+        var dto = Montar("CREATE_INDEX", "Info", nomeIndice,
+            $"Cria o indice '{nomeIndice}' em {nome} (existe no arquivo, nao no banco).",
+            partes, ConsultaIndice(tabela, nomeIndice), tabela, severidadeOrigem);
+        Adicionar(a, dto);
     }
 
     private static string SqlIndice(SchemaIndexInfoDto idx, string tabela)
@@ -480,28 +269,10 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
     // Foreign keys
     // =====================================================================
 
-    private void GerarFk(Acc a, string tabela, string nomeFk, IndiceModo modo,
-        SchemaFkInfoDto? alvo, bool novaTabela = false)
+    private void GerarFk(Acc a, string tabela, string nomeFk,
+        SchemaFkInfoDto alvo, string severidadeOrigem, bool novaTabela = false)
     {
         var nome = Qualificar(tabela);
-
-        if (modo == IndiceModo.Remover)
-        {
-            var stmt = $"ALTER TABLE {nome} DROP CONSTRAINT {Bracket(nomeFk)};";
-            var partes = new List<string>
-            {
-                $"-- ATENCAO: a FK '{nomeFk}' existe no banco mas nao no arquivo.",
-                "-- Descomente a linha abaixo somente apos a revisao:",
-                Comentar(stmt)
-            };
-            var dto = Montar("ALTER_FK", "Aviso", nomeFk,
-                $"Remove a FK '{nomeFk}' de {nome} (nao esta no arquivo). Script comentado.",
-                partes, false, null, ConsultaFk(nomeFk));
-            Adicionar(a, dto, true, null);
-            return;
-        }
-
-        if (alvo == null) return;
         var destino = Qualificar(alvo.TabelaDestino);
         var criar = $"ALTER TABLE {nome} ADD CONSTRAINT {Bracket(alvo.Nome)} " +
                     $"FOREIGN KEY ({Bracket(alvo.ColunaOrigem)}) " +
@@ -517,167 +288,11 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         else
             cabecalho.Add("-- Execute apos os scripts de coluna (aba Alteracoes).");
 
-        if (modo == IndiceModo.Novo)
-        {
-            var partesNovo = new List<string>(cabecalho) { criar };
-            var dtoNovo = Montar("ALTER_FK", "Info", nomeFk,
-                $"Cria a FK '{nomeFk}' em {nome} (existe no arquivo, nao no banco).",
-                partesNovo, false, null, ConsultaFk(nomeFk));
-            Adicionar(a, dtoNovo, false, null);
-            return;
-        }
-
-        // Divergente: ja existe com outra definicao
-        var stmtDrop = $"ALTER TABLE {nome} DROP CONSTRAINT {Bracket(nomeFk)};";
-        var partesDiv = new List<string>(cabecalho)
-        {
-            "-- A FK ja existe no banco com definicao diferente da arquivo.",
-            "-- Descomente a linha abaixo para remover a versao atual antes de recriar:",
-            Comentar(stmtDrop),
-            criar
-        };
-        var dtoDiv = Montar("ALTER_FK", "Aviso", nomeFk,
-            $"Recria a FK '{nomeFk}' em {nome} (definicao divergente; drop comentado incluido).",
-            partesDiv, false, OpcoesNovaFk(alvo, tabela), ConsultaFk(nomeFk));
-        Adicionar(a, dtoDiv, false, null);
-    }
-
-    // =====================================================================
-    // Blocos de backup
-    // =====================================================================
-
-    private string BlocoBackupTabela(Acc a, string tabela)
-    {
-        var destino = NomeBackup(tabela, null);
-        if (!a.Opcoes.GerarBackup)
-            return $"-- Sugestao de backup (descomente para executar antes):\n" +
-                   $"-- SELECT * INTO {destino} FROM {Qualificar(tabela)};";
-        if (!a.Backups.Add(destino))
-            return $"-- Backup da tabela ja incluido em outro script: {destino}";
-        return $"-- 1) Backup dos dados atuais:\nSELECT * INTO {destino} FROM {Qualificar(tabela)};";
-    }
-
-    private string BlocoBackupColuna(Acc a, string tabela, string coluna)
-    {
-        var destino = NomeBackup(tabela, coluna);
-        if (!a.Opcoes.GerarBackup)
-            return $"-- Sugestao de backup da coluna (descomente para executar antes):\n" +
-                   $"-- SELECT {Bracket(coluna)} INTO {destino} FROM {Qualificar(tabela)};";
-        if (!a.Backups.Add(destino))
-            return $"-- Backup da coluna ja incluido em outro script: {destino}";
-        return $"-- 1) Backup dos dados atuais da coluna:\n" +
-               $"SELECT {Bracket(coluna)} INTO {destino} FROM {Qualificar(tabela)};";
-    }
-
-    // =====================================================================
-    // Opcoes alternativas (nenhum destructive fica sem alternativa)
-    // =====================================================================
-
-    private static List<SqlScriptDto>? OpcoesExclusaoTabela(string tabela)
-    {
-        var id = IdTabela(tabela);
-        var novo = ExtrairNome(tabela) + "_OBSOLETA";
-        var partes = new List<string>
-        {
-            $"-- Alternativa nao destrutiva: renomeia {Qualificar(tabela)} em vez de exclui-la.",
-            $"EXEC sp_rename N'{Esc(id)}', N'{Esc(novo)}';"
-        };
-        return new List<SqlScriptDto>
-        {
-            Montar("DROP_TABLE", "Aviso", tabela,
-                $"Renomeia {Qualificar(tabela)} para {novo} (preserva os dados).",
-                partes, false, null, null)
-        };
-    }
-
-    private static List<SqlScriptDto>? OpcoesExclusaoColuna(string tabela, string coluna)
-    {
-        var novo = coluna + "_OBSOLETA";
-        var partes = new List<string>
-        {
-            $"-- Alternativa nao destrutiva: renomeia a coluna em vez de exclui-la.",
-            $"EXEC sp_rename N'{Esc(IdTabela(tabela))}.{Esc(coluna)}', N'{Esc(novo)}', N'COLUMN';"
-        };
-        return new List<SqlScriptDto>
-        {
-            Montar("DROP_COLUMN", "Aviso", coluna,
-                $"Renomeia a coluna '{coluna}' de {Qualificar(tabela)} para {novo} (preserva os dados).",
-                partes, false, null, null)
-        };
-    }
-
-    private static List<SqlScriptDto>? OpcoesRenomearIndice(string tabela, string indice)
-    {
-        var novo = indice + "_OBSOLETO";
-        var partes = new List<string>
-        {
-            $"-- Alternativa nao destrutiva: renomeia o indice em vez de remove-lo.",
-            $"EXEC sp_rename N'{Esc(IdTabela(tabela))}.{Esc(indice)}', N'{Esc(novo)}', N'INDEX';"
-        };
-        return new List<SqlScriptDto>
-        {
-            Montar("DROP_INDEX", "Aviso", indice,
-                $"Renomeia o indice '{indice}' para {novo} (preserva a estrutura).",
-                partes, false, null, null)
-        };
-    }
-
-    private static List<SqlScriptDto>? OpcoesNovoNomeIndice(
-        SchemaIndexInfoDto idx, string original, string tabela)
-    {
-        var nome = original + "_NOVO";
-        var copia = new SchemaIndexInfoDto(nome, idx.Unique, idx.Colunas);
-        var partes = new List<string>
-        {
-            $"-- Alternativa: cria o indice com outro nome, mantendo o indice atual intacto em {Qualificar(tabela)}.",
-            SqlIndice(copia, Qualificar(tabela))
-        };
-        return new List<SqlScriptDto>
-        {
-            Montar("CREATE_INDEX", "Aviso", original,
-                $"Cria o indice com o nome '{nome}' em vez de substituir o atual.",
-                partes, false, null, null)
-        };
-    }
-
-    private static List<SqlScriptDto>? OpcoesNovaFk(SchemaFkInfoDto fk, string tabela)
-    {
-        var nome = fk.Nome + "_NOVA";
-        var partes = new List<string>
-        {
-            $"-- Alternativa: cria a FK com outro nome, mantendo a atual intacta em {Qualificar(tabela)}.",
-            $"ALTER TABLE {Qualificar(tabela)} ADD CONSTRAINT {Bracket(nome)} " +
-            $"FOREIGN KEY ({Bracket(fk.ColunaOrigem)}) " +
-            $"REFERENCES {Qualificar(fk.TabelaDestino)} ({Bracket(fk.ColunaDestino)});"
-        };
-        return new List<SqlScriptDto>
-        {
-            Montar("ALTER_FK", "Aviso", fk.Nome,
-                $"Cria a FK '{nome}' em vez de substituir a atual.",
-                partes, false, null, null)
-        };
-    }
-
-    private static List<SqlScriptDto>? OpcoesMigracaoColuna(string tabela, SchemaColumnInfoDto alvo)
-    {
-        var nome = Qualificar(tabela);
-        var tipo = TipoSql(alvo, out _);
-        var mig = alvo.Nome + "_MIG";
-        var partes = new List<string>
-        {
-            "-- Alternativa: migra os dados sem alterar a coluna original.",
-            $"ALTER TABLE {nome} ADD {Bracket(mig)} {tipo} NULL;",
-            $"UPDATE {nome} SET {Bracket(mig)} = TRY_CONVERT({tipo}, {Bracket(alvo.Nome)});",
-            "-- Depois de validar a migracao, descomente para trocar as colunas:",
-            $"-- ALTER TABLE {nome} DROP COLUMN {Bracket(alvo.Nome)};",
-            $"-- EXEC sp_rename N'{Esc(IdTabela(tabela))}.{Esc(mig)}', N'{Esc(alvo.Nome)}', N'COLUMN';"
-        };
-        return new List<SqlScriptDto>
-        {
-            Montar("ALTER_TYPE", "Aviso", alvo.Nome,
-                $"Migra '{alvo.Nome}' para '{tipo}' via coluna temporaria '{mig}' (sem perda imediata).",
-                partes, false, null, null)
-        };
+        var partes = new List<string>(cabecalho) { criar };
+        var dto = Montar("ALTER_FK", "Info", nomeFk,
+            $"Cria a FK '{nomeFk}' em {nome} (existe no arquivo, nao no banco).",
+            partes, ConsultaFk(nomeFk), tabela, severidadeOrigem);
+        Adicionar(a, dto);
     }
 
     // =====================================================================
@@ -690,40 +305,36 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         public readonly List<SqlScriptDto> Alteracao = new();
         public readonly List<SqlScriptDto> IndiceConstraint = new();
         public readonly List<string> RevisaoManual = new();
-        public readonly HashSet<string> Backups = new(StringComparer.OrdinalIgnoreCase);
-        public readonly ScriptsGenOpcoesDto Opcoes;
+        public readonly Dictionary<string, int> OrdemTabelas = new(StringComparer.OrdinalIgnoreCase);
 
-        public Acc(ScriptsGenOpcoesDto? opcoes) => Opcoes = opcoes ?? new ScriptsGenOpcoesDto();
+        public void RegistrarTabela(string tabela)
+        {
+            if (string.IsNullOrWhiteSpace(tabela) || OrdemTabelas.ContainsKey(tabela)) return;
+            OrdemTabelas[tabela] = OrdemTabelas.Count;
+        }
+
+        public int OrdemDaTabela(string? tabela)
+            => tabela != null && OrdemTabelas.TryGetValue(tabela, out var i) ? i : int.MaxValue;
     }
 
     private static SqlScriptDto Montar(string tipo, string severidade, string campo,
-        string descricao, List<string> partes, bool backupSugerido,
-        List<SqlScriptDto>? opcoes, string? consulta)
+        string descricao, List<string> partes, string? consulta,
+        string? tabela = null, string? severidadeOrigem = null)
     {
         var sql = string.Join("\n", partes);
         var sqlFormatado = string.Join("\n\n", partes);
         return new SqlScriptDto(NovoId(tipo), tipo, severidade, sql, sqlFormatado,
-            descricao, campo, backupSugerido, opcoes, consulta);
+            descricao, campo, consulta, tabela, severidadeOrigem);
     }
 
-    private static void Adicionar(Acc a, SqlScriptDto dto, bool destrutivo, string? revisao)
+    private static void Adicionar(Acc a, SqlScriptDto dto)
     {
-        if (destrutivo && a.Opcoes.ModoEstrito)
-        {
-            a.RevisaoManual.Add(revisao
-                ?? $"Acao destrutiva '{dto.Tipo}' excluida pelo Modo estrito: {dto.Descricao}");
-            return;
-        }
-        if (revisao != null)
-            a.RevisaoManual.Add(revisao);
-
         switch (dto.Tipo)
         {
             case "CREATE_TABLE":
                 a.Criacao.Add(dto);
                 break;
             case "CREATE_INDEX":
-            case "DROP_INDEX":
             case "ALTER_FK":
                 a.IndiceConstraint.Add(dto);
                 break;
@@ -735,9 +346,9 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
 
     private SqlScriptResultDto Finalizar(Acc a)
     {
-        var criacao = a.Criacao.OrderBy(s => Ordem(s.Tipo)).ToList();
-        var alteracao = a.Alteracao.OrderBy(s => Ordem(s.Tipo)).ToList();
-        var indices = a.IndiceConstraint.OrderBy(s => Ordem(s.Tipo)).ToList();
+        var criacao = Ordenar(a, a.Criacao).ToList();
+        var alteracao = Ordenar(a, a.Alteracao).ToList();
+        var indices = Ordenar(a, a.IndiceConstraint).ToList();
         var todos = criacao.Concat(alteracao).Concat(indices).ToList();
 
         var impacto = Impacto(todos);
@@ -751,6 +362,11 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
             new SqlScriptResumoDto(criacao.Count, alteracao.Count, indices.Count,
                 impacto, avisos, a.RevisaoManual));
     }
+
+    // Ordem: tabelas na sequencia de processamento (primeiro a tbA, depois a tbB...)
+    // e, dentro da mesma tabela, por tipo de script (criacao -> adicao -> indice/FK).
+    private static IEnumerable<SqlScriptDto> Ordenar(Acc a, List<SqlScriptDto> lista)
+        => lista.OrderBy(s => a.OrdemDaTabela(s.Tabela)).ThenBy(s => Ordem(s.Tipo));
 
     private static int Ordem(string tipo) => tipo switch
     {
@@ -768,17 +384,12 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
 
     private static string Impacto(List<SqlScriptDto> todos)
     {
-        if (todos.Any(s => s.Tipo == "DROP_TABLE")) return "Critical";
-        if (todos.Any(s => s.Tipo == "DROP_COLUMN" || s.Tipo == "ALTER_TYPE")) return "High";
-        if (todos.Any(s => s.Tipo == "ALTER_COLUMN" || s.Tipo == "ALTER_FK" || s.Tipo == "DROP_INDEX"))
-            return "Medium";
+        if (todos.Any(s => s.Tipo == "CREATE_TABLE")) return "Medium";
         return "Low";
     }
 
     private static string NovoId(string tipo)
         => $"{tipo.ToLowerInvariant()}-{Guid.NewGuid().ToString("N")[..8]}";
-
-    private enum IndiceModo { Novo, Remover, Divergente }
 
     // =====================================================================
     // Definicao de coluna / tipos
@@ -852,116 +463,6 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         return $"'{v.Replace("'", "''")}'";
     }
 
-    private sealed record TipoInfo(string Base, int? Tamanho, int? Precisao, int? Escala);
-
-    private static TipoInfo InfoDe(SchemaColumnInfoDto c) => DeSql(TipoSql(c, out _));
-
-    private static TipoInfo ParseTipo(string? esperado)
-    {
-        if (string.IsNullOrWhiteSpace(esperado)) return new TipoInfo("", null, null, null);
-        var token = esperado.Trim().Split(' ')[0];
-        return DeSql(token);
-    }
-
-    private static TipoInfo DeSql(string tipo)
-    {
-        var s = (tipo ?? "").Trim().ToLowerInvariant();
-        var idx = s.IndexOf('(');
-        if (idx < 0) return new TipoInfo(s, null, null, null);
-
-        var b = s[..idx].Trim();
-        var fim = s.IndexOf(')', idx);
-        var dentro = fim > idx ? s[(idx + 1)..fim] : "";
-        var partes = dentro.Split(',');
-        int? p0 = int.TryParse(partes[0].Trim(), out var v0) ? v0 : null;
-        int? p1 = partes.Length > 1 && int.TryParse(partes[1].Trim(), out var v1) ? v1 : null;
-
-        return b switch
-        {
-            "decimal" or "numeric" => new TipoInfo(b, null, p0 ?? 18, p1 ?? 0),
-            "char" or "varchar" or "nchar" or "nvarchar" or "binary" or "varbinary"
-                => new TipoInfo(b, p0, null, null),
-            _ => new TipoInfo(b, null, null, null)
-        };
-    }
-
-    private enum Familia { Numerica, Caracter, Binaria, DataHora, Outra }
-    private enum Classe { Compativel, Estreitamento, Incompativel }
-
-    private static Familia FamiliaDe(string b) => b switch
-    {
-        "bit" or "tinyint" or "smallint" or "int" or "bigint" or "decimal" or "numeric"
-            or "money" or "smallmoney" or "float" or "real" => Familia.Numerica,
-        "char" or "varchar" or "text" or "nchar" or "nvarchar" or "ntext" => Familia.Caracter,
-        "binary" or "varbinary" or "image" => Familia.Binaria,
-        "date" or "time" or "datetime" or "datetime2" or "smalldatetime" or "datetimeoffset"
-            => Familia.DataHora,
-        _ => Familia.Outra
-    };
-
-    private static int Rank(Familia f, string b) => f switch
-    {
-        Familia.Numerica => b switch
-        {
-            "bit" => 0, "tinyint" => 1, "smallint" => 2, "int" => 3, "bigint" => 4,
-            "decimal" or "numeric" => 5, "money" or "smallmoney" => 6,
-            "float" or "real" => 7, _ => 5
-        },
-        Familia.Caracter => b switch
-        {
-            "char" => 0, "varchar" => 1, "text" => 2,
-            "nchar" => 3, "nvarchar" => 4, "ntext" => 5, _ => 0
-        },
-        Familia.Binaria => b switch
-        {
-            "binary" => 0, "varbinary" => 1, "image" => 2, _ => 0
-        },
-        Familia.DataHora => b switch
-        {
-            "date" => 0, "time" => 1, "smalldatetime" => 2, "datetime" => 3,
-            "datetime2" => 4, "datetimeoffset" => 5, _ => 0
-        },
-        _ => 0
-    };
-
-    private static Classe Classificar(TipoInfo atual, TipoInfo alvo)
-    {
-        if (atual.Base.Length == 0) return Classe.Incompativel;
-
-        if (atual.Base == alvo.Base)
-            return EstreitaTamanho(atual, alvo) ? Classe.Estreitamento : Classe.Compativel;
-
-        var fa = FamiliaDe(atual.Base);
-        var fb = FamiliaDe(alvo.Base);
-        if (fa == Familia.Outra || fb == Familia.Outra)
-            return Classe.Incompativel;
-
-        if (fa != fb)
-            return fa == Familia.Numerica && fb == Familia.Caracter
-                ? Classe.Compativel
-                : Classe.Incompativel;
-
-        if (Rank(fa, alvo.Base) < Rank(fa, atual.Base))
-            return Classe.Estreitamento;
-        if (fb == Familia.Caracter && EstreitaTamanho(atual, alvo))
-            return Classe.Estreitamento;
-        return Classe.Compativel;
-    }
-
-    private static bool EstreitaTamanho(TipoInfo atual, TipoInfo alvo)
-    {
-        if (alvo.Tamanho.HasValue && atual.Tamanho.HasValue
-            && alvo.Tamanho.Value >= 0 && atual.Tamanho.Value >= 0
-            && alvo.Tamanho.Value < atual.Tamanho.Value)
-            return true;
-        if (alvo.Precisao.HasValue && atual.Precisao.HasValue)
-        {
-            if (alvo.Precisao.Value < atual.Precisao.Value) return true;
-            if ((alvo.Escala ?? 0) < (atual.Escala ?? 0)) return true;
-        }
-        return false;
-    }
-
     // =====================================================================
     // Qualificacao de identificadores
     // =====================================================================
@@ -984,13 +485,6 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         return $"dbo.{t}";
     }
 
-    private static string ExtrairSchema(string tabela)
-    {
-        var t = (tabela ?? "").Trim();
-        var p = t.IndexOf('.');
-        return p >= 0 ? t[..p].Trim() : "dbo";
-    }
-
     private static string ExtrairNome(string tabela)
     {
         var t = (tabela ?? "").Trim();
@@ -998,23 +492,7 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         return p >= 0 ? t[(p + 1)..].Trim() : t;
     }
 
-    private static string NomeBackup(string tabela, string? sufixo)
-    {
-        var nome = ExtrairNome(tabela) + "_BACKUP"
-                   + (sufixo != null ? "_" + sufixo : "")
-                   + "_" + DateTime.UtcNow.ToString("yyyyMMdd");
-        return Qualificar($"{ExtrairSchema(tabela)}.{nome}");
-    }
-
     private static string Esc(string? s) => (s ?? "").Replace("'", "''");
-
-    private static string Comentar(string sql)
-    {
-        var linhas = sql.Replace("\r\n", "\n").Split('\n');
-        for (var i = 0; i < linhas.Length; i++)
-            linhas[i] = linhas[i].Length == 0 ? "--" : "-- " + linhas[i];
-        return string.Join("\n", linhas);
-    }
 
     private static bool EhDuplicada(SchemaDifferenceDto d)
         => d.Descricao != null && d.Descricao.Contains("duplicad", StringComparison.OrdinalIgnoreCase);

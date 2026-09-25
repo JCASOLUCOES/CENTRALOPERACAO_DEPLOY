@@ -293,10 +293,12 @@ public record BulkSchemaComparisonResultDto(
     List<BulkTableComparisonDto> Tabelas);
 
 /// <summary>
-/// Um script SQL de correcao gerado.
-/// Tipo: CREATE_TABLE | ADD_COLUMN | ALTER_COLUMN | ALTER_TYPE | DROP_COLUMN |
-///       DROP_TABLE | CREATE_INDEX | DROP_INDEX | ALTER_FK
-/// Severidade: "Info" | "Aviso" | "Critico"
+/// Um script SQL de correcao gerado (somente criacoes definidas pelo arquivo;
+/// divergencias e itens presentes apenas no banco seguem o padrao do banco conectado).
+/// Tipo: CREATE_TABLE | ADD_COLUMN | CREATE_INDEX | ALTER_FK
+/// Severidade: "Info" | "Aviso" | "Critico" (impacto do proprio script)
+/// Tabela: tabela de destino (exibicao/ordenacao no modo banco inteiro)
+/// SeveridadeOrigem: severidade da diferenca que originou o script (filtro pelo card ativo)
 /// </summary>
 public record SqlScriptDto(
     string Id,
@@ -306,9 +308,9 @@ public record SqlScriptDto(
     string SqlFormatado,
     string Descricao,
     string CampoRelacionado,
-    bool BackupSugerido,
-    List<SqlScriptDto>? Opcoes = null,
-    string? ConsultaValidacao = null);
+    string? ConsultaValidacao = null,
+    string? Tabela = null,
+    string? SeveridadeOrigem = null);
 
 /// <summary>
 /// Resumo executivo dos scripts gerados.
@@ -333,8 +335,8 @@ public record SqlScriptResultDto(
 
 /// <summary>
 /// Opcoes de geracao de scripts.
-/// GerarBackup: inclui SELECT INTO backup em operacoes destrutivas.
-/// ModoEstrito: somente scripts seguros (os destrutivos vao para RevisaoManual).
+/// Mantidas por compatibilidade de contrato: a geracao atual so produz criacoes
+/// (sem operacoes destrutivas), portanto GerarBackup/ModoEstrito nao tem efeito.
 /// </summary>
 public record ScriptsGenOpcoesDto(
     bool GerarBackup = true,
@@ -366,3 +368,33 @@ public record ValidarScriptResultDto(
     bool Valido,
     List<string> Erros,
     List<string> Avisos);
+
+/// <summary>
+/// Corpo bruto de uma procedure do banco conectado (comparacao de procedures).
+/// </summary>
+public record ProcedureCorpoDto(string Schema, string Nome, string Corpo);
+
+/// <summary>
+/// Comparacao de uma procedure (banco conectado x arquivo).
+/// Status: "Compativel" | "Divergente" | "SomenteBanco" | "SomenteArquivo".
+/// </summary>
+public record ProcedureComparisonDto(
+    string Schema,
+    string Nome,
+    string Status,
+    string? CorpoJca,
+    string? CorpoArquivo);
+
+/// <summary>
+/// Resultado consolidado da comparacao de procedures (somente leitura, sem scripts).
+/// </summary>
+public record ProceduresComparisonResultDto(
+    DateTime GeradoEm,
+    string? ArquivoNome,
+    int TotalBanco,
+    int TotalArquivo,
+    int Compativeis,
+    int Divergentes,
+    int SomenteBanco,
+    int SomenteArquivo,
+    List<ProcedureComparisonDto> Itens);
