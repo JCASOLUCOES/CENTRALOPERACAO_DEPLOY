@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router, RouterLink, NavigationEnd } from '@angular/router';
 import { filter, takeUntil } from 'rxjs';
 import { Subject } from 'rxjs';
@@ -68,8 +68,8 @@ const BREADCRUMB_PATTERNS: { pattern: string; label: string }[] = [
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <nav class="breadcrumb" aria-label="Trilha de navegação" *ngIf="!(path === '/' || path === '')">
-      <ng-container *ngFor="let item of items; let last = last; let i = index; trackBy: trackByIndex">
+    <nav class="breadcrumb" aria-label="Trilha de navegação" *ngIf="!(path() === '/' || path() === '')">
+      <ng-container *ngFor="let item of items(); let last = last; let i = index; trackBy: trackByIndex">
         <a
           *ngIf="!last && item.route"
           class="breadcrumb-link"
@@ -133,8 +133,8 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
 
-  items: BreadcrumbItem[] = [{ label: 'Início', route: '/' }];
-  path = '/';
+  items = signal<BreadcrumbItem[]>([{ label: 'Início', route: '/' }]);
+  path = signal('/');
 
   ngOnInit(): void {
     this.buildBreadcrumb(this.router.url);
@@ -157,24 +157,24 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
 
   private buildBreadcrumb(url: string): void {
     const rawPath = (url.split('?')[0] ?? '/').replace(/\/+$/, '') || '/';
-    this.path = rawPath;
+    this.path.set(rawPath);
 
-    if (this.path === '/') {
-      this.items = [{ label: 'Início', route: '/' }];
+    if (rawPath === '/') {
+      this.items.set([{ label: 'Início', route: '/' }]);
       return;
     }
 
-    const segments = this.path.split('/').filter(Boolean);
+    const segments = rawPath.split('/').filter(Boolean);
     const items: BreadcrumbItem[] = [{ label: 'Início', route: '/' }];
 
     let leafLabel: string | null = null;
     let leafRoute: string | undefined;
 
-    if (BREADCRUMB_LABELS[this.path]) {
-      leafLabel = BREADCRUMB_LABELS[this.path];
-      leafRoute = this.path;
+    if (BREADCRUMB_LABELS[rawPath]) {
+      leafLabel = BREADCRUMB_LABELS[rawPath];
+      leafRoute = rawPath;
     } else {
-      const pattern = this.matchPattern(this.path);
+      const pattern = this.matchPattern(rawPath);
       if (pattern) {
         if (pattern.pattern === '/database/tabela/:schema/:tabela') {
           const schema = segments[segments.length - 2] ?? '';
@@ -207,7 +207,7 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
     }
 
     items.push({ label: leafLabel, route: leafRoute });
-    this.items = items;
+    this.items.set(items);
   }
 
   private matchPattern(path: string): { pattern: string; label: string } | null {
