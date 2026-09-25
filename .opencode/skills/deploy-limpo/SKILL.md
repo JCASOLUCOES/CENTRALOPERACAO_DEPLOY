@@ -1,25 +1,26 @@
 ---
 name: deploy-limpo
-description: Use when the user types "deploy limpo", "deploy", "gerar deploy", "publicar o sistema" or asks to build and package the Central de Conhecimento frontend+backend for IIS. Runs the 4-stage pipeline: validate.ps1 -> deploy.ps1 build+package (BUILD_INFO) -> deploy.ps1 publish reusing package -> smoke.ps1.
+description: Use when the user types "deploy limpo", "deploy", "gerar deploy", "publicar o sistema" or asks to build and package the Central de Conhecimento frontend+backend for IIS. Runs the 5-stage pipeline: freeze -> validate.ps1 -> deploy.ps1 build+package (BUILD_INFO) -> deploy.ps1 publish reusing package -> smoke.ps1.
 ---
 
 # Deploy limpo (Central de Conhecimento)
 
-Pipeline de 4 estágios: **congelar → validar → empacotar → publicar → smoke**.
+Pipeline de 5 estágios: **congelar → validar → empacotar → publicar → smoke**.
 Objetivo: só publicar no IIS o que **passou no validate** e está **identificado** no `BUILD_INFO.txt` (hash do Git).
 
 ## Pré-requisitos
 
-- Código **commitado** (preferencialmente push em `developer`).
+- Working tree **limpa** e código commitado em `developer`.
 - `validate` verde no commit atual.
 - Node/npm + SDK .NET 8.
+- Credencial IIS obtida interativamente com `Get-Credential`; nunca reutilizar o fallback fixo do script.
 
 ## Pipeline (ordem fixa)
 
 ### 1. Git — congelar
 
 ```powershell
-git status          # deve estar limpo (ou consciente do que está sujo)
+git status          # deve estar limpo; qualquer alteração pendente bloqueia o deploy
 git rev-parse HEAD  # anote o hash
 ```
 
@@ -44,13 +45,16 @@ powershell -ExecutionPolicy Bypass -Command "& '.\scripts\deploy\deploy.ps1' -Bu
 ### 4. Publicar o pacote validado (sem rebuild)
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "& '.\scripts\deploy\deploy.ps1' -BuildFrontend 0 -BuildBackend 0 -Publicar 1 -Backup 1"
+$credencial = Get-Credential
+& '.\scripts\deploy\deploy.ps1' -BuildFrontend 0 -BuildBackend 0 -Publicar 1 -Backup 1 -UsuarioRemoto $credencial.UserName -SenhaRemota $credencial.Password
+Remove-Variable credencial
 ```
 
 - **Não** builda de novo — publica o pacote da etapa 3.
 - Confere se `BUILD_INFO.GitCommit` == `git rev-parse HEAD`; se divergir, **aborta**.
 - Backup automático do IIS atual antes do replace.
 - Preserva `appsettings*.json` do servidor.
+- A credencial é solicitada interativamente; não registrar a senha no terminal, arquivo ou commit.
 
 ### 5. Smoke
 
@@ -67,7 +71,9 @@ Se preferir uma tacada só (build + publica + backup), **ainda** rode o validate
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
 if ($LASTEXITCODE -eq 0) {
-  powershell -ExecutionPolicy Bypass -Command "& '.\scripts\deploy\deploy.ps1' -BuildFrontend 1 -BuildBackend 1 -Publicar 1 -Backup 1"
+  $credencial = Get-Credential
+  & '.\scripts\deploy\deploy.ps1' -BuildFrontend 1 -BuildBackend 1 -Publicar 1 -Backup 1 -UsuarioRemoto $credencial.UserName -SenhaRemota $credencial.Password
+  Remove-Variable credencial
   powershell -ExecutionPolicy Bypass -File .\scripts\smoke.ps1
 }
 ```
@@ -99,5 +105,5 @@ if ($LASTEXITCODE -eq 0) {
 
 - Build SSR: avisos de budget/SCSS são esperados.
 - `deploy/` é regenerado pelo script — não edite à mão (o `BUILD_INFO.txt` é gerado).
-- Senha do IIS embutida no script (decisão do projeto — risco aceito).
+- O script ainda possui fallback legado de credencial fixa: trate isso como risco crítico, rotacione a senha e passe a credencial explicitamente antes de publicar.
 - **Skills amigas:** `validar` (gate), `subir-interno` (dev local), `smoke` via `scripts/smoke.ps1`.

@@ -1,5 +1,5 @@
 ---
-description: Adiciona/atualiza conteúdo do wiki (cursos, ferramentas, fraseologias) nos arquivos *.data.ts seguindo as regras do README
+description: Adiciona/atualiza conteúdo estático (cursos, ferramentas, fraseologias) nos arquivos *.data.ts seguindo os contratos existentes
 mode: subagent
 temperature: 0.2
 permission:
@@ -19,8 +19,9 @@ Sua função é manter o acervo do wiki atualizado. Arquivos permitidos para edi
 
 Regras:
 - **Acionamento automático**: você é invocado pela delegação de `AGENTS.md` ao alterar conteúdo do wiki — sem precisar de pedido explícito do usuário.
-- Siga as regras de `README.md` (ver seção **"Como adicionar um curso"**): arrays por
-  plataforma, `videoId`/`playlistId` para YouTube, `embeddable`, vínculos em `trilhas`/`categorias`.
+- Siga o formato e as interfaces dos arquivos existentes: arrays por plataforma,
+  `videoId`/`playlistId` para YouTube, `embeddable`, vínculos em `trilhas`/`categorias`;
+  confirme o contrato no componente consumidor antes de editar.
 - **SEMPRE valide o canal/URL antes de incluir** — itens com canal inexistente ou URL
   quebrada devem ser removidos, não apenas corrigidos (já houve remoções por isso).
 - Mantenha IDs únicos e o mesmo formato/interface dos itens existentes.

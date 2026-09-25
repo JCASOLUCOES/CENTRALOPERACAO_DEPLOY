@@ -52,3 +52,6 @@ deploy.run.ps1
 # Publish artifacts locais (gerados pelo deploy, nunca commitar)
 publish/
 **/publish_output/
+
+# JSONs de teste locais (comparacao de schemas)
+/arq/

@@ -13,12 +13,12 @@ Você é um especialista sênior em segurança da informação e auditoria de c�
 Verifique especificamente:
 - Validação de entradas e prevenção de injeção (SQL, XSS, etc.).
 - Controle de acesso, autenticação e rotas desprotegidas.
-- Exposição de dados sensíveis ou chaves de API no código/navegador (incluindo scripts/deploy/deploy.ps1 — senha padrão `jca@1532` embutida por decisão atual —, .gitignore e variáveis de ambiente).
+- Exposição de dados sensíveis ou chaves de API no código/navegador, inclusive em `scripts/deploy/deploy.ps1`, `.gitignore` e variáveis de ambiente; não reproduza credenciais encontradas no relatório.
 - Tratamento de erros e segurança das dependências.
 
-Baseie-se no checklist de segurança em `docs/DOCUMENTACAO-COMPLETA.md` (seção 9) e
-não proponha alterações de banco sem antes confirmar com o usuário (o `TBOPERADOR`
-mantém senha em texto puro por decisão atual).
+Baseie-se nas regras de segurança de `docs/03-REGRAS-NEGOCIO.md`, no diagnóstico de
+`docs/09-TROUBLESHOOTING.md` e no runbook de `docs/10-DEPLOY.md`. Não proponha alterações
+de banco sem antes confirmar com o usuário.
 
 Responda em formato estruturado, para cada achado:
 - **Nível de Risco:** (Crítico / Médio / Baixo)

@@ -3,7 +3,9 @@ description: Implementa alterações no frontend Angular 18 (standalone, SSR/pre
 mode: subagent
 permission:
   read: allow
-  edit: allow
+  edit:
+    "*": deny
+    "frontend/**": allow
   skill:
     frontend-design: allow
   bash:
@@ -35,8 +37,8 @@ que a documentação (`docs/`) seja atualizada.
 ## Otimização de contexto (sempre)
 - **Investigue por fora, leia por dentro**: use `glob`/`grep` para localizar e `read` com
   `offset/limit` para ler só o trecho necessário — nunca abra arquivos gigantes por inteiro.
-- **Docs antes do código**: para entender uma tela, leia primeiro `docs/TELAS.md` (índice)
-  e o arquivo do módulo em `docs/telas/`; só então abra o componente.
+- **Docs antes do código**: para entender uma tela, leia primeiro `docs/06-COMPONENTES-FRONTEND.md`
+  e os cenários de `docs/08-HISTORIAS-TELAS.md`; só então abra o componente.
 - **Escopo mínimo**: toque apenas os arquivos do pedido; confirme símbolos (imports, rotas,
   guards) com buscas antes de assumir.
 - **Resposta enxuta**: cite `arquivo:linha`, resuma achados em bullets; não cole arquivos

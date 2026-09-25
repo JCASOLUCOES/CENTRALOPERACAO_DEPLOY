@@ -23,7 +23,7 @@ Este é um **monorepo** com código frontend e backend na mesma repo (sem submó
 **Tags** substituem "branch backup" — cada release vira `vX.Y.Z` imutável.
 Branches pessoais/obsoletas (`sara`, `samuel`, `projeto-implantacao`) foram **removidas** do fluxo.
 
-Detalhes em `README.md` (raiz) e `docs/DEPLOY.md` § 7.
+Detalhes em `README.md` (raiz) e `docs/10-DEPLOY.md`.
 
 ## § Pipeline Dev/Deploy (fluxo obrigatório)
 
@@ -59,32 +59,28 @@ Fluxo do dia a dia ao **concluir uma tarefa**:
 ## § Documentação (prioridade 3 — atualização AUTOMÁTICA)
 Ao **concluir** alterações relevantes, atualize a documentação **automaticamente, sem aguardar pedido do usuário**:
 
-- **Alterações de código** (Angular em `frontend/src/app/features`, backend em `backend/src/Central_BackEnd`, skills, agentes, scripts de deploy):
-  delegue **automaticamente** ao agente `docs-writer` (tool `task`) para revisar e atualizar:
-  - `frontend/README.md`
-  - `docs/*.md` (`DOCUMENTACAO-COMPLETA.md`, `DEPLOY.md`, `backend-auth-integracao.md`, **`TELAS.md` + `docs/telas/`**)
-  - `docs/TELAS.md` ← **Índice; conteúdo por tela em `docs/telas/` (auto-sync via extract-screens.ts + GitHub Action)**
-  - `backend/README.md`
-  - `README.md` da raiz do monorepo
+- **Entrada e documentos canônicos:** `docs/README.md` + `docs/00-ESTRUTURA.md` a `docs/10-DEPLOY.md`.
+- **Alterações de código** (Angular em `frontend/src/app`, backend em `backend/Central_BackEnd`, skills, agentes ou scripts):
+  delegue **automaticamente** ao agente `docs-writer` (tool `task`) para revisar os documentos temáticos afetados e, quando necessário, os READMEs da raiz, frontend e backend.
 - **Alterações de conteúdo do wiki** (`*.data.ts`):
   delegue **automaticamente** ao agente `content-editor` (tool `task`).
 - **Novos componentes/services/routers** (`frontend/src/app/features/**/*.component.ts`, `*.service.ts`, `*.routes.ts`):
-  delegue **automaticamente** ao agente `docs-writer` para atualizar o arquivo do módulo em `docs/telas/` (tabela em `docs/TELAS.md`) com a nova tela/documentação.
-- **Novos controllers/endpoints/models** (`backend/src/Central_BackEnd/Controllers/**/*.cs`, `Models/**/*.cs`, `Migrations/**/*.cs`):
-  delegue **automaticamente** ao agente `docs-writer` para atualizar `docs/telas/06-backend.md` (seções 17/18).
+  delegue ao `docs-writer` para atualizar `docs/06-COMPONENTES-FRONTEND.md`, os cenários de `docs/08-HISTORIAS-TELAS.md` e a navegação de `docs/01-VISAO-GERAL.md` quando aplicável.
+- **Novos controllers/endpoints/models/migrations** (`backend/Central_BackEnd/Controllers/**/*.cs`, `Models/**/*.cs`, `Migrations/**/*.cs`):
+  delegue ao `docs-writer` para atualizar `docs/04-ESTRUTURA-DADOS.md`, `docs/05-ENDPOINTS.md`, `docs/07-SERVICES-BACKEND.md` e os cenários de `docs/08-HISTORIAS-TELAS.md` quando houver impacto funcional.
 - **Novos scripts de pipeline** (`scripts/validate.ps1`, `scripts/smoke.ps1`, mudanças em `scripts/deploy/deploy.ps1`):
-  delegue **automaticamente** ao agente `docs-writer` para refletir em `docs/DEPLOY.md` e skills (`validar`, `deploy-limpo`).
+  delegue ao `docs-writer` para refletir em `docs/09-TROUBLESHOOTING.md` e `docs/10-DEPLOY.md`; o agente principal atualiza as skills `validar` e `deploy-limpo`.
 - **Alterações no fluxo de branches / deploy / versionamento**:
-  atualizar `README.md` da raiz, `frontend/README.md`,
-  `backend/README.md`, `docs/DEPLOY.md` § 7, `docs/DOCUMENTACAO-COMPLETA.md`
-  § Política de branches e tags — **e** a § Pipeline Dev/Deploy deste `AGENTS.md`.
+  delegue READMEs e `docs/00-ESTRUTURA.md`/`docs/10-DEPLOY.md` ao `docs-writer`; o agente principal atualiza a § Pipeline Dev/Deploy deste `AGENTS.md`.
 - **Regras da delegação automática:**
   - Não pergunte se deve atualizar a documentação — faça.
   - Não invente fatos: o agente confirma no código antes de documentar.
   - Mesmo que o usuário não peça, execute a delegação ao final da tarefa.
-  - `docs/TELAS.md` (+ `docs/telas/`) é **fonte única** de documentação de telas/APIs — deve estar sempre sincronizado com o código.
-  - Regras do fatiamento: um assunto, um arquivo; nova tela entra na seção do arquivo do módulo (+ linha no índice se for módulo novo); teto de ~600 linhas por arquivo (subdividir e atualizar o índice ao estourar); **atualizar ≠ engordar** (trocar o trecho obsoleto, não anexar); ao linkar, apontar para o **arquivo**, nunca para âncora profunda.
-  - Workflow `.github/workflows/docs-sync.yml` valida `scripts/screens-data.json` em PRs para `developer` (a sincronização do texto é feita pelo `docs-writer` no chat).
+  - `docs/README.md` é a entrada única; os 11 arquivos numerados de `00` a `10` são canônicos e devem permanecer sincronizados com o código.
+  - `docs/backup/` é histórico não canônico: nunca editar, tratar como fonte atual ou usar o `docs-writer` para corrigi-lo.
+  - Um assunto, um arquivo; **atualizar ≠ engardar**: substituir trechos obsoletos, preservar índices e links somente para arquivos, nunca para âncoras profundas.
+  - Os tamanhos são estimativas: priorizar completude e tabelas compactas; se um canônico crescer excessivamente, propor subdivisão sem mudar a entrada única sem aprovação explícita.
+  - Workflow `.github/workflows/docs-sync.yml` valida somente o inventário auxiliar `scripts/screens-data.json`; o texto canônico é revisado pelo `docs-writer` no chat.
 
 ## Convenção de commits
 - `feat:` — nova funcionalidade

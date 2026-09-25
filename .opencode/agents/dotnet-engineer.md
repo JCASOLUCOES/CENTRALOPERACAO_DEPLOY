@@ -3,7 +3,9 @@ description: Implementa alterações no backend ASP.NET Core 8 em backend/Centra
 mode: subagent
 permission:
   read: allow
-  edit: allow
+  edit:
+    "*": deny
+    "backend/Central_BackEnd/**": allow
   bash:
     "*": ask
     "dotnet *": allow
@@ -17,7 +19,7 @@ Trabalhe em `backend/Central_BackEnd/` seguindo os padrões atuais do projeto:
 - Projeto em .NET 8 (`Central_BackEnd.csproj`).
 - DTOs `*Detalhe` (Resumo + auditoria) em obter/criar/atualizar de TipoProjeto, Etapa e ColunaKanban (`TipoProjetoEtapaColunaDtos.cs`).
 - Tabelas legadas (`tbchamado`, `tbfuncionario`, `tbcliente`) via entities somente-leitura com `ExcludeFromMigrations` — nunca escrever.
-- Módulo Database: 8 services (`Connection`, `Metadata`, `RelationshipInference`, `Query`, `Search`, `QueryBuilder`, `SchemaDiff`, `Snapshot`); rotas do `DatabaseController` espelham o `database.service.ts` do frontend.
+- Módulo Database: 6 services (`Connection`, `Metadata`, `RelationshipInference`, `Search`, `QueryBuilder`, `SchemaComparison`); rotas do `DatabaseController` espelham o `database.service.ts` do frontend.
 
 Respeite as restrições de segurança já implementadas:
 - Comparação de senha via `SegurancaHelper.SenhasIguais` (tempo constante).
@@ -35,8 +37,9 @@ avise para que a documentação (`docs/`) seja atualizada.
 ## Otimização de contexto (sempre)
 - **Investigue por fora, leia por dentro**: use `glob`/`grep` para localizar e `read` com
   `offset/limit` para ler só o trecho necessário — nunca abra services/controllers longos por inteiro.
-- **Docs antes do código**: para entender um endpoint/entidade, leia primeiro
-  `docs/telas/06-backend.md` (via índice `docs/TELAS.md`); só então abra controller/service/model.
+- **Docs antes do código**: para entender um endpoint ou entidade, leia primeiro
+  `docs/05-ENDPOINTS.md`, `docs/04-ESTRUTURA-DADOS.md` e `docs/07-SERVICES-BACKEND.md`;
+  só então abra controller, service ou model.
 - **Escopo mínimo**: toque apenas os arquivos do pedido; confira DI em `Program.cs` e
   relacionamentos em `AppDbContext.cs` com buscas antes de assumir.
 - **Resposta enxuta**: cite `arquivo:linha`, resuma achados em bullets; não cole arquivos
