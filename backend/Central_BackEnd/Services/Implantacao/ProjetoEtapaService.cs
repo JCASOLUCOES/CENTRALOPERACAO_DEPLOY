@@ -18,8 +18,9 @@ public interface IProjetoEtapaService
     Task<int> RecalcularProgressoProjetoAsync(int projetoId, CancellationToken ct = default);
     /// <summary>
     /// Sincroniza os cards fixos com as tarefas (via Tarefa.ProjetoEtapaId):
-    /// contador dinâmico, percentual task-based e conclusão automática com
-    /// desbloqueio da próxima. Reabre apenas a etapa que contém a tarefa reaberta.
+    /// contador dinâmico, percentual task-based e conclusão automática apenas
+    /// quando a etapa anterior está concluída. Reabre a etapa com tarefa reaberta
+    /// e, em cascata, as posteriores Concluída passam a Bloqueada.
     /// </summary>
     Task SincronizarEtapasPorTarefasAsync(int projetoId, string usuario, CancellationToken ct = default);
 }
@@ -139,8 +140,11 @@ public class ProjetoEtapaService : IProjetoEtapaService
             .ToListAsync(ct);
 
         var mudou = false;
-        foreach (var etapa in etapas)
+        for (var idx = 0; idx < etapas.Count; idx++)
         {
+            var etapa = etapas[idx];
+            // Conclusão automática exige a etapa anterior concluída (fluxo sequencial).
+            var anteriorConcluida = idx == 0 || etapas[idx - 1].Estado == "Concluida";
             var daEtapa = tarefas.Where(t => t.ProjetoEtapaId == etapa.Id).ToList();
             // Sem tarefas vinculadas: fluxo manual/checklist intacto.
             if (daEtapa.Count == 0) continue;
@@ -157,7 +161,8 @@ public class ProjetoEtapaService : IProjetoEtapaService
                     continue;
                 }
 
-                // Reabre SÓ esta etapa (tarefa reabriu); etapas posteriores intactas.
+                // Reabre esta etapa (tarefa reabriu); as posteriores Concluída
+                // são reabertas em cascata (Bloqueada) ao final do laço.
                 etapa.Estado = "EmAndamento";
                 etapa.Percentual = percentual;
                 etapa.DataFimReal = null;
@@ -182,8 +187,8 @@ public class ProjetoEtapaService : IProjetoEtapaService
                 mudou = true;
             }
 
-            // 5/5 (ou N/N): conclui sozinha e libera a próxima.
-            if (concluidas == daEtapa.Count)
+            // 5/5 (ou N/N): conclui sozinha e libera a próxima — só se a anterior estiver concluída.
+            if (concluidas == daEtapa.Count && anteriorConcluida)
             {
                 var antes = etapa.Estado;
                 etapa.Estado = "Concluida";
@@ -200,6 +205,28 @@ public class ProjetoEtapaService : IProjetoEtapaService
                 mudou = true;
                 await DesbloquearProximaEtapaAsync(projetoId, etapa.Ordem, usuario, ct);
             }
+        }
+
+        // Cascata: etapa anterior não concluída → reabre as posteriores Concluída
+        // (ex.: DESENVOLVIMENTO reabre → HOMOLOGAÇÃO e demais concluídas → Bloqueada).
+        for (var idx = 1; idx < etapas.Count; idx++)
+        {
+            var etapa = etapas[idx];
+            var anterior = etapas[idx - 1];
+            if (etapa.Estado != "Concluida" || anterior.Estado == "Concluida") continue;
+
+            etapa.Estado = "Bloqueada";
+            etapa.DataFimReal = null;
+            etapa.UsuarioAlteracao = usuario;
+            etapa.DataAlteracao = DateTime.Now;
+            etapa.Historico.Add(new ProjetoEtapaHistorico
+            {
+                Acao = "Reabertura automática em cascata",
+                Detalhes = $"Estado: Concluida → Bloqueada | etapa anterior ({anterior.Nome}) não concluída",
+                Usuario = usuario,
+                Data = DateTime.Now
+            });
+            mudou = true;
         }
 
         if (mudou) await _db.SaveChangesAsync(ct);
@@ -603,10 +630,11 @@ public class ProjetoEtapaService : IProjetoEtapaService
         var proxima = await _db.ProjetoEtapas
             .FirstOrDefaultAsync(e => e.ProjetoId == projetoId && e.Ordem == ordemAtual + 1, ct);
 
-        if (proxima != null && proxima.Estado == "Pendente")
+        // Pendente (1ª vez) ou Bloqueada (reaberta em cascata) → volta a EmAndamento.
+        if (proxima != null && (proxima.Estado == "Pendente" || proxima.Estado == "Bloqueada"))
         {
             proxima.Estado = "EmAndamento";
-            proxima.DataInicio = DateTime.Now;
+            proxima.DataInicio ??= DateTime.Now;
             proxima.UsuarioAlteracao = usuario;
             proxima.DataAlteracao = DateTime.Now;
 

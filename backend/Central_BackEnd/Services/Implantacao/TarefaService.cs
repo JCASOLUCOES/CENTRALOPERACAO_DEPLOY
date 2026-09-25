@@ -305,13 +305,14 @@ public class TarefaService : ITarefaService
         // - coluna enviada vence o status (deriva o status dela, exceto BLOQUEADO);
         // - sem coluna, o status informado busca a coluna canônica; default = A FAZER.
         var colunaId = req.ColunaKanbanId;
+        ColunaKanban? colunaCriada = null;
         if (colunaId.HasValue)
         {
-            var colCriada = await _db.ColunasKanban.AsNoTracking()
+            colunaCriada = await _db.ColunasKanban.AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == colunaId.Value, ct);
-            if (colCriada != null)
+            if (colunaCriada != null)
             {
-                var stCol = StatusDaColuna(colCriada.Nome);
+                var stCol = StatusDaColuna(colunaCriada.Nome);
                 if (stCol.HasValue) statusInicial = stCol.Value;
             }
         }
@@ -320,6 +321,21 @@ public class TarefaService : ITarefaService
             var colAlvo = await ColunaPorStatusAsync(statusInicial, ct)
                 ?? await ColunaPorStatusAsync(StatusTarefa.AFazer, ct);
             colunaId = colAlvo?.Id;
+        }
+
+        // Sincronia bloq. ⇄ coluna na criação:
+        // - tarefa bloqueada nasce na coluna BLOQUEADO (motivo obrigatório);
+        // - coluna BLOQUEADO enviada implica bloqueada (mesma semântica do drag).
+        var bloqueada = req.Bloqueada ?? false;
+        if (colunaCriada != null && EhColunaBloqueada(colunaCriada.Nome))
+            bloqueada = true;
+
+        if (bloqueada)
+        {
+            if (string.IsNullOrWhiteSpace(req.MotivoBloqueio))
+                throw new ArgumentException("Motivo do bloqueio é obrigatório para tarefa bloqueada.");
+            var colBloqueio = await ColunaBloqueadaAsync(ct);
+            if (colBloqueio != null) colunaId = colBloqueio.Id;
         }
 
         var chamadosDesejados = (req.ChamadoIds ?? new List<int>())
@@ -349,8 +365,8 @@ public class TarefaService : ITarefaService
             // Data de conclusão bloqueada na criação: só vale se nascer Concluída.
             DataConclusao = statusInicial == StatusTarefa.Concluida ? req.DataConclusao : null,
             HorasEstimadas = req.HorasEstimadas,
-            Bloqueada = req.Bloqueada ?? false,
-            MotivoBloqueio = req.Bloqueada == true ? req.MotivoBloqueio : null,
+            Bloqueada = bloqueada,
+            MotivoBloqueio = bloqueada ? req.MotivoBloqueio : null,
             UsuarioInclusao = req.CriadorId,
             DataInclusao = DateTime.Now
         };
@@ -515,6 +531,29 @@ public class TarefaService : ITarefaService
             if (colConcluida != null) t.ColunaKanbanId = colConcluida.Id;
         }
 
+        // Sincronia bloq. ⇄ coluna na atualização:
+        // - bloqueada=true move o card para BLOQUEADO (mantém status; motivo obrigatório);
+        // - bloqueada=false saindo de BLOQUEADO volta para a coluna canônica do status.
+        if (t.Bloqueada)
+        {
+            if (string.IsNullOrWhiteSpace(t.MotivoBloqueio))
+                throw new ArgumentException("Motivo do bloqueio é obrigatório para tarefa bloqueada.");
+
+            var colBloqueio = await ColunaBloqueadaAsync(ct);
+            if (colBloqueio != null && t.ColunaKanbanId != colBloqueio.Id)
+                t.ColunaKanbanId = colBloqueio.Id;
+        }
+        else if (t.ColunaKanbanId.HasValue)
+        {
+            var colAtualBloq = await _db.ColunasKanban.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == t.ColunaKanbanId, ct);
+            if (colAtualBloq != null && EhColunaBloqueada(colAtualBloq.Nome))
+            {
+                var colAlvoBloq = await ColunaPorStatusAsync(t.Status, ct);
+                if (colAlvoBloq != null) t.ColunaKanbanId = colAlvoBloq.Id;
+            }
+        }
+
         // Atualiza múltiplos responsáveis
         if (req.ResponsavelIds != null)
         {
@@ -624,7 +663,7 @@ public class TarefaService : ITarefaService
             if (col != null)
             {
                 var nome = col.Nome.ToUpper().Trim();
-                if (nome == "BLOQUEADO" || nome.Contains("BLOQUEAD"))
+                if (EhColunaBloqueada(nome))
                 {
                     var motivo = req.MotivoBloqueio?.Trim();
                     if (string.IsNullOrWhiteSpace(motivo) && string.IsNullOrWhiteSpace(t.MotivoBloqueio))
@@ -680,6 +719,23 @@ public class TarefaService : ITarefaService
         foreach (var c in cols)
             if (StatusDaColuna(c.Nome) == status) return c;
         return null;
+    }
+
+    /// <summary>Regra única de nome de coluna: indica BLOQUEADO (mesma do drag).</summary>
+    private static bool EhColunaBloqueada(string nomeColuna)
+    {
+        var nome = nomeColuna.ToUpperInvariant().Trim();
+        return nome == "BLOQUEADO" || nome.Contains("BLOQUEAD");
+    }
+
+    /// <summary>Busca a coluna canônica BLOQUEADO ativa (seed), se existir.</summary>
+    private async Task<ColunaKanban?> ColunaBloqueadaAsync(CancellationToken ct)
+    {
+        var cols = await _db.ColunasKanban.AsNoTracking()
+            .Where(c => c.Ativa)
+            .OrderBy(c => c.Ordem)
+            .ToListAsync(ct);
+        return cols.FirstOrDefault(c => EhColunaBloqueada(c.Nome));
     }
 
     private async Task SincronizarAgendaAsync(Tarefa tarefa, ColunaKanban coluna, CancellationToken ct)
