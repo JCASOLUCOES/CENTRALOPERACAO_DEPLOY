@@ -3,7 +3,7 @@
  * extract-screens.ts
  * 
  * Extrai estrutura de rotas, components, services e endpoints backend
- * para gerar o JSON intermediário usado pelo docs-writer na geração de TELAS.md.
+ * para gerar o JSON auxiliar usado pelo docs-writer na conferência da documentação canônica.
  * 
  * Uso: npx tsx scripts/extract-screens.ts
  * Saída: scripts/screens-data.json
@@ -11,6 +11,12 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+
+const repoRoot = path.resolve(__dirname, '..');
+
+function toRepoPath(filePath: string): string {
+  return path.relative(repoRoot, filePath).replace(/\\/g, '/');
+}
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -49,8 +55,12 @@ interface EndpointInfo {
   description: string;
 }
 
+interface MigrationInfo {
+  file: string;
+  description: string;
+}
+
 interface ScreensData {
-  generatedAt: string;
   frontend: {
     routes: RouteInfo[];
     components: ComponentInfo[];
@@ -58,14 +68,14 @@ interface ScreensData {
   backend: {
     endpoints: EndpointInfo[];
     tables: string[];
-    migrations: string[];
+    migrations: MigrationInfo[];
   };
 }
 
 // ── Frontend Extraction ────────────────────────────────────────────────────
 
 function extractRoutes(): RouteInfo[] {
-  const routesDir = path.join(__dirname, '..', 'frontend', 'src', 'app', 'features');
+  const routesDir = path.join(__dirname, '..', 'frontend', 'src', 'app');
   const routes: RouteInfo[] = [];
 
   function scanDir(dir: string, parentPath: string) {
@@ -88,7 +98,7 @@ function extractRoutes(): RouteInfo[] {
             path: match[1],
             component: match[2].replace(/\.ts$/, '.component'),
             lazy: true,
-            file: fullPath.replace(/\\/g, '/')
+            file: toRepoPath(fullPath)
           });
         }
         for (const match of redirectMatches) {
@@ -96,7 +106,7 @@ function extractRoutes(): RouteInfo[] {
             path: match[1],
             component: match[2],
             lazy: false,
-            file: fullPath.replace(/\\/g, '/')
+            file: toRepoPath(fullPath)
           });
         }
       }
@@ -155,7 +165,7 @@ function extractComponents(): ComponentInfo[] {
 
         components.push({
           name: componentName,
-          file: fullPath.replace(/\\/g, '/'),
+          file: toRepoPath(fullPath),
           services,
           routes: []
         });
@@ -245,7 +255,7 @@ function extractTables(): string[] {
   return tables;
 }
 
-function extractMigrations(): string[] {
+function extractMigrations(): MigrationInfo[] {
   const migrationsDir = path.join(__dirname, '..', 'backend', 'Central_BackEnd', 'Migrations');
   const migrations: string[] = [];
 
@@ -259,7 +269,7 @@ function extractMigrations(): string[] {
       migrations.push({
         file,
         description: descMatch?.[1] || file
-      } as any);
+      });
     }
   }
   return migrations;
@@ -269,7 +279,6 @@ function extractMigrations(): string[] {
 
 function main() {
   const data: ScreensData = {
-    generatedAt: new Date().toISOString(),
     frontend: {
       routes: extractRoutes(),
       components: extractComponents()
@@ -287,7 +296,7 @@ function main() {
     fs.mkdirSync(outputDir, { recursive: true });
   }
   fs.writeFileSync(outputPath, JSON.stringify(data, null, 2), 'utf-8');
-  console.log(`✅ TELAS.md data extracted to ${outputPath}`);
+  console.log(`Documentation inventory extracted to ${outputPath}`);
   console.log(`   Routes: ${data.frontend.routes.length}`);
   console.log(`   Components: ${data.frontend.components.length}`);
   console.log(`   Backend Endpoints: ${data.backend.endpoints.length}`);

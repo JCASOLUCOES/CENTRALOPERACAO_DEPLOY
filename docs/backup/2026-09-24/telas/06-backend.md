@@ -74,33 +74,55 @@ Gestão de acessos de empresas via Google Sheets (listagem, validação de senha
 
 **Controllers:** `Controllers/Implantacao/*.cs`
 
-### Entidades Gerenciadas (9 tabelas `IMPL_*` + Agenda)
+### Entidades e recursos gerenciados
 
-| Controller | Rota base | Entidade | Tabela SQL |
-|-----------|-----------|----------|------------|
-| `ClientesController` | `/implantacao/clientes` | `Cliente` | `IMPL_Cliente` |
+| Controller | Rota base | Entidade/recurso | Tabela SQL |
+|-----------|-----------|------------------|------------|
 | `TiposProjetoController` | `/implantacao/tipos-projeto` | `TipoProjeto` | `IMPL_TipoProjeto` |
-| `EtapasController` | `/implantacao/etapas` | `Etapa` | `IMPL_Etapa` |
 | `ColunasKanbanController` | `/implantacao/colunas-kanban` | `ColunaKanban` | `IMPL_ColunaKanban` |
-| `ProjetosController` | `/implantacao/projetos` | `Projeto` | `IMPL_Projeto` |
-| `TarefasController` | `/implantacao/tarefas` | `Tarefa`, `ComentarioTarefa` | `IMPL_Tarefa`, `IMPL_ComentarioTarefa` |
+| `ProjetosController` | `/implantacao/projetos` | `Projeto` + 9 cards fixos por projeto | `IMPL_Projeto`, `tbprojetoEtapa*` |
+| `TarefasController` | `/implantacao/tarefas` | `Tarefa`, `ComentarioTarefa` e vínculos | `IMPL_Tarefa`, `IMPL_ComentarioTarefa`, `IMPL_Tarefa*` |
 | `DashboardController` (classe no arquivo `TarefasController.cs`) | `/implantacao/dashboard` | KPIs agregados (`?equipe=` legado sem efeito; `?projetoId=N` filtra projetos/tarefas/horas/apontamentos/prazos) | `IMPL_Projeto`, `IMPL_Tarefa` |
-| `LegacyController` | `/implantacao/legacy` | Legado | `tbcliente`, `tbchamado`, `tbfuncionario`, `tbfuncao` |
+| — | — | **Etapas Globais removidas** — não há controller, service, model `Etapa` nem tabela `IMPL_Etapa` no source atual | — |
 
-> **Nota:** O módulo Equipes (`EquipesController` → `/implantacao/equipes`, tabelas `IMPL_Equipe`/`IMPL_MembroEquipe`, `equipes.service.ts` no frontend) foi **removido em 2026-09-12** (migration `20260912173928_RemoveEquipes`). A Agenda V1 (`/implantacao/agenda`) foi removida no rollback de 10/09/2026 (commit `8956c57`). A **Agenda V2 (MVP)** foi reimplementada em **`/api/v1/agenda`** (controller próprio, fora do prefixo `/implantacao`). Ver seção 16 (frontend) e 17.5 (backend).
+> **Etapas por projeto (arquitetura vigente):** cada projeto recebe nove cards em `tbprojetoEtapa`, com checklists, documentos, histórico e comentários. Os cards são expostos por `/implantacao/projetos/etapas-padrao` e `/implantacao/projetos/{id}/etapas`. A migration `20260922154202_RemoveEtapaAntiga` removeu `IMPL_Etapa`, a FK/coluna legadas `TRF_EtapaId` e deixou `TRF_ProjetoEtapaId → tbprojetoEtapa.PEP_Id` como vínculo válido.
+>
+> **Diagnóstico 404 anterior e correção frontend:** `GET` e `POST /implantacao/etapas` retornavam 404 no ambiente publicado porque o controller global não existia. A tela capturava a falha e mostrava estado vazio. A funcionalidade frontend foi removida: rotas `/admin/cadastros/etapas*`, componentes/SCSS, `EtapasService`, tipos, `TarefasService.listarEtapas()` e breadcrumb específico saíram do source. A API global não deve ser recriada. A validação registrada foi 19/19 testes, typechecks e build frontend, com gate backend/frontend verde.
+
+### `ProjetosController` — 16 endpoints atuais
+
+Todos exigem `[Authorize]`. A classe aplica rate limit `validacao`; `GET /clientes` usa a política `leitura`. Os nomes dos parâmetros de rota não precisam coincidir literalmente com o frontend: Angular interpola os valores pela posição.
+
+| Método | Rota | Corpo | Resultado/regra |
+|--------|------|------|-----------------|
+| GET | `/api/v1/implantacao/projetos` | — | Lista com query `tipo`, `status`, `clienteId`, `responsavelId`, `buscar`, `perfilId` |
+| GET | `/api/v1/implantacao/projetos/com-etapas` | — | Mesma lista, cada projeto com seus cards fixos |
+| GET | `/api/v1/implantacao/projetos/{id}` | — | Detalhe ou 404 |
+| GET | `/api/v1/implantacao/projetos/etapas-padrao` | — | Nove nomes/ordens padrão, fonte única no backend |
+| GET | `/api/v1/implantacao/projetos/{id}/etapas` | — | Cards do projeto; inicializa os nove apenas se ainda não existirem |
+| GET | `/api/v1/implantacao/projetos/{id}/etapas/{ordem}` | — | Detalhe de um card ou 404 |
+| GET | `/api/v1/implantacao/projetos/proximo-codigo` | — | `{ codigo }`; sem parâmetros |
+| GET | `/api/v1/implantacao/projetos/clientes` | — | Clientes ativos de `tbcliente`; política `leitura` |
+| POST | `/api/v1/implantacao/projetos` | `ProjetoCriarRequest` | Cria projeto e automaticamente os nove cards; `etapaInicialOrdem` marca anteriores como concluídas |
+| PUT | `/api/v1/implantacao/projetos/{id}` | `ProjetoAtualizarRequest` | Atualização; o contrato backend mantém `Status?` e `UsuarioAlteracao` |
+| PUT | `/api/v1/implantacao/projetos/{id}/etapas/{ordem}` | `ProjetoEtapaAtualizarRequest` | Atualiza estado, percentual, datas, responsável e checklist |
+| POST | `/api/v1/implantacao/projetos/{id}/etapas/retornar` | `ProjetoEtapaRetornoRequest` | Retorna o projeto a um card anterior |
+| POST | `/api/v1/implantacao/projetos/{id}/etapas/{ordem}/checklist` | `ProjetoEtapaChecklistItemRequest` | Adiciona item ao checklist |
+| POST | `/api/v1/implantacao/projetos/{id}/etapas/{ordem}/documentos` | `ProjetoEtapaDocumentoRequest` | Adiciona documento ao card |
+| POST | `/api/v1/implantacao/projetos/{id}/etapas/{ordem}/comentarios` | `ProjetoEtapaComentarioRequest` | Adiciona comentário ao card |
+| DELETE | `/api/v1/implantacao/projetos/{id}` | — | Exclusão física ou 404 |
+
+> **Rotas removidas do source:** `GET /projetos/{id}/jornada`, `POST /projetos/{id}/etapas/inicializar` e `PATCH /projetos/{id}/status`. No IIS, enquanto o backend atual não for publicado, as três ainda podem responder **401** por pertencerem à versão antiga; isso não indica que continuem no source. O cálculo privado de `IProjetoJornadaService` permanece para `TarefaService`, e `IProjetoEtapaService.InicializarEtapasPadraoAsync` permanece para criação/leitura dos cards.
 
 ### Endpoints por Controller (resumido)
 
 | Controller | GET | POST | PUT | DELETE | Patch/Especiais |
 |-----------|-----|------|-----|--------|-----------------|
-| Clientes | ✅ | ✅ | ✅ | ✅ | — |
 | TiposProjeto | ✅ | ✅ | ✅ | ✅ | — |
-| Etapas | ✅ | ✅ | ✅ | ✅ | — |
 | ColunasKanban | ✅ | ✅ | ✅ | ✅ | POST `/reordenar` |
-| Projetos | ✅ | ✅ | ✅ | ✅ | GET `/proximo-codigo` (sem parâmetros, retorna `{ codigo }`), GET `/clientes` (ativos), PATCH `/{id}/status`, PUT `/{id}` |
-| Tarefas | ✅ | ✅ | ✅ | ✅ | GET com filtros (`projetoId`, `responsavelId`, `status`, `prioridade`, `buscar`, `apenasAtrasadas`, `apenasEmAndamento`, `apenasConcluidas`; `equipe` legado aceito), PUT `/{id}` (com `Status` opcional), PATCH `/{id}/coluna`, POST `/{id}/comentarios`; create/update aceitam `projetoEtapaId?` (etapa fixa do mesmo projeto, `NULL` = só totais) + `ChamadoIds?` (sync N-N com chamados) e `Status?` opcional no create (22/09/2026: form não envia mais `status` — sincronia coluna↔status no service) |
+| Projetos | ✅ | ✅ | ✅ | ✅ | **16 endpoints no total**; PUT `/{id}` mantém `Status?` no contrato |
+| Tarefas | ✅ | ✅ | ✅ | ✅ | GET com filtros; PATCH `/{id}/coluna`, `/{id}/arquivar`, `/{id}/desarquivar`; POST `/{id}/comentarios`; create/update com `projetoEtapaId?` e `ChamadoIds?` |
 | Dashboard | ✅ | — | — | — | Query `equipe` opcional (aceita, ignorada — stub `Geral`) |
-| Legacy | ✅ | — | — | — | GET `/clientes`, `/chamados`, `/indicacoes`, `/funcionarios` |
 
 ### Segurança
 - Todos com `[Authorize]`
@@ -117,7 +139,7 @@ Gestão de acessos de empresas via Google Sheets (listagem, validação de senha
 ### Observações Técnicas
 - Versionamento: `Asp.Versioning.Mvc` com `api/v{version:apiVersion}`
 - `[ApiVersion("1.0")]` em todos controllers
-- Seed em Development sem equipes (4 tipos, 13 etapas, 5 colunas, 3 clientes; seeds de exemplo — 2 projetos IMP-0001/CIAA-0001 e 5 eventos de agenda — DESABILITADOS via `#if false` em `Program.cs`; base de testes parte limpa via `scripts/db/wipe-test-data.sql`)
+- Seed em Development: 4 tipos, 7 colunas e 7 tipos de evento; não há seed de Etapas Globais. As nove etapas são cards por projeto, criados por `ProjetoEtapaService.InicializarEtapasPadraoAsync`. Seeds de exemplo — 2 projetos IMP-0001/CIAA-0001 e 5 eventos de agenda — permanecem desabilitados via `#if false` em `Program.cs`; clientes vêm de `tbcliente`.
 - Migration `20260912173928_RemoveEquipes.cs` (2026-09-12) remove `IMPL_Equipe`/`IMPL_MembroEquipe`
 - `scripts/deploy/deploy.ps1` **não** aplica migrations
 
@@ -128,7 +150,7 @@ Gestão de acessos de empresas via Google Sheets (listagem, validação de senha
 **Controller:** `Controllers/Database/DatabaseController.cs`
 
 ### O que faz
-API do Database Explorer — metadados, relacionamentos, busca, config (leitura), procedures, triggers, dependências, análise de procedures, query builder (geração de SQL) e comparação de schema via upload. **21 endpoints** (enxugamento 23/09/2026, `640bbf6`: removidos `POST /query`, `GET /procedures/search`, `PUT /config`, `POST /diff`, `POST /snapshot`, `GET /snapshots`, `POST /snapshot/comparar`; services `DatabaseQueryService`/`DatabaseSchemaDiffService`/`DatabaseSnapshotService` deletados).
+API do Database Explorer — metadados, relacionamentos, busca, config (leitura), procedures, triggers, dependências, análise de procedures, query builder (geração de SQL) e comparação de schema via upload. **19 endpoints** (enxugamento 23/09/2026, `640bbf6`: removidos `POST /query`, `GET /procedures/search`, `PUT /config`, `POST /diff`, `POST /snapshot`, `GET /snapshots`, `POST /snapshot/comparar`; services `DatabaseQueryService`/`DatabaseSchemaDiffService`/`DatabaseSnapshotService` deletados; 24/09/2026: removidos `POST /test-connection` e `GET /search/global` — FE usa `GET /status` e `GET /search`).
 
 ### Endpoints
 | Método | Rota | Descrição | Service |
@@ -144,7 +166,6 @@ API do Database Explorer — metadados, relacionamentos, busca, config (leitura)
 | GET | `/api/v1/database/graph` | Grafo BFS | `DatabaseRelationshipInferenceService` |
 | GET | `/api/v1/database/column-usage` | Uso de coluna | `DatabaseRelationshipInferenceService` |
 | GET | `/api/v1/database/search` | Busca global | `DatabaseSearchService` |
-| GET | `/api/v1/database/search/global` | Busca global unificada (mapeada p/ `GlobalSearchResultDto`) | `DatabaseSearchService` |
 | GET | `/api/v1/database/procedures` | Lista procedures (`?busca=`) | `DatabaseMetadataService` |
 | GET | `/api/v1/database/procedures/{schema}/{name}` | Detalhe procedure | `DatabaseMetadataService` |
 | GET | `/api/v1/database/procedures/{schema}/{name}/analysis` | Análise procedure | `DatabaseMetadataService` |
@@ -152,8 +173,7 @@ API do Database Explorer — metadados, relacionamentos, busca, config (leitura)
 | GET | `/api/v1/database/triggers/{schema}/{name}` | Detalhe trigger | `DatabaseMetadataService` |
 | POST | `/api/v1/database/query-builder-advanced` | Gera SQL do Criador (WHERE, ORDER BY, GROUP BY, CTEs) | `DatabaseQueryBuilderService` |
 | GET | `/api/v1/database/config` | Configuração (senha mascarada) | `DatabaseConnectionService` |
-| POST | `/api/v1/database/test-connection` | Testa conexão | `DatabaseConnectionService` |
-| POST | `/api/v1/database/compare-schemas` | Upload multipart `FormData` (`schema`, `tabela`, `arquivo` CSV/JSON ≤ 5 MB) → colunas/tipos/nullable/ordem/índices/FKs × schema JCA → `SchemaComparisonResultDto` (`[EnableRateLimiting("validacao")]`, `[RequestSizeLimit(5MB)]`) | `DatabaseSchemaComparisonService` |
+| POST | `/api/v1/database/compare-schemas` | Upload multipart `FormData` (`schema`, `tabela`, `arquivo` só `.json` ≤ 5 MB; CSV removido em 24/09/2026) → colunas/tipos/nullable/ordem/índices/FKs × schema JCA → `SchemaComparisonResultDto` (`[EnableRateLimiting("validacao")]`, `[RequestSizeLimit(5MB)]`) | `DatabaseSchemaComparisonService` |
 
 ### Banco de Dados
 - `dbActyon_JCA` (SQL Server 192.168.2.154)
@@ -164,7 +184,7 @@ API do Database Explorer — metadados, relacionamentos, busca, config (leitura)
 - Senha via env var `DB_EXPLORER_SENHA`
 - User-secrets em Development
 - `TrustServerCertificate=false` como default em produção
-- `POST /compare-schemas`: rate limit `validacao` (50/min prod), extensões `.csv`/`.json` apenas, 5 MB, parse server-side (não confia em conteúdo do cliente)
+- `POST /compare-schemas`: rate limit `validacao` (50/min prod), extensão `.json` apenas, 5 MB, parse server-side (não confia em conteúdo do cliente); endpoint de lote `compare-schemas-lote` removido em 24/09/2026; parser CSV removido do serviço
 - Sem execução de SQL arbitrário no servidor (endpoint `POST /query` removido; SELECT-only restava só no serviço de query)
 
 ### Observações Técnicas
@@ -349,20 +369,29 @@ API da Agenda V2 (MVP) — gerencia eventos, tipos de evento e participantes. Ro
 
 ---
 
-### 18.2 Tabelas do Módulo IMPLANTAÇÃO (v1.1.0)
+### 18.2 Tabelas e modelo vigente do módulo IMPLANTAÇÃO
 
 | Tabela | Prefixo | Descrição | Model |
 |--------|---------|-----------|-------|
-| `IMPL_Cliente` | `CLI_` | ⚠️ Legada interna — **descontinuada como fonte** (desde 2026-09-15 a fonte única é `tbcliente`, `ClienteLegado.cs`, somente leitura) | `Cliente.cs` |
-| `tbcliente` | — | Fonte única de clientes (CNPJ, RAZAO_SOCIAL, FANTASIA, ATIVO S/N; somente leitura, fora das migrations; FK `PRJ_ClienteId` → `CLIENTE_ID`) | `ClienteLegado.cs` |
-| `IMPL_TipoProjeto` | `TPP_` | Tipos: `CLIENTE`/`CARTEIRA`/`INTEGRACAO`/`PROJETO_CIAA` (sem `EquipeId` desde 2026-09-12) | `TipoProjeto.cs` |
-| `IMPL_Etapa` | `ETP_` | Etapas configuráveis (vinculadas a um tipo de projeto) | `Etapa.cs` |
-| `IMPL_ColunaKanban` | `CLK_` | Colunas do Kanban (limite 8, 5 padrão seeded) | `ColunaKanban.cs` |
-| `IMPL_Projeto` | `PRJ_` | Projeto principal (código sequencial `PRJ-0001`, tipo, cliente opcional) | `Projeto.cs` |
-| `IMPL_Tarefa` | `TRF_` | Tarefas (titulo, projeto, etapa, coluna Kanban, responsavel, status; **`TRF_ProjetoEtapaId` → `tbprojetoEtapa.PEP_Id`, NULL, `NO ACTION` (SQL Server barra múltiplos caminhos em cascata: IMPL_Projeto→IMPL_Tarefa direto + via tbprojetoEtapa), 20/09/2026**) | `Tarefa.cs` |
-| `IMPL_ComentarioTarefa` | `CMT_` | Comentários / histórico da tarefa | `ComentarioTarefa.cs` |
+| `IMPL_Cliente` | `CLI_` | Legada interna — **não é a fonte atual**; a fonte única de clientes é `tbcliente` (somente leitura) | `Cliente.cs` |
+| `tbcliente` | — | Fonte de clientes (CNPJ, razão social, fantasia, ativo; somente leitura, fora das migrations) | `ClienteLegado.cs` |
+| `IMPL_TipoProjeto` | `TPP_` | Tipos `CLIENTE`/`CARTEIRA`/`INTEGRACAO`/`PROJETO_CIAA` | `TipoProjeto.cs` |
+| `IMPL_ColunaKanban` | `CLK_` | Colunas do Kanban; 7 colunas padrão são seedadas | `ColunaKanban.cs` |
+| `IMPL_Projeto` | `PRJ_` | Projeto principal; código sequencial global `PRJ-0001` | `Projeto.cs` |
+| `tbprojetoEtapa` | `PEP_` | **Nove cards fixos por projeto**; `PEP_ProjetoId` vincula ao projeto | `ProjetoEtapa.cs` |
+| `tbprojetoEtapaChecklist` | `PEC_` | Itens de checklist do card | `ProjetoEtapa.cs` |
+| `tbprojetoEtapaDocumento` | `PED_` | Documentos do card | `ProjetoEtapa.cs` |
+| `tbprojetoEtapaHistorico` | `PEH_` | Histórico do card | `ProjetoEtapa.cs` |
+| `tbprojetoEtapaComentario` | `PEC_` | Comentários do card | `ProjetoEtapa.cs` |
+| `IMPL_Tarefa` | `TRF_` | Tarefa; vínculo vigente `TRF_ProjetoEtapaId` → `tbprojetoEtapa.PEP_Id`, `NO ACTION`/`Restrict`; não existe mais `TRF_EtapaId` | `Tarefa.cs` |
+| `IMPL_ComentarioTarefa` | `CMT_` | Comentários da tarefa | `ComentarioTarefa.cs` |
+| `IMPL_TarefaResponsavel` | — | N:N tarefa↔operador | `TarefaResponsavel.cs` |
+| `IMPL_TarefaChamado` | — | N:N tarefa↔chamado legado | `TarefaChamado.cs` |
+| `IMPL_TarefaApontamento` | `APT_` | Apontamentos de horas | `TarefaApontamento.cs` |
 
-> **Removidas em 2026-09-12** (migration `20260912173928_RemoveEquipes`): `IMPL_Equipe` (`EQP_`) e `IMPL_MembroEquipe` (`MBE_`, vínculo N:N operador↔equipe), mais as colunas `PRJ_EquipeId` (`IMPL_Projeto`) e `TPP_EquipeId` (`IMPL_TipoProjeto`).
+> **Etapas Globais removidas:** a migration `20260922154202_RemoveEtapaAntiga` removeu a tabela `IMPL_Etapa`, a FK e a coluna legadas `IMPL_Tarefa.TRF_EtapaId`, e substituiu a FK do card por `Restrict` para `tbprojetoEtapa`. Não há model `Etapa`, `EtapaService` nem `EtapasController` no source atual. Referências a `IMPL_Etapa` nas migrations anteriores descrevem apenas o histórico do schema.
+>
+> **Removidas em 2026-09-12** (migration `20260912173928_RemoveEquipes`): `IMPL_Equipe` (`EQP_`) e `IMPL_MembroEquipe` (`MBE_`), além de `PRJ_EquipeId` e `TPP_EquipeId`.
 
 ### 18.2.1 Tabelas da Agenda V2 (MVP — `/api/v1/agenda`)
 
@@ -388,11 +417,17 @@ API da Agenda V2 (MVP) — gerencia eventos, tipos de evento e participantes. Ro
 | `20260911215943_AgendaV2_Ajuste` | 2026-09-11 | Agenda V2 (MVP): adiciona `AGD_TipoId` FK → `CC_TipoEvento`, cria `CC_AgendaParticipante` (unique AgendaId+ParticipanteId), cria `CC_TipoEvento` |
 | `20260912173928_RemoveEquipes` | 2026-09-12 | Remove `IMPL_Equipe` + `IMPL_MembroEquipe`; remove `PRJ_EquipeId` (`IMPL_Projeto`) e `TPP_EquipeId` (`IMPL_TipoProjeto`); adiciona auditoria em `TipoProjeto` (`TPP_UsuarioAlteracao`/`TPP_DataAlteracao`). Criada nas Fases 2–3 (`PLANO-IMPLEMENTACAO-FASES.md`), com deploy em produção 192.168.2.130 OK no mesmo dia. **Incidente 2026-09-14 (homolog .154):** o script idempotente original recriava `FK_IMPL_Projeto_IMPL_TipoProjeto` com `ON DELETE CASCADE` e falhou no SQL Server com erro **1785/1750 + 3902** (múltiplos caminhos CASCADE). **Correção (confirmada no código):** `AppDbContext.cs` (bloco `Projeto`) agora usa `.OnDelete(DeleteBehavior.Restrict)` com comentário explicando o veto do SQL Server (caminho `Etapa→TipoProjeto` já é `Cascade`); `20260912173928_RemoveEquipes.cs` (`Up`, linhas 87–93) recria a FK com `onDelete: ReferentialAction.Restrict` (`Down` já era `Restrict`); `RemoveEquipes.Designer.cs`, `AppDbContextModelSnapshot.cs` e `20260914144751_AgendaConflitoHorarios.Designer.cs` registram `Projeto→TipoProjeto = Restrict` e `Etapa→TipoProjeto = Cascade`; `Migrations/Sql/RemoveEquipes_Idempotente.sql` regenerado com `ON DELETE NO ACTION`. Ver **§18.3.1** (incidente, causa e regra preventiva) |
 | `20260914144751_AgendaConflitoHorarios` | 2026-09-14 | Agenda V2 Fase 1: índice composto `IX_IMPL_Agenda_Operador_DataInicio_DataFim` em `IMPL_Agenda` (`AGD_OperadorId`, `AGD_DataInicio`, `AGD_DataFim`). Script idempotente `Migrations/Sql/AgendaConflitoHorarios_Idempotente.sql` (só `CREATE INDEX` + registro em `__EFMigrationsHistory`) — **aplicação manual, deploy não aplica migrations** |
-| `20260920185734_TarefaProjetoEtapaId` | 2026-09-20 | Contador dinâmico de tarefas por etapa: `IMPL_Tarefa.TRF_ProjetoEtapaId INT NULL` + índice `IX_IMPL_Tarefa_TRF_ProjetoEtapaId` + FK `FK_IMPL_Tarefa_tbprojetoEtapa_TRF_ProjetoEtapaId` → `tbprojetoEtapa.PEP_Id` (`NO ACTION` — SQL Server barra múltiplos caminhos em cascata: IMPL_Projeto→IMPL_Tarefa direto + via tbprojetoEtapa); backfill no `Up` por nome conhecido (`HOMOLOGACAO→HOMOLOGAÇÃO`, demais `NULL` = só totais). Script manual idempotente `scripts/db/migracao-tarefa-projeto-etapa-id.sql`. **Sem auto-migrate no startup — aplicar migration ou script no servidor** |
+| `20260918211919_AddProjetoEtapas` | 2026-09-18 | Cria `tbprojetoEtapa` e tabelas de checklist, documento, histórico e comentário dos cards fixos por projeto |
+| `20260920185734_TarefaProjetoEtapaId` | 2026-09-20 | Contador dinâmico por card: `IMPL_Tarefa.TRF_ProjetoEtapaId` + índice/FK para `tbprojetoEtapa.PEP_Id`; o `Up` histórico ainda fazia backfill por `IMPL_Etapa.ETP_Nome`, portanto a etapa seguinte retirou essa dependência |
+| `20260922154202_RemoveEtapaAntiga` | 2026-09-22 | Remove a FK/índice/coluna `TRF_EtapaId` e a tabela `IMPL_Etapa`; recria `FK_IMPL_Tarefa_tbprojetoEtapa_TRF_ProjetoEtapaId` com `Restrict` |
+
+> A limpeza de endpoints posterior não criou migration nem alterou banco. `scripts/deploy/deploy.ps1` continua sem aplicar migrations automaticamente.
 
 #### 18.3.1 Incidente `RemoveEquipes` — CASCADE rejeitado (erro 1785) e correção
 
 > **Escopo desta seção:** fatos de código confirmados nos arquivos citados; trecho de produção (`.154`, `__EFMigrationsHistory` envenenado, migration fantasma `20260910183240_AgendaGeral`) registrado como **relato operacional** fornecido na ocorrência, não verificável no código deste repo.
+>
+> **Estado posterior:** as menções a `Etapa → TipoProjeto` descrevem o schema de 12/09/2026. A migration `20260922154202_RemoveEtapaAntiga` removeu essa relação e a tabela `IMPL_Etapa`; atualmente o fluxo é `Projeto → tbprojetoEtapa`.
 
 - **O que aconteceu (relato operacional):** em homologação (`.154`), o script `RemoveEquipes_Idempotente.sql` com `ON DELETE CASCADE` na FK `FK_IMPL_Projeto_IMPL_TipoProjeto` falhou com erro **1785/1750** ("não é possível criar a restrição... múltiplos caminhos em cascata") + **3902** (transação abortada). Linhas foram marcadas em `__EFMigrationsHistory` **sem o DDL ter aplicado** (history "envenenado"); o usuário limpou as linhas manualmente (**Fase 0**) antes da reaplicação.
 - **Causa (confirmada no código):** convenção do EF — FK obrigatória (`PRJ_TipoProjetoId`, `nullable: false`) sem `OnDelete` explícito gera `Cascade` por padrão. Com dois caminhos `TipoProjeto → Projeto` e `TipoProjeto ← Etapa`, o SQL Server rejeita o segundo `CASCADE`. O `Up` original da migration recriava a FK com `Cascade`, reproduzindo o problema.
@@ -414,13 +449,14 @@ API da Agenda V2 (MVP) — gerencia eventos, tipos de evento e participantes. Ro
 | `PasswordValidationService` | Validação senha mestre | Cache 5 min + lockout |
 | `BruteForceGuard` | Anti-força bruta | 5 falhas/5 min → 15 min |
 | `SegurancaHelper` | Comparação senha em tempo constante | SHA-256 |
-| `ProjetoServico` | CRUD projetos + geração código | `ProximoCodigoAsync()` (sem args, prefixo fixo `PRJ`) |
+| `ProjetoService` | CRUD projetos + geração de código | `ProximoCodigoAsync()` (sem args, prefixo fixo `PRJ`); `AtualizarAsync` ainda aplica `ProjetoAtualizarRequest.Status` quando informado |
+| `ProjetoJornadaService` | Cálculo privado e persistência do progresso | Permanece porque `TarefaService` injeta `IProjetoJornadaService` e chama `RecalcularProgressoAsync`; não expõe endpoint próprio |
+| `ProjetoEtapaService` | Nove cards fixos por projeto + sincronização por tarefas | `InicializarEtapasPadraoAsync` é chamado ao criar o projeto e também pela leitura de etapas quando o projeto ainda não tem cards; `ObterEtapasAsync`, `SincronizarEtapasPorTarefasAsync` e demais operações dos cards |
 | `DashboardService` | KPIs agregados | `porEquipe` = stub único `Geral`; `EquipeNome` = `"Geral"` (pós-remoção de Equipes) |
-| `DatabaseService` | Database Explorer endpoints | 21 endpoints (23/09/2026) |
+| `DatabaseService` | Database Explorer endpoints | 19 endpoints (24/09/2026) |
 | `LegacyDataService` | Dados legados | Read-only |
-| `AgendaService` | CRUD Agenda V2 (eventos, tipos, participantes, funções) + validação de conflito de horários (Fase 1) | `IAgendaService` / `AgendaService` (`FimEfetivo()`, `QueryConflito()`, `ObterConflitosAsync()`, `ValidarSemConflitoAsync()` → `ConflictException`/`CONFLICT_HORARIOS`/409; `ListarEventosAsync(..., funcaoId?)` filtra por `Operador.FuncaoId` via subquery; `ListarFuncoesAsync()` retorna funções ativas com operadores ativos) |
-| `TarefaService` | CRUD tarefas + jornada + contador por etapa fixa + sincronia coluna↔status | `ValidarEtapaFixaAsync` (etapa fixa do mesmo projeto); `RecalcularJornadaAsync` → `SincronizarEtapasPorTarefasAsync` (criar/atualizar/mover-coluna/concluir/arquivar/excluir); `Projeto.Progresso` no fórmula-fixa; `StatusDaColuna`/`ColunaPorStatusAsync` (mapa coluna→status e status→coluna, 22/09/2026); `OndeAtrasadas()` no filtro `apenasAtrasadas` |
-| `ProjetoEtapaService` | Cards fixos (9 etapas) + sync por tarefas | `ObterEtapasAsync` (GROUP BY, contagens `TarefasTotal/Concluidas`); `SincronizarEtapasPorTarefasAsync` (sem tarefas não toca; com tarefas Percentual task-based; N/N → `Concluida` + `DataFimReal` + histórico "Conclusão automática por tarefas" + `DesbloquearProximaEtapaAsync`; `Concluida` completa congela 100; `Concluida` incompleta **reabre só a etapa** com histórico "Reabertura automática por tarefas", posteriores intactas — 22/09/2026) |
+| `AgendaService` | CRUD Agenda V2 (eventos, tipos, participantes, funções) + validação de conflito de horários (Fase 1) | `IAgendaService` / `AgendaService` (`FimEfetivo()`, `QueryConflito()`, `ObterConflitosAsync()`, `ValidarSemConflitoAsync()` → `ConflictException`/`CONFLICT_HORROSARIOS`/409; `ListarEventosAsync(..., funcaoId?)` filtra por `Operador.FuncaoId` via subquery; `ListarFuncoesAsync()` retorna funções ativas com operadores ativos) |
+| `TarefaService` | CRUD tarefas + progresso do projeto + contador por card + sincronia coluna↔status | `ValidarEtapaFixaAsync`; `RecalcularJornadaAsync` → `IProjetoJornadaService.RecalcularProgressoAsync` e depois `SincronizarEtapasPorTarefasAsync`; `StatusDaColuna`/`ColunaPorStatusAsync`; `OndeAtrasadas()` |
 
 > **Banco de produção (dbBUSINESS_HML): compatibilidade 100 (SQL 2008).** O EF Core traduz `Where(x => listaCapturada.Contains(...))` para `OPENJSON`, que exige compat ≥ 130 → 500 "Sintaxe incorreta próxima a '$'" (Error 102). Regra do código (2026-09-18): **nunca** `Contains` em coleção capturada — usar `EXISTS` correlacionado, carga total de tabelas pequenas + filtro em memória, ou loop por PK. Também proibido `GroupBy` sem agregação antes de materializar. Exceções não tratadas agora são logadas (`GlobalExceptionHandler` no `Program.cs`; ler em `Suporte_Back\logs\stdout*.log` com `stdoutLogEnabled=true`).
 > **Migration `20260917202045_TarefaProjetoOpcional` aplicada manualmente em produção em 2026-09-18** (`TRF_ProjetoId` NULL; sem linha em `__EFMigrationsHistory` — um futuro `dotnet ef database update` a registrará sem efeito colateral).
@@ -461,7 +497,7 @@ builder.Services.AddCors(options => {
 | Banco | `Database:UseSqlServer` em `appsettings.Development.json`: `true` → SQL homolog `192.168.2.154`/`dbBUSINESS_HML`; `false` → InMemory (seed) | SQL Server (`appsettings.json` do servidor) |
 | Swagger | `SwaggerEnabled: true` | `SwaggerEnabled: false` |
 | Senha JWT | Chave fraca de propósito | `JWT_KEY` via env var |
-| Seed | 1 operador (admin/admin123), 4 tipos, 13 etapas, 5 colunas, 3 clientes (sem equipes desde 2026-09-12; seeds de exemplo — 2 projetos IMP-0001/CIAA-0001 e 5 eventos — DESABILITADOS via `#if false`; base limpa via `scripts/db/wipe-test-data.sql`) | Nenhum (dados reais) |
+| Seed | 1 operador (admin/admin123), 4 tipos, 7 colunas, 7 tipos de evento; sem seed de Etapas Globais (os nove cards são gerados por projeto); clientes vêm de `tbcliente`; seeds de exemplo desabilitados via `#if false` | Nenhum (dados reais) |
 | AppSettings | `appsettings.Development.json` | `appsettings.json` do servidor (preservado) |
 
 ---

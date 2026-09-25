@@ -1,6 +1,6 @@
 ﻿# Central de Operação — Aplicação Frontend (módulos)
 
-> Extraído de `DOCUMENTACAO-COMPLETA.md` §7. Módulo Central Executiva marcado como desativado (rota comentada).
+> Extraído de `DOCUMENTACAO-COMPLETA.md` §7. Módulo Central Executiva e Módulo Gestor **removidos** do repo em 24/09/2026 (`e87d763`).
 
 ---
 
@@ -8,20 +8,20 @@
 
 | Módulo | Descrição |
 |---|---|
-| Autenticação | Login, guard de rotas, interceptor com `withCredentials: true` e **refresh token em cookie HttpOnly** (`cc_refresh`). Access token + usuário ficam **somente em memória**; após F5 ou 401, o refresh single-flight também **repopula o usuário** (`restaurarSessao`), mantendo o perfil do header visível. "Lembrar meu acesso" torna o cookie persistente por 4h. **Verificação periódica** (5 min) detecta expiração proativamente; logout por timeout exibe "Sua sessão expirou" no login |
-| Layout | Header (nav Início / Fraseologias / Ferramentas / Acessos / Cursos, breadcrumb com `/agenda`, `/chat`, `/implantacao/*`, `/admin/*`, `/executivo/dashboard`, busca local via `BuscaIndexService` + estado `BuscaService` com `abrirBusca()` e atalho `Ctrl+K`, dropdown do usuário com BEM `user-nav__*`) + sidebar com 7 seções de links diretos (Início — com **Central Executiva** (`/executivo`, `bi-speedometer2`) como primeiro item, só `ehAdministrador()` estrito (`perfil === 'Administrador'`) —, Atendimento, Implantação, Ferramentas, Conhecimento, JCA, Administração; sem links JOTA, sem grupos em uso) + JOTA flutuante (`<app-jota-widget>` no `MainLayout`: FAB + painel, proxy real, erro honesto) |
-| Home | Saudação com primeiro nome, busca `Ctrl+K`, 6 acessos rápidos, "Continue de onde parou"/"Mais utilizados" (`RecentesService`: `localStorage cc.recentes.v1`, `NavigationEnd`, partem vazios sem mock) + agenda real de 7 dias (`AgendaService.listarEventos`, top 5) |
-| Busca / Recentes (core, sem backend) | `BuscaIndexService.buscar(termo, limite = 8)` — índice local (ferramentas, cursos, trilhas, SQL, procedimentos, utilidades, política, onboarding, páginas), multi-termo sem acento; `RecentesService` — `recentes()`/`maisUtilizados()`/`mudancas$`; `BuscaService` — `abrirBusca()`/`fecharBusca()`/`buscaAberta$` |
-| JOTA transversal | `JotaWidgetComponent` (`features/chat/jota-widget/`: FAB + painel em todo o `MainLayout`, `JotaChatService.chat()` → `POST /api/rag-proxy/chat` com `workspaceId: 'suporte'`; falha → "JOTA indisponível..."); página `/chat` (`chat.routes.ts` → `RagChatWidgetComponent`) mantida |
+| Autenticação | Login, guard de rotas, interceptor com `withCredentials: true` e **refresh token em cookie HttpOnly** (`cc_refresh`). Access token + usuário ficam **somente em memória**; após F5 ou 401, o refresh single-flight também **repopula o usuário** (`restaurarSessao`), mantendo o perfil do header visível. "Lembrar meu acesso" torna o cookie persistente por 4h. **Verificação periódica** (5 min) detecta expiração proativamente; logout por timeout exibe "Sessão expirada. Faça login para retornar à operação." no login |
+| Layout | Header (nav Início / Fraseologias / Ferramentas / Acessos / Cursos, breadcrumb com `/agenda`, `/implantacao/*`, `/admin/*`, busca local compartilhada via `<app-global-search origem="header">` com placeholder **"Pesquisar qualquer conteúdo..."** e atalho `Ctrl+K`/`Cmd+K`, dropdown do usuário com BEM `user-nav__*`) + sidebar com 7 seções de links diretos (Início, Atendimento, Implantação, Ferramentas, Conhecimento, JCA, Administração; sem links JOTA, sem grupos em uso; Central Executiva removida) + JOTA flutuante (`<app-jota-widget>` no `MainLayout`: FAB + painel, proxy real, erro honesto) |
+| Home | Saudação com primeiro nome, input local **"Buscar na Central..."** via `<app-global-search origem="home">` (painel próprio, sem foco no Header), 6 acessos rápidos, "Continue de onde parou"/"Mais utilizados" (`RecentesService`: `localStorage cc.recentes.v1`, `NavigationEnd`, partem vazios sem mock) + agenda real de 7 dias (`AgendaService.listarEventos`, top 5) |
+| Busca / Recentes (core, sem backend) | `GlobalSearchComponent` standalone, reutilizado pelo Header e Home, renderiza `combobox`/`listbox`, sugestões, zero resultados, navegação por clique/setas/Enter, `Escape`/`Tab` e shortcut do Header; foco/click-outside/focusout com guard SSR, `preventScroll` e `prefers-reduced-motion`. `BuscaService` — sessão `{ aberta, origem: 'header' | 'home' | null, consulta }`, uma origem/um painel, consulta compartilhada e `buscaAberta$` booleano compatível. `BuscaIndexService.buscar(termo, limite = 8)` — índice local síncrono, multi-termo sem acento, com até 8 resultados. `RecentesService` — `recentes()`/`maisUtilizados()`/`mudancas$` |
+| JOTA transversal | `JotaWidgetComponent` (`features/chat/jota-widget/`: FAB + painel em todo o `MainLayout`, `JotaChatService.chat()` → `POST /api/rag-proxy/chat` com `workspaceId: 'suporte'`; falha → "JOTA indisponível..."); página `/chat` **removida** em 24/09/2026 |
 | Cursos | Catálogo de cursos por plataforma (Alura, YouTube, Curso em Vídeo, Microsoft Learn, Cisco, Fundação Bradesco, Postman Academy, Documentação/sites) e por área de conhecimento (9 trilhas), com detalhe e player embutido para YouTube. Canais/handles validados; cursos com canal inexistente foram removidos |
 | Ferramentas | Central de utilidades, busca e filtro por categoria |
 | Acessos | Cards de empresas, busca (controlada por `BuscaService`), modal de senha (aberto via `abrirSenhaModal()`, que fecha a busca com `buscaService.fecharBusca()` antes de abrir e garante **instância única** do modal — dismiss em `ngOnDestroy()`) → modal de detalhe; credenciais TS/Banco/VPN |
-| Trilhas | "Como resolver esse problema?" (8 seções em acordeão, redesign `.tdh`), dicas de SQL / Rede / Infra — seção Atendimento da sidebar; Resolver tem filtro de seções (`secoesVisiveis()`), 3 exemplos rápidos + CTA "Pergunte ao JOTA" (`/chat`) |
+| Trilhas | "Como resolver esse problema?" (8 seções em acordeão, redesign `.tdh`), dicas de SQL / Rede / Infra — seção Atendimento da sidebar; Resolver tem filtro de seções (`secoesVisiveis()`), 3 exemplos rápidos (CTA `/chat` removido) |
 | Visão ADM | Procedimentos administrativos por setor (Financeiro, RH, Comercial) com busca, detalhe e impressão + **Central de Utilidades** (favoritos, últimos utilizados, busca, categorias, grade/lista e contador de acessos) |
 | Fraseologia | Fluxo de atendimento e fraseologias; copiar mensagem para área de transferência (clipboard API + fallback `execCommand`) |
-| **Implantação / Projetos** (v1.1.0) | Gerenciador único de **Projetos / Tarefas / Clientes / Cadastros** (módulo Equipes removido em 2026-09-12). Tipos: `CLIENTE` (cliente obrigatório), `CARTEIRA`, `INTEGRAÇÃO`, `PROJETO_CIAA` (cliente opcional). Código de projeto sequencial global (`PRJ-0001`). Dashboard com `porEquipe` stub `Geral`. Ver [seção 6.5](#65-módulo-implantação--projetos-v110) |
+| **Implantação / Projetos** | Gerenciador de **Projetos e Tarefas** com nove cards fixos por Projeto em `tbprojetoEtapa`; os cards são carregados por `ProjetosService.obterEtapasProjeto()`/`listarEtapasPadrao()`. O módulo de Etapas Globais e o de Equipes foram removidos; a API global não deve ser recriada. Código sequencial global `PRJ-0001` e dashboard com `porEquipe = Geral`. Ver [`implantacao.md`](./implantacao.md). |
 | **Agenda** (MVP) | Calendário compartilhado com visões Dia/Semana/Mês, CRUD de eventos, tipos configuráveis, participantes, filtro por responsável, drag-drop para mover eventos. Rota `/agenda` (lazy loading), API `/api/v1/agenda`. Ver [seção 7.1](#71-módulo-agenda-mvp) |
-| **Central Executiva** (Dashboard Executivo, só `Administrador`) | Painel do Diretor em `/executivo/dashboard` (lazy, `adminGuard`): header via `app-page-header` (Lote B: `titulo="Painel do Diretor"`, `icone="bi-speedometer2"`, eyebrow removido, select/Limpar/Atualizar no slot `actions`); 6 KPIs clicáveis, Projetos em andamento (top 6 com deep-link `kanban?projetoId=`), Kanban Total embutido, visão por módulo (só Implantação real + Financeiro → Visão ADM), por equipe via `Funcao`, alertas, tarefas críticas, próximas entregas + agenda de 7 dias, gráficos Chart.js, auto-refresh 30s, filtro por função. Facade `forkJoin` 5 fontes sobre `GET /admin/dashboard` + `/implantacao/dashboard` + `/implantacao/projetos` + `/implantacao/tarefas` + `/agenda/eventos` — **zero endpoint novo no backend**. Admin sem deep-link cai aqui após o login. Ver [seção 7.2](#72-módulo-central-executiva-dashboard-executivo) |
+| **Central Executiva** | **REMOVIDA** em 24/09/2026 (`e87d763`) — `features/executivo/` excluído; ver §7.2 (histórico) |
 
 **Padrões e convenções:**
 - Componentes **standalone**; rotas filhas em `wiki.routes.ts` (ex.: `/ferramentas/acessos` → `AcessosComponent`,
@@ -163,11 +163,9 @@
 
 ---
 
-### 7.2 Módulo Central Executiva (Dashboard Executivo) — ~~DESATIVADO~~
+### 7.2 Módulo Central Executiva (Dashboard Executivo) — ~~REMOVIDO~~
 
-> **Status (2026-09):** rota **comentada** em `features.routes.ts` (linha do `path: 'executivo'`).
-> Código-fonte em `features/executivo/` permanece no repo, **sem rota ativa** (não acessível via URL).
-> Home dos gestores: **Módulo Gestor** `/gestor/entrada` (pós-login admin; ver `telas/07-gestao.md`).
+> **Status (2026-09-24):** **removido** do repo em `e87d763` — pasta `features/executivo/` excluída (rota já estava comentada antes). **Módulo Gestor** também excluído (`features/gestor/` + backend Gestor/4 endpoints); login sem deep-link → `/` (ver `telas/07-gestao.md` §§20–21).
 > Conteúdo abaixo mantido como referência histórica para reativação futura.
 
 **Visão geral (histórica):** Painel do Diretor para gestores (`Administrador`), que consolida Implantação, equipes e pontos críticos. **Nenhum endpoint novo no backend** — `ExecutivoDashboardService` (facade `forkJoin` com `catchError` por fonte) reutiliza 5 GETs existentes.
@@ -177,7 +175,7 @@
 - `features.routes.ts` — `path: 'executivo'` **comentado** (não carrega `executivo.routes`).
 - `executivo.routes.ts` — `''` → `redirectTo: 'dashboard'`; `'dashboard'` → `ExecutivoDashboardComponent` (`title: 'Central Executiva'`).
 - `admin.guard.ts` — sem sessão tenta refresh silencioso; `perfil !== 'Administrador'` → `'/'`; sem sessão válida → `/login?returnUrl=`.
-- **Login (`login.component.ts`):** `resolverDestino()` — deep-link (`returnUrl` ≠ `'/'`/vazio) sempre respeitado; admin genérico → **`/gestor/entrada`** (não mais `/executivo`); comum → `/`.
+- **Login (`login.component.ts`):** `resolverDestino()` — deep-link (`returnUrl` ≠ `'/'`/vazio) sempre respeitado; senão → **`/`** (Home; `e87d763`).
 - **Sidebar:** item `/executivo` **removido** do menu (não há link na sidebar).
 
 #### 7.2.2 Frontend (`/executivo/dashboard`)

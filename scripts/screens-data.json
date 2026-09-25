@@ -1,132 +1,275 @@
 {
-  "generatedAt": "2026-09-21T13:18:38.263Z",
   "frontend": {
     "routes": [
+      {
+        "path": "cadastros",
+        "component": "tipos-projeto",
+        "lazy": false,
+        "file": "frontend/src/app/features/admin/admin.routes.ts"
+      },
       {
         "path": "visao-geral",
         "component": "./pages/db-visao-geral.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
+        "file": "frontend/src/app/features/database/database.routes.ts"
       },
       {
         "path": "explorador",
         "component": "./pages/db-explorador.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
+        "file": "frontend/src/app/features/database/database.routes.ts"
       },
       {
         "path": "relacionamentos",
         "component": "./pages/db-relacionamentos.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
+        "file": "frontend/src/app/features/database/database.routes.ts"
       },
       {
         "path": "consultas",
         "component": "./pages/db-consultas.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
+        "file": "frontend/src/app/features/database/database.routes.ts"
       },
       {
         "path": "query-builder",
         "component": "./pages/db-diferencas.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
+        "file": "frontend/src/app/features/database/database.routes.ts"
       },
       {
         "path": "configuracao",
         "component": "./pages/db-configuracao.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
+        "file": "frontend/src/app/features/database/database.routes.ts"
       },
       {
         "path": "tabela/:schema/:tabela",
         "component": "./pages/table-detail.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
+        "file": "frontend/src/app/features/database/database.routes.ts"
       },
       {
         "path": "visao-geral",
         "component": "consultas",
         "lazy": false,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database.routes.ts"
-      },
-      {
-        "path": "dashboard",
-        "component": "./pages/executivo-dashboard/executivo-dashboard.component",
-        "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/executivo/executivo.routes.ts"
+        "file": "frontend/src/app/features/database/database.routes.ts"
       },
       {
         "path": "dashboard",
         "component": "./pages/dashboard/dashboard.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+        "file": "frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
         "path": "kanban",
         "component": "./pages/kanban/kanban.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+        "file": "frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
         "path": "projetos",
         "component": "./pages/projetos/projetos.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+        "file": "frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
         "path": "projetos/novo",
         "component": "./pages/projetos/projeto-form.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+        "file": "frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
         "path": "projetos/:id/editar",
         "component": "./pages/projetos/projeto-form.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+        "file": "frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
         "path": "projetos/:id",
         "component": "./pages/projetos/projeto-detalhe.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+        "file": "frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
         "path": "tarefas",
         "component": "./pages/tarefas/tarefas.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+        "file": "frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
         "path": "tarefas/novo",
         "component": "./pages/tarefas/tarefa-form.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+        "file": "frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
         "path": "tarefas/:id/editar",
         "component": "./pages/tarefas/tarefa-form.component",
         "lazy": true,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+        "file": "frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
         "path": "dashboard",
         "component": "dashboard",
         "lazy": false,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+        "file": "frontend/src/app/features/implantacao/implantacao.routes.ts"
       },
       {
         "path": "agenda",
         "component": "/agenda",
         "lazy": false,
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/implantacao.routes.ts"
+        "file": "frontend/src/app/features/implantacao/implantacao.routes.ts"
+      },
+      {
+        "path": "ferramentas",
+        "component": "@features/ferramentas/ferramentas.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "detalhe/:id",
+        "component": "@features/ferramentas/ferramenta-detalhe.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "acessos",
+        "component": "@features/acessos/acessos.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "contra-senha",
+        "component": "@features/faq/faq.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "stack",
+        "component": "@features/stack/stack.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "agenda",
+        "component": "@features/agenda/agenda.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "cursos",
+        "component": "@features/cursos/cursos.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "cursos/detalhe/:id",
+        "component": "@features/cursos/curso-detalhe.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "trilhas/resolver",
+        "component": "@features/trilhas/trilhas.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "trilhas/sql",
+        "component": "@features/trilha-sql/trilha-sql.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "trilhas/rede",
+        "component": "@features/trilha-rede/trilha-rede.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "trilhas/infra",
+        "component": "@features/trilha-infra/trilha-infra.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "visao-adm",
+        "component": "@features/visao-adm/visao-adm.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "visao-adm/detalhe/:id",
+        "component": "@features/visao-adm/visao-adm-detalhe.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "fraseologia",
+        "component": "@features/fraseologia/fraseologia.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "conhecimento",
+        "component": "@features/conhecimento/conhecimento-setor.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "modelo-chamados",
+        "component": "@features/modelo-chamados/modelo-chamados.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "politica",
+        "component": "@features/politica/politica.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "whatsapp-flow",
+        "component": "@features/empresa/onboarding/components/onboarding-home/onboarding-home.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "onboarding/capitulo/:id",
+        "component": "@features/empresa/onboarding/components/onboarding-capitulo/onboarding-capitulo.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "administrativo",
+        "component": "@features/implantacao/pages/kanban/kanban.component",
+        "lazy": true,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "ferramentas",
+        "component": "/modelo-chamados",
+        "lazy": false,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "faq",
+        "component": "fraseologia",
+        "lazy": false,
+        "file": "frontend/src/app/features.routes.ts"
+      },
+      {
+        "path": "implantacao",
+        "component": "onboarding",
+        "lazy": false,
+        "file": "frontend/src/app/features.routes.ts"
       }
     ],
     "components": [
       {
         "name": "Acessos",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/acessos/acessos.component.ts",
+        "file": "frontend/src/app/features/acessos/acessos.component.ts",
         "services": [
           {
             "name": "acessos.service",
@@ -153,7 +296,7 @@
       },
       {
         "name": "AdminLayout",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/admin/layout/admin-layout.component.ts",
+        "file": "frontend/src/app/features/admin/layout/admin-layout.component.ts",
         "services": [
           {
             "name": "auth.service",
@@ -165,8 +308,86 @@
         "routes": []
       },
       {
+        "name": "TipoProjetoForm",
+        "file": "frontend/src/app/features/admin/pages/cadastros/tipo-projeto-form.component.ts",
+        "services": [
+          {
+            "name": "cadastros.service",
+            "file": "@features/implantacao/services/cadastros.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "auth.service",
+            "file": "@core/services/auth.service",
+            "methods": [
+              "service",
+              "service",
+              "service",
+              "service"
+            ],
+            "httpCalls": [
+              {
+                "method": "GET",
+                "url": "/service",
+                "serviceMethod": "service"
+              },
+              {
+                "method": "GET",
+                "url": "/service",
+                "serviceMethod": "service"
+              },
+              {
+                "method": "GET",
+                "url": "/service",
+                "serviceMethod": "service"
+              },
+              {
+                "method": "GET",
+                "url": "/service",
+                "serviceMethod": "service"
+              }
+            ]
+          }
+        ],
+        "routes": []
+      },
+      {
+        "name": "TiposProjeto",
+        "file": "frontend/src/app/features/admin/pages/cadastros/tipos-projeto.component.ts",
+        "services": [
+          {
+            "name": "cadastros.service",
+            "file": "@features/implantacao/services/cadastros.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "auth.service",
+            "file": "@core/services/auth.service",
+            "methods": [
+              "service",
+              "service"
+            ],
+            "httpCalls": [
+              {
+                "method": "GET",
+                "url": "/service",
+                "serviceMethod": "service"
+              },
+              {
+                "method": "GET",
+                "url": "/service",
+                "serviceMethod": "service"
+              }
+            ]
+          }
+        ],
+        "routes": []
+      },
+      {
         "name": "AdminDashboard",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/admin/pages/dashboard/admin-dashboard.component.ts",
+        "file": "frontend/src/app/features/admin/pages/dashboard/admin-dashboard.component.ts",
         "services": [
           {
             "name": "auth.service",
@@ -193,7 +414,7 @@
       },
       {
         "name": "AgendaEventoModal",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/agenda/agenda-evento-modal.component.ts",
+        "file": "frontend/src/app/features/agenda/agenda-evento-modal.component.ts",
         "services": [
           {
             "name": "agenda.service",
@@ -212,7 +433,7 @@
       },
       {
         "name": "Agenda",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/agenda/agenda.component.ts",
+        "file": "frontend/src/app/features/agenda/agenda.component.ts",
         "services": [
           {
             "name": "agenda.service",
@@ -245,7 +466,7 @@
       },
       {
         "name": "Login",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/auth/pages/login/login.component.ts",
+        "file": "frontend/src/app/features/auth/pages/login/login.component.ts",
         "services": [
           {
             "name": "auth.service",
@@ -258,19 +479,19 @@
       },
       {
         "name": "JotaWidget",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/chat/jota-widget/jota-widget.component.ts",
+        "file": "frontend/src/app/features/chat/jota-widget/jota-widget.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "ConhecimentoSetor",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/conhecimento/conhecimento-setor.component.ts",
+        "file": "frontend/src/app/features/conhecimento/conhecimento-setor.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "CursoDetalhe",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/cursos/curso-detalhe.component.ts",
+        "file": "frontend/src/app/features/cursos/curso-detalhe.component.ts",
         "services": [
           {
             "name": "cursos.service",
@@ -291,7 +512,7 @@
       },
       {
         "name": "Cursos",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/cursos/cursos.component.ts",
+        "file": "frontend/src/app/features/cursos/cursos.component.ts",
         "services": [
           {
             "name": "cursos.service",
@@ -304,7 +525,7 @@
       },
       {
         "name": "DbGlobalSearch",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/components/db-global-search.component.ts",
+        "file": "frontend/src/app/features/database/components/db-global-search.component.ts",
         "services": [
           {
             "name": "database.service",
@@ -325,7 +546,20 @@
       },
       {
         "name": "DbQueryBuilder",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/components/db-query-builder.component.ts",
+        "file": "frontend/src/app/features/database/components/db-query-builder.component.ts",
+        "services": [
+          {
+            "name": "database.service",
+            "file": "../services/database.service",
+            "methods": [],
+            "httpCalls": []
+          }
+        ],
+        "routes": []
+      },
+      {
+        "name": "DbSincronizacao",
+        "file": "frontend/src/app/features/database/components/db-sincronizacao.component.ts",
         "services": [
           {
             "name": "database.service",
@@ -338,7 +572,7 @@
       },
       {
         "name": "DatabaseShell",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/database-shell.component.ts",
+        "file": "frontend/src/app/features/database/database-shell.component.ts",
         "services": [
           {
             "name": "database.service",
@@ -351,7 +585,7 @@
       },
       {
         "name": "DbConfiguracao",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/db-configuracao.component.ts",
+        "file": "frontend/src/app/features/database/pages/db-configuracao.component.ts",
         "services": [
           {
             "name": "database.service",
@@ -364,40 +598,13 @@
       },
       {
         "name": "DbConsultas",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/db-consultas.component.ts",
-        "services": [
-          {
-            "name": "database.service",
-            "file": "../services/database.service",
-            "methods": [],
-            "httpCalls": []
-          },
-          {
-            "name": "database-favoritos.service",
-            "file": "../services/database-favoritos.service",
-            "methods": [
-              "favoritosSvc",
-              "favoritosSvc"
-            ],
-            "httpCalls": [
-              {
-                "method": "GET",
-                "url": "/favoritosSvc",
-                "serviceMethod": "favoritosSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/favoritosSvc",
-                "serviceMethod": "favoritosSvc"
-              }
-            ]
-          }
-        ],
+        "file": "frontend/src/app/features/database/pages/db-consultas.component.ts",
+        "services": [],
         "routes": []
       },
       {
         "name": "DbDiferencas",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/db-diferencas.component.ts",
+        "file": "frontend/src/app/features/database/pages/db-diferencas.component.ts",
         "services": [
           {
             "name": "database.service",
@@ -410,7 +617,7 @@
       },
       {
         "name": "DbExplorador",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/db-explorador.component.ts",
+        "file": "frontend/src/app/features/database/pages/db-explorador.component.ts",
         "services": [
           {
             "name": "database.service",
@@ -423,13 +630,13 @@
       },
       {
         "name": "DbProcedureModal",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/db-procedure-modal.component.ts",
+        "file": "frontend/src/app/features/database/pages/db-procedure-modal.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "DbRelacionamentos",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/db-relacionamentos.component.ts",
+        "file": "frontend/src/app/features/database/pages/db-relacionamentos.component.ts",
         "services": [
           {
             "name": "database.service",
@@ -442,13 +649,13 @@
       },
       {
         "name": "DbTriggerModal",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/db-trigger-modal.component.ts",
+        "file": "frontend/src/app/features/database/pages/db-trigger-modal.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "DbVisaoGeral",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/db-visao-geral.component.ts",
+        "file": "frontend/src/app/features/database/pages/db-visao-geral.component.ts",
         "services": [
           {
             "name": "database.service",
@@ -461,7 +668,7 @@
       },
       {
         "name": "TableDetail",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/database/pages/table-detail.component.ts",
+        "file": "frontend/src/app/features/database/pages/table-detail.component.ts",
         "services": [
           {
             "name": "database.service",
@@ -474,52 +681,31 @@
       },
       {
         "name": "OnboardingCapitulo",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/empresa/onboarding/components/onboarding-capitulo/onboarding-capitulo.component.ts",
+        "file": "frontend/src/app/features/empresa/onboarding/components/onboarding-capitulo/onboarding-capitulo.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "OnboardingHome",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/empresa/onboarding/components/onboarding-home/onboarding-home.component.ts",
+        "file": "frontend/src/app/features/empresa/onboarding/components/onboarding-home/onboarding-home.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "OnboardingSection",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/empresa/onboarding/components/onboarding-section/onboarding-section.component.ts",
+        "file": "frontend/src/app/features/empresa/onboarding/components/onboarding-section/onboarding-section.component.ts",
         "services": [],
         "routes": []
       },
       {
-        "name": "ExecutivoDashboard",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/executivo/pages/executivo-dashboard/executivo-dashboard.component.ts",
-        "services": [
-          {
-            "name": "executivo-dashboard.service",
-            "file": "../../services/executivo-dashboard.service",
-            "methods": [
-              "svc"
-            ],
-            "httpCalls": [
-              {
-                "method": "GET",
-                "url": "/svc",
-                "serviceMethod": "svc"
-              }
-            ]
-          }
-        ],
-        "routes": []
-      },
-      {
         "name": "Faq",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/faq/faq.component.ts",
+        "file": "frontend/src/app/features/faq/faq.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "FerramentaDetalhe",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/ferramentas/ferramenta-detalhe.component.ts",
+        "file": "frontend/src/app/features/ferramentas/ferramenta-detalhe.component.ts",
         "services": [
           {
             "name": "ferramentas.service",
@@ -532,7 +718,7 @@
       },
       {
         "name": "Ferramentas",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/ferramentas/ferramentas.component.ts",
+        "file": "frontend/src/app/features/ferramentas/ferramentas.component.ts",
         "services": [
           {
             "name": "ferramentas.service",
@@ -553,23 +739,17 @@
       },
       {
         "name": "Fraseologia",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/fraseologia/fraseologia.component.ts",
+        "file": "frontend/src/app/features/fraseologia/fraseologia.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "Home",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/home/home.component.ts",
+        "file": "frontend/src/app/features/home/home.component.ts",
         "services": [
           {
             "name": "auth.service",
             "file": "@core/services/auth.service",
-            "methods": [],
-            "httpCalls": []
-          },
-          {
-            "name": "busca.service",
-            "file": "@core/services/busca.service",
             "methods": [],
             "httpCalls": []
           },
@@ -584,19 +764,19 @@
       },
       {
         "name": "ProjetoCard",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/components/projeto-card/projeto-card.component.ts",
+        "file": "frontend/src/app/features/implantacao/components/projeto-card/projeto-card.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "ProjetoEtapaCard",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/components/projeto-etapa-card/projeto-etapa-card.component.ts",
+        "file": "frontend/src/app/features/implantacao/components/projeto-etapa-card/projeto-etapa-card.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "ProjetoEtapaModal",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/components/projeto-etapa-modal/projeto-etapa-modal.component.ts",
+        "file": "frontend/src/app/features/implantacao/components/projeto-etapa-modal/projeto-etapa-modal.component.ts",
         "services": [
           {
             "name": "projetos.service",
@@ -609,13 +789,13 @@
       },
       {
         "name": "ProjetoRetornoDialog",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/components/projeto-retorno-dialog/projeto-retorno-dialog.component.ts",
+        "file": "frontend/src/app/features/implantacao/components/projeto-retorno-dialog/projeto-retorno-dialog.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "Dashboard",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/pages/dashboard/dashboard.component.ts",
+        "file": "frontend/src/app/features/implantacao/pages/dashboard/dashboard.component.ts",
         "services": [
           {
             "name": "dashboard.service",
@@ -626,11 +806,23 @@
           {
             "name": "tarefas.service",
             "file": "../../services/tarefas.service",
+            "methods": [],
+            "httpCalls": []
+          },
+          {
+            "name": "projetos.service",
+            "file": "../../services/projetos.service",
             "methods": [
+              "projetosSvc",
               "svc",
               "tarSvc"
             ],
             "httpCalls": [
+              {
+                "method": "GET",
+                "url": "/projetosSvc",
+                "serviceMethod": "projetosSvc"
+              },
               {
                 "method": "GET",
                 "url": "/svc",
@@ -648,7 +840,7 @@
       },
       {
         "name": "Kanban",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/pages/kanban/kanban.component.ts",
+        "file": "frontend/src/app/features/implantacao/pages/kanban/kanban.component.ts",
         "services": [
           {
             "name": "projetos.service",
@@ -677,7 +869,7 @@
               "tarefasService",
               "tarefasService",
               "tarefasService",
-              "projetosService",
+              "tarefasService",
               "tarefasService",
               "tarefasService",
               "tarefasService",
@@ -714,8 +906,8 @@
               },
               {
                 "method": "GET",
-                "url": "/projetosService",
-                "serviceMethod": "projetosService"
+                "url": "/tarefasService",
+                "serviceMethod": "tarefasService"
               },
               {
                 "method": "GET",
@@ -759,7 +951,7 @@
       },
       {
         "name": "ProjetoDetalhe",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/pages/projetos/projeto-detalhe.component.ts",
+        "file": "frontend/src/app/features/implantacao/pages/projetos/projeto-detalhe.component.ts",
         "services": [
           {
             "name": "projetos.service",
@@ -798,7 +990,7 @@
       },
       {
         "name": "ProjetoForm",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/pages/projetos/projeto-form.component.ts",
+        "file": "frontend/src/app/features/implantacao/pages/projetos/projeto-form.component.ts",
         "services": [
           {
             "name": "projetos.service",
@@ -843,7 +1035,7 @@
       },
       {
         "name": "Projetos",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/pages/projetos/projetos.component.ts",
+        "file": "frontend/src/app/features/implantacao/pages/projetos/projetos.component.ts",
         "services": [
           {
             "name": "projetos.service",
@@ -862,7 +1054,7 @@
       },
       {
         "name": "TarefaForm",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/pages/tarefas/tarefa-form.component.ts",
+        "file": "frontend/src/app/features/implantacao/pages/tarefas/tarefa-form.component.ts",
         "services": [
           {
             "name": "tarefas.service",
@@ -888,7 +1080,6 @@
             "methods": [
               "projSvc",
               "colSvc",
-              "projSvc",
               "tarSvc",
               "tarSvc",
               "tarSvc"
@@ -903,11 +1094,6 @@
                 "method": "GET",
                 "url": "/colSvc",
                 "serviceMethod": "colSvc"
-              },
-              {
-                "method": "GET",
-                "url": "/projSvc",
-                "serviceMethod": "projSvc"
               },
               {
                 "method": "GET",
@@ -931,7 +1117,7 @@
       },
       {
         "name": "Tarefas",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/implantacao/pages/tarefas/tarefas.component.ts",
+        "file": "frontend/src/app/features/implantacao/pages/tarefas/tarefas.component.ts",
         "services": [
           {
             "name": "tarefas.service",
@@ -970,55 +1156,55 @@
       },
       {
         "name": "ModeloChamados",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/modelo-chamados/modelo-chamados.component.ts",
+        "file": "frontend/src/app/features/modelo-chamados/modelo-chamados.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "Politica",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/politica/politica.component.ts",
+        "file": "frontend/src/app/features/politica/politica.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "Stack",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/stack/stack.component.ts",
+        "file": "frontend/src/app/features/stack/stack.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "TrilhaInfra",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/trilha-infra/trilha-infra.component.ts",
+        "file": "frontend/src/app/features/trilha-infra/trilha-infra.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "TrilhaRede",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/trilha-rede/trilha-rede.component.ts",
+        "file": "frontend/src/app/features/trilha-rede/trilha-rede.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "TrilhaSql",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/trilha-sql/trilha-sql.component.ts",
+        "file": "frontend/src/app/features/trilha-sql/trilha-sql.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "Trilhas",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/trilhas/trilhas.component.ts",
+        "file": "frontend/src/app/features/trilhas/trilhas.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "VisaoAdmDetalhe",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/visao-adm/visao-adm-detalhe.component.ts",
+        "file": "frontend/src/app/features/visao-adm/visao-adm-detalhe.component.ts",
         "services": [],
         "routes": []
       },
       {
         "name": "VisaoAdm",
-        "file": "C:/Users/JCA-SUP05/Documents/Projetos/Intranet/Central-Conhecimento-developer/frontend/src/app/features/visao-adm/visao-adm.component.ts",
+        "file": "frontend/src/app/features/visao-adm/visao-adm.component.ts",
         "services": [],
         "routes": []
       }
@@ -1209,25 +1395,11 @@
         "description": "Search returning List<DatabaseSearchResult>>"
       },
       {
-        "method": "POST",
-        "route": "api/v{version:apiVersion}/database/query",
-        "controller": "Database",
-        "service": "",
-        "description": "ExecuteQuery returning QueryResultDto>"
-      },
-      {
         "method": "GET",
         "route": "api/v{version:apiVersion}/database/procedures",
         "controller": "Database",
         "service": "",
         "description": "GetProcedures returning List<ProcedureResumoDto>>"
-      },
-      {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/database/procedures/search",
-        "controller": "Database",
-        "service": "",
-        "description": "SearchProcedures returning List<ProcedureResumoDto>>"
       },
       {
         "method": "GET",
@@ -1265,13 +1437,6 @@
         "description": "GetProcedureAnalysis returning ProcedureAnalysisDto>"
       },
       {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/database/search/global",
-        "controller": "Database",
-        "service": "",
-        "description": "GlobalSearch returning List<GlobalSearchResultDto>>"
-      },
-      {
         "method": "POST",
         "route": "api/v{version:apiVersion}/database/query-builder-advanced",
         "controller": "Database",
@@ -1283,35 +1448,14 @@
         "route": "api/v{version:apiVersion}/database/config",
         "controller": "Database",
         "service": "",
-        "description": "TestConnection returning DatabaseStatusDto>"
+        "description": "CompareSchemas returning SchemaComparisonResultDto>"
       },
       {
         "method": "POST",
-        "route": "api/v{version:apiVersion}/database/diff",
+        "route": "api/v{version:apiVersion}/database/compare-schemas-bulk",
         "controller": "Database",
         "service": "",
-        "description": "Diff returning SchemaDiffDto>"
-      },
-      {
-        "method": "POST",
-        "route": "api/v{version:apiVersion}/database/snapshot",
-        "controller": "Database",
-        "service": "",
-        "description": "SaveSnapshot returning string>"
-      },
-      {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/database/snapshots",
-        "controller": "Database",
-        "service": "",
-        "description": "ListSnapshots returning List<string>>"
-      },
-      {
-        "method": "POST",
-        "route": "api/v{version:apiVersion}/database/snapshot/comparar",
-        "controller": "Database",
-        "service": "",
-        "description": "CompareSnapshot returning SchemaDiffDto>"
+        "description": "CompareSchemasBulk returning BulkSchemaComparisonResultDto>"
       },
       {
         "method": "GET",
@@ -1357,34 +1501,6 @@
       },
       {
         "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/etapas",
-        "controller": "Etapas",
-        "service": "",
-        "description": "Listar returning List<EtapaResumo>>"
-      },
-      {
-        "method": "POST",
-        "route": "api/v{version:apiVersion}/implantacao/etapas",
-        "controller": "Etapas",
-        "service": "",
-        "description": "Criar returning EtapaResumo>"
-      },
-      {
-        "method": "PUT",
-        "route": "api/v{version:apiVersion}/implantacao/etapas/{id:int}",
-        "controller": "Etapas",
-        "service": "",
-        "description": "Atualizar returning EtapaResumo>"
-      },
-      {
-        "method": "DELETE",
-        "route": "api/v{version:apiVersion}/implantacao/etapas/{id:int}",
-        "controller": "Etapas",
-        "service": "",
-        "description": "Excluir returning ActionResult"
-      },
-      {
-        "method": "GET",
         "route": "api/v{version:apiVersion}/implantacao/projetos",
         "controller": "Projetos",
         "service": "",
@@ -1406,14 +1522,7 @@
       },
       {
         "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/jornada",
-        "controller": "Projetos",
-        "service": "",
-        "description": "Jornada returning ProjetoJornada>"
-      },
-      {
-        "method": "GET",
-        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/etapas",
+        "route": "api/v{version:apiVersion}/implantacao/projetos/etapas-padrao",
         "controller": "Projetos",
         "service": "",
         "description": "ObterEtapas returning List<ProjetoEtapaResumo>>"
@@ -1469,13 +1578,6 @@
       },
       {
         "method": "POST",
-        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/etapas/inicializar",
-        "controller": "Projetos",
-        "service": "",
-        "description": "InicializarEtapas returning ActionResult"
-      },
-      {
-        "method": "POST",
         "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/etapas/{ordem:int}/checklist",
         "controller": "Projetos",
         "service": "",
@@ -1494,13 +1596,6 @@
         "controller": "Projetos",
         "service": "",
         "description": "AdicionarComentario returning ProjetoEtapaDetalhe>"
-      },
-      {
-        "method": "PATCH",
-        "route": "api/v{version:apiVersion}/implantacao/projetos/{id:int}/status",
-        "controller": "Projetos",
-        "service": "",
-        "description": "MudarStatus returning ProjetoDetalhe>"
       },
       {
         "method": "DELETE",
@@ -1681,7 +1776,6 @@
       "IMPL_Cliente",
       "tbcliente",
       "IMPL_ColunaKanban",
-      "IMPL_Etapa",
       "tbfuncionario",
       "IMPL_Projeto",
       "tbprojetoEtapa",
@@ -1754,6 +1848,10 @@
       {
         "file": "20260920185734_TarefaProjetoEtapaId.cs",
         "description": "20260920185734_TarefaProjetoEtapaId.cs"
+      },
+      {
+        "file": "20260922154202_RemoveEtapaAntiga.cs",
+        "description": "20260922154202_RemoveEtapaAntiga.cs"
       }
     ]
   }

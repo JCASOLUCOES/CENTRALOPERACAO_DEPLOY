@@ -1,9 +1,7 @@
 # Módulo Banco de Dados — Database Explorer
 
-> Documentação do módulo Database Explorer da Central de Operação.
-> Inspirado no `projeto_BD.md` da raiz do monorepo. Para o passo-a-passo de
-> implementação, ver `projeto_BD.md` § 46 (Processo de Implementação Obrigatório).
-> Para a documentação completa do sistema, ver `docs/DOCUMENTACAO-COMPLETA.md` § 6.6.
+> **Documento histórico intermediário — não use como contrato atual.** O Database Explorer vigente tem 20 operações e 6 abas, configuração somente leitura e não executa SQL arbitrário.
+> Fonte atual: [`04-ESTRUTURA-DADOS.md`](../04-ESTRUTURA-DADOS.md), [`05-ENDPOINTS.md`](../05-ENDPOINTS.md) e [`06-COMPONENTES-FRONTEND.md`](../06-COMPONENTES-FRONTEND.md). A especificação original está em `projeto_BD.md`.
 
 ---
 

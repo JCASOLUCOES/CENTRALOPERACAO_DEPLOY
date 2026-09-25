@@ -171,15 +171,15 @@
 ## IMPLANTAÇÃO — PROJETOS (`/implantacao/projetos`)
 **História:** Como implantador, quero listar/filtrar projetos e abrir os formulários de criação/edição para iniciar ou ajustar uma implantação.
 **Passos:** 1. Acessa `/implantacao/projetos`. 2. Filtra por tipo/status/cliente/responsável e busca. 3. Clica em "Novo projeto" (`/implantacao/projetos/novo`), confere o código sugerido (`PRJ-XXXX` via `GET /proximo-codigo`) e salva (`POST`). 4. Abre um projeto e usa Editar (`/implantacao/projetos/:id/editar`) ou Excluir (com `confirm()`).
-**Backend/tabelas:** `GET /api/v1/implantacao/projetos` (filtros `tipo`, `status`, `clienteId`, `responsavelId`, `buscar`); `GET /api/v1/implantacao/projetos/proximo-codigo` (sem parâmetros, retorna `{ codigo }`); `GET /api/v1/implantacao/projetos/clientes` (clientes ativos); `GET /api/v1/implantacao/tipos-projeto?apenasAtivos=true`; `GET /api/v1/agenda/operadores`; `GET /api/v1/implantacao/colunas-kanban?apenasAtivas=true`; `POST /api/v1/implantacao/projetos` (`ProjetoCriarRequest`); `PUT /api/v1/implantacao/projetos/{id}` (`ProjetoAtualizarRequest` + `usuarioAlteracao`); `PATCH /api/v1/implantacao/projetos/{id}/status`; `DELETE /api/v1/implantacao/projetos/{id}`; tabelas `IMPL_Projeto`, `IMPL_Cliente`, `IMPL_TipoProjeto`.
+**Backend/tabelas:** `GET /api/v1/implantacao/projetos/com-etapas` (filtros `tipo`, `status`, `clienteId`, `responsavelId`, `buscar`, `perfilId`); `GET /projetos/proximo-codigo`; `GET /projetos/clientes`; `GET /api/v1/implantacao/tipos-projeto?apenasAtivos=true`; `GET /api/v1/agenda/operadores`; `GET /api/v1/implantacao/colunas-kanban?apenasAtivas=true`; `POST /projetos` (`ProjetoCriarRequest`, criação automática dos nove cards); `PUT /projetos/{id}` (`ProjetoAtualizarRequest`; o DTO backend mantém `Status?` e `UsuarioAlteracao`); `DELETE /projetos/{id}`. Tabelas: `IMPL_Projeto`, `IMPL_TipoProjeto`, `tbprojetoEtapa*` e leitura de `tbcliente`. Não existem as rotas legadas `GET /{id}/jornada`, `POST /{id}/etapas/inicializar` ou `PATCH /{id}/status`.
 **Resultado esperado:** Projeto criado com código `PRJ-XXXX`; grid mostra progresso/meta/responsável/prazo; prioridades alinhadas ao enum `PrioridadeProjeto` (`Baixa = 0`, `Media = 1`, `Alta = 2`, `Urgente = 3`).
 > **Status:** implementação em andamento no working tree; validação pendente (sem validação runtime).
 
 ## IMPLANTAÇÃO — PROJETO-NOVO/EDITAR (`/implantacao/projetos/novo`, `/implantacao/projetos/:id/editar`)
 **História:** Como implantador, quero preencher o formulário de projeto (create/edit) com lookups para salvar sem erro de payload.
-**Passos:** 1. Abre `/implantacao/projetos/novo` (código sugerido readonly) ou `/implantacao/projetos/:id/editar` (pré-preenchido via `GET /projetos/{id}`). 2. Preenche Nome* + Tipo* + Responsável* (validação `podeSalvar()`; progresso 0–100 no edit). 3. Seleciona Tipo (`GET /tipos-projeto?apenasAtivos=true`), Cliente (`GET /projetos/clientes`), Responsável (`GET /agenda/operadores`), Coluna Kanban (`GET /colunas-kanban?apenasAtivas=true`). 4. Salva (create → detalhe; edit → detalhe) ou Cancela (edit → detalhe; create → listagem).
-**Backend/tabelas:** `POST /api/v1/implantacao/projetos` (`ProjetoCriarRequest` com `criadorId` do operador logado); `PUT /api/v1/implantacao/projetos/{id}` (`ProjetoAtualizarRequest` com `usuarioAlteracao`; `status` em `Backlog`, `AFazer`, `EmAndamento`, `Homologacao`, `Concluido`, `Bloqueado`, `Cancelado`); validação server-side de `PrioridadeProjeto`, tipo/cliente (`400 { mensagem }`); escrita em `IMPL_Projeto` com código gerado via `ProximoCodigoAsync()`.
-**Resultado esperado:** Create exige Nome/Tipo/Responsável; edit preserva código e valida progresso; sucesso navega ao detalhe.
+**Passos:** 1. Abre `/implantacao/projetos/novo` (código sugerido readonly) ou `/implantacao/projetos/:id/editar`. 2. Preenche Nome*, Tipo* e Responsável*. 3. Seleciona Tipo, Cliente, Responsável e, na criação, a etapa inicial entre as nove padrão. 4. Salva ou cancela.
+**Backend/tabelas:** `POST /api/v1/implantacao/projetos` (`ProjetoCriarRequest` com `criadorId` e `etapaInicialOrdem?`; inicializa nove cards); `PUT /api/v1/implantacao/projetos/{id}` (`ProjetoAtualizarRequest` com `usuarioAlteracao`; o contrato mantém `Status?`, mas o formulário atual não expõe status); validação server-side de prioridade, tipo/cliente (`400 { mensagem }`); escrita em `IMPL_Projeto` e `tbprojetoEtapa*`, com código gerado via `ProximoCodigoAsync()`.
+**Resultado esperado:** Create exige Nome/Tipo/Responsável e cria nove cards; edit preserva o código; sucesso navega ao detalhe.
 > **Status:** implementação em andamento no working tree; validação pendente (sem validação runtime).
 
 ## IMPLANTAÇÃO — PROJETO-DETALHE (`/implantacao/projetos/:id`)
@@ -198,16 +198,14 @@
 
 ## IMPLANTAÇÃO — TAREFA-NOVA/EDITAR (`/implantacao/tarefas/novo`, `/implantacao/tarefas/:id/editar`)
 **História:** Como implantador, quero preencher o formulário de tarefa (create/edit) com projeto, prioridade, etapa, coluna, responsável, status e vínculo legado para salvar sem erro de payload.
-**Passos:** 1. Abre `/implantacao/tarefas/novo` (aceita `?projetoId=` pré-selecionado) ou `/implantacao/tarefas/:id/editar` (pré-preenche via `GET /tarefas/{id}`). 2. Preenche Título* + Projeto* (validação `podeSalvar()`; prioridade 0–3; ordem ≥ 0; motivo obrigatório se bloqueada). 3. Seleciona Projeto (`GET /projetos`), Etapa (`GET /etapas?projetoId=`), Coluna Kanban (`GET /colunas-kanban`), Responsável (`GET /agenda/operadores`); no edit, ajusta Status, datas, horas, bloqueio e `Chamado Legado (ID)`. 4. Salva (navega para `/implantacao/tarefas/:id/editar`) ou Cancela (volta à listagem).
-**Backend/tabelas:** `POST /api/v1/implantacao/tarefas` (`TarefaCriarRequest` com `criadorId` do operador logado); `PUT /api/v1/implantacao/tarefas/{id}` (`TarefaAtualizarRequest` com `Status` opcional e `usuarioAlteracao`); validação server-side de `PrioridadeTarefa` (0–3, `Enum.IsDefined`) e `StatusTarefa` (`Backlog`, `AFazer`, `EmAndamento`, `EmHomologacao`, `Concluida`, `Cancelada`, via `Enum.TryParse`); `ChamadoLegadoId` (`TRF_ChamadoLegadoId`, FK lógica p/ `tbchamado.CHAMADO_ID`); escrita em `IMPL_Tarefa`.
-**Resultado esperado:** Create exige Título/Projeto; edit preserva campos e valida prioridade/status/bloqueio; vínculo legado salvo quando informado.
+**Passos:** 1. Abre `/implantacao/tarefas/novo` (aceita `?projetoId=` pré-selecionado) ou `/implantacao/tarefas/:id/editar`. 2. Preenche Título*, Responsável, Data de Entrega, Tipo, Prioridade e Ordem; selects Projeto, Etapa do projeto (card), Coluna Kanban e Responsáveis. 3. Se houver projeto, seleciona um card em `GET /api/v1/implantacao/projetos/{id}/etapas`; o backend exige que ele pertença ao mesmo projeto. 4. Ajusta prazos, horas, bloqueio e chamados, e salva. O formulário não envia Status; a Coluna Kanban define o status no backend.
+**Backend/tabelas:** `POST /api/v1/implantacao/tarefas` e `PUT /api/v1/implantacao/tarefas/{id}`; `ProjetoEtapaId` é obrigatório quando há projeto e referencia `tbprojetoEtapa.PEP_Id`; o DTO de tarefa mantém `Status?`, mas o form não o envia e o serviço sincroniza Status↔Coluna. Também são validados tipo, prioridade, datas, responsáveis, chamados e bloqueio; escrita em `IMPL_Tarefa` e tabelas N-N/valores.
+**Resultado esperado:** Create exige Título e demais campos do formulário; se houver Projeto, exige o card correspondente; edit preserva campos e bloqueios.
 > **Status:** implementação em andamento no working tree; validação pendente (sem validação runtime).
 
-## IMPLANTAÇÃO — CADASTROS (`/implantacao/cadastros`)
-**História:** Como administrador, quero manter tipos, etapas e colunas do Kanban para configurar a operação.
-**Passos:** 1. Acessa `/implantacao/cadastros`. 2. Alterna as abas "Tipos", "Etapas", "Colunas Kanban". 3. Usa os formulários inline (criar/editar/excluir) e reordena colunas.
-**Backend/tabelas:** `GET/POST/PUT/DELETE /api/v1/implantacao/tipos-projeto`; `GET/POST/PUT/DELETE /api/v1/implantacao/etapas`; `GET/POST/PUT/DELETE /api/v1/implantacao/colunas-kanban` + `POST /reordenar`; tabelas `IMPL_TipoProjeto`, `IMPL_Etapa`, `IMPL_ColunaKanban` (aba Equipes removida em 2026-09-12).
-**Resultado esperado:** CRUD persiste por aba; seeds: 4 tipos, 13 etapas, 5 colunas padrão.
+## ADMINISTRAÇÃO — ETAPAS GLOBAIS — REMOVIDAS
+**Status:** a funcionalidade frontend foi removida: rotas `/admin/cadastros/etapas*`, componentes/SCSS, `EtapasService`, tipos relacionados, wrapper morto `TarefasService.listarEtapas()` e breadcrumb específico. Antes da remoção, `GET` e `POST /api/v1/implantacao/etapas` no ambiente publicado retornavam 404 porque a API global já havia sido removida do backend; a tela exibia estado vazio e mascarava a falha.
+**Arquitetura vigente:** nove cards por Projeto em `tbprojetoEtapa`, via `GET /api/v1/implantacao/projetos/etapas-padrao` e `GET /api/v1/implantacao/projetos/{id}/etapas`. A API global não deve ser recriada.
 
 ## DATABASE — SHELL (`/database` → `/database/visao-geral`)
 **História:** Como operador, quero navegar pelas abas do Database Explorer com status de conexão visível.
@@ -258,7 +256,7 @@
 ## DATABASE — CONFIGURAÇÃO (`/database/configuracao`)
 **História:** Como administrador, quero testar a conexão do Explorer para validar o acesso.
 **Passos:** 1. Acessa `/database/configuracao`. 2. Lê o aviso "Configuração gerenciada pelo administrador (variáveis de ambiente / user-secrets)". 3. Clica em "Testar conexão" ("Testando…" durante o teste).
-**Backend/tabelas:** `POST /api/v1/database/test-connection`; `GET /api/v1/database/config` (leitura; senha mascarada; `PUT /config` removido em 23/09/2026); senha via env `DB_EXPLORER_SENHA`, nunca logada; sem escrita em dados de negócio.
+**Backend/tabelas:** `GET /api/v1/database/status` (`testarConexao()` no FE; `POST /test-connection` removido em 24/09/2026); `GET /api/v1/database/config` (leitura; senha mascarada; `PUT /config` removido em 23/09/2026); senha via env `DB_EXPLORER_SENHA`, nunca logada; sem escrita em dados de negócio.
 **Resultado esperado:** Teste indica sucesso/falha; config real vem de env/user-secrets; interface é somente leitura.
 
 ## EMPRESA (`/empresa` → redirect)

@@ -1,5 +1,7 @@
 📋 PROJETO DE IMPLANTAÇÃO DA AGENDA — ESTRUTURA POR FASES
 
+> **Especificação histórica, não implementada como desenho atual.** O working tree vigente está em [`06-COMPONENTES-FRONTEND.md`](../06-COMPONENTES-FRONTEND.md), [`07-SERVICES-BACKEND.md`](../07-SERVICES-BACKEND.md) e [`08-HISTORIAS-TELAS.md`](../08-HISTORIAS-TELAS.md). Não use os paths, branches ou critérios antigos como procedimento.
+
 Formato: Documento completo para submeter ao Claude Code.
 Estruturado em fases sequenciais com tarefas, critérios e não-fazer.
 

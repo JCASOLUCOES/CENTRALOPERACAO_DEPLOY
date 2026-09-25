@@ -166,6 +166,13 @@ Projeto Web API na pasta `backend/Central_BackEnd/`
 - `AuthController` — login/refresh/logout/me (refresh token em cookie HttpOnly).
 - `AcessosController` — listagem e credenciais das empresas (com rate limiting).
 
+**Estado factual de Projetos/Etapas (24/09/2026):**
+- `ProjetosController` possui **16 endpoints**. Não existem mais no source `GET /implantacao/projetos/{id}/jornada`, `POST /implantacao/projetos/{id}/etapas/inicializar` nem `PATCH /implantacao/projetos/{id}/status`; seus wrappers frontend também foram removidos. `ProjetoAtualizarRequest.Status` continua no `PUT /projetos/{id}` e a criação ainda inicializa automaticamente as etapas do projeto. Os 401 dessas rotas no IIS refletem o backend antigo ainda publicado, não rotas no source atual.
+- A arquitetura vigente usa **nove cards por Projeto** em `tbprojetoEtapa`, expostos por `/implantacao/projetos/etapas-padrao` e `/implantacao/projetos/{id}/etapas`. `IProjetoJornadaService` permanece como cálculo privado usado por `TarefaService`; `IProjetoEtapaService.InicializarEtapasPadraoAsync` permanece para criação e leitura dos cards.
+- Não há API/controller/service/model/tabela de Etapas Globais. Antes da limpeza, GET/POST no ambiente publicado retornavam 404 e a tela mascarava a falha como estado vazio. A funcionalidade frontend foi removida: rotas `/admin/cadastros/etapas*`, componentes/SCSS, `EtapasService`/tipos, `TarefasService.listarEtapas()` e breadcrumb específico saíram do source. A API global não deve ser recriada. Validação registrada: 19/19 testes, typechecks e build frontend; gate backend/frontend verde.
+
+Detalhes: [`implantacao.md`](./implantacao.md), [`ENDPOINTS-AUDITORIA.md`](./ENDPOINTS-AUDITORIA.md) e [`telas/06-backend.md`](./telas/06-backend.md).
+
 **Configuração (`Program.cs`):**
 - **Versionamento de API** (`Asp.Versioning.Mvc`): endpoints usam prefixo `/api/v1/`. Suporta
   versionamento por segmento de URL (`/api/v1/...`) e por header `X-Api-Version`.
@@ -306,10 +313,10 @@ O interceptor `auth.interceptor.ts`:
   renderizar; senão redireciona para `/login`.
 - Com **"Lembrar meu acesso"** marcado (padrão), o cookie tem `MaxAge` de 4h (persiste entre
   reaberturas do navegador, dentro das 4h); desmarcado, é cookie de sessão (perde ao fechar o navegador).
-- **Destino pós-login — Central Executiva (`resolverDestino`, `login.component.ts:86-92`):**
+- **Destino pós-login (`resolverDestino`, `login.component.ts`):**
   após o `login()` (e no `constructor` quando já autenticado), o `LoginComponent` resolve o destino —
   `returnUrl` diferente de `'/'`/vazio (deep-link, ex. `/implantacao/kanban`) é **sempre respeitado**;
-  senão, `perfil === 'Administrador'` → **`/executivo`**, usuário comum → **`/`** (Home).
+  senão → **`/`** (Home, qualquer perfil; Módulo Gestor e Central Executiva removidos em 24/09/2026 — `e87d763`).
 
 **Restauração automática do usuário após F5/expiração (BUG 5 fix):**
 - O backend já devolve o objeto `user` no corpo do `POST /api/v1/auth/refresh`
@@ -333,7 +340,7 @@ O interceptor `auth.interceptor.ts`:
   - Se inválido → `logout(true)` com redirect para `/login`.
   - Se válido → dispara `refreshTokenSingleFlight()` para antecipar a renovação.
 - O logout por expiração grava a flag `sessaoExpirada` no `sessionStorage`. O `LoginComponent` lê
-  essa flag e exibe a mensagem **"Sua sessão expirou. Por favor, faça login novamente."**.
+  essa flag e exibe a mensagem **"Sessão expirada. Faça login para retornar à operação."**.
 - `pararVerificacaoPeriodica()` é chamada no `logout()` e ao destruir o serviço.
 
 ### 4.3. Segurança dos tokens
@@ -342,7 +349,7 @@ O interceptor `auth.interceptor.ts`:
 - **Refresh token**: 4h, **rotativo** e armazenado com **hash SHA-256** no banco; no navegador fica em
   **cookie HttpOnly (`cc_refresh`, SameSite=Strict)** — nunca no `localStorage`.
 - **Verificação periódica** (a cada 5 min): valida proativamente a sessão e antecipa o refresh;
-  se o access token expirar, faz logout automático com mensagem "Sua sessão expirou".
+  se o access token expirar, faz logout automático com mensagem de sessão expirada no login.
 - Reuso de refresh token apenas revoga o token reutilizado (detecção de cadeia inteira: roadmap).
 - **Após 4h o usuário desloga**: o access token expira, a renovação falha (o refresh token também
   expirou em 4h) e o sistema encerra a sessão, exigindo novo login.
@@ -461,10 +468,10 @@ publica no IIS (aborta se hash ≠ HEAD) → `scripts/smoke.ps1`.
     - **Correção em `login.component.ts`**: o componente lê a flag `sessaoExpirada` do `sessionStorage` e exibe a mensagem **"Sua sessão expirou. Por favor, faça login novamente."** quando o usuário é redirecionado por timeout.
 27. **BUG 3 — Texto da senha ia para barra de pesquisa** (25/08/2026):
     - **Causa**: ao clicar em um card de empresa no Acessos, o foco do `input` de busca no Header capturava o texto digitado no modal de senha (conflito de z-index: painel de busca `z-index: 1080` vs modal ng-bootstrap `~1050`).
-    - **Correção**: criado `BuscaService` (`src/app/core/services/busca.service.ts`) — serviço `providedIn: 'root'` que controla o estado aberto/fechado da busca via `BehaviorSubject<boolean>` e expõe `buscaAberta$` + `fecharBusca()`.
-    - O **Header** agora consome `buscaService.buscaAberta$` em vez de manter propriedade local `buscaAberta`.
-    - O **AcessosComponent** chama `buscaService.fecharBusca()` antes de `modalService.open(this.senhaRef, ...)`, garantindo que o painel de busca seja fechado e o foco do input removido antes do modal de senha aparecer.
-    - **Resultado**: o z-index de conflito é eliminado porque o painel de busca já está fechado quando o modal abre.
+    - **Busca local compartilhada:** `GlobalSearchComponent` standalone (`src/app/shared/components/global-search/`) é reutilizado pelo Header e pela Home, com painéis locais, navegação por clique/teclado e semântica acessível `combobox`/`listbox`; o Header mantém `Ctrl+K`/`Cmd+K` com foco e seleção do texto.
+    - **Estado atual:** `BuscaService` (`src/app/core/services/busca.service.ts`) usa `BehaviorSubject<BuscaEstado>` para `{ aberta, origem: 'header' | 'home' | null, consulta }`; há apenas uma origem/painel que pode ficar aberta, a consulta é compartilhada e `buscaAberta$` permanece compatível como observable booleano. `BuscaIndexService` continua sendo o índice local síncrono, com até 8 resultados.
+    - O **AcessosComponent** continua chamando `buscaService.fecharBusca()` antes de `modalService.open(this.senhaRef, ...)`, garantindo que o painel de busca esteja fechado antes do modal de senha.
+    - **Resultado**: o conflito de foco/z-index é eliminado; abrir a busca na Home não move o foco para o Header, e o fechamento usa clique fora/focusout sem timer de blur.
 28. **BUG 4 — Menu de perfil do usuário (dropdown) com visual corrompido** (25/08/2026):
     - **Causa raiz**: o módulo `bootstrap/scss/dropdown` não estava importado no `styles.scss`. Sem ele, o `.dropdown-menu` do Bootstrap perdia propriedades essenciais (`list-style: none`, `position: absolute`, `background`, `border`, `box-shadow`). Resultado: bullets visíveis, menu espalhado e conteúdo sobreposto.
     - **Correção em `styles.scss`**: adicionados os imports `@import 'bootstrap/scss/dropdown'` e `@import 'bootstrap/scss/navbar'`, que estavam ausentes na importação sob demanda dos módulos SCSS.

@@ -16,7 +16,7 @@ dotnet run
 - **Swagger (Dev):** `http://localhost:1009/swagger` (habilitado via `SwaggerEnabled=true` em `appsettings.Development.json`)
 - **Banco Dev:** interruptor `Database:UseSqlServer` em `appsettings.Development.json`:
   - `true` → SQL Server homolog `192.168.2.154` / `dbBUSINESS_HML` (connection string no mesmo arquivo)
-  - `false` → InMemory (seed automático: operador `admin`/`admin123`, funções, 7 colunas, 4 tipos, 13 etapas, 7 tipos de evento)
+  - `false` → InMemory (seed automático: operador `admin`/`admin123`, funções, 7 colunas, 4 tipos e 7 tipos de evento; sem Etapas Globais — cada Projeto recebe nove cards)
   - Seeds de exemplo (projetos IMP-0001/CIAA-0001, tarefas e eventos) **desabilitados** via `#if false` em `Program.cs`
 - **Fluxo pós-código:** skill `validar` (`scripts/validate.ps1`) → commit → skill `deploy-limpo`
 
@@ -41,6 +41,8 @@ Central_BackEnd/
 │   └── Implantacao/
 │       ├── AgendaService.cs  # ← NOVO
 │       ├── ProjetoService.cs
+│       ├── ProjetoEtapaService.cs  # 9 cards por projeto
+│       ├── ProjetoJornadaService.cs # cálculo privado de progresso
 │       ├── TarefaService.cs
 │       └── ...
 ├── Models/                   # Entidades EF Core
@@ -130,19 +132,23 @@ Central_BackEnd/
 
 | Controller | Base | Entidades |
 |------------|------|-----------|
-| `ClientesController` | `/clientes` | `IMPL_Cliente` |
 | `TiposProjetoController` | `/tipos-projeto` | `IMPL_TipoProjeto` |
-| `EtapasController` | `/etapas` | `IMPL_Etapa` |
 | `ColunasKanbanController` | `/colunas-kanban` | `IMPL_ColunaKanban` |
-| `ProjetosController` | `/projetos` | `IMPL_Projeto` |
+| `ProjetosController` — **16 endpoints** | `/projetos` | `IMPL_Projeto`, `tbprojetoEtapa*` |
+| `ProjetosController` | `/projetos/etapas-padrao`, `/projetos/{id}/etapas*` | Nove cards fixos por projeto |
+| — | `/etapas` | **Etapas Globais removidas**: sem controller/service/model/tabela no source atual |
 | `TarefasController` | `/tarefas` | `IMPL_Tarefa`, `IMPL_ComentarioTarefa`, `IMPL_TarefaResponsavel`, `IMPL_TarefaChamado`, `IMPL_TarefaApontamento` |
 | `DashboardController` | `/dashboard` | KPIs agregados |
+
+> **Rotas removidas de Projetos:** `GET /projetos/{id}/jornada`, `POST /projetos/{id}/etapas/inicializar` e `PATCH /projetos/{id}/status`. `ProjetoAtualizarRequest.Status` continua no PUT. Os 401 observados no IIS indicam a versão antiga ainda publicada, não rotas no source.
+>
+> **Etapas Globais — diagnóstico encerrado:** `GET/POST /implantacao/etapas` retornavam 404 no ambiente publicado porque o controller global já havia sido removido. A tela frontend foi removida junto com rotas, componentes, serviço, tipos e wrapper morto. Esta API não deve ser recriada; a arquitetura vigente são nove cards por Projeto em `tbprojetoEtapa`.
 
 > **Endpoints Tarefas expandidos (v0.8.x)**: `GET /tarefas/chamados/busca`, `POST /tarefas/{id}/chamados`, `DELETE /tarefas/{id}/chamados/{chamadoId}`, `POST /tarefas/{id}/apontamentos`, `PUT /tarefas/apontamentos/{apontamentoId}`, `DELETE /tarefas/apontamentos/{apontamentoId}`, `GET /tarefas/{id}/historico`.
 > **Campos Tarefas novos**: `TRF_TipoTarefa` (Feature/Bug), `TRF_DataEntrega`, `IMPL_TarefaResponsavel` (N:N), `IMPL_TarefaChamado` (N:N), `IMPL_TarefaApontamento` (horas com `HorasRealizadas` derivado).
 
 ### Database Explorer (`/api/v1/database`)
-14 endpoints para metadados, relacionamentos, queries SELECT-only, configuração. Ver `MODULO-BANCO-DADOS.md`.
+20 operações para metadados, relacionamentos, consultas SELECT-only, configuração e comparação de schemas. Consulte [`docs/05-ENDPOINTS.md`](../docs/05-ENDPOINTS.md) e [`docs/07-SERVICES-BACKEND.md`](../docs/07-SERVICES-BACKEND.md).
 
 ---
 
@@ -161,14 +167,20 @@ Central_BackEnd/
 |--------|---------|-----------|
 | `IMPL_Cliente` | `CLI_` | Clientes |
 | `IMPL_TipoProjeto` | `TPP_` | Tipos (CLIENTE, CARTEIRA, INTEGRACAO, PROJETO_CIAA) |
-| `IMPL_Etapa` | `ETP_` | Etapas configuráveis |
+| `tbprojetoEtapa` | `PEP_` | Nove cards fixos por projeto |
+| `tbprojetoEtapaChecklist` | `PEC_` | Checklist do card |
+| `tbprojetoEtapaDocumento` | `PED_` | Documentos do card |
+| `tbprojetoEtapaHistorico` | `PEH_` | Histórico do card |
+| `tbprojetoEtapaComentario` | `PEC_` | Comentários do card |
 | `IMPL_ColunaKanban` | `CLK_` | Colunas Kanban (máx 8) |
 | `IMPL_Projeto` | `PRJ_` | Projetos (código auto `PRJ-0001`, sem equipe desde 2026-09-12) |
-| `IMPL_Tarefa` | `TRF_` | Tarefas (status, prioridade, coluna Kanban, **tipo Feature/Bug**, **data entrega**, **etapa fixa do projeto `TRF_ProjetoEtapaId` → `tbprojetoEtapa.PEP_Id`, NULL = só totais**) |
+| `IMPL_Tarefa` | `TRF_` | Tarefas (status, prioridade, coluna Kanban, **tipo Feature/Bug**, **data entrega**, **etapa fixa do projeto `TRF_ProjetoEtapaId` → `tbprojetoEtapa.PEP_Id`; obrigatório quando há projeto**) |
 | `IMPL_ComentarioTarefa` | `CMT_` | Comentários/histórico |
 | `IMPL_TarefaResponsavel` | — | **N:N**: responsáveis múltiplos por tarefa (TRF_Id, OPERADOR_ID) |
 | `IMPL_TarefaChamado` | — | **N:N**: vínculo tarefa↔chamado legado (TRF_Id, CHAMADO_ID) |
 | `IMPL_TarefaApontamento` | — | **Apontamentos**: APT_Id, TRF_Id, OPERADOR_ID, APT_Data, APT_Horas, APT_Observacao |
+
+> `IMPL_Etapa`, `IMPL_Tarefa.TRF_EtapaId` e a FK legada foram removidos pela migration `20260922154202_RemoveEtapaAntiga`; o vínculo atual é `TRF_ProjetoEtapaId → tbprojetoEtapa.PEP_Id`.
 
 ### Tabelas Agenda V2 (MVP)
 | Tabela | Prefixo | Descrição |
@@ -216,7 +228,7 @@ O `appsettings.json` do repo contém **placeholders**. A configuração real fic
 - Operador: `admin` / `admin123` (perfil Admin, `FUNCAO_ID=1` → Implantador)
 - 3 Funções (`CC_Funcao`), 7 Colunas Kanban padrão
 - 4 Tipos de projeto (sem `EquipeId`)
-- 13 Etapas (6 + 7 por tipo)
+- Sem seed de Etapas Globais; cada Projeto inicializa nove cards por `ProjetoEtapaService`
 - 7 Tipos de evento (`CC_TipoEvento`)
 - > ⚠️ **Seeds de exemplo DESABILITADOS** (desde a limpeza total para testes):
   > `Seed IMPL_Projeto` (IMP-0001/CIAA-0001 com tarefas e comentários) e
@@ -256,32 +268,23 @@ dotnet ef database update
 > ao iniciar. Toda migration precisa ser aplicada manualmente no servidor
 > (`dotnet ef database update` ou script SQL idempotente).
 
-#### `20260920185734_TarefaProjetoEtapaId` — contador dinâmico de tarefas por etapa (20/09/2026)
-- **O que muda:** `IMPL_Tarefa.TRF_ProjetoEtapaId INT NULL` + índice
-  `IX_IMPL_Tarefa_TRF_ProjetoEtapaId` + FK
-  `FK_IMPL_Tarefa_tbprojetoEtapa_TRF_ProjetoEtapaId` → `tbprojetoEtapa.PEP_Id`
-  com `ON DELETE SET NULL` (`AppDbContext.cs`, bloco `Tarefa`: `HasOne(e => e.ProjetoEtapa).WithMany().HasForeignKey(e => e.ProjetoEtapaId).OnDelete(SetNull)`).
-- **Backfill (no `Up`):** liga tarefas existentes à etapa fixa do mesmo projeto por
-  nome conhecido (`IMPL_Etapa.ETP_Nome = tbprojetoEtapa.PEP_Nome`, com exceção
-  `HOMOLOGACAO → HOMOLOGAÇÃO`); demais casos ficam `NULL` (contam só nos totais).
-- **Script manual equivalente (idempotente):** `scripts/db/migracao-tarefa-projeto-etapa-id.sql`
-  ```bash
-  sqlcmd -S <servidor> -d Central_Conhecimento -E -C -i scripts/db/migracao-tarefa-projeto-etapa-id.sql
-  ```
-- **Regras de negócio (confirmadas no código):** `TarefaService.ValidarEtapaFixaAsync`
-  (etapa fixa deve ser do mesmo projeto, senão `400 "Etapa do projeto inválida para esta tarefa"`;
-  `NULL` = sem card fixo); `RecalcularJornadaAsync` chama
-  `ProjetoEtapaService.SincronizarEtapasPorTarefasAsync` após o recalc da jornada em
-  criar/atualizar/mover-coluna/concluir/arquivar/excluir; DTOs
-  `TarefaResumo/Detalhe/Criar/Atualizar` expõem `ProjetoEtapaId(+Nome)` e
-  `ProjetoEtapaResumo` expõe `TarefasTotal/TarefasConcluidas/Id`.
-  Builds: `dotnet` 0 erros; `ng build` sem erros.
+#### Cards por projeto — migrations e modelo atual
+- `20260918211919_AddProjetoEtapas`: cria `tbprojetoEtapa` e tabelas de checklist, documento, histórico e comentário.
+- `20260920185734_TarefaProjetoEtapaId`: adiciona `IMPL_Tarefa.TRF_ProjetoEtapaId` e o índice/FK para `tbprojetoEtapa.PEP_Id`. O `Up` histórico ainda usava nomes de `IMPL_Etapa` no backfill.
+- `20260922154202_RemoveEtapaAntiga`: remove a FK/índice/coluna `TRF_EtapaId`, remove `IMPL_Etapa` e recria a FK do card com `Restrict`.
+- Modelo atual: `TarefaService.ValidarEtapaFixaAsync` exige card do mesmo projeto quando a tarefa tem projeto; tarefa sem projeto fica sem card. `RecalcularJornadaAsync` usa `IProjetoJornadaService` e depois `SincronizarEtapasPorTarefasAsync`.
+
+A limpeza posterior dos endpoints de Projetos **não criou migration nem alterou banco**. A limpeza frontend de Etapas Globais também não tocou no backend. Validação registrada: 19/19 testes, typechecks e build frontend; gate backend/frontend verde.
 
 ---
 
 ## 📚 Documentação Relacionada
 
-- [`docs/TELAS.md`](../docs/TELAS.md#17-backend--endpoints-por-controller) — Mapa completo de endpoints
-- [`docs/DOCUMENTACAO-COMPLETA.md`](../docs/DOCUMENTACAO-COMPLETA.md) — Arquitetura, segurança, deploy
-- [`docs/DEPLOY.md`](../docs/DEPLOY.md) — Publicação no IIS
-- [`docs/backend-auth-integracao.md`](../docs/backend-auth-integracao.md) — Detalhes JWT/Refresh
+- [`docs/README.md`](../docs/README.md) — entrada da documentação canônica
+- [`docs/02-ARQUITETURA.md`](../docs/02-ARQUITETURA.md) — arquitetura, autenticação e segurança
+- [`docs/05-ENDPOINTS.md`](../docs/05-ENDPOINTS.md) — catálogo de endpoints e contratos
+- [`docs/06-COMPONENTES-FRONTEND.md`](../docs/06-COMPONENTES-FRONTEND.md) — clientes e fluxos frontend
+- [`docs/07-SERVICES-BACKEND.md`](../docs/07-SERVICES-BACKEND.md) — controllers, serviços, modelos e migrations
+- [`docs/08-HISTORIAS-TELAS.md`](../docs/08-HISTORIAS-TELAS.md) — histórias e cenários de QA
+- [`docs/09-TROUBLESHOOTING.md`](../docs/09-TROUBLESHOOTING.md) — diagnóstico do backend e dependências
+- [`docs/10-DEPLOY.md`](../docs/10-DEPLOY.md) — publicação no IIS

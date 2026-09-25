@@ -1,3 +1,5 @@
+> **Especificação histórica do Database Explorer — não representa o estado atual.** O código vigente possui 20 operações, 6 abas e não executa SQL arbitrário. Consulte [`04-ESTRUTURA-DADOS.md`](../04-ESTRUTURA-DADOS.md), [`05-ENDPOINTS.md`](../05-ENDPOINTS.md) e [`06-COMPONENTES-FRONTEND.md`](../06-COMPONENTES-FRONTEND.md).
+
 # Credenciais via variáveis de ambiente (NUNCA hardcoded no git)
 # DB_EXPLORER_SERVIDOR=192.168.2.154
 # DB_EXPLORER_BANCO=dbActyon_JCA
@@ -10,7 +12,7 @@ banco de HML que estamos usando.
 
 ## Central de Operação — JCA Soluções
 
-Você está trabalhando em um projeto EXISTENTE chamado **Central de Operação**, localizado no repositório atual.
+Na época, esta especificação tratava o projeto **Central de Operação** como existente e solicitava a implementação de um novo módulo de Banco de Dados.
 
 Sua missão é implementar um novo módulo chamado **Banco de Dados**, integrado à arquitetura e identidade visual já existentes.
 

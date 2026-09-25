@@ -1,15 +1,13 @@
 # 📋 PLANO MESTRE — Módulo IMPLANTAÇÃO/PROJETOS + Equipe (v1.3.0)
 
-> **Documento único e auto-contido para retomar o trabalho do zero em qualquer sessão.**
-> Contém: contexto, decisões, schema, mapeamento campo-a-campo, fases com sub-passos numerados, e um **prompt de continuação** no final.
->
-> ⚠️ **IMPORTANTE**: A **Agenda foi removida no rollback de 10/09/2026** (commit `8956c57`). Este documento descreve o plano original da v1.3.0 que incluía Agenda. Para o estado atual (sem Agenda), ver `docs/DOCUMENTACAO-COMPLETA.md` § 6.5.9 e `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação futura.
+> **Documento histórico — não executar como procedimento atual.** Este plano preserva decisões, schema e comandos de uma fase anterior; branches, submodules, Equipe e Agenda podem ter sido removidos.
+> Fonte atual: [`01-VISAO-GERAL.md`](../01-VISAO-GERAL.md), [`03-REGRAS-NEGOCIO.md`](../03-REGRAS-NEGOCIO.md), [`06-COMPONENTES-FRONTEND.md`](../06-COMPONENTES-FRONTEND.md) e [`08-HISTORIAS-TELAS.md`](../08-HISTORIAS-TELAS.md). O plano de reimplementação da Agenda é apenas histórico em `../Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md`.
 
 ---
 
 ## 0. Resumo executivo (1 parágrafo)
 
-Continuar a **v1.3.0** do monorepo JCA Central de Operação na branch `projeto-implantacao`. A v1.1.0 (Dashboard redesenhado + Kanban drag-drop + seed) já foi deployada em homolog. A v1.2.0 (legados TB* via FK lógica) estava em andamento. A v1.3.0 **adiciona Diretório de Equipe** além de terminar a v1.2.0 (dropdowns de legado no form de Projeto). **Agenda compartilhada foi removida no rollback `8956c57`** — ver `docs/AGENDA-REIMPLEMENTACAO.md`. **Não há deploy automático** — o trabalho vai sendo commitado em `projeto-implantacao` e só vai para o IIS 192.168.2.130 quando você disser "pode fazer deploy".
+Continuar a **v1.3.0** do monorepo JCA Central de Operação na branch `projeto-implantacao`. A v1.1.0 (Dashboard redesenhado + Kanban drag-drop + seed) já foi deployada em homolog. A v1.2.0 (legados TB* via FK lógica) estava em andamento. A v1.3.0 **adiciona Diretório de Equipe** além de terminar a v1.2.0 (dropdowns de legado no form de Projeto). **Agenda compartilhada foi removida no rollback `8956c57`** — ver `docs/Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md`. **Não há deploy automático** — o trabalho vai sendo commitado em `projeto-implantacao` e só vai para o IIS 192.168.2.130 quando você disser "pode fazer deploy".
 
 ---
 
@@ -127,7 +125,7 @@ Adicionou:
 - **Integração Service Account** (domínio): também roadmap
 
 ### 3.6 ~~Visibilidade da Agenda~~ (removida)
-> Seção removida — Agenda foi removida no rollback `8956c57`. Ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano futuro.
+> Seção removida — Agenda foi removida no rollback `8956c57`. Ver `docs/Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md` para plano futuro.
 
 ### 3.7 Perfil de Equipe (lista simples)
 - Sem foto, sem contador de projetos, sem agenda
@@ -140,7 +138,7 @@ Adicionou:
 
 ### 4.1 Tabelas novas (v1.3.0 — **Agenda removida no rollback `8956c57`**)
 
-> ⚠️ **A tabela `IMPL_Agenda` e `IMPL_MembroPerfil` foram criadas pela migration `AddAgendaAndPerfis` (já aplicada em produção), mas a feature Agenda foi removida.** As tabelas permanecem órfãs no banco. Ver `docs/AGENDA-REIMPLEMENTACAO.md`.
+> ⚠️ **A tabela `IMPL_Agenda` e `IMPL_MembroPerfil` foram criadas pela migration `AddAgendaAndPerfis` (já aplicada em produção), mas a feature Agenda foi removida.** As tabelas permanecem órfãs no banco. Ver `docs/Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md`.
 
 ```sql
 -- 4.1.1 ~~Agenda~~ (REMOVIDA - tabelas órfãs mantidas no banco)
@@ -238,7 +236,7 @@ GET    /api/v1/implantacao/legacy/funcionarios?buscar=X&take=N
 
 ### 5.3 ~~Novos (v1.3.0 — Agenda)~~ — **REMOVIDO no rollback `8956c57`**
 
-> A `AgendaController` e seus endpoints foram removidos. Ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação futura.
+> A `AgendaController` e seus endpoints foram removidos. Ver `docs/Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação futura.
 
 ### 5.4 Novos (v1.3.0 — Equipe/Diretório)
 ```csharp
@@ -322,7 +320,7 @@ Cards read-only por padrão. Botão "Editar perfil" só aparece se o card é do 
 
 ### 7.1 ~~`agenda.model.ts`~~ — **REMOVIDO no rollback `8956c57`**
 
-> Modelos TypeScript da Agenda foram removidos. Ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação futura.
+> Modelos TypeScript da Agenda foram removidos. Ver `docs/Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação futura.
 
 ### 7.2 `equipe.model.ts` (novo)
 ```typescript
@@ -397,7 +395,7 @@ chamadoLegadoId?: number;
 
 ### Bloco D — ~~Frontend Agenda~~ **REMOVIDO no rollback `8956c57`**
 
-> Toda a implementação do frontend da Agenda (Bloco D) foi removida. Ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação futura.
+> Toda a implementação do frontend da Agenda (Bloco D) foi removida. Ver `docs/Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação futura.
 
 ### Bloco E — Frontend Equipe (2 sub-passos, ~8 min)
 
@@ -406,8 +404,8 @@ chamadoLegadoId?: number;
 
 ### Bloco F — Documentação (2 sub-passos, ~5 min) — **Agenda removida**
 
-- **F1.** Atualizar `MODULO-IMPLANTACAO-MAP.md` na raiz do monorepo (cobre Projetos + Equipe + relações TB* — **Agenda removida**)
-- **F2.** Atualizar `docs/DOCUMENTACAO-COMPLETA.md` § 6.5 — adicionar subseção 6.5.8 (Equipe) — **6.5.7 Agenda removida**
+- **F1.** Atualizar `docs/Projeto-Implantação/MODULO-IMPLANTACAO-MAP.md` (cobre Projetos + Equipe + relações TB* — **Agenda removida**)
+- **F2.** Atualizar `docs/06-COMPONENTES-FRONTEND.md` para registrar Equipe e o estado da Agenda desta versão histórica
 
 ### Bloco G — Teste local (1 sub-passo, ~1 min) — **Agenda removida**
 

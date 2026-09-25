@@ -1,9 +1,8 @@
 # Módulo IMPLANTAÇÃO / PROJETOS — Mapa (v1.3.0)
 
-> Documento vivo do módulo. Cobre **Projetos + Equipe** (Agenda removida no rollback `8956c57`).
-> Para o passo-a-passo de retomada, ver `PLANO_MESTRE.md` na raiz do monorepo.
-> Para a documentação completa, ver `docs/DOCUMENTACAO-COMPLETA.md` § 6.5.
-> Para plano de reimplementação da Agenda, ver `docs/AGENDA-REIMPLEMENTACAO.md`.
+> **Mapa histórico — não representa o modelo atual.** Equipes, `IMPL_Etapa` global e diretório foram removidos; Agenda faz parte do monólito vigente.
+> Fonte atual: [`03-REGRAS-NEGOCIO.md`](../03-REGRAS-NEGOCIO.md), [`06-COMPONENTES-FRONTEND.md`](../06-COMPONENTES-FRONTEND.md) e [`07-SERVICES-BACKEND.md`](../07-SERVICES-BACKEND.md).
+> O plano de retomada está em `PLANO_MESTRE.md`; a Agenda atual está documentada no módulo vigente.
 
 ---
 
@@ -23,7 +22,7 @@
 | Chamados legados (`tbchamado`) | dbBUSINESS_HML (somente leitura) | Dropdown em Tarefa |
 | Funcionários legados (`tbfuncionario`) | dbBUSINESS_HML (somente leitura) | Diretório de Equipe |
 
-> **Nota:** `IMPL_Agenda` (Agenda compartilhada) foi removida no rollback `8956c57`. Tabelas órfãs mantidas no banco. Ver `docs/AGENDA-REIMPLEMENTACAO.md`.
+> **Nota:** `IMPL_Agenda` (Agenda compartilhada) foi removida no rollback `8956c57`. Tabelas órfãs mantidas no banco. Ver `docs/Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md`.
 
 ---
 
@@ -75,7 +74,7 @@ Regras:
 > **Rota frontend removida:** `/implantacao/agenda`
 > **Branch de backup:** `backup-master-pre-agenda-rollback` (commit `c3fec9c`)
 > 
-> Ver `docs/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação segura.
+> Ver `docs/Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md` para plano de reimplementação segura.
 
 ---
 
@@ -158,7 +157,7 @@ Drawer lateral de detalhes (ao clicar no card):
 | (v1.2.0) | `AddLegadoLinks` | `PRJ_ClienteLegadoId`, `TRF_ChamadoLegadoId` | ✅ sim |
 | **v1.3.0** | `AddAgendaAndPerfis` | `IMPL_Agenda`, `IMPL_MembroPerfil` | ✅ **aplicada em produção** (feature removida, tabelas órfãs mantidas) |
 
-> **Nota:** A migration `AddAgendaAndPerfis` já foi aplicada em produção. A feature Agenda foi removida no rollback `8956c57`, mas as tabelas permanecem no banco. Ver `docs/AGENDA-REIMPLEMENTACAO.md`.
+> **Nota:** A migration `AddAgendaAndPerfis` já foi aplicada em produção. A feature Agenda foi removida no rollback `8956c57`, mas as tabelas permanecem no banco. Ver `docs/Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md`.
 
 ---
 

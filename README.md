@@ -10,10 +10,10 @@ Este repositório (`JCASOLUCOES/CENTRALOPERACAO_DEPLOY`) é a fonte única do si
 
 ```text
 Central-Conhecimento-developer/
-├── docs/                 # Documentação unificada (índice: docs/INDEX.md)
+├── docs/                 # Documentação unificada (entrada: docs/README.md)
 ├── scripts/              # Scripts de utilidade (Deploy, Extração de metadados)
 ├── frontend/             # Angular 18 (standalone + SSR)
-│   └── src/app/features/ # Módulos lazy (inclui executivo/ — rota desativada)
+│   └── src/app/features/ # Módulos lazy (Gestor/executivo removidos em 24/09/2026)
 └── backend/              # ASP.NET Core 8 (Web API)
     └── Central_BackEnd/  # Controllers, Services e EF Core
 ```
@@ -64,9 +64,11 @@ ng serve
 ```
 Porta padrão: `http://localhost:4200`
 
-**Login (InMemory):** `admin` / `admin123`  
-**Login (homolog SQL):** usuários reais de `192.168.2.154` / `dbBUSINESS_HML`  
-Interruptor: `appsettings.Development.json` → `Database:UseSqlServer` (`true` = homolog, `false` = InMemory)
+**Ambiente Development:** o backend pode criar operadores de teste previsíveis; não publique nem reutilize essas credenciais fora do local.
+
+**Homolog SQL:** usuários reais de `192.168.2.154` / `dbBUSINESS_HML`.
+
+**Interruptor:** `appsettings.Development.json` → `Database:UseSqlServer` (`true` = homolog, `false` = InMemory).
 
 ### 3. Fluxo ao concluir uma tarefa
 
@@ -77,28 +79,26 @@ subir interno  →  validar  →  git commit/push  →  validar  →  deploy lim
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
-# se OK:
-git add -A; git commit -m "fix: ..."; git push origin developer
+# se OK, revisar e stage somente os arquivos intencionais:
+git status --short
+git add -- <arquivos-intencionais>
+git commit -m "fix: ..."
+git push origin developer
 powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
-# skill "deploy limpo" (ou etapas manuais em docs/DEPLOY.md § 0)
+# skill "deploy limpo" (ou etapas manuais em docs/10-DEPLOY.md)
 ```
 
 ---
 
-## ✨ Novas Funcionalidades (v0.8.0)
+## ✨ Funcionalidades Atuais
 
 ### 🧭 Navegação reorganizada (sidebar, header, Home, JOTA)
-- **Sidebar** (`header-nav.config.ts`): seções Início (Visão Geral `/` + Agenda), SUPORTE (resolver, fraseologia, modelos, trilhas), Implantação, Ferramentas, Conhecimento, JCA (inclui Kanban ADM `hasRole('F')` → `/implantacao/kanban?perfil=F`), Administração (`/admin/dashboard` só Administrador). **Central Executiva `/executivo` e `/administrativo` desativados** (rotas comentadas)
-- **Header**: nav Início/Fraseologias/Ferramentas/Acessos/Cursos, breadcrumb com `/agenda`, `/chat`, `/implantacao/*`, `/admin/*`, `/gestor/entrada`; busca local via `BuscaIndexService` com atalho `Ctrl+K`
+- **Sidebar** (`header-nav.config.ts`): seções Início (Visão Geral `/` + Agenda), SUPORTE (resolver, fraseologia, modelos, trilhas), Implantação, Ferramentas, Conhecimento, JCA (inclui Kanban ADM `hasRole('F')` → `/implantacao/kanban?perfil=F`) e Administração. A rota `/admin` redireciona para `/admin/cadastros`; não há rota ativa `/admin/dashboard`. **Módulo Gestor, Central Executiva `/executivo` e `/administrativo` removidos/desativados** (Gestor e `features/executivo/` excluídos em 24/09/2026 — `e87d763`)
+- **Header e Home:** busca unificada via `GlobalSearchComponent` e `BuscaIndexService`; o Header mantém “Pesquisar qualquer conteúdo...” e `Ctrl/Cmd+K`, enquanto a Home possui “Buscar na Central...” com resultados locais e sem redirecionar o foco
 - **Home refeita**: saudação com nome, 6 acessos rápidos, "Continue de onde parou"/"Mais utilizados" (`RecentesService`, `localStorage cc.recentes.v1`, partem vazios) + agenda real de 7 dias
-- **JOTA transversal**: FAB + painel em todo o `MainLayout` (proxy real `POST /api/rag-proxy/chat`, erro honesto); página `/chat` mantida
-- **Pós-login:** admin sem deep-link → **`/gestor/entrada`** (Módulo Gestor); comum → `/`
-- Detalhes por tela em [`docs/TELAS.md`](./docs/TELAS.md) (índice; conteúdo em [`docs/telas/`](./docs/telas/)) e guia em [`docs/frontend-modulos.md`](./docs/frontend-modulos.md)
-
-### 📊 Módulo Gestor (home dos gestores)
-- **Nova home dos gestores**: login como `Administrador` (sem deep-link) cai em `/gestor/entrada` (painéis CEO/CTO/COO — ver [`docs/telas/07-gestao.md`](./docs/telas/07-gestao.md))
-- **Central Executiva (`/executivo`) desativada**: rota comentada em `features.routes.ts`; código-fonte em `features/executivo/` permanece no repo sem rota ativa
-- Acesso ao Gestor: dropdown do usuário (admin) + pós-login
+- **JOTA transversal:** FAB + painel em todo o `MainLayout`. O frontend usa `POST /api/rag-proxy/chat` relativo ao site e depende de reverse proxy/ARR não versionado; o backend pode retornar fallback simulado. Página `/chat` **removida** em 24/09/2026
+- **Pós-login:** deep-link respeitado; sem deep-link → **`/`** (Home, qualquer perfil; Módulo Gestor removido)
+- Detalhes por tela em [`docs/06-COMPONENTES-FRONTEND.md`](./docs/06-COMPONENTES-FRONTEND.md), APIs em [`docs/05-ENDPOINTS.md`](./docs/05-ENDPOINTS.md) e arquitetura em [`docs/02-ARQUITETURA.md`](./docs/02-ARQUITETURA.md)
 
 ### 🐛 Correção: Erro Visual da Agenda (Overlay/Backdrop)
 **Problema**: Ao navegar para `/agenda`, a tela apresentava tom esbranquiçado/opaco com travamento de cliques (sidebar, header e área de conteúdo).
@@ -110,7 +110,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
 ### 🎯 Kanban Drag & Drop + Integração com Agenda
 - **Drag & Drop**: Alteração de status/coluna/fase das tarefas exclusivamente via arrastar-e-soltar (`@angular/cdk/drag-drop`)
 - **Integração Automática**: Tarefas movidas para colunas "Reunião", "Treinamento" ou "Marco de Entrega" criam/atualizam eventos na Agenda (`IMPL_Agenda`) automaticamente
-- **Backend**: `TarefaService.SincronizarAgendaAsync()` dispara `INSERT/UPDATE` na tabela `IMPL_Agenda` vinculando `ProjetoId` e `TarefaId`
+- **Backend:** `TarefaService.SincronizarAgendaAsync()` cria ou atualiza registros de `IMPL_Agenda`; a correspondência atual usa `ProjetoId` e título da tarefa, pois `AgendaItem` não possui `TarefaId`
 
 ### 👥 Cadastro de Operadores — Atribuição Automática por Função/Perfil
 - **Sem seleção manual de equipe**: A equipe e papel são definidos automaticamente pela Função selecionada
@@ -118,37 +118,43 @@ powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
   - `FUNCAO_ID = 1` (Analista de Sistemas) → **Implantador** (claim `eh_implantador=true` no JWT)
   - `FUNCAO_ID = 2` (Suporte) → Atendimento operacional
   - `FUNCAO_ID = 3` (Programador) → Desenvolvimento
-- **Nova migration**: `AddFuncao` (tabela `CC_Funcao` + `FUNCAO_ID` em `TBOPERADOR` + FK; script em `Migrations/Sql/AddFuncao.sql` — aplicado em produção em 2026-09-10)
+- **Migration relacionada:** `AddFuncao` (tabela `CC_Funcao` + `FUNCAO_ID` em `TBOPERADOR` + FK; script em `Migrations/Sql/AddFuncao.sql`). A aplicação em cada ambiente deve ser confirmada pelo histórico de migrations
 
 ---
 
 ## 🚢 Deploy (Produção)
 
-Pipeline em 4 estágios (detalhe: [`docs/DEPLOY.md`](./docs/DEPLOY.md) § 0):
+Pipeline em 5 etapas (detalhe: [`docs/10-DEPLOY.md`](./docs/10-DEPLOY.md)):
 
-1. **`scripts/validate.ps1`** — git + `dotnet build` + `ng build` (tem que ficar verde)
-2. **`deploy.ps1 -Publicar 0`** — empacota em `deploy/` + `BUILD_INFO.txt` (hash Git)
-3. **`deploy.ps1 -Build 0 -Publicar 1 -Backup 1`** — publica no IIS só se o hash == HEAD
-4. **`scripts/smoke.ps1`** — ping front `:1010` + swagger `:1009`
+1. **Congelar** — working tree limpa, hash e branch registrados
+2. **Validar** — `scripts/validate.ps1` (`dotnet build` + `ng build`)
+3. **Empacotar** — `deploy.ps1 -BuildFrontend 1 -BuildBackend 1 -Publicar 0`
+4. **Publicar** — `deploy.ps1 -BuildFrontend 0 -BuildBackend 0 -Publicar 1 -Backup 1`, somente se `BUILD_INFO` == HEAD
+5. **Smoke** — `scripts/smoke.ps1` verifica frontend `:1010` e Swagger `:1009`
 
-**Detalhes do Servidor:**
-- **Servidor Web:** 192.168.2.130 (IIS)
-- **Banco de Dados:** 192.168.2.154 (SQL Server)
-- **Portas:** Frontend (1010), Backend (1009)
+**Defaults operacionais (confirmar no ambiente):**
+- **Servidor Web:** `192.168.2.130` (IIS)
+- **Banco de Dados:** `192.168.2.154` (SQL Server)
+- **Portas:** Frontend `1010`, Backend `1009`
 
 ---
 
 ## 📝 Documentação Centralizada
 
-Toda a documentação técnica reside na pasta `/docs` (índice: [`docs/INDEX.md`](./docs/INDEX.md)):
+Toda a documentação técnica reside em `docs/` (entrada: [`docs/README.md`](./docs/README.md)):
 
-1. [`INDEX.md`](./docs/INDEX.md) — navegação de toda a documentação
-2. [`VISAO-GERAL.md`](./docs/VISAO-GERAL.md) — contexto, stack, checklist de nova tela
-3. [`NEGOCIO.md`](./docs/NEGOCIO.md) — regras de negócio compactas
-4. [`TELAS.md`](./docs/TELAS.md) — mapa de telas/APIs (índice; conteúdo em `docs/telas/`)
-5. [`DOCUMENTACAO-COMPLETA.md`](./docs/DOCUMENTACAO-COMPLETA.md) — arquitetura + JWT + deploy (fatiada: também `implantacao.md`, `frontend-modulos.md`, `integracoes-bd.md`)
-6. [`DEPLOY.md`](./docs/DEPLOY.md) — publicação e manutenção do servidor
-7. [`backend-auth-integracao.md`](./docs/backend-auth-integracao.md) — fluxo JWT
+1. [`docs/README.md`](./docs/README.md) — entrada e matriz dos 12 documentos canônicos
+2. [`docs/00-ESTRUTURA.md`](./docs/00-ESTRUTURA.md) — organização, backup e fluxo de trabalho
+3. [`docs/01-VISAO-GERAL.md`](./docs/01-VISAO-GERAL.md) — contexto, stack e situação atual
+4. [`docs/02-ARQUITETURA.md`](./docs/02-ARQUITETURA.md) — arquitetura, tokens e segurança
+5. [`docs/03-REGRAS-NEGOCIO.md`](./docs/03-REGRAS-NEGOCIO.md) — regras de negócio
+6. [`docs/04-ESTRUTURA-DADOS.md`](./docs/04-ESTRUTURA-DADOS.md) — dados, entidades e integrações
+7. [`docs/05-ENDPOINTS.md`](./docs/05-ENDPOINTS.md) — APIs, métodos, corpos e autorização
+8. [`docs/06-COMPONENTES-FRONTEND.md`](./docs/06-COMPONENTES-FRONTEND.md) — componentes, rotas e serviços frontend
+9. [`docs/07-SERVICES-BACKEND.md`](./docs/07-SERVICES-BACKEND.md) — controllers, serviços e persistência backend
+10. [`docs/08-HISTORIAS-TELAS.md`](./docs/08-HISTORIAS-TELAS.md) — histórias e cenários de QA
+11. [`docs/09-TROUBLESHOOTING.md`](./docs/09-TROUBLESHOOTING.md) — diagnóstico e troubleshooting
+12. [`docs/10-DEPLOY.md`](./docs/10-DEPLOY.md) — publicação, rollback e smoke
 
 ---
 
@@ -157,7 +163,6 @@ Toda a documentação técnica reside na pasta `/docs` (índice: [`docs/INDEX.md
 O projeto é otimizado para uso com assistentes de IA (opencode):
 - **Skills:** `validar`, `deploy-limpo`, `subir-interno`, `frontend-design`.
 - **Regras:** Definidas no arquivo `AGENTS.md`.
-- **Sync Automático:** O workflow `.github/workflows/docs-sync.yml` mantém o arquivo `TELAS.md` sempre sincronizado com o código-fonte em cada Pull Request.
 
 ---
 

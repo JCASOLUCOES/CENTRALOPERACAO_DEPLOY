@@ -49,12 +49,12 @@ Dashboard KPIs da operação de implantação. Cards de totais (projetos/tarefas
 **Componente:** `src/app/features/implantacao/pages/kanban/kanban.component.ts`
 
 ### O que faz
-View Kanban com drag-and-drop (`@angular/cdk`), colunas configuráveis, reordenamento de tarefas entre colunas, criação rápida inline por coluna ("Adicionar tarefa" → form com título*, descrição, prioridade 1–4, data de entrega*, responsável via `app-usuario-dropdown` e projeto pré-preenchido com o filtro atual, com validação inline `erroNovaTarefa` e estado `criandoTarefa`), menu do cartão (⋮), drawer de detalhe com comentários, edição inline e ações em lote. Integração Kanban↔Tarefas: mover no Kanban persiste via `PATCH /tarefas/{id}/coluna` (com ajuste de `Status` por nome da coluna, exigência de `motivoBloqueio` na coluna BLOQUEADO e sincronização com a Agenda via `SincronizarAgendaAsync`); edição/inline/bulk preservam campos via `obter()` + `requisicaoAtualizacao()`/`atualizarPreservandoCampos()`. **DnD corrigido (22/09/2026):** board usa `cdkDropListGroup` (antes `connectedTo` apontava para IDs `col-*` inexistentes, quebrando drag entre colunas); `onDrop()` atualiza o signal `tarefas` (mutação do array do computed não persistia), envia `motivoBloqueio` via `prompt` ao soltar em coluna com nome contendo BLOQUEAD, mostra `toastSucesso`/`toastErro` e reverte + `carregar()` no erro; **na sucesso, aplica `status`/`bloqueada`/`dataConclusao`/`colunaKanbanId`/`ordem` retornados pelo backend** (sincronia coluna↔status nos dois sentidos). Métricas/`isOverdue`/`slaInfo` usam o helper `ehAtrasada()` de `tarefa.model.ts` (regra única de atraso); drawer exibe prazo = `dataEntrega ?? dataPrevisao`. **Contador dinâmico (20/09/2026):** form inline com dropdown "Etapa do projeto (card)" (`novaTarefaProjetoEtapaId`, `etapasFixasCriacao` via `GET /projetos/{id}/etapas`, default = etapa `EmAndamento`, `NULL` = "Sem card (só totais)"); payload de criar/duplicar envia `projetoEtapaId` (`criarTarefa()` + fallback `t.projetoEtapaId ?? novaTarefaProjetoEtapaId`).
+View Kanban com drag-and-drop (`@angular/cdk`), colunas configuráveis, reordenamento de tarefas entre colunas, criação rápida inline por coluna ("Adicionar tarefa" → form com título*, descrição, prioridade 1–4, data de entrega*, responsável via `app-usuario-dropdown` e projeto pré-preenchido com o filtro atual, com validação inline `erroNovaTarefa` e estado `criandoTarefa`), menu do cartão (⋮), drawer de detalhe com comentários, edição inline e ações em lote. Integração Kanban↔Tarefas: mover no Kanban persiste via `PATCH /tarefas/{id}/coluna` (com ajuste de `Status` por nome da coluna, exigência de `motivoBloqueio` na coluna BLOQUEADO e sincronização com a Agenda via `SincronizarAgendaAsync`); edição/inline/bulk preservam campos via `obter()` + `requisicaoAtualizacao()`/`atualizarPreservandoCampos()`. **DnD corrigido (22/09/2026):** board usa `cdkDropListGroup` (antes `connectedTo` apontava para IDs `col-*` inexistentes, quebrando drag entre colunas); `onDrop()` atualiza o signal `tarefas` (mutação do array do computed não persistia), envia `motivoBloqueio` via `prompt` ao soltar em coluna com nome contendo BLOQUEAD, mostra `toastSucesso`/`toastErro` e reverte + `carregar()` no erro; **na sucesso, aplica `status`/`bloqueada`/`dataConclusao`/`colunaKanbanId`/`ordem` retornados pelo backend** (sincronia coluna↔status nos dois sentidos). Métricas/`isOverdue`/`slaInfo` usam o helper `ehAtrasada()` de `tarefa.model.ts` (regra única de atraso); drawer exibe prazo = `dataEntrega ?? dataPrevisao`. **Contador dinâmico (20/09/2026):** form inline com dropdown "Etapa do projeto (card)" (`novaTarefaProjetoEtapaId`, `etapasFixasCriacao` via `GET /projetos/{id}/etapas`, default = etapa `EmAndamento`, tarefa sem projeto fica sem card); payload de criar/duplicar envia `projetoEtapaId` (`criarTarefa()` + fallback `t.projetoEtapaId ?? novaTarefaProjetoEtapaId`).
 
 ### Services Injetados
 | Service | Métodos Usados | Finalidade |
 |---------|----------------|------------|
-| `TarefasService` | `listar()`, `obter()`, `criar()`, `atualizar()`, `mudarColuna()`, `excluir()`, `adicionarComentario()`, `listarEtapas()`, `listarOperadores()` | CRUD + movimento + comentários + lookups |
+| `TarefasService` | `listar()`, `obter()`, `criar()`, `atualizar()`, `mudarColuna()`, `excluir()`, `adicionarComentario()`, `listarOperadores()` | CRUD + movimento + comentários + lookups |
 | `ProjetosService` | `listar()` | Filtro por projeto |
 | `ColunasKanbanService` | `listar()`, `atualizar()` | Colunas, WIP, renomear/ocultar |
 
@@ -69,7 +69,7 @@ View Kanban com drag-and-drop (`@angular/cdk`), colunas configuráveis, reordena
 | DELETE | `/api/v1/implantacao/tarefas/{id}` | `TarefasService.excluir()` | Exclusão (unitária e em lote) |
 | POST | `/api/v1/implantacao/tarefas/{id}/comentarios` | `TarefasService.adicionarComentario()` | Adiciona comentário (`autorId`, `texto`) |
 | GET | `/api/v1/implantacao/projetos` | `ProjetosService.listar()` | Opções do filtro por projeto |
-| GET | `/api/v1/implantacao/etapas` | `TarefasService.listarEtapas()` | Lookup de etapas (filtro opcional `projetoId`) |
+| GET | `/api/v1/implantacao/projetos/{id}/etapas` | `ProjetosService.obterEtapasProjeto()` | Cards fixos do projeto para “Etapa do projeto (card)” |
 | GET | `/api/v1/agenda/operadores` | `TarefasService.listarOperadores()` | Lookup de operadores |
 | GET/PUT | `/api/v1/implantacao/colunas-kanban` | `ColunasKanbanService` | Colunas (renomear, WIP, ocultar) |
 
@@ -95,11 +95,11 @@ View Kanban com drag-and-drop (`@angular/cdk`), colunas configuráveis, reordena
 
 1. **Consulta e Renderização Inicial (SELECT)**
    - Ao acessar a tela, o frontend faz uma chamada GET à API `/api/v1/implantacao/tarefas`.
-   - O backend executa consultas SQL (`SELECT`) com JOINs nas tabelas `IMPL_Tarefa`, `IMPL_Projeto`, `IMPL_ColunaKanban`, `IMPL_Etapa` para buscar as tarefas organizadas por coluna e renderizar o estado inicial do Kanban.
+   - O backend consulta `IMPL_Tarefa`, `IMPL_Projeto` e `IMPL_ColunaKanban`; quando a tarefa tem card, o vínculo é `IMPL_Tarefa.TRF_ProjetoEtapaId` → `tbprojetoEtapa.PEP_Id`. Não há mais `IMPL_Etapa`.
 2. **Criação e Registro de Novos Dados (INSERT)**
    - O operador cria uma nova tarefa preenchendo os campos e aciona a confirmação.
    - A aplicação envia os dados via POST para `/api/v1/implantacao/tarefas`.
-   - O banco grava os dados na tabela `IMPL_Tarefa` (`INSERT INTO ...`) com chaves estrangeiras para `ProjetoId`, `EtapaId`, `ColunaKanbanId`, `ResponsavelId`.
+   - O banco grava a tarefa em `IMPL_Tarefa`; com projeto, `TRF_ProjetoEtapaId` referencia um card de `tbprojetoEtapa` do mesmo projeto. A coluna Kanban referencia `IMPL_ColunaKanban`; responsáveis, chamados e apontamentos usam as tabelas N-N/valores da tarefa.
 
 3. **Atualização e Alterações (UPDATE) — Drag & Drop**
    - A alteração do status, coluna ou fase das tarefas é realizada **exclusivamente arrastando e soltando os cards** na interface (listas conectadas via `cdkDropListGroup` no board).
@@ -116,28 +116,31 @@ View Kanban com drag-and-drop (`@angular/cdk`), colunas configuráveis, reordena
 **Componente:** `src/app/features/implantacao/pages/projetos/projetos.component.ts`
 
 ### O que faz
-Lista vertical agrupada de projetos (LAYOUT 3 COLUNAS, 20/09/2026 — substitui o layout vertical agrupado full-width; antes grid 2 colunas de 19/09/2026): header via `app-page-header` (componente reutilizável `PageHeaderComponent`, 21/09/2026 — espelho do Kanban, sem CSS local de header: `titulo="Projetos"`, `descricao="Gerencie a lista de projetos, datas de entrega e atribuições da equipe."`, `icone="bi-folder2-open"`, `projetos.component.ts:17-32`; busca só na sidebar, sem busca no header) + `.imp-layout` com aside filtros + seção conteúdo + aside resumo. Header: título + descrição fixa, slot `actions` com Filtros/Resumo/Novo Projeto (toggles `filtrosAbertos`/`resumoAberto`); eyebrow "TAREFAS & PROJETOS" e linha de subtítulo removidos; headers/CSS antigos locais removidos (só o contêiner `.imp-header__actions` do slot permanece, `projetos.component.scss:219`). Aside filtros (server-side via `listarComEtapas`): busca textual, status (select), responsável (select via signal `responsavelId()` com opção "Meus projetos" mapeada p/ operador logado via `AuthService.getOperadorLogado`), período vencimento de/até (client-side sobre `dataPrevisao`), ordenar, botão Limpar que reseta tudo; seção conteúdo com abas [Todos|Ativos|Concluídos|Atrasados] (`abaGrupo`) + dois grupos colapsáveis (Ativos no topo, Concluídos embaixo) mantidos; aside resumo com Análise rápida, Próximos vencimentos (top 5), Etapas atuais (por 1ª etapa não-concluída) e Meus projetos (com atalho "Ver meus projetos"). Signals `filtrosAbertos`/`resumoAberto` com toggles no header (`toggleFiltros()`/`toggleResumo()`). Código em mono (`PRJ-XXXX`, sequencial global via `GET /projetos/proximo-codigo`), progresso, meta com responsável e prazo. Ponto de entrada da Fase 2 (working tree): navega para `/implantacao/projetos/novo` (create) e `/implantacao/projetos/:id/editar` (edit); o detalhe (`/implantacao/projetos/:id`) expõe editar/excluir. **Backend: sem mudança (seções 17/18 inalteradas — nenhum endpoint novo/alterado; filtros usam `listarComEtapas`/`listarOperadores` existentes).**
+Lista vertical agrupada de projetos, com header `app-page-header`, busca/filtros na sidebar, grupos Ativos/Concluídos, abas Todos/Ativos/Concluídos/Atrasados e resumo lateral. Os cards exibem código, progresso, responsável, prazo e nove etapas fixas. Navega para novo, edição e detalhe. No backend atual, `ProjetosController` tem 16 endpoints; as rotas legadas de jornada, inicialização dedicated e status dedicated não existem.
 
 ### Services Injetados
 | Service | Métodos Usados | Finalidade |
 |---------|----------------|------------|
-| `ProjetosService` | `listarComEtapas()`, `listarOperadores()` | Lista projetos com etapas para a tela (filtros server-side `status`, `buscar`, `responsavelId`; ordenação client-side via `projetosOrdenados`; período vencimento de/até client-side sobre `dataPrevisao`) + lookup de operadores p/ filtro de responsável |
+| `ProjetosService` | `listarComEtapas()`, `listarOperadores()` | Lista projetos com cards fixos para a tela (filtros server-side `status`, `buscar`, `responsavelId`; ordenação/período client-side) + lookup de operadores |
 | `AuthService` | `getOperadorLogado()` | Resolve o operador logado p/ opção "Meus projetos" (`__MEUS__` → `meuId()`) e contador `meusProjetos()` |
 
 ### API Endpoints Consumidos
 | Método | Rota (v1) | Service | Descrição |
 |--------|-----------|---------|-----------|
-| GET | `/api/v1/implantacao/projetos` | `ProjetosService.listar()` | Lista projetos (`tipo`, `status`, `clienteId`, `responsavelId`, `buscar`) |
+| GET | `/api/v1/implantacao/projetos/com-etapas` | `ProjetosService.listarComEtapas()` | Lista projetos com os nove cards fixos de cada projeto; filtros `tipo`, `status`, `clienteId`, `responsavelId`, `buscar`, `perfilId` |
 | GET | `/api/v1/implantacao/projetos/{id}` | `ProjetosService.obter()` | Detalhe do projeto |
+| GET | `/api/v1/implantacao/projetos/etapas-padrao` | `ProjetosService.listarEtapasPadrao()` | Nomes/ordens das nove etapas para o formulário de criação |
+| GET | `/api/v1/implantacao/projetos/{id}/etapas` | `ProjetosService.obterEtapasProjeto()` | Cards fixos do projeto; inicializa os nove se ainda não existirem |
 | GET | `/api/v1/implantacao/projetos/proximo-codigo` | `ProjetosService.obterProximoCodigo()` | Gera próximo código sequencial global (`{ codigo: "PRJ-XXXX" }`, prefixo fixo `PRJ`) |
-| GET | `/api/v1/implantacao/projetos/clientes` | `ProjetosService.listarClientes()` | Lookup de clientes ativos **de `tbcliente`** (`ClienteResumo { id, nome, cnpj, ativo }`, `nome` = `FANTASIA`, ordem alfabética) |
-| GET | `/api/v1/implantacao/tipos-projeto?apenasAtivos=true` | `ProjetosService.listarTipos()` | Lookup de tipos (`TipoProjetoResumo { id, codigo, nome, clienteObrigatorio, ordem, ativo }`) |
-| GET | `/api/v1/agenda/operadores` | `ProjetosService.listarOperadores()` | Lookup de operadores (`OperadorResumo { id, nome, email }`) |
+| GET | `/api/v1/implantacao/projetos/clientes` | `ProjetosService.listarClientes()` | Lookup de clientes ativos **de `tbcliente`** |
+| GET | `/api/v1/implantacao/tipos-projeto?apenasAtivos=true` | `ProjetosService.listarTipos()` | Lookup de tipos ativos |
+| GET | `/api/v1/agenda/operadores` | `ProjetosService.listarOperadores()` | Lookup de operadores |
 | GET | `/api/v1/implantacao/colunas-kanban?apenasAtivas=true` | `ProjetosService.listarColunasKanban()` | Lookup de colunas Kanban ativas |
-| POST | `/api/v1/implantacao/projetos` | `ProjetosService.criar()` | Cria projeto (`ProjetoCriarRequest`; `400 { mensagem }` em validação) |
-| PUT | `/api/v1/implantacao/projetos/{id}` | `ProjetosService.atualizar()` | Atualização (`ProjetoAtualizarRequest` + `usuarioAlteracao`) |
-| PATCH | `/api/v1/implantacao/projetos/{id}/status` | `ProjetosService.mudarStatus()` | Muda status (`ProjetoMudarStatusRequest`) |
+| POST | `/api/v1/implantacao/projetos` | `ProjetosService.criar()` | Cria projeto e os nove cards automaticamente (`ProjetoCriarRequest`, inclusive `etapaInicialOrdem`) |
+| PUT | `/api/v1/implantacao/projetos/{id}` | `ProjetosService.atualizar()` | Atualiza pelo `ProjetoAtualizarRequest`; o contrato backend mantém `Status?` e `UsuarioAlteracao` |
 | DELETE | `/api/v1/implantacao/projetos/{id}` | `ProjetosService.excluir()` | Exclusão (204; 404 se inexistente) |
+
+> Não existem mais `GET /projetos/{id}/jornada`, `POST /projetos/{id}/etapas/inicializar` nem `PATCH /projetos/{id}/status` no backend nem wrappers correspondentes no `ProjetosService`. No IIS ainda podem retornar 401 enquanto a versão atual não for publicada.
 
 ### Banco de Dados
 - **Conecta:** ✅ Sim — tabelas `IMPL_Projeto`, `IMPL_TipoProjeto` + leitura de `tbcliente` (clientes, `FANTASIA` A–Z; `IMPL_Cliente` descontinuada como fonte)
@@ -188,11 +191,12 @@ Hero com código, título, progresso e breadcrumb back (hero do detalhe mantido 
 | Método | Rota (v1) | Service | Descrição |
 |--------|-----------|---------|-----------|
 | GET | `/api/v1/implantacao/projetos/{id}` | `ProjetosService.obter()` | Detalhe do projeto (com `totalTarefas`, `tarefasConcluidas`, `tarefasAtrasadas`) |
+| GET | `/api/v1/implantacao/projetos/{id}/etapas` | `ProjetosService.obterEtapasProjeto()` | Nove cards fixos exibidos na timeline |
 | GET | `/api/v1/implantacao/tarefas?projetoId={id}` | `TarefasService.listar()` | Tarefas do projeto (aba Tarefas) |
 | DELETE | `/api/v1/implantacao/projetos/{id}` | `ProjetosService.excluir()` | Exclusão via botão do hero (volta para `/implantacao/projetos`) |
 
 ### Banco de Dados
-- **Conecta:** ✅ Sim — `IMPL_Projeto`, `IMPL_Tarefa`, `IMPL_Etapa`, `IMPL_ColunaKanban`
+- **Conecta:** ✅ Sim — `IMPL_Projeto`, `IMPL_Tarefa`, `tbprojetoEtapa` e `IMPL_ColunaKanban`
 
 ### Dependências Externas
 - `ProjetoService`, `TarefaService`
@@ -241,42 +245,13 @@ Grid de cards de tarefas com atalhos (Todas/Atrasadas/Em andamento/Concluídas),
 
 ---
 
-### 14.6 `CadastrosComponent`
+### 14.6 Etapas Globais — removidas do frontend
 
-**Componente:** `src/app/features/implantacao/pages/cadastros/cadastros.component.ts`
+A funcionalidade administrativa de Etapas Globais foi removida. Saíram do source as rotas `/admin/cadastros/etapas`, `/admin/cadastros/etapas/novo` e `/admin/cadastros/etapas/editar/:id`, os componentes `EtapasComponent`/`EtapaFormComponent` e seus SCSS, o `EtapasService` com CRUD `/api/v1/implantacao/etapas`, os tipos relacionados, o wrapper morto `TarefasService.listarEtapas()` e o breadcrumb específico.
 
-### O que faz
-3 abas (Tipos/Etapas/Colunas) com formulários inline e tabelas. CRUD completo para cadastros do módulo IMPLANTAÇÃO (aba Equipes removida em 2026-09-12 com o módulo Equipes).
+Antes da remoção, `GET` e `POST /api/v1/implantacao/etapas` no ambiente publicado retornavam 404 porque o backend global já havia sido removido; a tela capturava a falha e exibia estado vazio. A API global não deve ser recriada.
 
-### Services Injetados
-| Service | Métodos Usados | Finalidade |
-|---------|----------------|------------|
-| `TipoProjetoService` | `listar()`, `criar()`, `atualizar()`, `excluir()` | CRUD tipos |
-| `EtapaService` | `listar()`, `criar()`, `atualizar()`, `excluir()` | CRUD etapas |
-| `ColunasKanbanService` | `listar()`, `criar()`, `atualizar()`, `excluir()`, `reordenar()` | CRUD colunas |
-
-### API Endpoints Consumidos
-| Método | Rota (v1) | Service | Descrição |
-|--------|-----------|---------|-----------|
-| GET/POST/PUT/DELETE | `/api/v1/implantacao/tipos-projeto` | `TipoProjetoService` | CRUD tipos |
-| GET/POST/PUT/DELETE | `/api/v1/implantacao/etapas` | `EtapaService` | CRUD etapas |
-| GET/POST/PUT/DELETE | `/api/v1/implantacao/colunas-kanban` | `ColunasKanbanService` | CRUD colunas |
-| POST | `/api/v1/implantacao/colunas-kanban/reordenar` | `ColunasKanbanService` | Reordenar colunas |
-
-### Banco de Dados
-- **Conecta:** ✅ Sim — `IMPL_TipoProjeto`, `IMPL_Etapa`, `IMPL_ColunaKanban`
-
-### Dependências Externas
-- 3 services de cadastro (`services/cadastros.service.ts`: `TiposProjetoService`, `EtapasService`, `ColunasKanbanService`)
-- Models em `models/cadastros.model.ts` (`TipoProjetoResumo/Criar/AtualizarRequest`, `EtapaResumo/Criar/AtualizarRequest`, `ColunaKanbanResumo/Criar/Atualizar/ReordenarRequest` — sem Equipe)
-- Formulários inline
-- 13 etapas seeded (6 IMPL + 7 CIAA)
-- 4 tipos de projeto seeded
-
-### Observações Técricas
-- Lazy loading em `implantacao.routes.ts:31`
-- Seed em Development sem `IMPL_Equipe` (`TipoProjeto` sem `EquipeId`)
-- Todas com `[Authorize]` + rate limiting `validacao`
+A arquitetura vigente são nove cards por Projeto em `tbprojetoEtapa`, mantidos por `ProjetosService.obterEtapasProjeto()`/`listarEtapasPadrao()`, `ProjetoEtapaService` e selects de tarefas. A validação registrada para a limpeza frontend foi 19/19 testes, typechecks e build frontend, com gate backend/frontend verde.
 
 ---
 
@@ -285,7 +260,7 @@ Grid de cards de tarefas com atalhos (Todas/Atrasadas/Em andamento/Concluídas),
 **Componente:** `src/app/features/implantacao/pages/projetos/projeto-form.component.ts` + `projeto-form.component.html`
 
 ### O que faz
-Formulário create/edit de Projeto. `create` em `/implantacao/projetos/novo`; `edit` em `/implantacao/projetos/:id/editar` (detectado via `route.snapshot.paramMap.get('id')`). Código exibido `readonly` (sugerido via `obterProximoCodigo()`; o código efetivo é gerado no backend em `ProximoCodigoAsync()`). Validação client-side (`podeSalvar()`: nome ≥ 3, `tipoProjetoId` obrigatório, `responsavelId` obrigatório, `progresso` 0–100 no edit). Erros de lookup parcial exibem alerta ("Alguns dados auxiliares não puderam ser carregados..."). Sucesso navega para o detalhe (`/implantacao/projetos/:id`); cancelar volta para detalhe (edit) ou listagem (create).
+Formulário create/edit de Projeto. `create` em `/implantacao/projetos/novo`; `edit` em `/implantacao/projetos/:id/editar` (detectado via `route.snapshot.paramMap.get('id')`). Código exibido `readonly` (sugerido via `obterProximoCodigo()`; o código efetivo é gerado no backend em `ProximoCodigoAsync()`). Validação client-side (`podeSalvar()`: nome ≥ 3, `tipoProjetoId` e `responsavelId` obrigatórios). Erros de lookup parcial exibem alerta ("Alguns dados auxiliares não puderam ser carregados..."). Sucesso navega para o detalhe (`/implantacao/projetos/:id`); cancelar volta para detalhe (edit) ou listagem (create).
 
 ### Lookups (paralelos via `Promise.allSettled`)
 | Campo | Endpoint | Service |
@@ -294,16 +269,17 @@ Formulário create/edit de Projeto. `create` em `/implantacao/projetos/novo`; `e
 | Clientes | `GET /api/v1/implantacao/projetos/clientes` | `ProjetosService.listarClientes()` |
 | Responsáveis | `GET /api/v1/agenda/operadores` | `ProjetosService.listarOperadores()` |
 | Colunas Kanban | `GET /api/v1/implantacao/colunas-kanban?apenasAtivas=true` | `ProjetosService.listarColunasKanban()` |
+| Etapas padrão | `GET /api/v1/implantacao/projetos/etapas-padrao` | `ProjetosService.listarEtapasPadrao()` |
 | Próximo código | `GET /api/v1/implantacao/projetos/proximo-codigo` | `ProjetosService.obterProximoCodigo()` |
 
 ### Payloads
-- **Create** → `POST /api/v1/implantacao/projetos` (`ProjetoCriarRequest`: `nome*`, `descricao?`, `tipoProjetoId*`, `clienteId?`, `clienteLegadoId?`, `responsavelId?`, `criadorId*` via `AuthService.getOperadorLogado()`, `colunaKanbanId?`, `prioridade`, `dataInicio?`, `dataPrevisao?`, `dataGoLivePrevista?`, `horasPlanejadas?`, `observacao?`).
-- **Edit** → `PUT /api/v1/implantacao/projetos/{id}` (`ProjetoAtualizarRequest`: base do create + `status?`, `progresso?`, `dataConclusao?`, `dataGoLiveReal?`, `horasRealizadas?`, `usuarioAlteracao*`).
-- **Status (edit):** `Backlog`, `AFazer`, `EmAndamento`, `Homologacao`, `Concluido`, `Bloqueado`, `Cancelado`.
+- **Create** → `POST /api/v1/implantacao/projetos` (`ProjetoCriarRequest`: `nome*`, `descricao?`, `tipoProjetoId*`, `clienteId?`, `clienteLegadoId?`, `responsavelId?`, `criadorId*`, `prioridade`, datas, `horasPlanejadas?`, `observacao?` e `etapaInicialOrdem?`). O backend cria automaticamente os nove cards.
+- **Edit** → `PUT /api/v1/implantacao/projetos/{id}` (`ProjetoAtualizarRequest`; o DTO backend mantém `status?`, `progresso?`, `dataConclusao?`, `dataGoLiveReal?`, `horasRealizadas?` e `usuarioAlteracao`). O formulário atual envia os campos preenchidos, mas não expõe um controle de status.
+- **Status no contrato PUT:** `Backlog`, `AFazer`, `EmAndamento`, `Homologacao`, `Concluido`, `Bloqueado`, `Cancelado`; não existe mais um endpoint PATCH dedicado.
 - **Prioridades:** alinhadas ao enum do backend `PrioridadeProjeto` (`Baixa = 0`, `Media = 1`, `Alta = 2`, `Urgente = 3`); backend rejeita fora do enum (`400 { mensagem: "Prioridade inválida" }`).
 
 ### Banco de Dados
-- **Conecta:** ✅ Sim — `IMPL_Projeto` (+ leituras `IMPL_TipoProjeto`, `tbcliente` — cliente via `FANTASIA` —, `TBOPERADOR`, `IMPL_ColunaKanban`); código `PRJ-XXXX` gerado server-side.
+- **Conecta:** ✅ Sim — `IMPL_Projeto` + `tbprojetoEtapa` na criação automática; leituras `IMPL_TipoProjeto`, `tbcliente`, `TBOPERADOR` e `IMPL_ColunaKanban`; código `PRJ-XXXX` gerado server-side.
 
 ### Identidade (IDENTIDADE CLEAN 21/09/2026 + Lote B, confirmado no código)
 - Header via `app-page-header` (`PageHeaderComponent` reutilizável, `projeto-form.component.html:2-11`): título dinâmico via binding (`[titulo]="titulo()"`, `computed` em `projeto-form.component.ts:77-78` → `isEdit() ? 'Editar Projeto' : 'Novo Projeto'`), `descricao` dinâmica (edit: "Atualize as informações do projeto" / create: "Preencha os dados para criar um novo projeto"), `icone="bi-file-earmark-plus"`; slot `actions` (`.imp-form-header-actions`) com Cancelar; CSS `.imp-form-header`/`.imp-form-title`/`.imp-form-subtitle` removido do scss (resta só o contêiner do slot; regra responsiva órfã `.imp-form-header` em `projeto-form.component.scss:189` sem elemento correspondente).
@@ -315,31 +291,31 @@ Formulário create/edit de Projeto. `create` em `/implantacao/projetos/novo`; `e
 **Componente:** `src/app/features/implantacao/pages/tarefas/tarefa-form.component.ts` + `tarefa-form.component.html`
 
 ### O que faz
-Formulário create/edit **unificado** (22/09/2026): todos os campos **visíveis desde o início**, sem `*ngIf="isEdit()"`. `create` em `/implantacao/tarefas/novo` (aceita `?projetoId=`); `edit` em `/implantacao/tarefas/:id/editar` (pré-preenche via `obter()`). Validação client-side (`podeSalvar()`: título ≥ 3, `projetoId` obrigatório, `prioridade` 0–3, `ordem` ≥ 0, motivo obrigatório se `bloqueada`). **Após create:** navega para a lista `/implantacao/tarefas` com toast "Tarefa criada com sucesso" (router state); **após atualização:** permanece na tela de edição com toast de sucesso. **Seção 3 redesenhada (22/09/2026):** "Mais opções" (colapsável com botão) substituída por seção fixa **"Cronograma e acompanhamento"**, sem colapso, em 3 subcartões: **Prazos** (Previsão de Conclusão + Data de Conclusão Real, com hints), **Esforço** (Horas Estimadas + Ordem no quadro), **Bloqueio** (switch `.imp-form__switch` + Motivo via `@if (bloqueada())`, não mais input `disabled`). **Select Status removido do form** — status deriva da Coluna Kanban (hint "Define o status da tarefa no quadro"); signals `status`/`statusOptions`/`maisOpcoesAbertas` removidos; payload não envia mais `status`. Hints novos: Data de Entrega ("Prazo oficial — base do cálculo de atraso"), Previsão (estimativa interna), Conclusão Real (auto-preenchida), Ordem no quadro.
+Formulário create/edit **unificado** (22/09/2026): todos os campos **visíveis desde o início**, sem `*ngIf="isEdit()"`. `create` em `/implantacao/tarefas/novo` (aceita `?projetoId=`); `edit` em `/implantacao/tarefas/:id/editar` (pré-preenche via `obter()`). Validação client-side (`podeSalvar()`: título ≥ 3, `prioridade` 0–3, `ordem` ≥ 0, card obrigatório quando há projeto, motivo obrigatório se `bloqueada`). **Após create:** navega para a lista `/implantacao/tarefas` com toast "Tarefa criada com sucesso" (router state); **após atualização:** permanece na tela de edição com toast de sucesso. **Seção 3 redesenhada (22/09/2026):** "Mais opções" (colapsável com botão) substituída por seção fixa **"Cronograma e acompanhamento"**, sem colapso, em 3 subcartões: **Prazos** (Previsão de Conclusão + Data de Conclusão Real, com hints), **Esforço** (Horas Estimadas + Ordem no quadro), **Bloqueio** (switch `.imp-form__switch` + Motivo via `@if (bloqueada())`, não mais input `disabled`). **Select Status removido do form** — status deriva da Coluna Kanban (hint "Define o status da tarefa no quadro"); signals `status`/`statusOptions`/`maisOpcoesAbertas` removidos; payload não envia mais `status`. Hints novos: Data de Entrega ("Prazo oficial — base do cálculo de atraso"), Previsão (estimativa interna), Conclusão Real (auto-preenchida), Ordem no quadro.
 
 ### Lookups (paralelos via `Promise.allSettled`)
 | Campo | Endpoint | Service |
 |-------|----------|---------|
 | Projetos | `GET /api/v1/implantacao/projetos` | `ProjetosService.listar()` |
-| Etapas | `GET /api/v1/implantacao/etapas` (`projetoId` opcional) | `TarefasService.listarEtapas()` |
+| Etapa do projeto (card) | `GET /api/v1/implantacao/projetos/{id}/etapas` | `ProjetosService.obterEtapasProjeto()` |
 | Colunas Kanban | `GET /api/v1/implantacao/colunas-kanban` | `ColunasKanbanService.listar()` |
 | Responsáveis | `GET /api/v1/agenda/operadores` | `TarefasService.listarOperadores()` |
 
 ### Payloads
-- **Create** → `POST /api/v1/implantacao/tarefas` (`TarefaCriarRequest`: `projetoId*`, `etapaId?`, `projetoEtapaId?`, `colunaKanbanId?`, `titulo*`, `descricao?`, `responsavelId?`, `criadorId*`, `prioridade`, `ordem`, `dataPrevisao?`, `horasEstimadas?`, `chamadoLegadoId?`, `chamadoIds?`, `dataConclusao?`, `bloqueada?`, `motivoBloqueio?` — **`status` não é mais enviado pelo form**, o backend deriva da coluna).
-- **Edit** → `PUT /api/v1/implantacao/tarefas/{id}` (`TarefaAtualizarRequest`: `etapaId?`, `projetoEtapaId?`, `colunaKanbanId?`, `chamadoLegadoId?`, `chamadoIds?`, `titulo*`, `descricao?`, `responsavelId?`, `prioridade`, `ordem`, `dataPrevisao?`, `dataConclusao?`, `horasEstimadas?`, `bloqueada`, `motivoBloqueio?`, `usuarioAlteracao*`; **`horasRealizadas` removido** — horas realizadas só via apontamentos; **`status` não enviado** — sincronia coluna↔status no backend).
+- **Create** → `POST /api/v1/implantacao/tarefas` (`TarefaCriarRequest`: `projetoId?`, `projetoEtapaId?` — obrigatório quando há projeto, `colunaKanbanId?`, `titulo*`, `descricao?`, `responsavelId?`, `responsavelIds?`, `criadorId*`, `prioridade`, `tipo`, `ordem`, `dataPrevisao?`, `dataEntrega?`, `horasEstimadas?`, `chamadoLegadoId?`, `chamadoIds?`, `dataConclusao?`, `bloqueada?`, `motivoBloqueio?`; `status` não é enviado pelo form e o backend deriva da coluna).
+- **Edit** → `PUT /api/v1/implantacao/tarefas/{id}` (`TarefaAtualizarRequest`: `projetoEtapaId?`, `colunaKanbanId?`, `chamadoLegadoId?`, `chamadoIds?`, `titulo*`, `descricao?`, `responsavelId?`, `responsavelIds?`, `prioridade`, `tipo`, `ordem`, `dataPrevisao?`, `dataEntrega?`, `dataConclusao?`, `horasEstimadas?`, `bloqueada`, `motivoBloqueio?`, `usuarioAlteracao*`; `status` não é enviado e a coluna↔status é sincronizada no backend).
 - **`buildRequest()` envia `chamadoIds`** (create e update) — corrige o bug em que os chamados relacionados selecionados no dropdown não persistiam (antes o N-N só era gravado via `ChamadoLegadoId`).
-- **Form expõe:** projeto*, prioridade*, etapa, **etapa do projeto (card)** (`projetoEtapaId`, dropdown das 9 fixas via `GET /projetos/{id}/etapas`, default = `EmAndamento`, `NULL` = "Sem card (só totais)"), coluna Kanban (hint: define o status), responsável, **seção fixa "Cronograma e acompanhamento"** (Prazos: previsão + conclusão real; Esforço: horas estimadas + ordem no quadro; Bloqueio: switch + motivo via `@if`), lista de **chamados relacionados** (dropdown `chamadoIds`). **Removidos do form:** "Horas Realizadas", "Chamado Legado (ID)", **select Status** e a seção colapsável "Mais opções" (22/09/2026).
+- **Form expõe:** projeto (opcional), prioridade, **etapa do projeto (card)** obrigatória quando há projeto (`projetoEtapaId`, dropdown das 9 fixas via `GET /projetos/{id}/etapas`, default = `EmAndamento`, tarefa sem projeto fica sem card), coluna Kanban (hint: define o status), responsável, **seção fixa "Cronograma e acompanhamento"** (Prazos: previsão + conclusão real; Esforço: horas estimadas + ordem no quadro; Bloqueio: switch + motivo via `@if`), lista de **chamados relacionados** (dropdown `chamadoIds`). **Removidos do form:** "Horas Realizadas", "Chamado Legado (ID)", **select Status** e a seção colapsável "Mais opções" (22/09/2026).
 - **Backend:** `TarefaDetalhe.ChamadoLegadoId` (`TRF_ChamadoLegadoId`, FK lógica p/ `tbchamado.CHAMADO_ID`) presente em resumo/detalhe/create/update; `ChamadoIds` sincroniza o N-N (no update, lista enviada é fonte da verdade; no create, grava na criação); `Status` opcional no create e no update (`Enum.TryParse<StatusTarefa>`; `StatusTarefa`: `Backlog`, `AFazer`, `EmAndamento`, `EmHomologacao`, `Concluida`, `Cancelada`); prioridade validada via `Enum.IsDefined(typeof(PrioridadeTarefa))` (`Baixa = 0`, `Media = 1`, `Alta = 2`, `Urgente = 3`) no create e no update (`400 { mensagem }` quando inválida).
 
 ### Banco de Dados
-- **Conecta:** ✅ Sim — `IMPL_Tarefa` (+ `IMPL_Projeto`, `IMPL_Etapa`, `IMPL_ColunaKanban`, `TBOPERADOR`, `IMPL_ComentarioTarefa` na leitura do detalhe).
+- **Conecta:** ✅ Sim — `IMPL_Tarefa` + `IMPL_Projeto`, `tbprojetoEtapa`, `IMPL_ColunaKanban`, `TBOPERADOR` e `IMPL_ComentarioTarefa`.
 
 ### Identidade (IDENTIDADE CLEAN 21/09/2026 + Lote B, confirmado no código)
 - Header via `app-page-header` (`PageHeaderComponent` reutilizável, `tarefa-form.component.html:2-11`): título dinâmico via binding (`[titulo]="tituloPagina()"`, `computed` em `tarefa-form.component.ts:98-99` → `isEdit() ? 'Editar Tarefa' : 'Nova Tarefa'`), `descricao` dinâmica (edit: "Atualize as informações da tarefa" / create: "Preencha os dados para criar uma nova tarefa"), `icone="bi-file-earmark-text"`; slot `actions` (`.imp-form-header-actions`) com Cancelar; CSS `.imp-form-header`/`.imp-form-title`/`.imp-form-subtitle` removido do scss.
 
 ### Observações Técnicas (Kanban↔Tarefas — Fase 3)
-- **Menu do cartão (⋮):** Editar (→ `/implantacao/tarefas/:id/editar`), Comentar (abre o drawer), Duplicar (lê o detalhe e recria com `(cópia)`, preservando `etapaId`, `colunaKanbanId`, `chamadoLegadoId`, `prioridade`, `ordem + 1`), Mover de coluna, Excluir (com `confirm()`).
+- **Menu do cartão (⋮):** Editar (→ `/implantacao/tarefas/:id/editar`), Comentar (abre o drawer), Duplicar (lê o detalhe e recria com `(cópia)`, preservando `projetoEtapaId`, `colunaKanbanId`, `chamadoLegadoId`, `prioridade`, `ordem + 1`), Mover de coluna, Excluir (com `confirm()`).
 - **Drawer:** abre via `obter()`; exibe projeto/status/prioridade/responsável/previsão/horas/descrição; thread de comentários (`t.comentarios`) + `POST /tarefas/{id}/comentarios`; ações **Editar tarefa** e **Excluir**.
 - **Edição inline (título F2, prioridade duplo clique, responsável):** valida prioridade 0–3; persiste via `obter()` + `PUT` com `requisicaoAtualizacao()` (preserva todos os demais campos, incluindo `chamadoLegadoId` e `status`).
 - **Ações em lote:** mover (via `PATCH /coluna`), prioridade/responsável (via `atualizarPreservandoCampos()` + `PUT`, preservando campos), excluir (via `DELETE`); orquestradas com `forkJoin`.
@@ -359,15 +335,17 @@ Gestão da Central (`/admin/dashboard`, só Administrador, refresh 30s) em 3 aba
 
 ### 14.6 Jornada da implantação (Projeto → Etapas → Tarefas)
 
-**Backend:** `IProjetoJornadaService/ProjetoJornadaService` + `GET /implantacao/projetos/{id}/jornada` → `{projetoId, etapas[{etapaId,nome,cor,ordem,totalTarefas,tarefasConcluidas,percentual,estado}], progressoGeral, etapaAtualId}`. Fluxo = etapas ativas do `TipoProjeto` do projeto + globais, na `Ordem` cadastrada (sem tabela nova). Estados derivados: `Concluida` (100% com tarefas), `EmAndamento` (primeira incompleta com tarefas), `Bloqueada` (anterior < 100%), `Pendente` (sem tarefas; vazia não bloqueia). Geral = média simples das etapas com tarefas (persistido em `PRJ_Progresso` via `RecalcularProgressoAsync`, chamado em criar/atualizar/mover/excluir/arquivar/desarquivar sem quebrar a operação em caso de falha).
+**Backend:** a jornada é composta por **nove cards por projeto** em `tbprojetoEtapa`, não por etapas globais. `POST /implantacao/projetos` chama `IProjetoEtapaService.InicializarEtapasPadraoAsync`; `GET /implantacao/projetos/{id}/etapas` usa o mesmo método apenas se o projeto ainda não tiver cards. Os nomes padrão são expostos por `GET /implantacao/projetos/etapas-padrao`.
 
-**Regra:** tarefa com `ProjetoId` exige `EtapaId` do fluxo (400 `Etapa obrigatória...`/`Etapa não pertence ao fluxo...`); sem projeto, etapa opcional e campo oculto no form.
+`IProjetoJornadaService/ProjetoJornadaService` permanece como cálculo privado de progresso para `TarefaService`; **não há** `GET /implantacao/projetos/{id}/jornada`. O cálculo usa os cards, tarefas não arquivadas vinculadas por `ProjetoEtapaId` e persiste `PRJ_Progresso`.
 
-**Frontend:** `projeto-detalhe` tem a timeline de cards (cores/ícones por estado + % geral); clique navega para `/implantacao/kanban?projetoId=X&etapaId=Y` (chip removível no Kanban); `tarefa-form` exige etapa com projeto (select filtrado pelo fluxo via `GET /etapas?tipoProjetoId=`); Kanban exibe badge de etapa no card/drawer e exige etapa no criar inline; lista de tarefas mostra etiqueta de etapa. `GET /tarefas` aceita `?etapaId=`; `TarefaResumo` inclui `etapaId/etapaNome`.
+**Regra:** tarefa com `ProjetoId` exige `ProjetoEtapaId` pertencente ao mesmo projeto (`400 "Etapa do projeto inválida para esta tarefa"`); tarefa sem projeto não usa card.
+
+**Frontend:** `projeto-detalhe` carrega `GET /projetos/{id}/etapas` e abre o modal do card; `tarefa-form` e a criação inline do Kanban carregam os cards do projeto selecionado. O wrapper global `GET /implantacao/etapas` foi removido; não há uso corrente de `?etapaId=` ou `Tarefa.EtapaId`.
 
 ### 14.6.1 Contador dinâmico de tarefas por etapa + transição automática (20/09/2026)
 
-**Backend (confirmado no código):** `Tarefa.ProjetoEtapaId` (`TRF_ProjetoEtapaId`, FK NULL p/ `tbprojetoEtapa.PEP_Id`, `NO ACTION` — SQL Server barra múltiplos caminhos em cascata (IMPL_Projeto→IMPL_Tarefa direto + via tbprojetoEtapa)) + nav `ProjetoEtapa`; relationship em `AppDbContext.cs` (bloco `Tarefa`); migration `20260920185734_TarefaProjetoEtapaId` (AddColumn + índice `IX_IMPL_Tarefa_TRF_ProjetoEtapaId` + FK + backfill SQL por nome conhecido, `HOMOLOGACAO→HOMOLOGAÇÃO`, demais `NULL`) + script manual `scripts/db/migracao-tarefa-projeto-etapa-id.sql` (idempotente); DTOs `TarefaResumo/Detalhe/Criar/Atualizar` com `ProjetoEtapaId(+Nome)`; `ProjetoEtapaResumo` com `TarefasTotal/TarefasConcluidas/Id` (GROUP BY em `ObterEtapasAsync`, excluindo arquivadas). `TarefaService.ValidarEtapaFixaAsync` (etapa fixa deve ser do mesmo projeto, senão `400 "Etapa do projeto inválida para esta tarefa"`); sets no Criar/Atualizar; includes + projeções em Listar/Obter; injeção de `IProjetoEtapaService`; `RecalcularJornadaAsync` chama `SincronizarEtapasPorTarefasAsync` após o recalc (cobre criar/atualizar/mover-coluna/concluir/arquivar/excluir) — `Projeto.Progresso` termina no fórmula-fixa. `ProjetoEtapaService.SincronizarEtapasPorTarefasAsync`: conta tarefas por linha fixa (`!Arquivada`, `ProjetoEtapaId`); sem tarefas não toca (manual/checklist intacto); com tarefas atualiza Percentual task-based; tudo-concluído + não-concluída → `Concluida` + `DataFimReal` + histórico "Conclusão automática por tarefas" + `DesbloquearProximaEtapaAsync` (reuso); etapa `Concluida` **completa** congela em 100; etapa `Concluida` **incompleta** (tarefa reabriu) → **reabre SÓ ela** (`EmAndamento`, % recalculado, `DataFimReal=null`, histórico "Reabertura automática por tarefas"; etapas posteriores intactas — 22/09/2026).
+**Backend (confirmado no código):** `Tarefa.ProjetoEtapaId` (`TRF_ProjetoEtapaId`, FK NULL p/ `tbprojetoEtapa.PEP_Id`, `NO ACTION` — SQL Server barra múltiplos caminhos em cascata (IMPL_Projeto→IMPL_Tarefa direto + via tbprojetoEtapa)) + nav `ProjetoEtapa`; relationship em `AppDbContext.cs` (bloco `Tarefa`); migration `20260920185734_TarefaProjetoEtapaId` (AddColumn + índice `IX_IMPL_Tarefa_TRF_ProjetoEtapaId` + FK + backfill SQL por nome conhecido, `HOMOLOGACAO→HOMOLOGAÇÃO`, demais `NULL`) + script manual `scripts/db/migracao-tarefa-projeto-etapa-id.sql` (idempotente); DTOs `TarefaResumo/Detalhe/Criar/Atualizar` com `ProjetoEtapaId(+Nome)`; `ProjetoEtapaResumo` com `TarefasTotal/TarefasConcluidas/Id` (GROUP BY em `ObterEtapasAsync`, excluindo arquivadas). `TarefaService.ValidarEtapaFixaAsync` (etapa fixa deve ser do mesmo projeto, senão `400 "Etapa do projeto inválida para esta tarefa"`); sets no Criar/Atualizar; includes + projeções em Listar/Obter; injeção de `IProjetoEtapaService`; `RecalcularJornadaAsync` chama `SincronizarEtapasPorTarefasAsync` após o recalc (cobre criar/atualizar/mover-coluna/concluir/arquivar/excluir) — `Projeto.Progresso` termina no fórmula-fixa. `ProjetoEtapaService.SincronizarEtapasPorTarefasAsync`: conta tarefas por linha fixa (`!Arquivada`, `ProjetoEtapaId`); sem tarefas não toca (manual/checklist intacto); com tarefas atualiza Percentual task-based; tudo-concluído + não-concluída → `Concluida` + `DataFimReal` + histórico "Conclusão automática por tarefas" + `DesbloquearProximaEtapaAsync` (reuso); etapa `Concluida` **completa** congela em 100; etapa `Concluida` **incompleta** (tarefa reabriu) → **reabre SÓ ela** (`EmAndamento`, % recalculado, `DataFimReal=null`, histórico "Reabertura automática por tarefas"; etapas posteriores intactas — 22/09/2026). A migration `20260922154202_RemoveEtapaAntiga` removeu depois a tabela `IMPL_Etapa` e a coluna legada `TRF_EtapaId`; o modelo atual usa somente `TRF_ProjetoEtapaId` com `Restrict`.
 
-**Frontend (confirmado no código):** `projeto.model.ts` (`ProjetoEtapaResumo.tarefasTotal/tarefasConcluidas/id`) e `tarefa.model.ts` (`projetoEtapaId/projetoEtapaNome` em Resumo/Detalhe/Criar/Atualizar) estendidos; `projeto-etapa-card` (`projeto-etapa-card.component.ts`) mostra "X/Y tarefas" (`.etapa-tarefas`, tooltips `tooltipTarefas()`) quando há tarefas, senão checklist (`tooltipChecklist()`); `tarefa-form` e Kanban inline com dropdown "Etapa do projeto (card)" (default = `EmAndamento`, `NULL` = "Sem card (só totais)"); payloads enviam `projetoEtapaId`. Builds: dotnet 0 erros; `ng build` sem erros. Sem auto-migrate no startup — aplicar migration ou script SQL no servidor.
+**Frontend (confirmado no código):** `projeto.model.ts` (`ProjetoEtapaResumo.tarefasTotal/tarefasConcluidas/id`) e `tarefa.model.ts` (`projetoEtapaId/projetoEtapaNome` em Resumo/Detalhe/Criar/Atualizar) estendidos; `projeto-etapa-card` (`projeto-etapa-card.component.ts`) mostra "X/Y tarefas" (`.etapa-tarefas`, tooltips `tooltipTarefas()`) quando há tarefas, senão checklist (`tooltipChecklist()`); `tarefa-form` e Kanban inline com dropdown "Etapa do projeto (card)" (default = `EmAndamento`, tarefa sem projeto fica sem card); payloads enviam `projetoEtapaId`. Validação registrada para a limpeza de endpoints de Projetos: `scripts/validate.ps1` verde — backend 0 avisos/0 erros; frontend compilou com os warnings já tolerados.
 - IDENTIDADE CLEAN (21/09/2026, confirmado no código — remoção de emojis do visual, sidebar mantida): `projeto-etapa-card` com badge numérico CSS (`.etapa-numero`) + `<i class="bi bi-exclamation-triangle-fill">` no atraso (sem emoji); `projeto-etapa-modal` com badge de estado + ícones Bootstrap (`bi-check-lg`, `bi-check-circle-fill`, sem emoji); `projeto-retorno-dialog` sem o ✅ (lista de consequências com `bi-check-circle-fill`, aviso com `bi-info-circle-fill`). Restam só comentários HTML invisíveis. (A aba "Banco × Documentação" de `db-diferencas` foi removida em 23/09/2026 — ver `docs/telas/04-database.md`.)

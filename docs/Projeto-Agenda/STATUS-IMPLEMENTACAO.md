@@ -1,5 +1,7 @@
 # Status de Implementação da Agenda — Central de Operação
 
+> **Documento histórico de 11/09/2026 — não representa o status atual.** branched da Agenda, migrations e paths podem ter sido removidos ou alterados. Consulte [`06-COMPONENTES-FRONTEND.md`](../06-COMPONENTES-FRONTEND.md), [`07-SERVICES-BACKEND.md`](../07-SERVICES-BACKEND.md) e [`08-HISTORIAS-TELAS.md`](../08-HISTORIAS-TELAS.md) para o monorepo vigente.
+
 > **Última atualização**: 11/09/2026  
 > **Versão**: MVP (v1.0.0)  
 > **Branch base**: `developer` → `feature/agenda-mvp` (a criar)
@@ -10,7 +12,7 @@
 
 Implementação completa do **MVP da Agenda** (calendário interno, CRUD de eventos, 3 visualizações, filtro por responsável) seguindo a arquitetura existente da Central de Operação (Angular 18 + .NET 8 + SQL Server).
 
-**Status geral**: ✅ **Código 100% pronto** | ⏳ **Deploy em homologação pendente** (senha do servidor)
+**Status registrado em 11/09/2026:** ✅ **Código 100% pronto** | ⏳ **Deploy em homologação pendente**. Esse status é histórico e não comprova o estado vigente.
 
 ---
 
@@ -124,10 +126,11 @@ Implementação completa do **MVP da Agenda** (calendário interno, CRUD de even
 powershell -ExecutionPolicy Bypass -File .\scripts\deploy.ps1
 ```
 
-### **2. Documentação Automática (Delegar ao `docs-writer`)**
+### **2. Documentação (delegar ao `docs-writer`)**
 Após deploy, o agente `docs-writer` deve atualizar:
-- `docs/TELAS.md` — Seção **Agenda** (frontend + endpoints)
-- `docs/DOCUMENTACAO-COMPLETA.md` — Seção módulo Agenda
+- `docs/06-COMPONENTES-FRONTEND.md` — componentes e rotas da Agenda
+- `docs/05-ENDPOINTS.md` e `docs/07-SERVICES-BACKEND.md` — endpoints e serviços da Agenda
+- `docs/08-HISTORIAS-TELAS.md` — cenários de QA da Agenda
 - `backend/README.md` — Endpoints Agenda
 - `frontend/README.md` — Componente Agenda
 
@@ -204,7 +207,6 @@ frontend/src/app/
 
 - **Plano original**: `docs/Projeto-Agenda/AgendaProjeto.md`
 - **Rollback anterior**: `docs/Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md`
-- **Diagnóstico fase 0**: `docs/Diagnostico-Agenda.md`
 - **Migration script**: `backend/Central_BackEnd/ImplantacaoInit.sql`
 
 ---

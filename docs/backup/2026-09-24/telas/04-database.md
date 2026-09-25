@@ -224,37 +224,63 @@ Host do **Criador de Consultas** (enxugamento 23/09/2026, `640bbf6`) — sem aba
 ### O que faz
 **Só a sub-aba Sincronização** (aba "Banco × Documentação" e snapshots removidos em 23/09/2026, `640bbf6`; modo lote removido em 24/09/2026). `DbDiferencasComponent` carrega `listarTabelas()` e repassa via `@Input tabelas` ao `DbSincronizacaoComponent`: compara schema de **uma** tabela JCA × arquivo **JSON** enviado (parse no backend, `POST /compare-schemas`; entrada CSV removida em 24/09/2026 — só `.json`).
 
-**Resumo = cards-filtro clicáveis** (padrão **só críticos**): `críticos` | `avisos` | `compatíveis` | `match % · tudo`. Clique no card filtra a lista; clique de novo (ou em `match · tudo`) limpara. Checkbox "Mostrar apenas diferenças" removido. `filtroSeveridade` signal (`'Critico' | 'Aviso' | 'Ok' | null`, default `'Critico'`); numerador `numeroCritico` estável na lista completa da resposta (não renumera ao trocar filtro); coluna `numero` no export CSV.
+**Dois modos (toggle):**
+- **Tabela única** (padrão): escolhe tabela no dropdown, envia JSON (≤ 5 MB), `POST /compare-schemas`.
+- **Banco inteiro**: sem dropdown, envia JSON Lines (uma linha por tabela, ≤ 20 MB), `POST /compare-schemas-bulk` — compara **todas** as tabelas do arquivo × todas do banco conectado; tabelas ausentes de **qualquer lado** contam como **Crítico**.
 
-**Controles:** busca de tabela **reativa via signal** (`buscaTabela` signal + `tabelasFiltradas` computed — case-insensitive sobre nome/schema; corrigido em 24/09/2026: propriedade comum não invalidava o `computed`, exigindo Ctrl+F5; tabela selecionada sempre permanece visível no `<select>` mesmo fora do match), file input `accept=".json"` ("Escolher JSON"), botões Comparar / Exportar CSV / **Limpar** (`limparTudo()` zera resultado, arquivo, seleção, filtro, busca e input de arquivo via `ViewChild` — busca volta a filtrar imediatamente, sem F5).
+**Resumo modo tabela única = cards-filtro clicáveis** (padrão **só críticos**): `críticos` | `avisos` | `compatíveis` | `match % · tudo`. Clique no card filtra a lista; clique de novo (ou em `match · tudo`) limpa. `filtroSeveridade` signal (`'Critico' | 'Aviso' | 'Ok' | null`, default `'Critico'`); numerador `numeroCritico` estável na lista completa da resposta (não renumera ao trocar filtro); coluna `numero` no export CSV.
 
-**Script de exportação:** inputs de schema + tabela, `<pre>` gerado ao vivo (`scriptSql()`), botão "Copiar script" (clipboard API + fallback `execCommand`). JSON montado com **`FOR XML PATH` + `RAISERROR`** (sem `FOR JSON`/`JSON_QUERY`/`THROW`) — compatível com SQL Server 2005+; saída 1 coluna `nvarchar(max)` (objeto único).
+**Resumo modo banco inteiro = cards-filtro + chips de status**: `críticos` | `avisos` | `tabelas ok` | `match % · tudo` + linha de chips `X ok • Y com diferenças • Z só no arquivo • W só no banco`. Lista por tabela (expansível): status badge (`OK`/`Diferenças`/`Só no arquivo`/`Só no banco`), nome, `cols arq × cols JCA`, `crít.`, `av.`, `match %`. Expande → lista de diferenças reutilizando cards `.db-sync__item` com numerador global.
+
+**Controles modo tabela única:** busca reativa via signal (`buscaTabela` + `tabelasFiltradas` computed — case-insensitive; tabela selecionada permanece visível), file input `accept=".json"` (placeholder "até 5 MB"), botões Comparar / Exportar CSV / **Limpar** (`limparTudo()` zera tudo, busca volta a filtrar sem F5).
+
+**Controles modo banco inteiro:** sem dropdown; file input placeholder "(até 20 MB)"; botões Comparar / Exportar CSV / **Limpar** (apaga resultado bulk, filtro bulk, tabelas expandidas).
+
+**Scripts de exportação (ambos os modos):** inputs de schema (vazio = todos os schemas no modo banco) + tabela (só modo tabela única), `<pre>` gerado ao vivo (`scriptSql()` / `scriptSqlBulk()`), botão "Copiar script". JSON montado com **`FOR XML PATH` + `RAISERROR`** (sem `FOR JSON`) — compatível SQL Server 2005+.
+- **Modo tabela única**: saída 1 coluna `nvarchar(max)` (objeto único).
+- **Modo banco inteiro**: script SSMS em massa — 1 linha por tabela (evita truncamento de célula), `DECLARE @schema sysname = NULL` (NULL = todos), `ORDER BY schema, tabela`.
+
+**Formatos JSON aceitos (backend auto-detecta):**
+| Formato | Exemplo | Notas |
+|---------|---------|-------|
+| Objeto limpo | `{"tabela":"dbo.t","colunas":[...],"indices":[],"fks":[]}` | Padrão |
+| String CSV/SSMS | `"{\"tabela\":...}"` | Aspas duplicadas `""` → `"` |
+| Array de colunas | `[{"nome":"id","tipo":"int",...},...]` | Só colunas |
+| Objeto `tabelas` | `{"tabelas":[{"tabela":"dbo.t",...}]}` | 1 tabela OK; >1 → erro "use banco inteiro" |
+| **Array embrulhado** | `[{"": "{\"tabela\":...}"}]` | Artefato Excel/SSMS — **desembrulha auto** |
+| **JSON Lines** | 1 linha = 1 tabela (objeto ou string CSV) | Modo banco inteiro; header não-JSON ignorado |
 
 ### Services Injetados
 | Service | Métodos Usados | Finalidade |
 |---------|----------------|------------|
-| `DatabaseService` | `listarTabelas()`, `compararSchemas()` | Dropdown + upload de schema |
+| `DatabaseService` | `listarTabelas()`, `compararSchemas()`, `compararBancoInteiro()` | Dropdown + upload tabela única + upload banco inteiro |
 
 ### API Endpoints Consumidos
 | Método | Rota (v1) | Service | Descrição |
 |--------|-----------|---------|-----------|
-| GET | `/api/v1/database/tables` | `DatabaseService.listarTabelas()` | Tabelas do dropdown |
-| POST | `/api/v1/database/compare-schemas` | `DatabaseService.compararSchemas()` | Upload multipart (`schema`, `tabela`, `arquivo` só `.json`) × schema JCA → `SchemaComparisonResultDto` |
+| GET | `/api/v1/database/tables` | `DatabaseService.listarTabelas()` | Tabelas do dropdown (modo tabela única) |
+| POST | `/api/v1/database/compare-schemas` | `DatabaseService.compararSchemas()` | Upload multipart (`schema`, `tabela`, `arquivo` ≤ 5 MB, só `.json`) × schema JCA → `SchemaComparisonResultDto` |
+| POST | `/api/v1/database/compare-schemas-bulk` | `DatabaseService.compararBancoInteiro()` | Upload multipart (`arquivo` ≤ 20 MB, só `.json`) × banco conectado → `BulkSchemaComparisonResultDto` |
 
 ### Banco de Dados
 - **Conecta:** ✅ Sim — schema real do SQL Server × arquivo externo (Sincronização)
 
 ### Dependências Externas
 - `DatabaseService`
-- `SchemaComparisonResult`/`SchemaDifference` em `database/models/database.model.ts`
+- `SchemaComparisonResult`/`SchemaDifference`/`BulkSchemaComparisonResult`/`BulkTableComparison`/`BulkTableStatus` em `database/models/database.model.ts`
 - `DbSincronizacaoComponent` (standalone, `@Input tabelas`)
 
 ### Observações Técnicas
 - Lazy loading em `database.routes.ts:14`
 - Removidos: `POST /diff`, `POST|GET /snapshot(s)`, `POST /snapshot/comparar`, métodos `diferencarSchema`/`salvarSnapshot`/`listarSnapshots`/`compararSnapshot` e modelos `DiffResult`/`DiffItem`; **modo lote** (`compare-schemas-lote`, `compararSchemasLote`, `SchemaComparisonBatchResult`, toggle UI)
-- IDENTIDADE CLEAN: dots CSS `.db-sync__dot--Critico/--Aviso/--Ok`; badge `.db-sync__badge` numerando críticos; cards `.db-sync__stat` com estado ativo por severidade; entrada só JSON ≤ 5 MB; export `schema-comparacao-{tabela}.csv` client-side com colunas `numero,severidade,…`; `buscaTabela`/`tabelaSelecionada` signals (busca reativa sem F5)
-- Bloco "Script de exportação": aspas SQL escapadas via `litarSql`; JSON montado via `FOR XML PATH` (2005+); duplicatas no arquivo → `Aviso`, sem abortar
-- Modelos: `SchemaDifference.numeroCritico?` em `database.model.ts`
+- IDENTIDADE CLEAN: dots CSS `.db-sync__dot--Critico/--Aviso/--Ok`; badge `.db-sync__badge` numerando críticos; cards `.db-sync__stat` com estado ativo por severidade; entrada JSON ≤ 5 MB (tabela) / ≤ 20 MB (banco inteiro); export CSV client-side:
+  - Tabela única: `schema-comparacao-{tabela}.csv` → `numero,severidade,categoria,campo,esperado,encontrado,descricao`
+  - Banco inteiro: `schema-banco-inteiro.csv` → `tabela,status,severidade,categoria,campo,esperado,encontrado,descricao`
+- `buscaTabela`/`tabelaSelecionada` signals (busca reativa sem F5)
+- Bloco "Script de exportação": aspas SQL escapadas via `litarSql`; JSON via `FOR XML PATH` (2005+); duplicatas no arquivo → `Aviso`, sem abortar
+- Modelos: `SchemaDifference.numeroCritico?`, `BulkTableStatus = 'Ok' | 'Diferencas' | 'SomenteArquivo' | 'SomenteBanco'` em `database.model.ts`
+- Rate limit: 50 req/min (política `validacao`) em ambos endpoints
+- Chave de matching arquivo × JCA: `schema.tabela` case-insensitive; fallback `dbo.nome`; depois nome puro (primeiro match)
 
 ---
 

@@ -11,6 +11,7 @@
 | Mapa de telas e APIs por módulo | [`TELAS.md`](./TELAS.md) → [`telas/`](./telas/) |
 | Histórias de QA (passos, endpoints, tabelas) | [`HISTORIAS-TELAS.md`](./HISTORIAS-TELAS.md) |
 | Arquitetura, JWT, versionamento, deploy IIS, segurança | [`DOCUMENTACAO-COMPLETA.md`](./DOCUMENTACAO-COMPLETA.md) |
+| Plano de migração 1 → 4 webapps (multi-webapp) | [`ARQUITETURA-MULTI-WEBAPP.md`](./ARQUITETURA-MULTI-WEBAPP.md) |
 | Google Sheets, tabelas SQL, Database Explorer | [`integracoes-bd.md`](./integracoes-bd.md) |
 | Módulo Implantação / Projetos | [`implantacao.md`](./implantacao.md) |
 | Módulos frontend (Agenda; Gestor/Central Executiva removidos) | [`frontend-modulos.md`](./frontend-modulos.md) |

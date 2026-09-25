@@ -128,15 +128,7 @@ O `scripts/deploy/deploy.ps1` **publica direto nas pastas reais do IIS**:
 powershell -ExecutionPolicy Bypass -File .\scripts\deploy\deploy.ps1
 ```
 
-> **Credenciais do servidor:** o parâmetro `-SenhaRemota` tem valor padrão
-> `jca@1532` (senha do `JCASRV-SUP` embutida no script desde 18/09/2026) e há
-> fallback para o mesmo valor se vier vazio — na prática o deploy publica sem
-> pedir senha. Com `-Publicar:$true` (padrão), após empacotar, validar os
-> artefatos e testar a conectividade, a autenticação usa `New-PSDrive` com
-> `PSCredential`, sem `net use` nem conversão da senha para texto puro.
-> Para trocar a conta, passe `-UsuarioRemoto` (não há confirmação interativa
-> do usuário). **Correção da documentação anterior:** o script atual não lê
-> `DEPLOY_USUARIO_REMOTO`; definir apenas essa variável não muda a conta.
+> **Credenciais do servidor:** esta cópia histórica teve o valor de fallback removido para não reproduzir um segredo. O script da data do snapshot ainda continha uma credencial fixa e fallback inseguro. Não use este documento como procedimento: rotacione a credencial, remova o fallback e forneça `-UsuarioRemoto`/`-SenhaRemota` por canal seguro ou `Get-Credential`. Com `-Publicar:$true`, a autenticação usa `New-PSDrive` com `PSCredential`, sem `net use` nem conversão da senha para texto puro. O script da época também não lia `DEPLOY_USUARIO_REMOTO`; definir apenas essa variável não mudava a conta.
 >
 > **Invocação não-interativa:** `-BuildFrontend`, `-BuildBackend` e `-Backup`
 > são `Nullable[bool]` — via `powershell -File`/`-Command` o `$true` chega

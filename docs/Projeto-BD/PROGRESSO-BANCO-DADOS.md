@@ -9,7 +9,7 @@
 > 28 → **21 endpoints**; services `DatabaseQueryService`/`DatabaseSchemaDiffService`/
 > `DatabaseSnapshotService` e `PUT /config` apagados. As tabelas/markers ✅ abaixo
 > são o **histórico** da fase original (Fases 1–4) e não refletem o estado atual —
-> fonte atual: `MODULO-BANCO-DADOS.md` § 4 e `docs/telas/06-backend.md` § 17.4.
+> fonte atual: `MODULO-BANCO-DADOS.md` § 4, `docs/05-ENDPOINTS.md` e `docs/07-SERVICES-BACKEND.md`.
 > **Atualização 24/09/2026:** fusão conservadora — `POST /test-connection` →
 > `GET /status`; `GET /search/global` → `GET /search`; backend em **19 endpoints**.
 
@@ -99,7 +99,7 @@
 ## ✅ FASE 4 — Confiabilidade e Segurança (CONCLUÍDA)
 
 ### Segurança (riscos identificados na auditoria)
-- ✅ **R1:** Credenciais hardcoded removidas de `docs/projeto_BD.md`, `docs/MODULO-BANCO-DADOS.md`, `scripts/configure-db-explorer-password.ps1`, `docs/PLANO_MESTRE.md`, `docs/MODULO-IMPLANTACAO-MAP.md`
+- ✅ **R1:** Credenciais hardcoded removidas de `docs/Projeto-BD/projeto_BD.md`, `docs/Projeto-BD/MODULO-BANCO-DADOS.md`, `scripts/db/configure-db-explorer-password.ps1`, `docs/Projeto-Implantação/PLANO_MESTRE.md`, `docs/Projeto-Implantação/MODULO-IMPLANTACAO-MAP.md`
 - ✅ **R2:** Bloqueio expandido — `OPENROWSET`, `OPENDATASOURCE`, `sp_executesql`, `xp_cmdshell`, `xp_*`, `sp_*`, `LINKED SERVER`, `BULK INSERT`, `INTO #`, `WAITFOR DELAY`, `SHUTDOWN`, `RECONFIGURE`
 - ✅ **R3:** Validação de nomes via `sys.columns` (endpoint `/tables/{schema}/{name}/columns`)
 - ✅ **R4:** `PUT /config` protegido com `[Authorize(Roles = "Admin")]`
@@ -114,14 +114,13 @@
 ### Testes Automatizados
 - ✅ **Frontend:** Estrutura pronta para testes (especs a criar em CI)
 - ✅ **Backend:** Services testáveis via DI, endpoints cobertos
-- ✅ CI: preparado para integrar em `docs-sync.yml` / `ci.yml`
+- ✅ CI: preparado para integrar no pipeline de validação
 
 ### Documentação
 - ✅ `MODULO-BANCO-DADOS.md §4` atualizado com 28 endpoints
-- ✅ `TELAS.md §17.4` atualizado com 28 endpoints + novos services
-- ✅ `DOCUMENTACAO-COMPLETA.md` referências atualizadas
+- ✅ `docs/05-ENDPOINTS.md` e `docs/07-SERVICES-BACKEND.md` atualizados com 28 endpoints + novos services
+- ✅ `docs/02-ARQUITETURA.md` referências atualizadas
 - ✅ Credenciais removidas de todos os arquivos `.md` e scripts
-- ✅ `docs/TELAS.md` sincronizado via `extract-screens.ts` + GitHub Action
 
 ---
 
