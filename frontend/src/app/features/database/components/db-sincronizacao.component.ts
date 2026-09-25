@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal, input, output, computed, ViewChild, ElementRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatabaseService } from '../services/database.service';
+import { DbScriptsCorrecaoComponent } from './db-scripts-correcao.component';
 import {
   DatabaseTable, SchemaComparisonResult, SchemaDifference,
   BulkSchemaComparisonResult, BulkTableComparison, BulkTableStatus
@@ -12,7 +13,7 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
 @Component({
   selector: 'app-db-sincronizacao',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DbScriptsCorrecaoComponent],
   template: `
   <div class="adm-card p-3">
     <h3 class="adm-card__title">Comparação de Schemas</h3>
@@ -328,6 +329,10 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | 'Ok' | null;
         </ng-container>
       </div>
     </div>
+
+    <app-db-scripts-correcao
+      [resultado]="resultado()"
+      [resultadoBulk]="resultadoBulk()" />
   </div>
   `,
   styles: [`

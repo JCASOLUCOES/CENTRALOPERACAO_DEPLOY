@@ -234,7 +234,7 @@ public record SchemaInfoDto(
 /// </summary>
 public record SchemaDifferenceDto(
     string Severidade,     // "Critico" | "Aviso" | "Ok"
-    string Categoria,      // "Coluna" | "Tipo" | "Nullable" | "Indice" | "Fk" | "Ordem"
+    string Categoria,      // "Coluna" | "Tipo" | "Nullable" | "Indice" | "Fk" | "Tabela"
     string Campo,
     string? Esperado,      // lado JCA
     string? Encontrado,    // lado arquivo
@@ -253,7 +253,9 @@ public record SchemaComparisonResultDto(
     int Avisos,
     int Oks,
     decimal PercentualMatch,
-    List<SchemaDifferenceDto> Diferencas);
+    List<SchemaDifferenceDto> Diferencas,
+    SchemaInfoDto? SchemaArquivo = null,
+    SchemaInfoDto? SchemaJca = null);
 
 /// <summary>
 /// Comparacao de uma tabela no modo banco inteiro.
@@ -268,7 +270,9 @@ public record BulkTableComparisonDto(
     decimal PercentualMatch,
     int TotalColunasJca,
     int TotalColunasArquivo,
-    List<SchemaDifferenceDto> Diferencas);
+    List<SchemaDifferenceDto> Diferencas,
+    SchemaInfoDto? SchemaArquivo = null,
+    SchemaInfoDto? SchemaJca = null);
 
 /// <summary>
 /// Resultado consolidado da comparacao de banco inteiro (arquivo x banco conectado).
@@ -287,3 +291,78 @@ public record BulkSchemaComparisonResultDto(
     int Oks,
     decimal PercentualMatch,
     List<BulkTableComparisonDto> Tabelas);
+
+/// <summary>
+/// Um script SQL de correcao gerado.
+/// Tipo: CREATE_TABLE | ADD_COLUMN | ALTER_COLUMN | ALTER_TYPE | DROP_COLUMN |
+///       DROP_TABLE | CREATE_INDEX | DROP_INDEX | ALTER_FK
+/// Severidade: "Info" | "Aviso" | "Critico"
+/// </summary>
+public record SqlScriptDto(
+    string Id,
+    string Tipo,
+    string Severidade,
+    string Sql,
+    string SqlFormatado,
+    string Descricao,
+    string CampoRelacionado,
+    bool BackupSugerido,
+    List<SqlScriptDto>? Opcoes = null,
+    string? ConsultaValidacao = null);
+
+/// <summary>
+/// Resumo executivo dos scripts gerados.
+/// ImpactoEstimado: "Low" | "Medium" | "High" | "Critical"
+/// </summary>
+public record SqlScriptResumoDto(
+    int TotalCriacoes,
+    int TotalAlteracoes,
+    int TotalIndices,
+    string ImpactoEstimado,
+    int QtdAvisos,
+    List<string> RevisaoManual);
+
+/// <summary>
+/// Resultado da geracao de scripts de correcao (3 abas + resumo).
+/// </summary>
+public record SqlScriptResultDto(
+    List<SqlScriptDto> ScriptsCriacao,
+    List<SqlScriptDto> ScriptsAlteracao,
+    List<SqlScriptDto> ScriptsIndiceConstraint,
+    SqlScriptResumoDto Resumo);
+
+/// <summary>
+/// Opcoes de geracao de scripts.
+/// GerarBackup: inclui SELECT INTO backup em operacoes destrutivas.
+/// ModoEstrito: somente scripts seguros (os destrutivos vao para RevisaoManual).
+/// </summary>
+public record ScriptsGenOpcoesDto(
+    bool GerarBackup = true,
+    bool ModoEstrito = false);
+
+/// <summary>
+/// Entrada do endpoint de geracao (modo tabela unica).
+/// </summary>
+public record GerarScriptsRequest(
+    SchemaComparisonResultDto Resultado,
+    ScriptsGenOpcoesDto? Opcoes = null);
+
+/// <summary>
+/// Entrada do endpoint de geracao (modo banco inteiro).
+/// </summary>
+public record GerarScriptsBulkRequest(
+    BulkSchemaComparisonResultDto Resultado,
+    ScriptsGenOpcoesDto? Opcoes = null);
+
+/// <summary>
+/// Entrada da validacao estatica de um script SQL (nada e executado no banco).
+/// </summary>
+public record ValidarScriptRequest(string Sql);
+
+/// <summary>
+/// Resultado da validacao estatica de um script SQL.
+/// </summary>
+public record ValidarScriptResultDto(
+    bool Valido,
+    List<string> Erros,
+    List<string> Avisos);

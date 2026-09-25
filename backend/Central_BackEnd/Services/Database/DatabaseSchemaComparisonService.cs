@@ -38,7 +38,11 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
 
         var jca = await ExtrairSchemaJcaAsync(schema, tabela, ct);
         var externo = await LerArquivoAsync(arquivo, ct);
-        return Comparar(jca, externo, arquivo.FileName);
+        return Comparar(jca, externo, arquivo.FileName) with
+        {
+            SchemaArquivo = externo,
+            SchemaJca = jca
+        };
     }
 
     public async Task<BulkSchemaComparisonResultDto> CompararBancoInteiroAsync(
@@ -75,7 +79,8 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
                     null, $"{ext.Colunas.Count} colunas",
                     "Tabela existe no arquivo mas nao existe no banco conectado.");
                 tabelas.Add(new BulkTableComparisonDto(ext.Tabela, "SomenteArquivo",
-                    1, 0, 0, 0m, 0, ext.Colunas.Count, new List<SchemaDifferenceDto> { dif }));
+                    1, 0, 0, 0m, 0, ext.Colunas.Count,
+                    new List<SchemaDifferenceDto> { dif }, ext));
                 continue;
             }
 
@@ -85,7 +90,9 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
             if (status == "Ok") tabelasOk++; else tabelasDif++;
             tabelas.Add(new BulkTableComparisonDto(r.Tabela, status,
                 r.Criticos, r.Avisos, r.Oks, r.PercentualMatch,
-                r.TotalColunasJca, r.TotalColunasArquivo, r.Diferencas));
+                r.TotalColunasJca, r.TotalColunasArquivo, r.Diferencas,
+                status == "Ok" ? null : ext,
+                status == "Ok" ? null : jcaMap[chave]));
         }
 
         foreach (var kv in jcaMap)
@@ -678,13 +685,7 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
                     "Escala divergente."));
             }
 
-            // Ordem (apenas informativo; so gera aviso se ambos tem ordem definida)
-            if (col.Ordem > 0 && extCol.Ordem > 0 && col.Ordem != extCol.Ordem)
-            {
-                difs.Add(new SchemaDifferenceDto("Aviso", "Ordem", col.Nome,
-                    col.Ordem.ToString(), extCol.Ordem.ToString(),
-                    "Ordem da coluna divergente."));
-            }
+            // Ordem das colunas nao e considerada diferenca (SQL Server nao exige ordem identica)
 
             if (!difs.Any(d => d.Campo.Equals(col.Nome, StringComparison.OrdinalIgnoreCase)
                                && d.Severidade != "Ok"))

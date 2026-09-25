@@ -8,7 +8,8 @@ import {
   DatabaseStatus, DatabaseConnectionConfig,
   ProcedureResumo, ProcedureDetalhe,
   Trigger, Dependencia, ProcedureAnalysis,
-  SchemaComparisonResult, BulkSchemaComparisonResult
+  SchemaComparisonResult, BulkSchemaComparisonResult,
+  SqlScriptResult, SqlScriptOpcoes, ValidarScriptResult
 } from '../models/database.model';
 
 @Injectable({ providedIn: 'root' })
@@ -121,5 +122,34 @@ export class DatabaseService {
     const fd = new FormData();
     fd.append('arquivo', arquivo, arquivo.name);
     return this.http.post<BulkSchemaComparisonResult>(`${this.baseUrl}/compare-schemas-bulk`, fd);
+  }
+
+  // Geração de scripts SQL de correção (o resultado da comparação vai no corpo)
+  gerarScripts(
+    resultado: SchemaComparisonResult,
+    opcoes?: SqlScriptOpcoes
+  ): Observable<SqlScriptResult> {
+    return this.http.post<SqlScriptResult>(
+      `${this.baseUrl}/generate-correction-scripts`,
+      { resultado, opcoes: opcoes ?? null }
+    );
+  }
+
+  gerarScriptsBulk(
+    resultado: BulkSchemaComparisonResult,
+    opcoes?: SqlScriptOpcoes
+  ): Observable<SqlScriptResult> {
+    return this.http.post<SqlScriptResult>(
+      `${this.baseUrl}/generate-correction-scripts-bulk`,
+      { resultado, opcoes: opcoes ?? null }
+    );
+  }
+
+  // Validação estática de um script (nada é executado no banco)
+  validarScript(sql: string): Observable<ValidarScriptResult> {
+    return this.http.post<ValidarScriptResult>(
+      `${this.baseUrl}/validate-script`,
+      { sql }
+    );
   }
 }

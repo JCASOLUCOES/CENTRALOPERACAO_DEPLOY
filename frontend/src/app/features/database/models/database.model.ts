@@ -223,9 +223,16 @@ export interface SchemaFkInfo {
   colunaDestino: string;
 }
 
+export interface SchemaInfo {
+  tabela: string;
+  colunas: SchemaColumnInfo[];
+  indices: SchemaIndexInfo[];
+  fks: SchemaFkInfo[];
+}
+
 export interface SchemaDifference {
   severidade: 'Critico' | 'Aviso' | 'Ok';
-  categoria: 'Coluna' | 'Tipo' | 'Nullable' | 'Indice' | 'Fk' | 'Ordem' | 'Tabela';
+  categoria: 'Coluna' | 'Tipo' | 'Nullable' | 'Indice' | 'Fk' | 'Tabela';
   campo: string;
   esperado?: string;
   encontrado?: string;
@@ -244,6 +251,8 @@ export interface SchemaComparisonResult {
   oks: number;
   percentualMatch: number;
   diferencas: SchemaDifference[];
+  schemaArquivo?: SchemaInfo;
+  schemaJca?: SchemaInfo;
 }
 
 export type BulkTableStatus = 'Ok' | 'Diferencas' | 'SomenteArquivo' | 'SomenteBanco';
@@ -258,6 +267,8 @@ export interface BulkTableComparison {
   totalColunasJca: number;
   totalColunasArquivo: number;
   diferencas: SchemaDifference[];
+  schemaArquivo?: SchemaInfo;
+  schemaJca?: SchemaInfo;
 }
 
 export interface BulkSchemaComparisonResult {
@@ -274,4 +285,63 @@ export interface BulkSchemaComparisonResult {
   oks: number;
   percentualMatch: number;
   tabelas: BulkTableComparison[];
+}
+
+// =====================================================================
+// Geração de scripts SQL de correção (arquivo = alvo, banco = corrigido)
+// =====================================================================
+
+export type SqlScriptTipo =
+  | 'CREATE_TABLE'
+  | 'ADD_COLUMN'
+  | 'ALTER_COLUMN'
+  | 'ALTER_TYPE'
+  | 'DROP_COLUMN'
+  | 'DROP_TABLE'
+  | 'CREATE_INDEX'
+  | 'DROP_INDEX'
+  | 'ALTER_FK';
+
+export type SqlScriptSeveridade = 'Info' | 'Aviso' | 'Critico';
+
+export type SqlImpacto = 'Low' | 'Medium' | 'High' | 'Critical';
+
+export interface SqlScript {
+  id: string;
+  tipo: SqlScriptTipo;
+  severidade: SqlScriptSeveridade;
+  sql: string;
+  sqlFormatado: string;
+  descricao: string;
+  campoRelacionado: string;
+  backupSugerido: boolean;
+  opcoes?: SqlScript[];
+  consultaValidacao?: string;
+}
+
+export interface SqlScriptResumo {
+  totalCriacoes: number;
+  totalAlteracoes: number;
+  totalIndices: number;
+  impactoEstimado: SqlImpacto;
+  qtdAvisos: number;
+  revisaoManual: string[];
+}
+
+export interface SqlScriptResult {
+  scriptsCriacao: SqlScript[];
+  scriptsAlteracao: SqlScript[];
+  scriptsIndiceConstraint: SqlScript[];
+  resumo: SqlScriptResumo;
+}
+
+export interface SqlScriptOpcoes {
+  gerarBackup: boolean;
+  modoEstrito: boolean;
+}
+
+export interface ValidarScriptResult {
+  valido: boolean;
+  erros: string[];
+  avisos: string[];
 }

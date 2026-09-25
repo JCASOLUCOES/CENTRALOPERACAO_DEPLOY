@@ -20,6 +20,7 @@ public class DatabaseController : ControllerBase
     private readonly IDatabaseSearchService _search;
     private readonly IDatabaseQueryBuilderService _queryBuilder;
     private readonly IDatabaseSchemaComparisonService _comparison;
+    private readonly ISqlScriptGeneratorService _scripts;
 
     public DatabaseController(
         IDatabaseConnectionService conn,
@@ -27,7 +28,8 @@ public class DatabaseController : ControllerBase
         IDatabaseRelationshipInferenceService rels,
         IDatabaseSearchService search,
         IDatabaseQueryBuilderService queryBuilder,
-        IDatabaseSchemaComparisonService comparison)
+        IDatabaseSchemaComparisonService comparison,
+        ISqlScriptGeneratorService scripts)
     {
         _conn = conn;
         _meta = meta;
@@ -35,6 +37,7 @@ public class DatabaseController : ControllerBase
         _search = search;
         _queryBuilder = queryBuilder;
         _comparison = comparison;
+        _scripts = scripts;
     }
 
     private async Task<(bool Ok, string? Msg, int Ms)> TestarConexaoAsync(CancellationToken ct)
@@ -309,5 +312,56 @@ public class DatabaseController : ControllerBase
         {
             return BadRequest(new { mensagem = ex.Message });
         }
+    }
+
+    [HttpPost("generate-correction-scripts")]
+    [EnableRateLimiting("validacao")]
+    [RequestSizeLimit(25 * 1024 * 1024)]
+    public ActionResult<SqlScriptResultDto> GenerateCorrectionScripts(
+        [FromBody] GerarScriptsRequest req)
+    {
+        if (req == null || req.Resultado == null)
+            return BadRequest(new { mensagem = "Resultado da comparacao e obrigatorio" });
+
+        try
+        {
+            return Ok(_scripts.GerarScripts(req.Resultado, req.Opcoes));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { mensagem = ex.Message });
+        }
+    }
+
+    [HttpPost("generate-correction-scripts-bulk")]
+    [EnableRateLimiting("validacao")]
+    [RequestSizeLimit(25 * 1024 * 1024)]
+    public ActionResult<SqlScriptResultDto> GenerateCorrectionScriptsBulk(
+        [FromBody] GerarScriptsBulkRequest req)
+    {
+        if (req == null || req.Resultado == null)
+            return BadRequest(new { mensagem = "Resultado da comparacao e obrigatorio" });
+
+        try
+        {
+            return Ok(_scripts.GerarScriptsBulk(req.Resultado, req.Opcoes));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { mensagem = ex.Message });
+        }
+    }
+
+    [HttpPost("validate-script")]
+    [EnableRateLimiting("validacao")]
+    [RequestSizeLimit(2 * 1024 * 1024)]
+    public async Task<ActionResult<ValidarScriptResultDto>> ValidateScript(
+        [FromBody] ValidarScriptRequest req,
+        CancellationToken ct = default)
+    {
+        if (req == null || string.IsNullOrWhiteSpace(req.Sql))
+            return BadRequest(new { mensagem = "Sql e obrigatorio" });
+
+        return Ok(await _scripts.ValidarScriptAsync(req.Sql, ct));
     }
 }
