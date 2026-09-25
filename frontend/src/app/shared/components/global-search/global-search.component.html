@@ -1,0 +1,83 @@
+<ng-container *ngIf="estado$ | async as estado">
+  <div
+    #searchContainer
+    class="global-search"
+    [class.global-search--header]="variante === 'header'"
+    [class.global-search--home]="variante === 'home'"
+    [class.global-search--open]="isExpanded(estado)"
+    clickOutside
+    (clickOutside)="onClickOutside()"
+    (focusout)="onFocusOut($event)"
+  >
+    <label class="global-search__label" [for]="inputId">{{ searchLabel }}</label>
+    <i class="bi bi-search global-search__icon" aria-hidden="true"></i>
+    <input
+      #searchInput
+      [id]="inputId"
+      type="search"
+      class="global-search__input"
+      role="combobox"
+      aria-autocomplete="list"
+      aria-haspopup="listbox"
+      aria-keyshortcuts="Control+K Meta+K"
+      [attr.aria-controls]="listboxId"
+      [attr.aria-expanded]="isExpanded(estado)"
+      [attr.aria-activedescendant]="activeOptionId"
+      [placeholder]="searchPlaceholder"
+      [value]="estado.consulta"
+      (click)="onActivate()"
+      (focus)="onActivate()"
+      (input)="onInput($event)"
+      (keydown)="onKeydown($event)"
+    />
+    <kbd class="global-search__kbd" aria-hidden="true">Ctrl/⌘ K</kbd>
+
+    <div class="global-search__panel" *ngIf="isExpanded(estado)">
+      <ng-container *ngIf="resultados$ | async as resultados">
+        <div class="global-search__header">
+          <span>{{ estado.consulta.trim() ? 'Resultados' : 'Sugestões' }}</span>
+          <span class="global-search__count" *ngIf="resultados.length">{{ resultados.length }}</span>
+        </div>
+
+        <div class="global-search__status" role="status" aria-live="polite" aria-atomic="true">
+          {{ statusText(estado, resultados) }}
+        </div>
+
+        <ul [id]="listboxId" class="global-search__list" role="listbox" aria-label="Resultados da busca">
+          <li *ngFor="let resultado of resultados; let i = index; trackBy: trackByIndex" role="presentation">
+            <a
+              #searchOption
+              [id]="optionId(i)"
+              class="global-search__item"
+              role="option"
+              tabindex="-1"
+              [attr.aria-selected]="activeIndex === i"
+              [class.global-search__item--active]="activeIndex === i"
+              [routerLink]="resultado.rota"
+               (mousedown)="onOptionMouseDown($event)"
+               (mouseenter)="onOptionMouseEnter(i)"
+              (focus)="onOptionMouseEnter(i)"
+              (click)="onOptionClick()"
+            >
+              <i class="bi" [ngClass]="resultado.icone" aria-hidden="true"></i>
+              <span class="global-search__text">
+                <span class="global-search__titulo">{{ resultado.titulo }}</span>
+                <span class="global-search__tipo">{{ resultado.tipo }}</span>
+              </span>
+              <i class="bi bi-arrow-right-short global-search__go" aria-hidden="true"></i>
+            </a>
+          </li>
+        </ul>
+
+        <div class="global-search__empty" *ngIf="!resultados.length && estado.consulta.trim()">
+          <i class="bi bi-search" aria-hidden="true"></i>
+          <span>Não encontramos resultados para “{{ estado.consulta.trim() }}”. Tente outro termo.</span>
+        </div>
+        <div class="global-search__empty" *ngIf="!resultados.length && !estado.consulta.trim()">
+          <i class="bi bi-stars" aria-hidden="true"></i>
+          <span>Digite um termo para encontrar páginas, ferramentas e cursos.</span>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</ng-container>

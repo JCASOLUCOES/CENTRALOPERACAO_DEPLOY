@@ -3,8 +3,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
-import { BuscaService } from '@core/services/busca.service';
 import { AgendaService, AgendaResumo } from '@features/agenda/services/agenda.service';
+import { GlobalSearchComponent } from '@shared/components/global-search/global-search.component';
 
 interface AcaoRapida {
   titulo: string;
@@ -26,13 +26,12 @@ const ACOES: AcaoRapida[] = [
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, GlobalSearchComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit {
   private readonly auth = inject(AuthService);
-  private readonly busca = inject(BuscaService);
   private readonly agendaSvc = inject(AgendaService);
 
   readonly acoes = ACOES;
@@ -57,9 +56,5 @@ export class HomeComponent implements OnInit {
         this.compromissos.set(lista.slice(0, 5));
         this.carregandoAgenda.set(false);
       });
-  }
-
-  abrirBusca(): void {
-    this.busca.abrirBusca();
   }
 }

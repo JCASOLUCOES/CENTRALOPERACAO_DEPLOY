@@ -8,11 +8,13 @@
         <p>O que você precisa fazer?</p>
       </div>
     </div>
-    <button type="button" class="home-busca" (click)="abrirBusca()" aria-label="Buscar na Central">
-      <i class="bi bi-search" aria-hidden="true"></i>
-      <span>Buscar na Central...</span>
-      <kbd>Ctrl + K</kbd>
-    </button>
+    <app-global-search
+      origem="home"
+      variante="home"
+      placeholder="Buscar na Central..."
+      label="Buscar na Central na página inicial"
+      class="home-search"
+    ></app-global-search>
   </header>
 
   <div class="home-section-head">

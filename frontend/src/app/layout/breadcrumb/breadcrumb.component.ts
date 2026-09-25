@@ -68,7 +68,7 @@ const BREADCRUMB_PATTERNS: { pattern: string; label: string }[] = [
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <nav class="breadcrumb" aria-label="Trilha de navegação" *ngIf="items.length > 1">
+    <nav class="breadcrumb" aria-label="Trilha de navegação" *ngIf="!(path === '/' || path === '')">
       <ng-container *ngFor="let item of items; let last = last; let i = index; trackBy: trackByIndex">
         <a
           *ngIf="!last && item.route"
@@ -87,10 +87,14 @@ const BREADCRUMB_PATTERNS: { pattern: string; label: string }[] = [
       align-items: center;
       gap: 0.35rem;
       font-family: var(--font-mono);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
       flex-wrap: wrap;
       margin-bottom: 0.75rem;
+      padding: 0.35rem 0.6rem;
+      background: var(--surface-breadcrumb);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-muted);
     }
 
     .breadcrumb-link {
@@ -98,17 +102,20 @@ const BREADCRUMB_PATTERNS: { pattern: string; label: string }[] = [
       text-decoration: none;
       white-space: nowrap;
       transition: color 0.2s ease;
+      padding: 0.15rem 0.3rem;
+      border-radius: var(--radius-sm);
 
       &:hover {
         color: var(--primary-color);
-        text-decoration: underline;
+        background: var(--surface-hover-muted);
+        text-decoration: none;
       }
     }
 
     .breadcrumb-sep {
       color: var(--text-muted);
       flex-shrink: 0;
-      opacity: 0.6;
+      opacity: 0.5;
     }
 
     .breadcrumb-current {
@@ -117,6 +124,7 @@ const BREADCRUMB_PATTERNS: { pattern: string; label: string }[] = [
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      padding: 0.15rem 0.3rem;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -126,6 +134,7 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   items: BreadcrumbItem[] = [{ label: 'Início', route: '/' }];
+  path = '/';
 
   ngOnInit(): void {
     this.buildBreadcrumb(this.router.url);
@@ -147,24 +156,25 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   }
 
   private buildBreadcrumb(url: string): void {
-    const path = (url.split('?')[0] ?? '/').replace(/\/+$/, '') || '/';
+    const rawPath = (url.split('?')[0] ?? '/').replace(/\/+$/, '') || '/';
+    this.path = rawPath;
 
-    if (path === '/') {
+    if (this.path === '/') {
       this.items = [{ label: 'Início', route: '/' }];
       return;
     }
 
-    const segments = path.split('/').filter(Boolean);
+    const segments = this.path.split('/').filter(Boolean);
     const items: BreadcrumbItem[] = [{ label: 'Início', route: '/' }];
 
     let leafLabel: string | null = null;
     let leafRoute: string | undefined;
 
-    if (BREADCRUMB_LABELS[path]) {
-      leafLabel = BREADCRUMB_LABELS[path];
-      leafRoute = path;
+    if (BREADCRUMB_LABELS[this.path]) {
+      leafLabel = BREADCRUMB_LABELS[this.path];
+      leafRoute = this.path;
     } else {
-      const pattern = this.matchPattern(path);
+      const pattern = this.matchPattern(this.path);
       if (pattern) {
         if (pattern.pattern === '/database/tabela/:schema/:tabela') {
           const schema = segments[segments.length - 2] ?? '';

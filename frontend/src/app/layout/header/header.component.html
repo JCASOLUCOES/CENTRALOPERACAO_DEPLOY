@@ -23,47 +23,12 @@
       </div>
 
       <div class="top-bar__center">
-        <div class="global-search" [class.global-search--open]="buscaAberta">
-          <i class="bi bi-search global-search__icon" aria-hidden="true"></i>
-          <input
-            #searchInput
-            type="search"
-            class="global-search__input"
-            placeholder="Pesquisar qualquer conteúdo..."
-            aria-label="Pesquisar qualquer conteúdo"
-            [(ngModel)]="termoBusca"
-            (input)="onBuscaInput()"
-            (focus)="buscaAberta = true"
-            (blur)="onBuscaBlur()"
-            (keydown.escape)="fecharBusca()"
-          />
-          <kbd class="global-search__kbd" aria-hidden="true">Ctrl + K</kbd>
-
-          <div class="global-search__panel" *ngIf="buscaAberta">
-            <div class="global-search__header">
-              <span>{{ termoBusca.trim() ? 'Resultados' : 'Sugestões' }}</span>
-              <span class="global-search__count" *ngIf="resultadosBusca.length">{{ resultadosBusca.length }}</span>
-            </div>
-
-            <ul class="global-search__list">
-              <li *ngFor="let r of resultadosBusca; trackBy: trackByIndex">
-                <a class="global-search__item" [routerLink]="r.rota" (click)="fecharBusca()">
-                  <i class="bi" [ngClass]="r.icone" aria-hidden="true"></i>
-                  <span class="global-search__text">
-                    <span class="global-search__titulo">{{ r.titulo }}</span>
-                    <span class="global-search__tipo">{{ r.tipo }}</span>
-                  </span>
-                  <i class="bi bi-arrow-right-short global-search__go" aria-hidden="true"></i>
-                </a>
-              </li>
-            </ul>
-
-            <div class="global-search__empty" *ngIf="!resultadosBusca.length">
-              <i class="bi bi-search" aria-hidden="true"></i>
-              <span>Nenhum resultado para “{{ termoBusca }}”.</span>
-            </div>
-          </div>
-        </div>
+        <app-global-search
+          origem="header"
+          variante="header"
+          placeholder="Pesquisar qualquer conteúdo..."
+          label="Buscar na Central"
+        ></app-global-search>
       </div>
 
       <div class="top-bar__right">
