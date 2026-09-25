@@ -99,7 +99,7 @@ Consequências confirmadas:
 - Ao mover para uma coluna não bloqueada, o serviço limpa `Bloqueada` e `MotivoBloqueio`; uma coluna de conclusão também preenche `DataConclusao` quando necessário.
 - A movimentação para uma coluna com `LimiteWip` positivo é recusada quando a quantidade de tarefas na coluna já atingiu o limite. A contagem não filtra tarefas arquivadas.
 - Somente tarefas com status `Concluida` podem ser arquivadas. Desarquivar força status `Concluida` e escolhe a coluna cujo nome contém `CONCLUID`, se existir.
-- A atualização direta pode definir `Bloqueada` sem exigir motivo; portanto a obrigação de motivo não é uniforme.
+- Criação e atualização exigem motivo quando a tarefa é bloqueada (`Motivo do bloqueio é obrigatório para tarefa bloqueada.`) e sincronizam a flag com a coluna: bloqueada nasce/vai para a coluna `BLOQUEADO` (ativa, nome contendo `BLOQUEAD`); coluna `BLOQUEADO` enviada na criação implica `Bloqueada=true`; ao desbloquear com o card em `BLOQUEADO`, o card volta para a coluna canônica do status.
 - O alerta administrativo chamado `Bloqueadas` não conta o campo `Bloqueada`: ele conta `Cancelada`, `Backlog` e `A Fazer`. Essa é uma divergência de regra que deve ser corrigida ou renomeada.
 
 ## Apontamentos de horas
@@ -134,7 +134,7 @@ Consequências confirmadas:
 - Tarefa com `ProjetoId` exige `ProjetoEtapaId` **do mesmo projeto**. `TarefaService.ValidarEtapaFixaAsync` exige a etapa (`Etapa do projeto é obrigatória para tarefas de projeto`) e rejeita etapa de outro projeto (`Etapa do projeto inválida para esta tarefa`); a validação é de aplicação, no serviço, e vale para criação e atualização.
 - Tarefa sem projeto **e** sem etapa continua válida. Na criação, informar etapa sem projeto é rejeitado com mensagem explícita (`Não é possível informar uma etapa do projeto sem informar o projeto.`).
 - Na atualização, o projeto não é trocado: `TarefaAtualizarRequest` não tem `ProjetoId` e `AtualizarAsync` não escreve `t.ProjetoId`. A etapa enviada é validada contra o projeto já persistido e, em tarefa sem projeto, é gravada como `null`.
-- A sincronização por tarefas ignora tarefas arquivadas, calcula percentual por tarefas concluídas, reabre somente a etapa afetada quando uma tarefa reabre, conclui automaticamente quando todas as tarefas da etapa estão concluídas e libera a próxima etapa pendente.
+- A sincronização por tarefas ignora tarefas arquivadas e calcula percentual por tarefas concluídas. Uma tarefa reaberta reabre a etapa afetada e, em cascata, as etapas posteriores `Concluida` passam a `Bloqueada` (histórico `Reabertura automática em cascata`, `DataFimReal` limpo). A conclusão automática (N/N) só ocorre quando a etapa anterior está `Concluida` e libera a próxima etapa `Pendente` ou `Bloqueada`, que volta a `EmAndamento` preservando `DataInicio`.
 - O retorno manual aceita ordem alvo 1–8, reseta as etapas posteriores e mantém o checklist da etapa alvo. Não foi localizada regra que restrinja esse retorno por responsável.
 - Existem duas rotinas de progresso: `ProjetoJornadaService` calcula média dos percentuais das etapas, enquanto `ProjetoEtapaService` calcula `(etapasConcluídas * 100 + percentualAtual) / 9`. A atualização direta de projeto ainda aceita `Progresso` e `Status` na requisição. Não há uma fórmula única garantida para todo fluxo.
 
