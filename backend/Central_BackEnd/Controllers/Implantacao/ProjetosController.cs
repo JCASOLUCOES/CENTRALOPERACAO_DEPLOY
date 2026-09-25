@@ -15,9 +15,8 @@ namespace Central_BackEnd.Controllers.Implantacao;
 public class ProjetosController : ControllerBase
 {
     private readonly IProjetoService _service;
-    private readonly IProjetoJornadaService _jornada;
     private readonly IProjetoEtapaService _etapa;
-    public ProjetosController(IProjetoService service, IProjetoJornadaService jornada, IProjetoEtapaService etapa) { _service = service; _jornada = jornada; _etapa = etapa; }
+    public ProjetosController(IProjetoService service, IProjetoEtapaService etapa) { _service = service; _etapa = etapa; }
 
     [HttpGet]
     public async Task<ActionResult<List<ProjetoResumo>>> Listar(
@@ -55,13 +54,6 @@ public class ProjetosController : ControllerBase
     {
         var p = await _service.ObterAsync(id, ct);
         return p == null ? NotFound() : Ok(p);
-    }
-
-    [HttpGet("{id:int}/jornada")]
-    public async Task<ActionResult<ProjetoJornada>> Jornada(int id, CancellationToken ct = default)
-    {
-        var j = await _jornada.ObterJornadaAsync(id, ct);
-        return j == null ? NotFound() : Ok(j);
     }
 
     [HttpGet("etapas-padrao")]
@@ -141,13 +133,6 @@ public class ProjetosController : ControllerBase
         catch (ArgumentException ex) { return BadRequest(new { mensagem = ex.Message }); }
     }
 
-    [HttpPost("{id:int}/etapas/inicializar")]
-    public async Task<ActionResult> InicializarEtapas(int id, CancellationToken ct = default)
-    {
-        await _etapa.InicializarEtapasPadraoAsync(id, ct);
-        return Ok();
-    }
-
     [HttpPost("{id:int}/etapas/{ordem:int}/checklist")]
     public async Task<ActionResult<ProjetoEtapaDetalhe>> AdicionarChecklistItem(int id, int ordem, [FromBody] ProjetoEtapaChecklistItemRequest item, CancellationToken ct = default)
     {
@@ -180,17 +165,6 @@ public class ProjetosController : ControllerBase
             var usuario = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
             var etapa = await _etapa.AdicionarComentarioAsync(id, ordem, req, usuario, ct);
             return Ok(etapa);
-        }
-        catch (ArgumentException ex) { return BadRequest(new { mensagem = ex.Message }); }
-    }
-
-    [HttpPatch("{id:int}/status")]
-    public async Task<ActionResult<ProjetoDetalhe>> MudarStatus(int id, [FromBody] ProjetoMudarStatusRequest req, CancellationToken ct = default)
-    {
-        try
-        {
-            var p = await _service.MudarStatusAsync(id, req, ct);
-            return p == null ? NotFound() : Ok(p);
         }
         catch (ArgumentException ex) { return BadRequest(new { mensagem = ex.Message }); }
     }

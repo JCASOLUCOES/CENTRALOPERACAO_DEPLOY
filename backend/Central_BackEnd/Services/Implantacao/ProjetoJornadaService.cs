@@ -1,5 +1,4 @@
 using Central_BackEnd.Data;
-using Central_BackEnd.Dtos.Implantacao;
 using Central_BackEnd.Models.Implantacao;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +6,6 @@ namespace Central_BackEnd.Services.Implantacao;
 
 public interface IProjetoJornadaService
 {
-    Task<ProjetoJornada?> ObterJornadaAsync(int projetoId, CancellationToken ct = default);
     /// <summary>Recalcula e persiste PRJ_Progresso (média simples das etapas com tarefas).</summary>
     Task<int> RecalcularProgressoAsync(int projetoId, CancellationToken ct = default);
 }
@@ -16,12 +14,28 @@ public class ProjetoJornadaService : IProjetoJornadaService
 {
     private readonly AppDbContext _db;
 
+    private sealed record EtapaJornadaProjecao(
+        int EtapaId,
+        string Nome,
+        string? Cor,
+        int Ordem,
+        int TotalTarefas,
+        int TarefasConcluidas,
+        int Percentual,
+        string Estado);
+
+    private sealed record ProjetoJornadaProjecao(
+        int ProjetoId,
+        List<EtapaJornadaProjecao> Etapas,
+        int ProgressoGeral,
+        int? EtapaAtualId);
+
     public ProjetoJornadaService(AppDbContext db)
     {
         _db = db;
     }
 
-    public async Task<ProjetoJornada?> ObterJornadaAsync(int projetoId, CancellationToken ct = default)
+    private async Task<ProjetoJornadaProjecao?> CalcularJornadaAsync(int projetoId, CancellationToken ct = default)
     {
         var projeto = await _db.Projetos.AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == projetoId, ct);
@@ -42,7 +56,7 @@ public class ProjetoJornadaService : IProjetoJornadaService
             .Select(t => new { t.ProjetoEtapaId, t.Status })
             .ToListAsync(ct);
 
-        var itens = new List<EtapaJornadaItem>();
+        var itens = new List<EtapaJornadaProjecao>();
         var anteriorCompleta = true;
         foreach (var e in etapas)
         {
@@ -68,19 +82,19 @@ public class ProjetoJornadaService : IProjetoJornadaService
             // Etapa concluída sem tarefas (criação em etapa avançada) conta 100%.
             var percentualFinal = estado == "Concluida" && total == 0 ? 100 : percentual;
 
-            itens.Add(new EtapaJornadaItem(e.Id, e.Nome, null, e.Ordem, total, concluidas, percentualFinal, estado));
+            itens.Add(new EtapaJornadaProjecao(e.Id, e.Nome, null, e.Ordem, total, concluidas, percentualFinal, estado));
         }
 
         var geral = (int)Math.Round(itens.Average(i => i.Estado == "Concluida" ? 100.0 : i.Percentual));
 
         var atual = itens.FirstOrDefault(i => i.Estado != "Concluida") ?? itens.LastOrDefault();
 
-        return new ProjetoJornada(projetoId, itens, geral, atual?.EtapaId);
+        return new ProjetoJornadaProjecao(projetoId, itens, geral, atual?.EtapaId);
     }
 
     public async Task<int> RecalcularProgressoAsync(int projetoId, CancellationToken ct = default)
     {
-        var jornada = await ObterJornadaAsync(projetoId, ct);
+        var jornada = await CalcularJornadaAsync(projetoId, ct);
         if (jornada == null) return 0;
 
         var projeto = await _db.Projetos.FirstOrDefaultAsync(p => p.Id == projetoId, ct);

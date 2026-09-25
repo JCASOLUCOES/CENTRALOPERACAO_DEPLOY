@@ -11,7 +11,6 @@ public interface IProjetoService
     Task<ProjetoDetalhe?> ObterAsync(int id, CancellationToken ct = default);
     Task<ProjetoDetalhe> CriarAsync(ProjetoCriarRequest req, CancellationToken ct = default);
     Task<ProjetoDetalhe?> AtualizarAsync(int id, ProjetoAtualizarRequest req, CancellationToken ct = default);
-    Task<ProjetoDetalhe?> MudarStatusAsync(int id, ProjetoMudarStatusRequest req, CancellationToken ct = default);
     Task<bool> ExcluirAsync(int id, CancellationToken ct = default);
     Task<string> ProximoCodigoAsync(CancellationToken ct = default);
     Task<List<ClienteResumo>> ListarClientesAsync(CancellationToken ct = default);
@@ -173,27 +172,6 @@ public class ProjetoService : IProjetoService
         p.DataAlteracao = DateTime.Now;
         await _db.SaveChangesAsync(ct);
         await _auditoria.RegistrarAsync("Projeto", id, "UPDATE", null, p, req.UsuarioAlteracao, "Projeto atualizado", ct);
-        return await ObterAsync(p.Id, ct);
-    }
-
-    public async Task<ProjetoDetalhe?> MudarStatusAsync(int id, ProjetoMudarStatusRequest req, CancellationToken ct = default)
-    {
-        var p = await _db.Projetos.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (p == null) return null;
-        if (!Enum.TryParse<StatusProjeto>(req.Status, out var novoStatus))
-            throw new ArgumentException("Status invalido");
-        var antes = new { p.Status, p.ColunaKanbanId, p.Progresso, p.DataConclusao };
-        p.Status = novoStatus;
-        p.ColunaKanbanId = req.ColunaKanbanId;
-        p.UsuarioAlteracao = req.UsuarioAlteracao;
-        p.DataAlteracao = DateTime.Now;
-        if (novoStatus == StatusProjeto.Concluido)
-        {
-            p.DataConclusao = DateTime.Now;
-            p.Progresso = 100;
-        }
-        await _db.SaveChangesAsync(ct);
-        await _auditoria.RegistrarAsync("Projeto", id, "UPDATE", antes, new { p.Status, p.ColunaKanbanId, p.Progresso, p.DataConclusao }, req.UsuarioAlteracao, $"Status alterado para {novoStatus}", ct);
         return await ObterAsync(p.Id, ct);
     }
 

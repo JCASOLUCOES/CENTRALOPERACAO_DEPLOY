@@ -93,11 +93,6 @@ public record ProjetoAtualizarRequest(
     string? Status,
     string UsuarioAlteracao);
 
-public record ProjetoMudarStatusRequest(
-    string Status,
-    int? ColunaKanbanId,
-    string UsuarioAlteracao);
-
 public record ProjetoFiltro(
     string? Tipo,
     string? Status,
@@ -111,23 +106,6 @@ public record ClienteResumo(
     string Nome,
     string? Cnpj,
     bool Ativo);
-
-/// <summary>Jornada de implantação: etapas do fluxo com progresso derivado das tarefas.</summary>
-public record EtapaJornadaItem(
-    int EtapaId,
-    string Nome,
-    string? Cor,
-    int Ordem,
-    int TotalTarefas,
-    int TarefasConcluidas,
-    int Percentual,
-    string Estado);
-
-public record ProjetoJornada(
-    int ProjetoId,
-    List<EtapaJornadaItem> Etapas,
-    int ProgressoGeral,
-    int? EtapaAtualId);
 
 // ===== NOVOS DTOs PARA ETAPAS FIXAS (9 ETAPAS) =====
 

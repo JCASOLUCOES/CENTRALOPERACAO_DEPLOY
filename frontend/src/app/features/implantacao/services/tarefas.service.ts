@@ -119,12 +119,6 @@ listar(filtro: TarefaFiltro): Observable<TarefaResumo[]> {
     return this.http.get<HistoricoMovimentacao[]>(`${this.baseUrl}/${tarefaId}/historico`);
   }
 
-  listarEtapas(tipoProjetoId?: number): Observable<{ id: number; nome: string }[]> {
-    let params = new HttpParams();
-    if (tipoProjetoId != null) params = params.set("tipoProjetoId", String(tipoProjetoId));
-    return this.http.get<{ id: number; nome: string }[]>(`${environment.apiBaseUrl}/implantacao/etapas`, { params });
-  }
-
   /** Delegado para OperadoresService compartilhado. */
   listarOperadores(): Observable<OperadorResumo[]> {
     return this.operadoresSvc.listar();

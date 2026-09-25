@@ -17,11 +17,8 @@ import {
   TipoProjetoResumo,
   ProjetoCriarRequest,
   ProjetoAtualizarRequest,
-  ProjetoMudarStatusRequest,
   ProjetoEtapaResumo,
   ProjetoEtapaDetalhe,
-  EtapaJornadaItem,
-  ProjetoJornada,
   ProjetoEtapaEstado,
   ProjetoEtapaChecklistItem,
   ProjetoEtapaDocumentoItem,
@@ -62,10 +59,6 @@ export class ProjetosService {
     return this.http.get<ProjetoDetalhe>(`${this.baseUrl}/${id}`);
   }
 
-  obterJornada(id: number): Observable<ProjetoJornada> {
-    return this.http.get<ProjetoJornada>(`${this.baseUrl}/${id}/jornada`);
-  }
-
   obterEtapaDetalhe(projetoId: number, ordem: number): Observable<ProjetoEtapaDetalhe> {
     return this.http.get<ProjetoEtapaDetalhe>(`${this.baseUrl}/${projetoId}/etapas/${ordem}`);
   }
@@ -76,10 +69,6 @@ export class ProjetosService {
 
   retornarEtapa(projetoId: number, req: ProjetoEtapaRetornoRequest): Observable<ProjetoEtapaDetalhe> {
     return this.http.post<ProjetoEtapaDetalhe>(`${this.baseUrl}/${projetoId}/etapas/retornar`, req);
-  }
-
-  inicializarEtapas(projetoId: number): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${projetoId}/etapas/inicializar`, {});
   }
 
   adicionarChecklistItem(projetoId: number, ordem: number, item: ProjetoEtapaChecklistItemRequest): Observable<ProjetoEtapaDetalhe> {
@@ -133,10 +122,6 @@ export class ProjetosService {
 
   excluir(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
-  }
-
-  mudarStatus(id: number, req: ProjetoMudarStatusRequest): Observable<ProjetoDetalhe> {
-    return this.http.patch<ProjetoDetalhe>(`${this.baseUrl}/${id}/status`, req);
   }
 
   obterProximoCodigo(): Observable<string> {

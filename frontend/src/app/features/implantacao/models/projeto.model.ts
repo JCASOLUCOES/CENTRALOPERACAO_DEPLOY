@@ -92,12 +92,6 @@ export interface EtapaPadraoResumo {
   nome: string;
 }
 
-export interface ProjetoMudarStatusRequest {
-  status: string;
-  colunaKanbanId?: number;
-  usuarioAlteracao: string;
-}
-
 export interface ProjetoFiltro {
   tipo?: string;
   status?: string;
@@ -105,26 +99,6 @@ export interface ProjetoFiltro {
   responsavelId?: string;
   buscar?: string;
   perfilId?: string;
-}
-
-export type EtapaJornadaEstado = "Concluida" | "EmAndamento" | "Bloqueada" | "Pendente";
-
-export interface EtapaJornadaItem {
-  etapaId: number;
-  nome: string;
-  cor?: string;
-  ordem: number;
-  totalTarefas: number;
-  tarefasConcluidas: number;
-  percentual: number;
-  estado: EtapaJornadaEstado;
-}
-
-export interface ProjetoJornada {
-  projetoId: number;
-  etapas: EtapaJornadaItem[];
-  progressoGeral: number;
-  etapaAtualId?: number;
 }
 
 // ===== NOVOS TYPES PARA ETAPAS FIXAS (9 ETAPAS) =====
