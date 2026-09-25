@@ -19,7 +19,7 @@ Documento derivado do código atualmente presente no *working tree*. Não infere
 | bloqueio, WIP, arquivamento | [Tarefa.cs](../backend/Central_BackEnd/Models/Implantacao/Tarefa.cs), [TarefaService.cs](../backend/Central_BackEnd/Services/Implantacao/TarefaService.cs) |
 | apontamentos e horas | [TarefaApontamento.cs](../backend/Central_BackEnd/Models/Implantacao/TarefaApontamento.cs), [TarefaService.cs](../backend/Central_BackEnd/Services/Implantacao/TarefaService.cs) |
 | sincronização tarefa–agenda | [TarefaService.cs](../backend/Central_BackEnd/Services/Implantacao/TarefaService.cs), [AgendaService.cs](../backend/Central_BackEnd/Services/Implantacao/AgendaService.cs) |
-| etapas e jornada | [ProjetoEtapaService.cs](../backend/Central_BackEnd/Services/Implantacao/ProjetoEtapaService.cs), [ProjetoEtapa.cs](../backend/Central_BackEnd/Models/Implantacao/ProjetoEtapa.cs) |
+| etapas e jornada | [ProjetoEtapaService.cs](../backend/Central_BackEnd/Services/Implantacao/ProjetoEtapaService.cs), [ProjetoEtapa.cs](../backend/Central_BackEnd/Models/Implantacao/ProjetoEtapa.cs), [TarefaService.cs](../backend/Central_BackEnd/Services/Implantacao/TarefaService.cs) |
 | propriedade, perfis e permissões | [AuthService.cs](../backend/Central_BackEnd/Services/AuthService.cs), [TarefaService.cs](../backend/Central_BackEnd/Services/Implantacao/TarefaService.cs), [AgendaController.cs](../backend/Central_BackEnd/Controllers/AgendaController.cs), [auth.service.ts](../frontend/src/app/core/services/auth.service.ts) |
 | conflitos de agenda | [AgendaService.cs](../backend/Central_BackEnd/Services/Implantacao/AgendaService.cs), [ConflictException.cs](../backend/Central_BackEnd/Exceptions/ConflictException.cs) |
 | código global PRJ | [ProjetoService.cs](../backend/Central_BackEnd/Services/Implantacao/ProjetoService.cs), [Projeto.cs](../backend/Central_BackEnd/Models/Implantacao/Projeto.cs) |
@@ -38,7 +38,7 @@ Documento derivado do código atualmente presente no *working tree*. Não infere
 | bloqueios | **Parcial** |
 | apontamentos | **Parcial** |
 | sincronização tarefa–agenda | **Parcial** |
-| etapas | **Implementado**, com fórmulas de progresso concorrentes |
+| etapas | **Implementado**; a etapa do projeto é obrigatória na tarefa com projeto, com fórmulas de progresso concorrentes |
 | propriedade/permissões | **Parcial** |
 | conflitos de agenda | **Parcial** |
 | código PRJ global | **Parcial** |
@@ -131,7 +131,9 @@ Consequências confirmadas:
 - A jornada padrão tem nove etapas, nesta ordem: `KICKOFF`, `LEVANTAMENTO`, `DESENVOLVIMENTO`, `HOMOLOGAÇÃO`, `TREINAMENTO`, `GO LIVE`, `PÓS-IMPLANTAÇÃO`, `PASSAR PARA O SUPORTE` e `CONCLUÍDO`.
 - A criação do projeto inicializa as nove etapas, com checklists padrão. A ordem de início é 1–9: etapas anteriores nascem concluídas, a etapa inicial nasce em andamento e as seguintes pendentes.
 - `ProjetoId + Ordem` é único. Checklist, documento, histórico e comentário dependem da etapa e são removidos em cascata.
-- Tarefa com `ProjetoId` precisa de `ProjetoEtapaId` da mesma etapa/projeto; tarefa sem projeto não exige etapa. Essa validação ocorre na criação e atualização de tarefas.
+- Tarefa com `ProjetoId` exige `ProjetoEtapaId` **do mesmo projeto**. `TarefaService.ValidarEtapaFixaAsync` exige a etapa (`Etapa do projeto é obrigatória para tarefas de projeto`) e rejeita etapa de outro projeto (`Etapa do projeto inválida para esta tarefa`); a validação é de aplicação, no serviço, e vale para criação e atualização.
+- Tarefa sem projeto **e** sem etapa continua válida. Na criação, informar etapa sem projeto é rejeitado com mensagem explícita (`Não é possível informar uma etapa do projeto sem informar o projeto.`).
+- Na atualização, o projeto não é trocado: `TarefaAtualizarRequest` não tem `ProjetoId` e `AtualizarAsync` não escreve `t.ProjetoId`. A etapa enviada é validada contra o projeto já persistido e, em tarefa sem projeto, é gravada como `null`.
 - A sincronização por tarefas ignora tarefas arquivadas, calcula percentual por tarefas concluídas, reabre somente a etapa afetada quando uma tarefa reabre, conclui automaticamente quando todas as tarefas da etapa estão concluídas e libera a próxima etapa pendente.
 - O retorno manual aceita ordem alvo 1–8, reseta as etapas posteriores e mantém o checklist da etapa alvo. Não foi localizada regra que restrinja esse retorno por responsável.
 - Existem duas rotinas de progresso: `ProjetoJornadaService` calcula média dos percentuais das etapas, enquanto `ProjetoEtapaService` calcula `(etapasConcluídas * 100 + percentualAtual) / 9`. A atualização direta de projeto ainda aceita `Progresso` e `Status` na requisição. Não há uma fórmula única garantida para todo fluxo.
@@ -213,5 +215,6 @@ As correções abaixo não foram implementadas; são pontos de atenção verific
 - A agenda valida conflito do responsável e retorna `409`; não valida conflitos de participantes, não filtra `Visibilidade` e não restringe propriedade nas leituras.
 - A sincronização tarefa–agenda é chamada na mudança de coluna e não é bidirecional.
 - O código de projeto é global, começa por `PRJ-` e termina com quatro dígitos; não há sequência transacional.
+- A etapa do projeto é obrigatória na tarefa com projeto e precisa pertencer a ele; etapa sem projeto é rejeitada na criação e zera na atualização de tarefa sem projeto; o `PUT` de tarefa não altera o projeto. Essa regra é executada pelo serviço e **não tem suíte de testes no backend**: a cobertura automatizada existente em [`tarefa-form.component.spec.ts`](../frontend/src/app/features/implantacao/pages/tarefas/tarefa-form.component.spec.ts) exercita somente o gating e o payload do cliente, não a validação do serviço.
 - Nenhuma regra de UI foi inferida; as correções listadas são apenas recomendações.
 

@@ -24,8 +24,8 @@ Catálogo derivado dos `Controllers`, DTOs e do registro de autenticação/limit
 | `TarefasController` / Implantação | 16 | `/api/v1/implantacao/tarefas` |
 | `DashboardController` / Implantação | 1 | `/api/v1/implantacao/dashboard` |
 | `AdminDashboardController` / administração | 1 | `/api/v1/admin/dashboard` |
-| `DatabaseController` / Database Explorer | 23 | `/api/v1/database` |
-| **Total** | **85** | — |
+| `DatabaseController` / Database Explorer | 24 | `/api/v1/database` |
+| **Total** | **86** | — |
 
 O `DashboardController` é uma classe separada declarada no mesmo arquivo de `TarefasController.cs`. A contagem é de métodos de ação com atributo HTTP, não de rotas Swagger ou de endpoints gerados pelo framework.
 
@@ -188,7 +188,7 @@ Fonte: [AdminDashboardController.cs](../backend/Central_BackEnd/Controllers/Impl
 
 ## Database Explorer
 
-Fonte: [DatabaseController.cs](../backend/Central_BackEnd/Controllers/Database/DatabaseController.cs). Todas as operações exigem JWT; as comparações e os três endpoints de scripts de correção usam `validacao`.
+Fonte: [DatabaseController.cs](../backend/Central_BackEnd/Controllers/Database/DatabaseController.cs). Todas as operações exigem JWT; as comparações (schemas, banco inteiro e procedures) e os endpoints de scripts de correção usam `validacao`.
 
 | Método | Rota | Limite | Entrada | Resposta resumida |
 |---|---|---|---|---|
@@ -212,8 +212,9 @@ Fonte: [DatabaseController.cs](../backend/Central_BackEnd/Controllers/Database/D
 | `GET` | `/api/v1/database/config` | — | Sem body | `200 DatabaseConnectionConfigDto`; senha preenchida é substituída por `***`. |
 | `POST` | `/api/v1/database/compare-schemas` | `validacao` | Form `schema`, `tabela`, arquivo JSON | `200 SchemaComparisonResultDto`; limite de 5 MB e erros de arquivo/JSON retornam `400`. |
 | `POST` | `/api/v1/database/compare-schemas-bulk` | `validacao` | Form com arquivo JSON | `200 BulkSchemaComparisonResultDto`; limite de 20 MB e erros de arquivo/JSON retornam `400`. |
-| `POST` | `/api/v1/database/generate-correction-scripts` | `validacao` | Body `GerarScriptsRequest` (resultado da comparação + `opcoes?`) | `200 SqlScriptResultDto` com listas, `resumo` e `schemaJca`; limite de 25 MB; nunca executa SQL. |
-| `POST` | `/api/v1/database/generate-correction-scripts-bulk` | `validacao` | Body `GerarScriptsBulkRequest` (resultado bulk + `opcoes?`) | `200 SqlScriptResultDto`; limite de 25 MB; nunca executa SQL. |
+| `POST` | `/api/v1/database/compare-procedures` | `validacao` | Form com arquivo JSON | `200 ProceduresComparisonResultDto` (itens com `status` `Compativel`/`Divergente`/`SomenteBanco`/`SomenteArquivo` e corpos); limite de 20 MB; somente leitura, nenhum script é gerado. |
+| `POST` | `/api/v1/database/generate-correction-scripts` | `validacao` | Body `GerarScriptsRequest` (resultado da comparação; `opcoes?` aceito mas sem efeito) | `200 SqlScriptResultDto` só com **criações** vindas do arquivo (`CREATE_TABLE`, `ADD_COLUMN`, `CREATE_INDEX`, `ALTER_FK`), cada script com `tabela` e `severidadeOrigem`; limite de 25 MB; nunca executa SQL. |
+| `POST` | `/api/v1/database/generate-correction-scripts-bulk` | `validacao` | Body `GerarScriptsBulkRequest` (resultado bulk; `opcoes?` aceito mas sem efeito) | `200 SqlScriptResultDto`; mesmo contrato do modo tabela única, ordenado por tabela; limite de 25 MB; nunca executa SQL. |
 | `POST` | `/api/v1/database/validate-script` | `validacao` | Body `ValidarScriptRequest` (`sql`) | `200 ValidarScriptResultDto` com `valido`, `erros` e `avisos` (validação estática, sem execução); limite de 2 MB. |
 
 O `DatabaseConnectionService` prioriza `DB_EXPLORER_*` sobre `DatabaseExplorer:*`; nenhuma senha ou string de conexão deve ser incluída em exemplo. A consulta avançada é um construtor de SQL: não foi localizada uma rota que execute o resultado. Os endpoints de scripts recebem o JSON da comparação pronto (sem novo upload) e apenas geram/validam texto SQL.
@@ -327,10 +328,10 @@ Os documentos abaixo estão preservados apenas como contexto histórico em `back
 
 | Documento arquivado | Divergência confirmada no código | Correção sugerida |
 |---|---|---|
-| [ENDPOINTS-AUDITORIA.md](./backup/2026-09-24/ENDPOINTS-AUDITORIA.md) | Declara total 81 e `DatabaseController` com 19 operações; a busca atual encontra 82 e 20. | Recalcular o total e a linha do Database Controller. |
+| [ENDPOINTS-AUDITORIA.md](./backup/2026-09-24/ENDPOINTS-AUDITORIA.md) | Declara total 81 e `DatabaseController` com 19 operações; a busca atual encontra 86 e 24. | Recalcular o total e a linha do Database Controller. |
 | [04-database.md](./backup/2026-09-24/telas/04-database.md) | Lista `POST /api/v1/database/procedures/{schema}/{name}`; o controller atual só expõe `GET` nessa rota. | Remover a linha ou corrigir o método no documento. |
 | [06-backend.md](./backup/2026-09-24/telas/06-backend.md) | Descreve `validacao` como 5/min e afirma validação de `ClienteObrigatorio`; o código atual define 50/100 por minuto e não aplica esse sinalizador no cadastro. | Corrigir limite e separar o campo persistido da regra efetivamente validada. |
-| [06-backend.md](./backup/2026-09-24/telas/06-backend.md) | Repete a contagem de 19 operações do Database Explorer. | Usar a contagem recalculada de 20. |
+| [06-backend.md](./backup/2026-09-24/telas/06-backend.md) | Repete a contagem de 19 operações do Database Explorer. | Usar a contagem recalculada de 24. |
 
 ## Limitações de contrato a corrigir
 
@@ -339,14 +340,14 @@ As observações abaixo são limitações confirmadas, não regras desejadas:
 - [Limitação] `TiposProjetoController` e os métodos de escrita de `ColunasKanbanController` declaram respostas resumidas, mas os serviços retornam DTOs detalhados. O catálogo registra o tipo efetivamente serializado; as assinaturas devem ser alinhadas.
 - [Limitação] A detecção de administrador para apontamentos usa `Admin`/`PerfilId`, enquanto a autenticação emite `Administrador`/`perfil`. O comportamento administrativo precisa ser testado no código.
 - [Limitação] O Database Explorer não possui um controller de execução de SQL; não documentar o SQL gerado como se tivesse sido executado.
-- [Limitação] A documentação de rotas deve preservar a exceção de versionamento do RagProxy e as 82 operações contadas no baseline.
+- [Limitação] A documentação de rotas deve preservar a exceção de versionamento do RagProxy e as 86 operações contadas no baseline.
 - [Limitação] A Agenda persiste `Visibilidade`, mas as leituras não a filtram; `ResponsavelIds` não tem regra uniforme e `equipe`, `funcaoClassificacao` e `diasRetro` são aceitos sem efeito nas consultas ou cálculos correspondentes.
 - [Limitação] A exclusão de tipo com projeto vinculado pode gerar `500` por `InvalidOperationException` não tratado; isso é comportamento atual, não uma resposta de negócio desejada.
 
 ## Contagens e fatos confirmados
 
-- 11 classes de controller e 82 operações HTTP na árvore de trabalho atual.
+- 11 classes de controller e 86 operações HTTP na árvore de trabalho atual.
 - 10 controllers usam rota versionada `/api/v1`; `RagProxyController` usa a rota sem versão `/api/rag-proxy`.
-- Auth possui 4 operações; Acessos 3; Agenda 10; RAG 1; TiposProjeto 5; ColunasKanban 5; Projetos 16; Tarefas 16; Dashboard 1; AdminDashboard 1; Database 23.
+- Auth possui 4 operações; Acessos 3; Agenda 10; RAG 1; TiposProjeto 5; ColunasKanban 5; Projetos 16; Tarefas 16; Dashboard 1; AdminDashboard 1; Database 24.
 - O smoke não valida a API de negócio.
 - Nenhum segredo, token real, senha real ou string de conexão foi incluído neste documento.

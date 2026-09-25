@@ -183,7 +183,7 @@ Há 16 migrações no diretório, nesta ordem de arquivo:
 - Relacionamentos confirmados vêm de FKs reais; relacionamentos possíveis são inferidos por nomes/tipos/índices e carregam pontuação. A inferência não é uma FK.
 - `DatabaseQueryBuilderService` valida até cinco tabelas, monta SELECT/CTE/joins/filtros/ordenações e devolve SQL; não foi localizado endpoint que execute esse SQL.
 - `DatabaseConnectionConfigDto` mascara a senha no controller. Entretanto, todos os endpoints do controller exigem apenas `Authorize`, e os DTOs de procedimento/gatilho podem conter o corpo completo do objeto. A exposição deve ser considerada em função do perfil do usuário.
-- `SqlScriptGeneratorService` consome o resultado da comparação (com `SchemaArquivo`/`SchemaJca`) e devolve `SqlScriptResultDto` (`SqlScriptDto`, `SqlScriptResumoDto`); os contratos de geração/validação ficam em `DatabaseDtos.cs` e não são persistidos em nenhuma tabela (sem EF/migração).
+- `SqlScriptGeneratorService` consome o resultado da comparação (com `SchemaArquivo`/`SchemaJca`) e devolve `SqlScriptResultDto` (`SqlScriptDto` com `tabela`/`severidadeOrigem`, `SqlScriptResumoDto`), somente com criações vindas do arquivo; os contratos de geração/validação ficam em `DatabaseDtos.cs` e não são persistidos em nenhuma tabela (sem EF/migração). A comparação de procedures usa `ProceduresComparisonResultDto` também em `DatabaseDtos.cs`, sem persistência.
 
 ## Segurança e dados sensíveis
 

@@ -136,7 +136,7 @@ O código do frontend define `useMockAuth=false`; a configuração efetiva deve 
 - Login possui limitação de taxa e bloqueio local de tentativas; validação de dados sensíveis e leitura também possuem limites.
 - CORS usa lista explícita de origens e `AllowCredentials`.
 - Detalhes de Acessos exigem revalidação, expiram após cinco minutos e geram auditoria.
-- O Database Explorer não oferece execução de SQL arbitrário pelos endpoints atuais; trabalha com metadados, busca, relações, comparação de schemas, construção de consultas e geração/validação estática de scripts de correção (somente texto, nunca executado).
+- O Database Explorer não oferece execução de SQL arbitrário pelos endpoints atuais; trabalha com metadados, busca, relações, comparação de schemas e de corpos de procedures, construção de consultas e geração/validação estática de scripts de correção (somente texto, nunca executado).
 - Há limites relevantes: o cookie refresh usa `Secure=false`, os defaults operacionais de URL são HTTP e devem ser confirmados no ambiente, e a comparação de senha usa SHA-256 sem algoritmo adaptativo com salt.
 
 A descrição completa dos controles, exceções e limites está em [`02-ARQUITETURA.md`](./02-ARQUITETURA.md).

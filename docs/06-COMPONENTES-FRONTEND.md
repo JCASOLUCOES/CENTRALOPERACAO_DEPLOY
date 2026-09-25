@@ -171,10 +171,12 @@ O layout administrativo tem um outlet próprio e não reutiliza `MainLayoutCompo
 | `/implantacao/projetos/:id/editar` | `ProjetoFormComponent` |
 | `/implantacao/projetos/:id` | `ProjetoDetalheComponent` |
 | `/implantacao/tarefas` | `TarefasComponent` |
-| `/implantacao/tarefas/novo` | `TarefaFormComponent` |
-| `/implantacao/tarefas/:id/editar` | `TarefaFormComponent` |
+| `/implantacao/tarefas/novo` | `TarefaFormComponent`; aceita `?projetoId=` e `?tarefaId=` |
+| `/implantacao/tarefas/:id/editar` | `TarefaFormComponent`; o Projeto não é alterável |
 
 A ordem de `projetos/:id/editar` antes de `projetos/:id` faz a rota de edição ser reconhecida antes do detalhe paramétrico.
+
+`TarefaFormComponent` resolve o modo pelo snapshot da rota: `:id/editar` entra em edição, `/novo` permanece em create e, ainda em create, `?tarefaId=` carrega o detalhe da tarefa como formulário de duplicação (o `id` não é adotado, portanto o envio continua sendo `POST`). `?projetoId=` apenas pré-seleciona o projeto. A duplicação é disparada por `KanbanComponent.duplicarTarefa`.
 
 ### 4.5 Rotas de Database
 
@@ -264,6 +266,7 @@ Os componentes roteados e suas URLs estão consolidados nas seções 4.2 a 4.5. 
 | `DbQueryBuilderComponent` | Import de `DbConsultasComponent` |
 | `DbSincronizacaoComponent` | Import de `DbDiferencasComponent` |
 | `DbScriptsCorrecaoComponent` | Import de `DbSincronizacaoComponent` (aba de comparação) |
+| `DbProceduresResultadoComponent` | Import de `DbSincronizacaoComponent` (modo procedures) |
 | `AgendaEventoModalComponent` | `import()` dinâmico e `NgbModal.open` |
 | `DbProcedureModalComponent` | `import()` dinâmico e `NgbModal.open` |
 | `DbTriggerModalComponent` | `import()` dinâmico e `NgbModal.open` |
@@ -305,7 +308,7 @@ Todos os serviços Angular de aplicação localizados usam `providedIn: 'root'`.
 | `DashboardService` | KPI e agregados do dashboard de Implantação | API `/implantacao/dashboard` |
 | `ColunasKanbanService` | Leitura das colunas do Kanban | API `/implantacao/colunas-kanban` |
 | `TiposProjetoService` | CRUD administrativo de tipos de Projeto | API `/implantacao/tipos-projeto` |
-| `DatabaseService` | Metadados, busca, relações, procedures, triggers, query builder, comparação e scripts de correção (`gerarScripts`, `gerarScriptsBulk`, `validarScript`) | API `/database` |
+| `DatabaseService` | Metadados, busca, relações, procedures, triggers, query builder, comparação (schemas, bulk e procedures) e scripts de correção (`gerarScripts`, `gerarScriptsBulk`, `validarScript`, `compararProcedures`) | API `/database` |
 | `JotaChatService` | Chat RAG e métodos de sessão/mensagens | `/api/rag-proxy`; ver seções 10.4 e 12 |
 | `ChatContextoService` | Contexto da tarefa, abertura do widget e histórico por tarefa | Signals, `Subject`, `sessionStorage` |
 | `AdminDashboardService` | Consulta do dashboard administrativo | API `/admin/dashboard`; somente o componente sem rota ativa o consome |
@@ -441,11 +444,29 @@ O contexto de tarefa é incorporado à mensagem e o histórico é mantido por ta
 
 ### 10.5 Database
 
-`DatabaseShellComponent` carrega status e informações gerais. Páginas e componentes internos chamam `DatabaseService` para metadados, relações, busca, procedures, triggers, consultas geradas, comparação de schemas e scripts de correção. O estado visual fica nos componentes; o serviço é a única porta HTTP do módulo.
+`DatabaseShellComponent` carrega status e informações gerais. Páginas e componentes internos chamam `DatabaseService` para metadados, relações, busca, procedures, triggers, consultas geradas, comparação de schemas e de procedures e scripts de correção. O estado visual fica nos componentes; o serviço é a única porta HTTP do módulo.
 
-`DbSincronizacaoComponent` executa a comparação (modo tabela única ou banco inteiro) e monta o resumo com cards de severidade. `críticos` e `avisos` filtram a listagem; `compatíveis`/`tabelas ok` são indicadores estáticos de contagem — itens `Ok` não aparecem em nenhuma listagem nem no CSV, somente nos contadores e no percentual de match. No modo banco inteiro, os cards escolhem quais tabelas são listadas e a expansão de cada tabela mostra sempre as diferenças `Aviso` + `Crítico` (nunca `Ok`); a numeração das críticas (`numeroCritico`) reinicia por tabela (1, 2, 3… local). O export CSV client-side exclui itens `Ok` e traz a coluna `numero` nos dois modos (no banco inteiro com a numeração local). O filtro ativo é `'Critico' | 'Aviso' | null` e o componente também gera o script de exportação JSON para o SSMS.
+`DbSincronizacaoComponent` executa a comparação em três modos — `Tabela única`, `Banco inteiro` e `Procedures` — e monta o resumo com cards de severidade. `críticos` e `avisos` filtram a listagem; `compatíveis`/`tabelas ok` são indicadores estáticos de contagem — itens `Ok` não aparecem em nenhuma listagem nem no CSV, somente nos contadores e no percentual de match. No modo banco inteiro, os cards escolhem quais tabelas são listadas e a expansão de cada tabela mostra sempre as diferenças `Aviso` + `Crítico` (nunca `Ok`); a numeração das críticas (`numeroCritico`) reinicia por tabela (1, 2, 3… local). O export CSV client-side exclui itens `Ok` e traz a coluna `numero` nos dois modos de schema (no banco inteiro com a numeração local). O filtro ativo é `'Critico' | 'Aviso' | null` e o componente também gera o script de exportação JSON (schemas) ou T-SQL de 1 linha por procedure (procedures) para o SSMS; no modo procedures há um script próprio (`scriptSqlProcedures`, com escaping de `\`, aspas, quebras de linha e tabs) e o CSV/ação de scripts fica indisponível. A geração de correção chama `gerarScripts`/`gerarScriptsBulk` **sem** corpo de opções.
 
-`DbScriptsCorrecaoComponent` recebe o resultado da comparação (tabela única ou bulk) e expõe três abas (Criação, Alterações, Índices e FKs) com cards por script: severidade, SQL com realce próprio, copiar, validar (estático) e consulta de verificação. O rodapé mostra resumo/impacto e `RevisaoManual`; as ações exportam o conjunto como arquivo `.sql` (Blob) ou copiam tudo. Ele é montado dentro de `DbSincronizacaoComponent` e limpa os scripts gerados sempre que a comparação muda.
+`DbScriptsCorrecaoComponent` recebe o resultado da comparação (tabela única ou bulk) e o filtro de severidade (`filtroSeveridade`, a severidade de origem em modo tabela única) e expõe três abas (Criação, Alterações, Índices e FKs) com badges de contagem por aba, cards por script (severidade, badge de `tabela` no modo bulk, SQL com realce próprio, copiar, validar (estático) e consulta de verificação) e o rótulo do filtro ativo. Os scripts são somente criações vindas do arquivo (o banco JCA é a fonte da verdade), cada um com `severidadeOrigem` usada pelo filtro das abas. O rodapé mostra resumo/impacto e `RevisaoManual`; as ações exportam o conjunto como arquivo `.sql` (Blob) ou copiam tudo. Não há checkboxes de backup/modo estrito (as opções saíram da UI). Ele é montado dentro de `DbSincronizacaoComponent` e limpa os scripts gerados sempre que a comparação muda.
+
+`DbProceduresResultadoComponent` recebe `ProceduresComparisonResult` no modo procedures: chips de contagem por `status` (`Compativel`, `Divergente`, `SomenteBanco`, `SomenteArquivo`), pills de filtro por status, busca por nome e a listagem com os corpos lado a lado (lado único quando só existe um dos lados), botão copiar por lado com fallback `execCommand` e export CSV (`schema,nome,status,tamanhoJca,tamanhoArquivo`). Não há geração de scripts neste modo.
+
+### 10.6 Formulário de Tarefa — Projeto e etapa do projeto
+
+`TarefaFormComponent` mantém `projetoId` e `projetoEtapaId` em signals e resolve o contrato de etapa sem sair do componente:
+
+- O campo **Etapa do projeto (card)** é renderizado nos dois modos. Sem projeto ele fica desabilitado, com placeholder "Selecione um projeto primeiro" (ou "Tarefa sem projeto" na edição) e a dica de que é preciso escolher um projeto; com projeto ele mostra o placeholder de carregamento, o de erro ou a lista das nove etapas. O `required` é condicional (`[required]="temProjeto()"`).
+- `carregarEtapasFixas` zera lista e etapa antes de cada chamada, marca `etapasLoading` e usa um contador de requisição: a resposta só é aplicada quando a sequência e o `projetoId` ainda conferem, portanto trocar ou remover o projeto descarta respostas antigas, inclusive quando a resposta obsoleta chega por `error`.
+- Estados separados: `etapasError` (falha de comunicação, mensagem `Não foi possível carregar as etapas do projeto.`) e `etapasVazia` (projeto sem nenhum card cadastrado, `Nenhuma etapa cadastrada para este projeto.`). Projeto sem etapas não vira erro de comunicação e, nos dois casos, `podeSalvar` fica falso porque a etapa obrigatória não existe.
+- Recuperação: com projeto, erro e carga parada, o campo `podeTentarEtapas` exibe o botão **Tentar novamente**, que chama `tentarNovamenteEtapas` e repete o `GET` do mesmo projeto. Ele existe também na edição, onde o seletor de Projeto está desabilitado — é o único caminho de recuperação quando a carga inicial falha ali.
+- Default com projeto, isolado em `escolherEtapaPadrao`: etapa preservada se pertencer à lista, senão `EmAndamento` → primeira não concluída → primeira disponível.
+- Reuso: ao preencher o formulário (carga inicial, duplicação e retorno do `PUT`), `preencherFormulario` só chama `carregarEtapasFixas` quando o projeto mudou ou a lista ainda não foi carregada; com etapas em memória — inclusive o estado vazio já conhecido — reaproveita a lista e reaplica o default **sem novo `GET`**.
+- `podeSalvar` exige etapa válida (presente na lista, sem erro e sem carregamento) sempre que há projeto; sem projeto, a etapa não é exigida.
+- Payload: o create envia `projetoId` e `projetoEtapaId`; o update envia `projetoEtapaId` e **não** envia `projetoId`. O select de Projeto é desabilitado na edição, com a dica de que o projeto não pode ser alterado, e a Etapa permanece habilitada. Tarefa sem projeto não envia etapa alguma no create.
+- Acessibilidade: o select recebe `aria-busy` durante o carregamento e `aria-describedby="etapaFixa-mensagem"` sempre que há mensagem; a mensagem tem `role="alert"` no erro e `role="status"` nos demais casos (carregando, vazio, sem projeto).
+- Ciclo de vida: a assinatura de etapas usa `takeUntilDestroyed(this.destroyRef)`; a classe implementa `OnDestroy` para limpar o temporizador do toast.
+- O comportamento é coberto por [`tarefa-form.component.spec.ts`](../frontend/src/app/features/implantacao/pages/tarefas/tarefa-form.component.spec.ts); a suíte não foi executada nesta revisão.
 
 ## 11. Recursos removidos e código dormente
 
@@ -479,12 +500,14 @@ Esta seção separa o que o código executa do risco que permanece no estado atu
 | 6 | O frontend consulta status, metadados, procedures, triggers e configuração do Database Explorer. | Os endpoints são protegidos apenas por JWT; podem revelar definições, e a conexão pode operar sem `Encrypt` conforme a configuração. |
 | 7 | O modal de etapa carrega o detalhe, fecha pelo `NgbActiveModal` (inclusive em erro de carga), o pai recarrega os cards e o diálogo de retorno confirma uma chamada ao backend. | O retorno envia `usuarioAlteracao: 'admin'`; o upload cria `blob:` com `URL.createObjectURL` e persiste essa URL como documento, sem upload real. A URL é temporária e a exclusão de documento ainda é TODO no frontend. |
 | 8 | Não há tipo, rota ou controller `Backup` no frontend; formulários e serviços possuem apenas validações específicas. | Não é possível afirmar um recurso de backup ou uma camada uniforme de validação sem código adicional; as validações documentadas são apenas as implementadas em cada tela/serviço. |
+| 9 | `TarefaFormComponent` sempre exibe a etapa do projeto, a desabilita sem projeto, limpa lista e etapa ao trocar/remover o projeto, ignora respostas de etapas obsoletas, separa erro de comunicação de projeto sem etapas, oferece **Tentar novamente** e envia `projetoEtapaId` no create e no update; o Projeto fica desabilitado na edição. | Não há troca de projeto na edição: o `PUT` de Tarefa não transporta `projetoId` e o serviço mantém o projeto persistido, portanto mudar o projeto da tarefa exige sair do formulário. Caminho de recuperação previsto no componente: o botão **Tentar novamente** refaz a carga de etapas do mesmo projeto (inclusive na edição, com o Projeto desabilitado); para projeto sem etapas cadastradas não há recuperação, porque a etapa é obrigatória e o envio fica bloqueado. |
 
 As limitações correspondentes no backend estão detalhadas em [`07-SERVICES-BACKEND.md`](./07-SERVICES-BACKEND.md).
 
 ## 13. Incertezas remanescentes
 
 - Não foi executado build Angular nem teste de navegador; o documento comprova a configuração estática, não a renderização integrada.
+- A suíte frontend tem cinco arquivos `*.spec.ts` e 31 casos, dos quais 12 no formulário de Tarefa; eles não foram executados nesta revisão, portanto a cobertura é um inventário do repositório, não um resultado. A classificação por história está em [`08-HISTORIAS-TELAS.md`](./08-HISTORIAS-TELAS.md).
 - O estado do ambiente publicado e das migrações de banco não foi verificado.
 - A disponibilidade e os resultados reais do Database Explorer, Google Sheets e AnythingLLM dependem da configuração e dos serviços externos em execução.
 - Há duas constantes de versão com valores diferentes: `package.json`/`APP_VERSION` estão em 0.7.0, enquanto `APP_CONFIG.versao` está em 0.8.0. A intenção de versionamento não foi definida no código consultado.

@@ -154,7 +154,7 @@ Os contratos estão em [`AgendaDtos.cs`](../backend/Central_BackEnd/Dtos/Implant
 
 ### 3.4 Database Explorer
 
-Todos os endpoints usam JWT. Os dois de comparação e os três de scripts de correção também usam `validacao` e limite de requisição.
+Todos os endpoints usam JWT. Os três de comparação (schemas, banco inteiro e procedures) e os três de scripts de correção também usam `validacao` e limite de requisição.
 
 | Método e caminho | Corpo/parâmetros | Serviço |
 |---|---|---|
@@ -178,20 +178,21 @@ Todos os endpoints usam JWT. Os dois de comparação e os três de scripts de co
 | `GET /api/v1/database/config` | Sem corpo | Retorna servidor, porta, banco, usuário e flags; o controller substitui a senha configurada por `***` |
 | `POST /api/v1/database/compare-schemas` | Multipart: `schema`, `tabela`, `arquivo` | Compara uma tabela; upload vazio rejeitado |
 | `POST /api/v1/database/compare-schemas-bulk` | Multipart: `arquivo` | Compara várias tabelas; upload vazio rejeitado |
-| `POST /api/v1/database/generate-correction-scripts` | `GerarScriptsRequest` | `SqlScriptGeneratorService.GerarScripts`; gera scripts, não executa |
+| `POST /api/v1/database/compare-procedures` | Multipart: `arquivo` | `DatabaseSchemaComparisonService.CompararProceduresAsync`; compara corpos de procedures (20 MB), não gera script |
+| `POST /api/v1/database/generate-correction-scripts` | `GerarScriptsRequest` | `SqlScriptGeneratorService.GerarScripts`; gera somente criações, não executa |
 | `POST /api/v1/database/generate-correction-scripts-bulk` | `GerarScriptsBulkRequest` | `SqlScriptGeneratorService.GerarScriptsBulk`; gera scripts, não executa |
 | `POST /api/v1/database/validate-script` | `ValidarScriptRequest` | `SqlScriptGeneratorService.ValidarScriptAsync`; validação estática, não executa |
 
-Os DTOs do módulo estão em [`DatabaseDtos.cs`](../backend/Central_BackEnd/Dtos/Database/DatabaseDtos.cs). Os dois serviços de comparação devolvem `SchemaArquivo` e `SchemaJca` (quando disponíveis), que a geração de scripts usa para classificar a compatibilidade dos tipos.
+Os DTOs do módulo estão em [`DatabaseDtos.cs`](../backend/Central_BackEnd/Dtos/Database/DatabaseDtos.cs). A comparação de schemas devolve `SchemaArquivo` e `SchemaJca` (quando disponíveis), que a geração de scripts usa para classificar a compatibilidade dos tipos; a comparação de procedures devolve `ProceduresComparisonResultDto` (`status` `Compativel`/`Divergente`/`SomenteBanco`/`SomenteArquivo`, com os dois corpos quando existem) e não passa pela geração de scripts.
 
 #### SqlScriptGeneratorService
 
 [`SqlScriptGeneratorService.cs`](../backend/Central_BackEnd/Services/Database/SqlScriptGeneratorService.cs) (scoped, registrado em `Program.cs` junto aos demais serviços do módulo) transforma o resultado da comparação — enviado como JSON pronto, sem novo upload — em `SqlScriptResultDto`:
 
-- **Tipos de script:** `CREATE_TABLE`, `ADD_COLUMN`, `ALTER_COLUMN`, `ALTER_TYPE`, `DROP_COLUMN`, `DROP_TABLE`, `CREATE_INDEX`, `DROP_INDEX`, `ALTER_FK`; a saída é ordenada nessa sequência (sort estável por tipo).
-- **Direção:** cria no JCA o que falta; o que só existe no JCA vira `DROP` **comentado**, com backup sugerido em comentários; nada destrutivo é gerado ativo.
-- **Opções:** `gerarBackup` (default `true`, blocos de backup em comentários) e `modoEstrito` (default `false`; quando `true`, scripts destrutivos vão para `Resumo.RevisaoManual` em vez das listas). Conversão de tipo incompatível sempre gera nota em `RevisaoManual`.
-- **`resumo`:** totais por categoria, impacto estimado (`Low`/`Medium`/`High`/`Critical`), contagem de avisos e `revisaoManual`.
+- **Tipos de script:** somente criações — `CREATE_TABLE`, `ADD_COLUMN`, `CREATE_INDEX` e `ALTER_FK`. No modo banco inteiro a saída é ordenada por tabela (ordem de processamento da comparação) e, dentro da tabela, por tipo (criação → coluna → índice/FK).
+- **Direção:** o banco JCA é a fonte da verdade. Divergência, tabela/coluna só no JCA ou ausente no arquivo não geram script (seguem o padrão do banco); só o que existe no arquivo e falta no JCA vira script, montado a partir do schema do arquivo.
+- **Metadados por script:** cada `SqlScriptDto` carrega `tabela` e `severidadeOrigem` (critico para criação de tabela/coluna; severidade da diferença de origem para índice e FK), usados pelo filtro das abas no frontend. `ScriptsGenOpcoesDto` (`gerarBackup`/`modoEstrito`) continua no contrato por compatibilidade, mas não tem efeito.
+- **`resumo`:** totais por categoria, impacto estimado (`Low` sem criar tabela, `Medium` com `CREATE_TABLE`), contagem de avisos e `revisaoManual` (apenas tabelas sem definição no arquivo, que impedem a montagem).
 - **`ValidarScriptAsync`:** validação **estática** (nunca executa no SQL Server): limpa comentários/strings, aplica allowlist de verbos e objetos, emite avisos para `DROP TABLE/COLUMN`, `TRUNCATE` e `DELETE`/`UPDATE` sem `WHERE`, e confere a existência de tabelas por consulta leve em `INFORMATION_SCHEMA.TABLES` apenas quando a conexão está disponível.
 
 ### 3.5 Projetos e cards de etapa
@@ -227,8 +228,8 @@ Todos os endpoints usam JWT e `validacao`.
 |---|---|---|
 | `GET /api/v1/implantacao/tarefas` | Filtros de Projeto, responsável, status, datas, perfil, função e arquivamento | Lista até 500; arquivadas excluídas por padrão |
 | `GET /api/v1/implantacao/tarefas/{id}` | Sem corpo | Detalhe completo |
-| `POST /api/v1/implantacao/tarefas` | `TarefaCriarRequest` | Cria tarefa, vínculos e auditoria |
-| `PUT /api/v1/implantacao/tarefas/{id}` | `TarefaAtualizarRequest` | Atualiza os campos enviados, sincroniza card/coluna e audita; não é um PATCH de campos parciais |
+| `POST /api/v1/implantacao/tarefas` | `TarefaCriarRequest` | Cria tarefa, vínculos e auditoria; `projetoEtapaId` sem `projetoId` é rejeitado com mensagem explícita |
+| `PUT /api/v1/implantacao/tarefas/{id}` | `TarefaAtualizarRequest` | Atualiza os campos enviados, sincroniza card/coluna e audita; não é um PATCH de campos parciais; não troca `projetoId` e valida/zera `projetoEtapaId` |
 | `PATCH /api/v1/implantacao/tarefas/{id}/coluna` | `TarefaMudarColunaRequest` | Move, aplica WIP e sincroniza estado |
 | `PATCH .../{id}/arquivar` | Corpo `{}` | Arquiva somente Tarefa concluída |
 | `PATCH .../{id}/desarquivar` | Corpo `{}` | Desarquiva e volta para coluna de concluídas |
@@ -244,6 +245,8 @@ Todos os endpoints usam JWT e `validacao`.
 | `GET /api/v1/implantacao/dashboard` | `equipe?`, `projetoId?` | Agregados do dashboard |
 
 Os DTOs estão em [`TarefaDtos.cs`](../backend/Central_BackEnd/Dtos/Implantacao/TarefaDtos.cs). Para apontamentos, o controller calcula `ehAdmin` com role `Admin` ou claim `PerfilId=A`; `AuthService` emite role `Administrador` e claim `perfil=Administrador`, sem `PerfilId`. Assim, para os JWTs emitidos pelo serviço atual, o controller delega ao service sem marcar admin, e a regra efetivo é “próprio apontamento”.
+
+A regra de etapa do projeto é aplicada no serviço, não no controller. `TarefaService.ValidarEtapaFixaAsync` exige `ProjetoEtapaId` quando a tarefa tem projeto (`Etapa do projeto é obrigatória para tarefas de projeto`) e confirma que a etapa pertence a esse projeto (`Etapa do projeto inválida para esta tarefa`). Sem projeto, a validação é ignorada. Na criação, `CriarAsync` rejeita etapa sem projeto (`Não é possível informar uma etapa do projeto sem informar o projeto.`); na atualização, `AtualizarAsync` valida a etapa contra o projeto já persistido, mantém `t.ProjetoId` inalterado — `TarefaAtualizarRequest` não transporta projeto — e grava `t.ProjetoEtapaId = null` quando a tarefa é sem projeto.
 
 ### 3.7 Catálogos e dashboard administrativo
 
@@ -286,7 +289,7 @@ Os contratos de catálogo estão em [`TipoProjetoEtapaColunaDtos.cs`](../backend
 | `ProjetoService` | CRUD, filtro, cliente e progresso do Projeto | `AppDbContext`, auditoria | Prioridade definida, tipo ativo, cliente legado ativo; lista até 500 | Gera código, grava Projeto, audita; exclusão cascateia cards e Tarefas |
 | `ProjetoEtapaService` | Nove cards, checklist, documentos, comentários, retorno e progresso | `AppDbContext`, auditoria, logger | Card precisa existir; concluída exige 100%; retorno aceita ordem 1–8 e apenas para trás | Um GET pode criar cards ausentes; conclude/desbloqueia, reseta, grava histórico e recalcula Projeto |
 | `ProjetoJornadaService` | Progresso da jornada baseado em tarefas | `AppDbContext` | Não recalcula quando o Projeto não tem cards | Persiste média simples dos percentuais dos cards |
-| `TarefaService` | CRUD, Kanban, responsáveis, chamados, apontamentos e histórico | DbContext, auditoria, jornada, cards, logger | Tarefa com Projeto exige card do mesmo Projeto; enums, coluna, responsáveis e chamados são validados; WIP e motivo de bloqueio; apontamento > 0; atualização/exclusão de apontamento ficam restritas ao próprio para os JWTs emitidos atualmente | Audita, recalcula jornada/cards e pode criar/atualizar evento de Agenda em colunas especiais |
+| `TarefaService` | CRUD, Kanban, responsáveis, chamados, apontamentos e histórico | DbContext, auditoria, jornada, cards, logger | Tarefa com Projeto exige `projetoEtapaId` do mesmo Projeto (etapa sem projeto é rejeitada na criação; em tarefa sem projeto a etapa é zerada na atualização) e o Projeto não é trocado pelo `PUT`; enums, coluna, responsáveis e chamados são validados; WIP e motivo de bloqueio; apontamento > 0; atualização/exclusão de apontamento ficam restritas ao próprio para os JWTs emitidos atualmente | Audita, recalcula jornada/cards e pode criar/atualizar evento de Agenda em colunas especiais |
 | `DashboardService` | KPIs e agregados de Implantação | `AppDbContext` | Filtra opcionalmente por `projetoId`; `equipe` é recebido, mas não filtra a consulta | Somente leitura; `porEquipe` contém uma linha “Geral” zerada e o tempo de ciclo copia o tempo de lead |
 | `AdminDashboardService` | Visão administrativa de Tarefas e funções | `AppDbContext` | `funcaoId` filtra funções/operadores; `diasRetro` é recebido, mas não participa dos cálculos | Somente leitura |
 | `AgendaService` | Eventos, participantes, recorrência e conflitos | `AppDbContext`, logger | Tipo ativo, responsável ativo, datas, prioridade, SLA, regras por tipo, conflito do responsável e propriedade/admin | Cria, altera, move ou exclui; participantes são intersecção com operadores ativos |
@@ -299,12 +302,12 @@ As nove etapas são: KICKOFF, LEVANTAMENTO, DESENVOLVIMENTO, HOMOLOGAÇÃO, TREI
 | Serviço | Responsabilidade | Dependências | Validações/efeitos |
 |---|---|---|---|
 | `DatabaseConnectionService` | Configuração e abertura de conexão SQL independente | `IConfiguration`, logger; singleton | Variáveis `DB_EXPLORER_*` têm precedência; exige servidor, banco e usuário; `Encrypt` e `TrustServerCertificate` são lidos da configuração, com padrões `false` e `true`; a configuração não é gravada em runtime |
-| `DatabaseMetadataService` | Tabelas, colunas, índices, FKs, procedures, triggers, dependências e extração de schemas | `IDatabaseConnectionService`, logger | Consultas de metadados/SELECT; devolve corpos de procedures/triggers; contagem sem permissão retorna `-1`; nenhuma escrita de dados |
+| `DatabaseMetadataService` | Tabelas, colunas, índices, FKs, procedures, triggers, dependências e extração de schemas | `IDatabaseConnectionService`, logger | Consultas de metadados/SELECT; devolve corpos de procedures/triggers e a listagem de corpos usada pela comparação de procedures (`ListarCorposProceduresAsync`, só objetos do usuário); contagem sem permissão retorna `-1`; nenhuma escrita de dados |
 | `DatabaseSearchService` | Busca unificada de objetos | Conexão | Termo vazio retorna vazio; `take` limitado a 1–500; somente leitura |
 | `DatabaseRelationshipInferenceService` | FKs confirmadas, candidatas, uso de coluna e grafo | Conexão, logger | Candidatas usam nome, tipo, PK e índice; grafo limita profundidade a 1–5; somente leitura |
 | `DatabaseQueryBuilderService` | Monta SQL a partir de metadados e relacionamentos | Conexão, metadata, inferência, logger | Limita a cinco tabelas, valida tabelas e `HAVING`; gera texto SQL, não executa a consulta |
-| `DatabaseSchemaComparisonService` | Compara uma ou várias tabelas com JSON | `IDatabaseMetadataService`, logger | Exige arquivo não vazio, extensão `.json`, 5 MB por tabela ou 20 MB no bulk; somente leitura no banco alvo; ordem das colunas **não** é considerada diferença (só nome, tipo, tamanho/precisão/escala, nullable, índices, FKs e presença de tabelas/colunas) |
-| `SqlScriptGeneratorService` | Gera e valida estaticamente scripts de correção a partir do resultado da comparação | `IDatabaseConnectionService`, logger | Scoped; não executa SQL nem persiste nada; itens destrutivos viram comentário/`RevisaoManual` conforme `modoEstrito` |
+| `DatabaseSchemaComparisonService` | Compara tabelas com JSON e compara corpos de procedures | `IDatabaseMetadataService`, logger | Exige arquivo não vazio, extensão `.json`, 5 MB por tabela, 20 MB no bulk ou nas procedures; ordem das colunas **não** é considerada diferença; nas procedures a chave é `schema.nome` (sem distinção de caixa), o corpo é normalizado só em quebras de linha/espaço à direita e a comparação é somente leitura (sem scripts) |
+| `SqlScriptGeneratorService` | Gera e valida estaticamente scripts de correção a partir do resultado da comparação | `IDatabaseConnectionService`, logger | Scoped; não executa SQL nem persiste nada; gera somente criações vindas do arquivo (o banco JCA é a fonte da verdade) |
 
 ## 5. Modelos, DbContext e relacionamentos
 
@@ -443,7 +446,7 @@ Eventos são armazenados com operador responsável, tipo, prioridade, SLA, proje
 
 ### 8.4 Projetos, cards e Tarefas
 
-Ao criar um Projeto, o controller chama `ProjetoService` e depois `ProjetoEtapaService.InicializarEtapasPadraoAsync`. Alterações de Tarefas recalculam a jornada e sincronizam cards com tarefas não arquivadas. Cards concluídos podem desbloquear o próximo; uma tarefa reaberta em card concluído reabre somente esse card.
+Ao criar um Projeto, o controller chama `ProjetoService` e depois `ProjetoEtapaService.InicializarEtapasPadraoAsync`. Alterações de Tarefas recalculam a jornada e sincronizam cards com tarefas não arquivadas. Cards concluídos podem desbloquear o próximo; uma tarefa reaberta em card concluído reabre somente esse card. Toda tarefa com projeto nasce e permanece ligada a um card do mesmo projeto: a criação sem etapa é recusada, a etapa de outro projeto é recusada e a atualização não move a tarefa entre projetos.
 
 ### 8.5 Database e RAG
 
@@ -485,4 +488,4 @@ Esta seção separa o que o código implementa do risco que permanece no estado 
 - `equipe` em Tarefas/Dashboard, `diasRetro` no dashboard administrativo e campos legados de Cliente não são aplicados integralmente pelos serviços atuais.
 - Não foi possível inferir se a divergência de `APP_VERSION` do frontend tem efeito no versionamento do backend; ela está registrada em [`06-COMPONENTES-FRONTEND.md`](./06-COMPONENTES-FRONTEND.md).
 - A existência dos scripts SQL auxiliares não comprova que foram aplicados em algum ambiente.
-- Não há teste backend localizado para confirmar contratos, concorrência de refresh, conflitos de agenda ou compatibilidade SQL em tempo de execução.
+- Não há teste backend localizado para confirmar contratos, concorrência de refresh, conflitos de agenda ou compatibilidade SQL em tempo de execução. Em particular, a regra de etapa do projeto não tem suíte no backend: o spec do frontend cobre apenas o gating e o payload do cliente, e não foi executado nesta revisão.

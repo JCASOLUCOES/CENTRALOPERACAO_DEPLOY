@@ -235,7 +235,7 @@ O módulo Database possui uma conexão separada, lida por `DatabaseConnectionSer
 2. seção `DatabaseExplorer` da configuração;
 3. configuração vazia; nesse caso, o serviço informa que a conexão não está configurada.
 
-Os endpoints atuais cobrem status, informação, tabelas, colunas, índices, relacionamentos, grafo, busca de colunas, stored procedures, gatilhos, dependências, análise de procedure, construção de consulta e comparação de schemas. Eles não recebem uma instrução SQL arbitrária para execução.
+Os endpoints atuais cobrem status, informação, tabelas, colunas, índices, relacionamentos, grafo, busca de colunas, stored procedures, gatilhos, dependências, análise de procedure, construção de consulta, comparação de schemas e comparação de corpos de procedures. Eles não recebem uma instrução SQL arbitrária para execução.
 
 ### Google Sheets
 
