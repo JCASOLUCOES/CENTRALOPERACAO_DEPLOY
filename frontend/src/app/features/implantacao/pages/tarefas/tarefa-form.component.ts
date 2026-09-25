@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, DestroyRef, inject, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -17,6 +18,13 @@ import { UsuarioDropdownComponent } from '@shared/components/usuario-dropdown/us
 import { ChamadoDropdownComponent } from '@shared/components/chamado-dropdown/chamado-dropdown.component';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 
+interface EtapaOpcao {
+  id: number;
+  ordem: number;
+  nome: string;
+  estado: string;
+}
+
 @Component({
   selector: 'app-implantacao-tarefa-form',
   standalone: true,
@@ -31,7 +39,7 @@ import { PageHeaderComponent } from '@shared/components/page-header/page-header.
   templateUrl: './tarefa-form.component.html',
   styleUrl: './tarefa-form.component.scss'
 })
-export class TarefaFormComponent implements OnInit {
+export class TarefaFormComponent implements OnInit, OnDestroy {
   protected readonly Number = Number;
   // Form state
   modoAtual = signal<'create' | 'edit'>('create');
@@ -39,6 +47,9 @@ export class TarefaFormComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   error = signal<string | null>(null);
+  etapasLoading = signal(false);
+  etapasError = signal<string | null>(null);
+  etapasVazia = signal(false);
 
   // Form fields - ordem conforme CORRECAO.MD:
   // 1. Título, 2. Descrição, 3. Tipo + Data Entrega, 4. Responsável, 5. Projeto (opcional), 6. Chamados
@@ -64,7 +75,7 @@ export class TarefaFormComponent implements OnInit {
 
   // Lookups
   projetos = signal<{ id: number; codigo: string; nome: string }[]>([]);
-  etapasFixas = signal<{ id: number; ordem: number; nome: string; estado: string }[]>([]);
+  etapasFixas = signal<EtapaOpcao[]>([]);
   colunasKanban = signal<{ id: number; nome: string; cor: string }[]>([]);
 
   // Static options
@@ -84,17 +95,53 @@ export class TarefaFormComponent implements OnInit {
   isEdit = computed(() => this.modoAtual() === 'edit');
   tituloPagina = computed(() => this.isEdit() ? 'Editar Tarefa' : 'Nova Tarefa');
   temProjeto = computed(() => this.projetoId() !== null);
-  podeSalvar = computed(() =>
-    this.titulo().trim().length >= 3 &&
-    this.responsavelIds().length > 0 &&
-    this.dataEntrega() !== '' &&
-    this.tipo() >= 0 &&
-    this.tipo() <= 1 &&
-    this.prioridade() >= 0 &&
-    this.prioridade() <= 3 &&
-    (!this.temProjeto() || this.projetoEtapaId() !== null) &&
-    (!this.bloqueada() || this.motivoBloqueio().trim().length > 0)
+  podeSalvar = computed(() => {
+    const etapaId = this.projetoEtapaId();
+    const etapaValida = !this.temProjeto() || (
+      !this.etapasLoading() &&
+      this.etapasError() === null &&
+      etapaId !== null &&
+      this.etapasFixas().some(etapa => etapa.id === etapaId)
+    );
+
+    return this.titulo().trim().length >= 3 &&
+      this.responsavelIds().length > 0 &&
+      this.dataEntrega() !== '' &&
+      this.tipo() >= 0 &&
+      this.tipo() <= 1 &&
+      this.prioridade() >= 0 &&
+      this.prioridade() <= 3 &&
+      etapaValida &&
+      (!this.bloqueada() || this.motivoBloqueio().trim().length > 0);
+  });
+
+  readonly placeholderEtapa = computed(() => {
+    if (this.etapasLoading()) return 'Carregando etapas...';
+    if (this.etapasError()) return 'Etapas indisponíveis';
+    if (!this.temProjeto()) return this.isEdit() ? 'Tarefa sem projeto' : 'Selecione um projeto primeiro';
+    return 'Selecione a etapa...';
+  });
+
+  readonly mensagemEtapa = computed<string | null>(() => {
+    if (this.etapasLoading()) return 'Carregando etapas do projeto selecionado...';
+    if (this.etapasError()) return this.etapasError();
+    if (this.etapasVazia()) return 'Nenhuma etapa cadastrada para este projeto.';
+    if (!this.temProjeto()) {
+      return this.isEdit()
+        ? 'Esta tarefa não está vinculada a um projeto.'
+        : 'Selecione um projeto para carregar e escolher uma etapa válida.';
+    }
+    return null;
+  });
+
+  readonly mensagemEtapaPapel = computed(() => (this.etapasError() ? 'alert' : 'status'));
+
+  readonly podeTentarEtapas = computed(() =>
+    this.temProjeto() && this.etapasError() !== null && !this.etapasLoading()
   );
+
+  private etapasRequestSequence = 0;
+  private readonly destroyRef = inject(DestroyRef);
 
   // Toast
   private toastTimeout: any = null;
@@ -113,6 +160,11 @@ export class TarefaFormComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.carregarLookups();
     this.verificarModoEdicao();
+  }
+
+  ngOnDestroy(): void {
+    clearTimeout(this.toastTimeout);
+    this.toastTimeout = null;
   }
 
   private async carregarLookups(): Promise<void> {
@@ -143,22 +195,29 @@ export class TarefaFormComponent implements OnInit {
       this.modoAtual.set('edit');
       this.tarefaId.set(Number(id));
       this.carregarTarefa(Number(id));
-    } else {
-      this.modoAtual.set('create');
-      const projetoIdParam = this.route.snapshot.queryParamMap.get('projetoId');
-      if (projetoIdParam) this.projetoId.set(Number(projetoIdParam));
-      this.carregarEtapasFixas();
-      // Pre-fill responsavel with logged user
-      const operador = this.auth.getOperadorLogadoCompleto();
-      if (operador) {
-        this.responsavelIds.set([operador.id]);
-      }
+      return;
+    }
+
+    this.modoAtual.set('create');
+    const projetoIdParam = this.route.snapshot.queryParamMap.get('projetoId');
+    if (projetoIdParam) this.projetoId.set(Number(projetoIdParam));
+
+    const tarefaIdParam = this.route.snapshot.queryParamMap.get('tarefaId');
+    if (tarefaIdParam) {
+      this.carregarTarefa(Number(tarefaIdParam));
+      return;
+    }
+
+    this.carregarEtapasFixas();
+    const operador = this.auth.getOperadorLogadoCompleto();
+    if (operador) {
+      this.responsavelIds.set([operador.id]);
     }
   }
 
   private carregarTarefa(id: number): void {
     this.loading.set(true);
-    this.tarSvc.obter(id).subscribe({
+    this.tarSvc.obter(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (t) => {
         if (t) {
           this.preencherFormulario(t);
@@ -175,15 +234,20 @@ export class TarefaFormComponent implements OnInit {
   }
 
   private preencherFormulario(t: TarefaDetalhe): void {
+    const projetoAnterior = this.projetoId();
+    const projetoCarregado = t.projetoId ?? null;
+    const etapaPreservada = t.projetoEtapaId ?? null;
+
     this.titulo.set(t.titulo);
     this.descricao.set(t.descricao ?? '');
     this.tipo.set(t.tipo ?? 0);
     this.dataEntrega.set(this.formatarData(t.dataEntrega));
     this.responsavelIds.set(t.responsaveis?.map(r => r.operadorId) ?? []);
-    this.projetoId.set(t.projetoId ?? null);
-    this.carregarEtapasFixas(t.projetoEtapaId ?? null);
+    this.projetoId.set(projetoCarregado);
+    if (projetoAnterior !== projetoCarregado || !this.reaproveitarEtapasCarregadas(etapaPreservada)) {
+      this.carregarEtapasFixas(etapaPreservada);
+    }
     this.chamadoIds.set(t.chamados?.map(c => c.chamadoId) ?? []);
-    this.projetoEtapaId.set(t.projetoEtapaId ?? null);
     this.colunaKanbanId.set(t.colunaKanbanId ?? null);
     this.prioridade.set(t.prioridade);
     this.ordem.set(t.ordem);
@@ -276,7 +340,6 @@ export class TarefaFormComponent implements OnInit {
     const dadosComuns = {
       titulo: this.titulo().trim(),
       descricao: this.descricao().trim() || undefined,
-      projetoId: projetoId ?? undefined,
       projetoEtapaId: this.projetoEtapaId() ?? undefined,
       colunaKanbanId: this.colunaKanbanId() ?? undefined,
       responsavelId: responsavelPrincipal,
@@ -303,6 +366,7 @@ export class TarefaFormComponent implements OnInit {
 
     return {
       ...dadosComuns,
+      projetoId: projetoId ?? undefined,
       dataConclusao: this.dataConclusao() || undefined,
       bloqueada: this.bloqueada(),
       motivoBloqueio: this.motivoBloqueio().trim() || undefined,
@@ -323,30 +387,71 @@ export class TarefaFormComponent implements OnInit {
     this.carregarEtapasFixas();
   }
 
+  aoMudarEtapa(event: Event): void {
+    const valor = (event.target as HTMLSelectElement).value;
+    this.projetoEtapaId.set(valor === '' ? null : Number(valor));
+  }
+
+  tentarNovamenteEtapas(): void {
+    if (this.projetoId() == null) return;
+    this.carregarEtapasFixas(this.projetoEtapaId());
+  }
+
+  private reaproveitarEtapasCarregadas(preservarId: number | null): boolean {
+    const fixas = this.etapasFixas();
+    if (fixas.length === 0) return this.etapasVazia();
+
+    this.projetoEtapaId.set(this.escolherEtapaPadrao(fixas, preservarId));
+    return true;
+  }
+
+  private escolherEtapaPadrao(fixas: EtapaOpcao[], preservarId: number | null): number | null {
+    if (preservarId != null && fixas.some(f => f.id === preservarId)) return preservarId;
+
+    return fixas.find(f => f.estado === 'EmAndamento')?.id
+      ?? fixas.find(f => f.estado !== 'Concluida')?.id
+      ?? fixas[0]?.id
+      ?? null;
+  }
+
   /** Carrega as 9 etapas fixas do projeto; default = etapa em andamento. */
   private carregarEtapasFixas(preservarId?: number | null): void {
+    const requestSequence = ++this.etapasRequestSequence;
     const pid = this.projetoId();
-    if (pid == null) {
-      this.etapasFixas.set([]);
-      this.projetoEtapaId.set(null);
-      return;
-    }
-    this.projSvc.obterEtapasProjeto(pid).subscribe({
+
+    this.etapasFixas.set([]);
+    this.projetoEtapaId.set(null);
+    this.etapasLoading.set(false);
+    this.etapasError.set(null);
+    this.etapasVazia.set(false);
+
+    if (pid == null) return;
+
+    this.etapasLoading.set(true);
+    this.projSvc.obterEtapasProjeto(pid).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (lista) => {
+        if (requestSequence !== this.etapasRequestSequence || pid !== this.projetoId()) return;
+
         const fixas = (lista ?? [])
           .filter(e => e.id != null)
           .map(e => ({ id: e.id as number, ordem: e.ordem, nome: e.nome, estado: e.estado }));
+
         this.etapasFixas.set(fixas);
-        if (preservarId != null && fixas.some(f => f.id === preservarId)) {
-          this.projetoEtapaId.set(preservarId);
-        } else {
-          this.projetoEtapaId.set(
-            fixas.find(f => f.estado === 'EmAndamento')?.id
-            ?? fixas.find(f => f.estado !== 'Concluida')?.id
-            ?? null);
-        }
+        this.etapasLoading.set(false);
+        this.etapasVazia.set(fixas.length === 0);
+        this.projetoEtapaId.set(fixas.length === 0 ? null : this.escolherEtapaPadrao(fixas, preservarId ?? null));
       },
-      error: () => { this.etapasFixas.set([]); this.projetoEtapaId.set(preservarId ?? null); }
+      error: () => {
+        if (requestSequence !== this.etapasRequestSequence || pid !== this.projetoId()) return;
+
+        this.etapasFixas.set([]);
+        this.projetoEtapaId.set(null);
+        this.etapasLoading.set(false);
+        this.etapasVazia.set(false);
+        this.etapasError.set('Não foi possível carregar as etapas do projeto.');
+      }
     });
   }
 

@@ -228,7 +228,7 @@ public class TarefaService : ITarefaService
 
     /// <summary>
     /// Tarefa com projeto exige etapa fixa (card) do mesmo projeto.
-    /// Sem projeto, a etapa é ignorada/NULL.
+    /// A criação sem projeto rejeita etapa; a atualização zera a etapa da tarefa sem projeto.
     /// </summary>
     private async Task ValidarEtapaFixaAsync(int? projetoId, int? projetoEtapaId, CancellationToken ct)
     {
@@ -267,6 +267,9 @@ public class TarefaService : ITarefaService
 
         // ProjetoId é opcional - permite tarefas sem projeto (requisito perfil F).
         // Com projeto, a etapa fixa (card) é obrigatória e deve pertencer ao projeto.
+        if (!req.ProjetoId.HasValue && req.ProjetoEtapaId.HasValue)
+            throw new ArgumentException("Não é possível informar uma etapa do projeto sem informar o projeto.");
+
         if (req.ProjetoId.HasValue)
         {
             var projeto = await _db.Projetos.AsNoTracking()
