@@ -288,18 +288,14 @@ export interface BulkSchemaComparisonResult {
 }
 
 // =====================================================================
-// Geração de scripts SQL de correção (arquivo = alvo, banco = corrigido)
+// Geração de scripts SQL de correção (somente criações vindas do arquivo;
+// divergências seguem o padrão do banco JCA — nenhum script é gerado)
 // =====================================================================
 
 export type SqlScriptTipo =
   | 'CREATE_TABLE'
   | 'ADD_COLUMN'
-  | 'ALTER_COLUMN'
-  | 'ALTER_TYPE'
-  | 'DROP_COLUMN'
-  | 'DROP_TABLE'
   | 'CREATE_INDEX'
-  | 'DROP_INDEX'
   | 'ALTER_FK';
 
 export type SqlScriptSeveridade = 'Info' | 'Aviso' | 'Critico';
@@ -314,8 +310,8 @@ export interface SqlScript {
   sqlFormatado: string;
   descricao: string;
   campoRelacionado: string;
-  backupSugerido: boolean;
-  opcoes?: SqlScript[];
+  tabela?: string | null;
+  severidadeOrigem?: string | null;
   consultaValidacao?: string;
 }
 
@@ -335,13 +331,34 @@ export interface SqlScriptResult {
   resumo: SqlScriptResumo;
 }
 
-export interface SqlScriptOpcoes {
-  gerarBackup: boolean;
-  modoEstrito: boolean;
-}
-
 export interface ValidarScriptResult {
   valido: boolean;
   erros: string[];
   avisos: string[];
+}
+
+// =====================================================================
+// Comparação de procedures (somente leitura, sem geração de scripts)
+// =====================================================================
+
+export type ProcedureStatus = 'Compativel' | 'Divergente' | 'SomenteBanco' | 'SomenteArquivo';
+
+export interface ProcedureComparison {
+  schema: string;
+  nome: string;
+  status: ProcedureStatus;
+  corpoJca?: string | null;
+  corpoArquivo?: string | null;
+}
+
+export interface ProceduresComparisonResult {
+  geradoEm: string;
+  arquivoNome?: string | null;
+  totalBanco: number;
+  totalArquivo: number;
+  compativeis: number;
+  divergentes: number;
+  somenteBanco: number;
+  somenteArquivo: number;
+  itens: ProcedureComparison[];
 }

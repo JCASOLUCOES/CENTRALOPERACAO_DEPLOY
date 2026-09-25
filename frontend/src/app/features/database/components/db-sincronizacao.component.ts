@@ -3,17 +3,20 @@ import { Component, inject, signal, input, output, computed, ViewChild, ElementR
 import { FormsModule } from '@angular/forms';
 import { DatabaseService } from '../services/database.service';
 import { DbScriptsCorrecaoComponent } from './db-scripts-correcao.component';
+import { DbProceduresResultadoComponent } from './db-procedures-resultado.component';
 import {
   DatabaseTable, SchemaComparisonResult, SchemaDifference,
-  BulkSchemaComparisonResult, BulkTableComparison, BulkTableStatus
+  BulkSchemaComparisonResult, BulkTableComparison, BulkTableStatus,
+  ProceduresComparisonResult
 } from '../models/database.model';
 
 type FiltroSeveridade = 'Critico' | 'Aviso' | null;
+type Modo = 'tabela' | 'banco' | 'procedures';
 
 @Component({
   selector: 'app-db-sincronizacao',
   standalone: true,
-  imports: [CommonModule, FormsModule, DbScriptsCorrecaoComponent],
+  imports: [CommonModule, FormsModule, DbScriptsCorrecaoComponent, DbProceduresResultadoComponent],
   template: `
   <div class="adm-card p-3">
     <h3 class="adm-card__title">Comparação de Schemas</h3>
@@ -32,6 +35,11 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | null;
               [class.db-sync__modo-btn--on]="modo() === 'banco'"
               (click)="setModo('banco')">
         <i class="bi bi-database"></i> Banco inteiro
+      </button>
+      <button type="button" class="db-sync__modo-btn"
+              [class.db-sync__modo-btn--on]="modo() === 'procedures'"
+              (click)="setModo('procedures')">
+        <i class="bi bi-diagram-3"></i> Procedures
       </button>
     </div>
 
@@ -60,10 +68,15 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | null;
         <span class="db-sync__modo-info-val">arquivo × banco conectado (todas as tabelas)</span>
       </label>
 
+      <label *ngIf="modo() === 'procedures'" class="db-sync__modo-info">
+        Comparação
+        <span class="db-sync__modo-info-val">procedures × banco conectado (somente leitura, sem scripts)</span>
+      </label>
+
       <label class="db-sync__file">
         <input type="file" accept=".json" #arquivoInput (change)="onArquivo($event)" [disabled]="carregando()">
         <span *ngIf="!arquivo()" class="db-sync__file-placeholder">
-          <i class="bi bi-upload"></i> Escolher JSON{{ modo() === 'banco' ? ' (até 20 MB)' : '' }}
+          <i class="bi bi-upload"></i> Escolher JSON{{ modo() !== 'tabela' ? ' (até 20 MB)' : '' }}
         </span>
         <span *ngIf="arquivo()" class="db-sync__file-name">
           <i class="bi bi-file-earmark-text"></i> {{ arquivo()!.name }}
@@ -76,11 +89,13 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | null;
         {{ carregando() ? 'Comparando…' : 'Comparar' }}
       </button>
 
-      <button *ngIf="(modo() === 'tabela' ? resultado() : resultadoBulk())" class="btn btn-outline-secondary" (click)="exportarCsv()">
+      <button *ngIf="modo() !== 'procedures' && (modo() === 'tabela' ? resultado() : resultadoBulk())"
+              class="btn btn-outline-secondary" (click)="exportarCsv()">
         <i class="bi bi-download"></i> Exportar CSV
       </button>
 
-      <button *ngIf="resultado() || resultadoBulk() || arquivo() || tabelaSelecionada()" class="btn btn-outline-danger"
+      <button *ngIf="resultado() || resultadoBulk() || resultadoProcedures() || arquivo() || tabelaSelecionada()"
+              class="btn btn-outline-danger"
               (click)="limparTudo()" [disabled]="carregando()">
         <i class="bi bi-eraser"></i> Limpar
       </button>
@@ -88,7 +103,7 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | null;
 
     <div class="db-sync__script mb-3">
       <div class="db-sync__script-header">
-        <strong>Script de exportação (JSON) — {{ modo() === 'tabela' ? 'tabela única' : 'banco inteiro' }}</strong>
+        <strong>Script de exportação (JSON) — {{ rotuloModo() }}</strong>
         <div class="db-sync__script-acoes">
           <input class="form-control form-control-sm db-sync__script-input"
                  type="text" placeholder="schema" [(ngModel)]="scriptSchema"
@@ -103,7 +118,7 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | null;
           </button>
         </div>
       </div>
-      <pre class="db-sync__script-pre">{{ modo() === 'tabela' ? scriptSql() : scriptSqlBulk() }}</pre>
+      <pre class="db-sync__script-pre">{{ scriptVisivel() }}</pre>
       <small *ngIf="modo() === 'tabela'" class="text-muted db-sync__script-dica">
         1. Rode no SSMS do banco externo · 2. Clique na célula do resultado e copie o JSON inteiro ·
         3. Cole em um arquivo <code>.json</code> e envie acima. O script gera colunas, índices e FKs
@@ -119,6 +134,13 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | null;
         conectado; tabelas ausentes de <strong>qualquer lado</strong> contam como crítico.
         Uma linha por tabela evita truncamento de célula no SSMS.
       </small>
+      <small *ngIf="modo() === 'procedures'" class="text-muted db-sync__script-dica">
+        1. Deixe o schema <strong>vazio</strong> para exportar todas as procedures (ou informe 1 schema) ·
+        2. Rode no SSMS do banco externo · 3. Selecione <strong>todas as linhas</strong> (uma por procedure) e copie ·
+        4. Cole em um arquivo <code>.json</code> e envie acima. Cada linha traz
+        <code>&#123;"schema","nome","corpo"&#125;</code>; os corpos são comparados com o banco conectado
+        (sensível a caixa). <strong>Somente leitura</strong>: nenhum script é gerado neste modo.
+      </small>
     </div>
 
     <div *ngIf="erro()" class="adm-aviso adm-aviso--erro mb-3">
@@ -126,7 +148,7 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | null;
       <span>{{ erro() }}</span>
     </div>
 
-    <div *ngIf="!carregando() && !resultado() && !resultadoBulk() && !erro()" class="adm-empty">
+    <div *ngIf="!carregando() && !resultado() && !resultadoBulk() && !resultadoProcedures() && !erro()" class="adm-empty">
       <ng-container *ngIf="modo() === 'tabela'; else emptyBulk">
         Selecione uma tabela, envie o arquivo <strong>JSON</strong> e clique em <strong>Comparar</strong>.
         <br><small class="text-muted">
@@ -134,11 +156,21 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | null;
         </small>
       </ng-container>
       <ng-template #emptyBulk>
-        Envie o arquivo <strong>JSON</strong> com as tabelas exportadas pelo script de banco inteiro
-        e clique em <strong>Comparar</strong>.
-        <br><small class="text-muted">
-          Aceita <code>&#123;"tabelas":[...]&#125;</code>, array de objetos de tabela ou JSON Lines (uma linha por tabela).
-        </small>
+        <ng-container *ngIf="modo() === 'procedures'; else emptyBanco">
+          Envie o arquivo <strong>JSON</strong> com as procedures exportadas pelo script
+          e clique em <strong>Comparar</strong>.
+          <br><small class="text-muted">
+            Uma linha por procedure: <code>&#123;"schema","nome","corpo"&#125;</code> (JSON Lines),
+            <code>&#123;"procedures":[...]&#125;</code> ou array de objetos.
+          </small>
+        </ng-container>
+        <ng-template #emptyBanco>
+          Envie o arquivo <strong>JSON</strong> com as tabelas exportadas pelo script de banco inteiro
+          e clique em <strong>Comparar</strong>.
+          <br><small class="text-muted">
+            Aceita <code>&#123;"tabelas":[...]&#125;</code>, array de objetos de tabela ou JSON Lines (uma linha por tabela).
+          </small>
+        </ng-template>
       </ng-template>
     </div>
 
@@ -318,9 +350,12 @@ type FiltroSeveridade = 'Critico' | 'Aviso' | null;
       </div>
     </div>
 
+    <app-db-procedures-resultado [resultado]="resultadoProcedures()" />
+
     <app-db-scripts-correcao
       [resultado]="resultado()"
-      [resultadoBulk]="resultadoBulk()" />
+      [resultadoBulk]="resultadoBulk()"
+      [filtroSeveridade]="resultado() ? filtro() : null" />
   </div>
   `,
   styles: [`
@@ -467,8 +502,9 @@ export class DbSincronizacaoComponent {
   readonly filtro = signal<FiltroSeveridade>('Critico');
   readonly tabelaSelecionada = signal('');
   readonly buscaTabela = signal('');
-  readonly modo = signal<'tabela' | 'banco'>('tabela');
+  readonly modo = signal<Modo>('tabela');
   readonly resultadoBulk = signal<BulkSchemaComparisonResult | null>(null);
+  readonly resultadoProcedures = signal<ProceduresComparisonResult | null>(null);
   readonly filtroBulk = signal<FiltroSeveridade>('Critico');
   readonly tabelaExpandida = signal<string | null>(null);
 
@@ -499,14 +535,15 @@ export class DbSincronizacaoComponent {
     if (tabela) this.scriptTabela = tabela;
   }
 
-  setModo(m: 'tabela' | 'banco'): void {
+  setModo(m: Modo): void {
     if (this.modo() === m) return;
     this.modo.set(m);
-    if (m === 'banco' && this.scriptSchema === 'dbo') this.scriptSchema = '';
+    if ((m === 'banco' || m === 'procedures') && this.scriptSchema === 'dbo') this.scriptSchema = '';
     if (m === 'tabela' && !this.scriptSchema) this.scriptSchema = 'dbo';
     this.erro.set(null);
     this.resultado.set(null);
     this.resultadoBulk.set(null);
+    this.resultadoProcedures.set(null);
     this.filtro.set('Critico');
     this.filtroBulk.set('Critico');
     this.tabelaExpandida.set(null);
@@ -517,6 +554,7 @@ export class DbSincronizacaoComponent {
   limparTudo(): void {
     this.resultado.set(null);
     this.resultadoBulk.set(null);
+    this.resultadoProcedures.set(null);
     this.arquivo.set(null);
     this.erro.set(null);
     this.filtro.set('Critico');
@@ -833,9 +871,49 @@ ORDER BY tb.schemaNome, tb.nome;`;
     return v.replace(/'/g, "''");
   }
 
+  rotuloModo(): string {
+    switch (this.modo()) {
+      case 'tabela': return 'tabela única';
+      case 'banco': return 'banco inteiro';
+      default: return 'procedures';
+    }
+  }
+
+  scriptVisivel(): string {
+    switch (this.modo()) {
+      case 'tabela': return this.scriptSql();
+      case 'banco': return this.scriptSqlBulk();
+      default: return this.scriptSqlProcedures();
+    }
+  }
+
+  scriptSqlProcedures(): string {
+    const schema = this.litarSql(this.scriptSchema || '');
+    const declSchema = schema
+      ? `DECLARE @schema sysname = N'${schema}';`
+      : `DECLARE @schema sysname = NULL;  -- NULL = todos os schemas`;
+    return `${declSchema}
+
+SELECT
+    N'{"schema":"' + REPLACE(REPLACE(SCHEMA_NAME(p.schema_id), N'\\', N'\\\\'), N'"', N'\\"')
+  + N'","nome":"' + REPLACE(REPLACE(p.name, N'\\', N'\\\\'), N'"', N'\\"')
+  + N'","corpo":"' + REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONVERT(nvarchar(max), ISNULL(m.definition, N'')),
+        N'\\', N'\\\\'),
+        N'"', N'\\"'),
+        NCHAR(13) + NCHAR(10), N'\\n'),
+        NCHAR(10), N'\\n'),
+        NCHAR(9), N'\\t')
+  + N'"}'
+FROM sys.procedures p
+LEFT JOIN sys.sql_modules m ON m.object_id = p.object_id
+WHERE p.is_ms_shipped = 0
+  AND (@schema IS NULL OR SCHEMA_NAME(p.schema_id) = @schema)
+ORDER BY SCHEMA_NAME(p.schema_id), p.name;`;
+  }
+
   copiarScript(): void {
     if (typeof window === 'undefined') return;
-    const sql = this.modo() === 'banco' ? this.scriptSqlBulk() : this.scriptSql();
+    const sql = this.scriptVisivel();
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(sql).then(() => {
         this.sucessoCopia();
@@ -900,7 +978,7 @@ ORDER BY tb.schemaNome, tb.nome;`;
       input.value = '';
       return;
     }
-    const limiteMb = this.modo() === 'banco' ? 20 : 5;
+    const limiteMb = this.modo() === 'tabela' ? 5 : 20;
     if (f.size > limiteMb * 1024 * 1024) {
       this.erro.set(`Arquivo excede o limite de ${limiteMb} MB.`);
       this.arquivo.set(null);
@@ -915,6 +993,10 @@ ORDER BY tb.schemaNome, tb.nome;`;
     if (!this.arquivo()) return;
     if (this.modo() === 'banco') {
       this.compararBanco();
+      return;
+    }
+    if (this.modo() === 'procedures') {
+      this.compararProcedures();
       return;
     }
     const sel = this.tabelaSelecionada();
@@ -954,6 +1036,24 @@ ORDER BY tb.schemaNome, tb.nome;`;
       },
       error: (err: any) => {
         this.erro.set(err?.error?.mensagem || 'Falha ao comparar o banco inteiro.');
+        this.carregando.set(false);
+      }
+    });
+  }
+
+  private compararProcedures(): void {
+    this.carregando.set(true);
+    this.erro.set(null);
+    this.resultado.set(null);
+    this.resultadoBulk.set(null);
+    this.resultadoProcedures.set(null);
+    this.db.compararProcedures(this.arquivo()!).subscribe({
+      next: rp => {
+        this.resultadoProcedures.set(rp);
+        this.carregando.set(false);
+      },
+      error: (err: any) => {
+        this.erro.set(err?.error?.mensagem || 'Falha ao comparar procedures.');
         this.carregando.set(false);
       }
     });

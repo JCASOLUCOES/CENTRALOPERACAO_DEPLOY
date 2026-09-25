@@ -8,8 +8,8 @@ import {
   DatabaseStatus, DatabaseConnectionConfig,
   ProcedureResumo, ProcedureDetalhe,
   Trigger, Dependencia, ProcedureAnalysis,
-  SchemaComparisonResult, BulkSchemaComparisonResult,
-  SqlScriptResult, SqlScriptOpcoes, ValidarScriptResult
+  SchemaComparisonResult, BulkSchemaComparisonResult, ProceduresComparisonResult,
+  SqlScriptResult, ValidarScriptResult
 } from '../models/database.model';
 
 @Injectable({ providedIn: 'root' })
@@ -124,24 +124,25 @@ export class DatabaseService {
     return this.http.post<BulkSchemaComparisonResult>(`${this.baseUrl}/compare-schemas-bulk`, fd);
   }
 
+  // Comparação de procedures (arquivo com N procedures x banco conectado, somente leitura)
+  compararProcedures(arquivo: File): Observable<ProceduresComparisonResult> {
+    const fd = new FormData();
+    fd.append('arquivo', arquivo, arquivo.name);
+    return this.http.post<ProceduresComparisonResult>(`${this.baseUrl}/compare-procedures`, fd);
+  }
+
   // Geração de scripts SQL de correção (o resultado da comparação vai no corpo)
-  gerarScripts(
-    resultado: SchemaComparisonResult,
-    opcoes?: SqlScriptOpcoes
-  ): Observable<SqlScriptResult> {
+  gerarScripts(resultado: SchemaComparisonResult): Observable<SqlScriptResult> {
     return this.http.post<SqlScriptResult>(
       `${this.baseUrl}/generate-correction-scripts`,
-      { resultado, opcoes: opcoes ?? null }
+      { resultado }
     );
   }
 
-  gerarScriptsBulk(
-    resultado: BulkSchemaComparisonResult,
-    opcoes?: SqlScriptOpcoes
-  ): Observable<SqlScriptResult> {
+  gerarScriptsBulk(resultado: BulkSchemaComparisonResult): Observable<SqlScriptResult> {
     return this.http.post<SqlScriptResult>(
       `${this.baseUrl}/generate-correction-scripts-bulk`,
-      { resultado, opcoes: opcoes ?? null }
+      { resultado }
     );
   }
 
