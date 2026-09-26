@@ -109,8 +109,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
 
 ### 🎯 Kanban Drag & Drop + Integração com Agenda
 - **Drag & Drop**: Alteração de status/coluna/fase das tarefas exclusivamente via arrastar-e-soltar (`@angular/cdk/drag-drop`)
-- **Integração Automática**: Tarefas movidas para colunas "Reunião", "Treinamento" ou "Marco de Entrega" criam/atualizam eventos na Agenda (`IMPL_Agenda`) automaticamente
-- **Backend:** `TarefaService.SincronizarAgendaAsync()` cria ou atualiza registros de `IMPL_Agenda`; a correspondência atual usa `ProjetoId` e título da tarefa, pois `AgendaItem` não possui `TarefaId`
+- **Integração Automática**: Tarefas movidas para colunas "Reunião", "Treinamento" ou "Marco de Entrega" criam/atualizam eventos na Agenda (`tbagenda`) automaticamente
+- **Backend:** `TarefaService.SincronizarAgendaAsync()` cria ou atualiza registros de `tbagenda`; a correspondência atual usa `ProjetoId` e título da tarefa, pois `AgendaItem` não possui `TarefaId`
 
 ### 👥 Cadastro de Operadores — Atribuição Automática por Função/Perfil
 - **Sem seleção manual de equipe**: A equipe e papel são definidos automaticamente pela Função selecionada
@@ -118,7 +118,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\validate.ps1
   - `FUNCAO_ID = 1` (Analista de Sistemas) → **Implantador** (claim `eh_implantador=true` no JWT)
   - `FUNCAO_ID = 2` (Suporte) → Atendimento operacional
   - `FUNCAO_ID = 3` (Programador) → Desenvolvimento
-- **Migration relacionada:** `AddFuncao` (tabela `CC_Funcao` + `FUNCAO_ID` em `TBOPERADOR` + FK; script em `Migrations/Sql/AddFuncao.sql`). A aplicação em cada ambiente deve ser confirmada pelo histórico de migrations
+- **Migration relacionada:** `AddFuncao` (tabela `CC_Funcao` + `FUNCAO_ID` em `TBOPERADOR` + FK; script em `Migrations/Sql/AddFuncao.sql`). A tabela `CC_Funcao` foi fundida na legada `tbfuncao` pela migration `PadraoTabelasTb` (ganhou `CLASSIFICACAO` e `ATIVO`, e `FUNCAO_ID` foi widenada de `smallint` para `int`); `TBOPERADOR` passou a se chamar `tboperador`. A aplicação em cada ambiente deve ser confirmada pelo histórico de migrations
 
 ---
 

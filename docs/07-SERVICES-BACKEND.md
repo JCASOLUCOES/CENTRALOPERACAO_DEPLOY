@@ -317,7 +317,7 @@ As nove etapas são: KICKOFF, LEVANTAMENTO, DESENVOLVIMENTO, HOMOLOGAÇÃO, TREI
 | Domínio | DbSets/tabelas |
 |---|---|
 | Identidade | `Operadores`/`tboperador`, `Funcoes`/`tbfuncao`, `RefreshTokens`/`tbrefreshtoken`, `AuditoriaAcessos`/`tbauditoriaacesso` |
-| Cadastros | `TiposProjeto`/`tbtipoprojeto`, `ColunasKanban`/`tbcoluskananban` |
+| Cadastros | `TiposProjeto`/`tbtipoprojeto`, `ColunasKanban`/`tbcolunakanban` |
 | Projetos | `Projetos`/`tbprojeto`, `ProjetoEtapas`/`tbprojetoetapa`, `ProjetoEtapaChecklists`/`tbprojetoetapachecklist`, `ProjetoEtapaDocumentos`/`tbprojetoetapadocumento`, `ProjetoEtapaHistoricos`/`tbprojetoetahistorico`, `ProjetoEtapaComentarios`/`tbprojetoetapacomentario` |
 | Tarefas | `Tarefas`/`tbtarefa`, `ComentariosTarefa`/`tbcomentariotarefa`, `TarefaResponsaveis`/`tbtarefareponsavel`, `TarefaChamados`/`tbtarefachamado`, `TarefaApontamentos`/`tbtarefaapontamento` |
 | Agenda | `Agenda`/`tbagenda`, `TiposEvento`/`tbtipoevento`, `AgendaParticipantes`/`tbagendaparticipante` |
@@ -402,12 +402,12 @@ A entidade `Cliente` e a tabela `IMPL_Cliente` foram removidas: `ProjetoService.
 | `20260918211919_AddProjetoEtapas` | Cinco tabelas `tbprojetoetapa*` e índice único por Projeto/ordem |
 | `20260920185734_TarefaProjetoEtapaId` | Adiciona `TRF_ProjetoEtapaId` e backfill a partir da etapa global |
 | `20260922154202_RemoveEtapaAntiga` | Remove `IMPL_Etapa`, `TRF_EtapaId` e FKs legadas; mantém FK do card com `Restrict` |
-| `20260926022803_PadraoTabelasTb` | Padroniza nomes de tabela em `tb*`, funde `CC_Funcao` na legada `tbfuncao`, remove `IMPL_Cliente`/`CC_Funcao`/`AgendaEvento`/`AgendaEventoParticipante` e renomeia 20 PKs. Escrita à mão, não gerada pelo scaffold. |
+| `20260926010406_PadraoTabelasTb` | Padroniza nomes de tabela em `tb*`, funde `CC_Funcao` na legada `tbfuncao`, remove `IMPL_Cliente`/`CC_Funcao`/`AgendaEvento`/`AgendaEventoParticipante` e renomeia 20 PKs. Escrita à mão, não gerada pelo scaffold. |
 | `20260926022906_RenomeiaIndicesPkTb` | Renomeia 33 índices para `IX_<tabela>_<colunas>`, as 5 PKs com nome automático do EF e a unique constraint para `AK_tbtipoevento_Nome`. |
 
 O snapshot atual contém `tbprojeto*`, `tbtarefa*`, `tbagenda*` e `TRF_ProjetoEtapaId`; não contém `IMPL_Etapa` nem `TRF_EtapaId`. Referências em migrações anteriores são histórico, não API ou modelo atual.
 
-⚠️ **Antes de rodar `dotnet ef database update`:** `20260914144751_AgendaConflitoHorarios`, `20260917202045_TarefaProjetoOpcional` e `20260920185734_TarefaProjetoEtapaId` já estavam fisicamente aplicadas via scripts manuais e foram carimbadas à mão em `__EFMigrationsHistory`. O banco também tem o registro órfão `20260910183240_AgendaGeral`, cujo arquivo `.cs` não existe (o EF ignora). Em produção, `scripts/deploy/deploy.ps1` não aplica migrations: usar `scripts/db/renomear-tabelas-tb-idempotente.sql` (tabelas), `scripts/db/renomear-indices-pk-tb-idempotente.sql` (índices, PKs e unique constraint) e `scripts/db/conferencia-padrao-tb.sql`. Detalhes em [04-ESTRUTURA-DADOS.md](04-ESTRUTURA-DADOS.md).
+⚠️ **Antes de rodar `dotnet ef database update`:** `20260914144751_AgendaConflitoHorarios`, `20260917202045_TarefaProjetoOpcional` e `20260920185734_TarefaProjetoEtapaId` já estavam fisicamente aplicadas via scripts manuais e foram carimbadas à mão em `__EFMigrationsHistory`. O banco também tem o registro órfão `20260910183240_AgendaGeral`, cujo arquivo `.cs` não existe (o EF ignora). Em produção, `scripts/deploy/deploy.ps1` não aplica migrations: usar o script único `scripts/db/renomear-tabelas-tb-idempotente.sql` (tabelas, PKs, índices e unique constraint, equivalente a `PadraoTabelasTb` + `RenomeiaIndicesPkTb`) e `scripts/db/conferencia-padrao-tb.sql` para auditar. Detalhes em [04-ESTRUTURA-DADOS.md](04-ESTRUTURA-DADOS.md).
 
 ### 7.2 Execução e seeds
 

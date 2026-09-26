@@ -293,7 +293,7 @@ if (app.Environment.IsDevelopment())
             db.SaveChanges();
         }
 
-        // Seed tbcolusanakanban: 7 colunas padrao (BACKLOG -> CONCLUIDO)
+        // Seed tbcolunakanban: 7 colunas padrao (BACKLOG -> CONCLUIDO)
         if (!db.ColunasKanban.Any())
         {
             db.ColunasKanban.AddRange(

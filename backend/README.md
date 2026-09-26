@@ -73,7 +73,7 @@ Central_BackEnd/
 │   ├── 20260912173928_RemoveEquipes.cs           # ← Remove IMPL_Equipe/IMPL_MembroEquipe (2026-09-12)
 │   ├── 20260914144751_AgendaConflitoHorarios.cs  # ← Agenda Fase 1: índice de conflito de horário
 │   ├── 20260917170249_TarefaEvolucaoResponsaveisChamadosHoras.cs  # ← **NOVO**: TRF_DataEntrega, TRF_TipoTarefa, apontamentos, responsáveis e chamados
-│   ├── 20260926022803_PadraoTabelasTb.cs         # ← **Padrão tb***: renomeia tabelas, funde CC_Funcao na legada tbfuncao, remove órfãs
+│   ├── 20260926010406_PadraoTabelasTb.cs         # ← **Padrão tb***: renomeia tabelas, funde CC_Funcao na legada tbfuncao, remove órfãs
 │   └── 20260926022906_RenomeiaIndicesPkTb.cs     # ← **Nomes de índice/PK/unique**: 33 índices, 5 PKs automáticas e a AK de tbtipoevento
 ├── Program.cs                # Configuração DI, Auth, CORS, Rate Limiting, Swagger
 └── appsettings.json          # Placeholders (config real só no servidor)
@@ -134,7 +134,7 @@ Central_BackEnd/
 | Controller | Base | Entidades |
 |------------|------|-----------|
 | `TiposProjetoController` | `/tipos-projeto` | `tbtipoprojeto` |
-| `ColunasKanbanController` | `/colunas-kanban` | `tbcoluskananban` |
+| `ColunasKanbanController` | `/colunas-kanban` | `tbcolunakanban` |
 | `ProjetosController` — **16 endpoints** | `/projetos` | `tbprojeto`, `tbprojetoetapa*` |
 | `ProjetosController` | `/projetos/etapas-padrao`, `/projetos/{id}/etapas*` | Nove cards fixos por projeto |
 | — | `/etapas` | **Etapas Globais removidas**: sem controller/service/model/tabela no source atual |
@@ -155,7 +155,7 @@ Central_BackEnd/
 
 ## 🗄️ Banco de Dados
 
-Padrão canônico de nomenclatura: **nome de tabela = `tb` + nome da entidade em minúsculas, colado, sem underscore** (exceção para sub-entidades: `tb<entidade>_<sub>`). Aplicado pelas migrations `20260926022803_PadraoTabelasTb` (tabelas) e `20260926022906_RenomeiaIndicesPkTb` (índices, PKs e unique constraint). **As colunas não mudaram** (prefixo curto da entidade + `_`, UPPER nas legadas). As FKs mantêm nomes antigos — cosmético, não é bug. Detalhes em [`docs/04-ESTRUTURA-DADOS.md`](../docs/04-ESTRUTURA-DADOS.md).
+Padrão canônico de nomenclatura: **nome de tabela = `tb` + nome da entidade em minúsculas, colado, sem underscore** (exceção para sub-entidades: `tb<entidade>_<sub>`). Aplicado pelas migrations `20260926010406_PadraoTabelasTb` (tabelas) e `20260926022906_RenomeiaIndicesPkTb` (índices, PKs e unique constraint). **As colunas não mudaram** (prefixo curto da entidade + `_`, UPPER nas legadas). As FKs mantêm nomes antigos — cosmético, não é bug. Detalhes em [`docs/04-ESTRUTURA-DADOS.md`](../docs/04-ESTRUTURA-DADOS.md).
 
 ### Tabelas do Sistema
 | Tabela | Descrição |
@@ -169,7 +169,7 @@ Padrão canônico de nomenclatura: **nome de tabela = `tb` + nome da entidade em
 | Tabela | Prefixo | Descrição |
 |--------|---------|-----------|
 | `tbtipoprojeto` | `TPP_` | Tipos (CLIENTE, CARTEIRA, INTEGRACAO, PROJETO_CIAA) |
-| `tbcoluskananban` | `CLK_` | Colunas Kanban (máx 8) |
+| `tbcolunakanban` | `CLK_` | Colunas Kanban (máx 8) |
 | `tbprojeto` | `PRJ_` | Projetos (código auto `PRJ-0001`, sem equipe desde 2026-09-12) |
 | `tbprojetoetapa` | `PEP_` | Nove cards fixos por projeto |
 | `tbprojetoetapachecklist` | `PEC_` | Checklist do card |
@@ -185,7 +185,7 @@ Padrão canônico de nomenclatura: **nome de tabela = `tb` + nome da entidade em
 
 > `IMPL_Etapa`, `tbtarefa.TRF_EtapaId` e a FK legada foram removidos pela migration `20260922154202_RemoveEtapaAntiga`; o vínculo atual é `TRF_ProjetoEtapaId → tbprojetoetapa.PEP_Id`.
 >
-> A entidade `Cliente` e a tabela `IMPL_Cliente` foram removidas pela migration `20260926022803_PadraoTabelasTb` (cadastro morto). A fonte única de clientes é a legada `tbcliente` (`ExcludeFromMigrations()`, somente leitura), assim como `tbchamado` e `tbfuncionario`.
+> A entidade `Cliente` e a tabela `IMPL_Cliente` foram removidas pela migration `20260926010406_PadraoTabelasTb` (cadastro morto). A fonte única de clientes é a legada `tbcliente` (`ExcludeFromMigrations()`, somente leitura), assim como `tbchamado` e `tbfuncionario`.
 >
 > A tabela de colunas do Kanban **segue a regra** `tb` + `ColunaKanban`.ToLower() (14 caracteres, o que `ColunaKanban.cs` e os snapshots declaram). ⚠️ O literal da `PadraoTabelasTb` para essa tabela tem 16 caracteres e não coincide com o modelo: conferir o nome real no banco antes de dar por encerrado.
 
@@ -197,10 +197,9 @@ Padrão canônico de nomenclatura: **nome de tabela = `tb` + nome da entidade em
 | `tbagendaparticipante` | — | N:N evento ↔ operador (participantes) |
 
 > ⚠️ **Migração necessária em homolog/produção:** `scripts/deploy/deploy.ps1` **não** aplica migrations. Caminhos:
-> 1. `scripts/db/renomear-tabelas-tb-idempotente.sql` — tabelas em `tb*`, equivalente à `PadraoTabelasTb`; **é o caminho de produção** para as tabelas (carimba também as migrations aplicadas manualmente).
-> 2. `scripts/db/renomear-indices-pk-tb-idempotente.sql` — índices, PKs e unique constraint, equivalente à `RenomeiaIndicesPkTb`. Use este para essa parte: o script das tabelas ainda traz a chamada de índice na forma defeituosa (sem itemtype `INDEX` e sem qualificar a tabela), que **pula o rename silenciosamente**.
-> 3. `scripts/db/conferencia-padrao-tb.sql` — conferência de contagens/estrutura; aceita nomes antigos e novos, rode **antes e depois** e compare as seções 1 e 2.
-> 4. `dotnet ef database update` — atenção: `20260914144751_AgendaConflitoHorarios`, `20260917202045_TarefaProjetoOpcional` e `20260920185734_TarefaProjetoEtapaId` já foram carimbadas à mão, e há um registro órfão `20260910183240_AgendaGeral` sem arquivo no repositório.
+> 1. `scripts/db/renomear-tabelas-tb-idempotente.sql` — **é o caminho de produção**: um único script idempotente para tabelas, PKs, índices e unique constraint, equivalente a `PadraoTabelasTb` + `RenomeiaIndicesPkTb` (carimba também as migrations aplicadas manualmente).
+> 2. `scripts/db/conferencia-padrao-tb.sql` — conferência de contagens/estrutura; aceita nomes antigos e novos, rode **antes e depois** e compare as seções 1 e 2.
+> 3. `dotnet ef database update` — atenção: `20260914144751_AgendaConflitoHorarios`, `20260917202045_TarefaProjetoOpcional` e `20260920185734_TarefaProjetoEtapaId` já foram carimbadas à mão, e há um registro órfão `20260910183240_AgendaGeral` sem arquivo no repositório.
 >
 > `scripts/db/migracao-tarefa-projeto-etapa-id.sql` está marcado como **obsoleto — não executar** (substituído pelo script idempotente acima).
 
@@ -282,7 +281,7 @@ dotnet ef database update
 > (`dotnet ef database update` ou script SQL idempotente).
 
 #### Padrão `tb*` — migrations e aplicação manual
-- `20260926022803_PadraoTabelasTb`: padroniza 20 nomes de tabela em `tb*` (14 renomeações + 6 normalizações de caixa), funde `CC_Funcao` na legada `tbfuncao` (ganha `CLASSIFICACAO`/`ATIVO`, `FUNCAO_ID` widenada de `smallint` para `int`), remove `IMPL_Cliente`/`CC_Funcao`/`AgendaEvento`/`AgendaEventoParticipante` e renomeia 20 PKs por `sp_rename` (mais a `PK_tbfuncao` recriada em `ALTER TABLE`). Escrita à mão, não gerada pelo scaffold. As **FKs não** foram renomeadas (cosmético).
+- `20260926010406_PadraoTabelasTb`: padroniza 20 nomes de tabela em `tb*` (14 renomeações + 6 normalizações de caixa), funde `CC_Funcao` na legada `tbfuncao` (ganha `CLASSIFICACAO`/`ATIVO`, `FUNCAO_ID` widenada de `smallint` para `int`), remove `IMPL_Cliente`/`CC_Funcao`/`AgendaEvento`/`AgendaEventoParticipante` e renomeia 20 PKs por `sp_rename` (mais a `PK_tbfuncao` recriada em `ALTER TABLE`). Escrita à mão, não gerada pelo scaffold. As **FKs não** foram renomeadas (cosmético).
 - `20260926022906_RenomeiaIndicesPkTb`: alinha os **nomes** de índice, PK e unique constraint — 33 índices para `IX_<tabela>_<colunas>`, as 5 PKs que o EF deixou com nome automático (`PK_tbagenda`, `PK_tbagendaparticipante`, `PK_tbauditoriaacesso`, `PK_tbrefreshtoken`, `PK_tbtipoevento`) e a unique constraint para `AK_tbtipoevento_Nome`. Duas armadilhas do `sp_rename`, que já causaram falha silenciosa: índice exige o itemtype `'INDEX'` (sem ele `OBJECT_ID('dbo.<índice>')` devolve `NULL`, o guard passa e o rename é pulado sem erro) e o nome precisa ser qualificado como `"tabela.índice"` (`"dbo.índice"` ou `"índice"` falham com o erro 15248).
 - **Produção:** use `scripts/db/renomear-tabelas-tb-idempotente.sql`; `scripts/deploy/deploy.ps1` não aplica migrations. Audite com `scripts/db/conferencia-padrao-tb.sql` (antes/depois, seções 1 e 2).
 - **Carimbadas à mão em `__EFMigrationsHistory`:** `20260914144751_AgendaConflitoHorarios`, `20260917202045_TarefaProjetoOpcional`, `20260920185734_TarefaProjetoEtapaId`. Registre órfão no banco: `20260910183240_AgendaGeral` (sem arquivo `.cs`; o EF ignora).

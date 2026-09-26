@@ -23,9 +23,9 @@ Inventário calculado a partir de [AppDbContext.cs](../backend/Central_BackEnd/D
 | legadas | [ClienteLegado.cs](../backend/Central_BackEnd/Models/Implantacao/ClienteLegado.cs), [ChamadoLegado.cs](../backend/Central_BackEnd/Models/Implantacao/ChamadoLegado.cs), [FuncionarioLegado.cs](../backend/Central_BackEnd/Models/Implantacao/FuncionarioLegado.cs) |
 | Google Sheets | [GoogleSheetsService.cs](../backend/Central_BackEnd/Services/GoogleSheetsService.cs) |
 | Database Explorer | [DatabaseConnectionService.cs](../backend/Central_BackEnd/Services/Database/DatabaseConnectionService.cs), [DatabaseMetadataService.cs](../backend/Central_BackEnd/Services/Database/DatabaseMetadataService.cs) |
-| padrão de nomes `tb*` | [20260926022803_PadraoTabelasTb.cs](../backend/Central_BackEnd/Migrations/20260926022803_PadraoTabelasTb.cs) e [20260926022906_RenomeiaIndicesPkTb.cs](../backend/Central_BackEnd/Migrations/20260926022906_RenomeiaIndicesPkTb.cs) |
+| padrão de nomes `tb*` | [20260926010406_PadraoTabelasTb.cs](../backend/Central_BackEnd/Migrations/20260926010406_PadraoTabelasTb.cs) e [20260926022906_RenomeiaIndicesPkTb.cs](../backend/Central_BackEnd/Migrations/20260926022906_RenomeiaIndicesPkTb.cs) |
 | conferência antes/depois | [conferencia-padrao-tb.sql](../scripts/db/conferencia-padrao-tb.sql) |
-| aplicação em produção | [renomear-tabelas-tb-idempotente.sql](../scripts/db/renomear-tabelas-tb-idempotente.sql) (tabelas) e [renomear-indices-pk-tb-idempotente.sql](../scripts/db/renomear-indices-pk-tb-idempotente.sql) (índices, PKs e AK) |
+| aplicação em produção | [renomear-tabelas-tb-idempotente.sql](../scripts/db/renomear-tabelas-tb-idempotente.sql) (tabelas, PKs, índices e AK) |
 
 ## Padrão de nomenclatura (canônico)
 
@@ -34,7 +34,7 @@ Inventário calculado a partir de [AppDbContext.cs](../backend/Central_BackEnd/D
 Nome de tabela = `tb` + nome da entidade em minúsculas, **colado, sem underscore**. Exemplos: `tbprojeto`, `tbtarefa`, `tbagenda`, `tboperador`, `tbrefreshtoken`, `tbprojetoetapa`.
 
 - **Exceção — sub-entidades:** `tb<entidade>_<sub>`, com um único underscore separando o agregado pai da sub-entidade. É o padrão já presente no legado (`tbcliente_contato`, `tbchamado_itens`).
-- A tabela de colunas do Kanban **segue a regra**: `tb` + `ColunaKanban`.ToLower() = 14 caracteres, exatamente o que `ColunaKanban.cs` e os três snapshots declaram. ⚠️ **Ponto aberto:** o literal usado na `PadraoTabelasTb` (chamada `RenameTable` do `IMPL_ColunaKanban`, a `RenameConstraint` da PK correspondente e o comentário de cabeçalho da migration) tem **16 caracteres** e não coincide com o modelo; conferir o nome real no banco antes de dar o assunto por encerrado. Não "corrigir" modelo nem migration por suposição.
+- A tabela de colunas do Kanban **segue a regra**: `tb` + `ColunaKanban`.ToLower() = 14 caracteres (`tbcolunakanban`), exatamente o que `ColunaKanban.cs` e os três snapshots declaram.
 - Nomes de tabela não levam prefixo de módulo: o prefixo `tb` é único e substituiu `IMPL_`/`CC_`.
 
 ### Colunas (padrão anterior, inalterado)
@@ -65,7 +65,7 @@ A padronização afeta **apenas nomes de tabela**. As colunas seguem como antes:
 ### Nomes de PK, FK e índice
 
 - **PKs e o índice composto de conflito da agenda foram renomeados** para acompanhar o prefixo `tb`.
-- **As FKs NÃO foram renomeadas.** Constraints como `FK_IMPL_Projeto_IMPL_ColunaKanban_PRJ_ColunaKanbanId` continuam com o prefixo antigo mesmo apontando para `tbcoluskananban`. **Isso é cosmético, não é bug**: `sp_rename` de tabela já reescreve internamente o objeto referenciado, e renomear a constraint exigiria derrubá-la e recriá-la. Nunca concluir que uma FK "quebrou" pelo nome antigo.
+- **As FKs NÃO foram renomeadas.** Constraints como `FK_IMPL_Projeto_IMPL_ColunaKanban_PRJ_ColunaKanbanId` continuam com o prefixo antigo mesmo apontando para `tbcolunakanban`. **Isso é cosmético, não é bug**: `sp_rename` de tabela já reescreve internamente o objeto referenciado, e renomear a constraint exigiria derrubá-la e recriá-la. Nunca concluir que uma FK "quebrou" pelo nome antigo.
 - Exceção criada na fusão da função: `FK_tboperador_tbfuncao_FUNCAO_ID` já nasce com o nome novo, porque a constraint antiga caiu junto com a tabela `CC_Funcao`.
 - **Índices** seguem a convenção do EF `IX_<tabela>_<colunas>`; **chave alternativa** (unique constraint) segue `AK_<tabela>_<colunas>`. Os 33 índices com prefixo antigo e a unique constraint `AK_tbtipoevento_Nome` foram renomeados pela `RenomeiaIndicesPkTb`.
 - **Índice de conflito da agenda (divergência encerrada):** o nome final é `IX_tbagenda_AGD_OperadorId_AGD_DataInicio_AGD_DataFim`, derivado por convenção. O `HasDatabaseName("IX_IMPL_Agenda_Operador_DataInicio_DataFim")` foi **removido** do `AppDbContext` (bloco `Entity<AgendaItem>`); o `AppDbContext` não fixa mais nome de índice, e modelo, snapshot e banco concordam.
@@ -119,7 +119,7 @@ A padronização afeta **apenas nomes de tabela**. As colunas seguem como antes:
 | `RefreshTokens` / `RefreshToken` | `tbrefreshtoken` | `Id` | Gerida | Hash do refresh, expiração, revogação, substituição e operador. |
 | `AuditoriaAcessos` / `AuditoriaAcesso` | `tbauditoriaacesso` | `Id` | Gerida | Evento de visualização de acesso: operador, empresa, IP, data/hora e user-agent. |
 | `TiposProjeto` / `TipoProjeto` | `tbtipoprojeto` | `Id` | Gerida | Código único, nome, obrigatoriedade de cliente, ordem e ativo. |
-| `ColunasKanban` / `ColunaKanban` | `tbcoluskananban` | `Id` | Gerida | Ordem, cor, padrão, ativo e limite WIP. |
+| `ColunasKanban` / `ColunaKanban` | `tbcolunakanban` | `Id` | Gerida | Ordem, cor, padrão, ativo e limite WIP. |
 | `Projetos` / `Projeto` | `tbprojeto` | `Id` | Gerida | Código global, cliente, tipo, responsável, datas, progresso, horas e go-live. |
 | `ProjetoEtapas` / `ProjetoEtapa` | `tbprojetoetapa` | `Id` | Gerida | Jornada de nove etapas por projeto; `ProjetoId + Ordem` é único. |
 | `ProjetoEtapaChecklists` / `ProjetoEtapaChecklist` | `tbprojetoetapachecklist` | `Id` | Gerida | Itens de checklist e conclusão. |
@@ -198,18 +198,18 @@ Há 18 classes de migração no diretório, nesta ordem de arquivo:
 | `20260918211919_AddProjetoEtapas` | Tabelas da jornada de nove etapas e dependentes. |
 | `20260920185734_TarefaProjetoEtapaId` | Adiciona vínculo de tarefa com etapa fixa do projeto. |
 | `20260922154202_RemoveEtapaAntiga` | Remove `IMPL_Etapa` e `TRF_EtapaId`; mantém `TRF_ProjetoEtapaId`. |
-| `20260926022803_PadraoTabelasTb` | Padroniza os nomes de tabela em `tb*`, funde `CC_Funcao` na legada `tbfuncao`, remove as tabelas órfãs e renomeia 20 PKs. |
+| `20260926010406_PadraoTabelasTb` | Padroniza os nomes de tabela em `tb*`, funde `CC_Funcao` na legada `tbfuncao`, remove as tabelas órfãs e renomeia 20 PKs. |
 | `20260926022906_RenomeiaIndicesPkTb` | Alinha os **nomes** de índice, PK e unique constraint: 33 índices para `IX_<tabela>_<colunas>`, as 5 PKs que o EF deixou com nome automático e a unique constraint para `AK_tbtipoevento_Nome`. |
 
 `IMPL_Equipe`, `IMPL_MembroEquipe` e `IMPL_Etapa` são históricos, não entidades do `AppDbContext` atual. A existência de uma migração não permite afirmar que o banco de destino foi atualizado; é necessário consultar o histórico aplicado no ambiente.
 
-### `20260926022803_PadraoTabelasTb` em detalhe
+### `20260926010406_PadraoTabelasTb` em detalhe
 
 Migration **escrita à mão** (o scaffold do EF não serviria) com três motivos: `tbfuncao` já existe como legada, então o EF geraria `RenameTable` e falharia; as tabelas órfãs da Agenda não pertencem ao modelo, então o EF nunca as removeria; e o scaffold emitiria `Drop`/`Add` de todas as PKs, FKs e índices, o que é desnecessário porque `sp_rename` só mexe em metadados.
 
 | Grupo | O que faz |
 |---|---|
-| Renomeações (14) | `IMPL_Projeto`→`tbprojeto`, `IMPL_Tarefa`→`tbtarefa`, `IMPL_ComentarioTarefa`→`tbcomentariotarefa`, `IMPL_TarefaResponsavel`→`tbtarefareponsavel`, `IMPL_TarefaChamado`→`tbtarefachamado`, `IMPL_TarefaApontamento`→`tbtarefaapontamento`, `IMPL_TipoProjeto`→`tbtipoprojeto`, `IMPL_Agenda`→`tbagenda`, `IMPL_Auditoria`→`tbauditoriaimplantacao`, `CC_TipoEvento`→`tbtipoevento`, `CC_AgendaParticipante`→`tbagendaparticipante`, `RefreshTokens`→`tbrefreshtoken`, `AuditoriaAcessos`→`tbauditoriaacesso`, e `IMPL_ColunaKanban` (literal divergente do modelo, ver ⚠️ na seção de nomenclatura). |
+| Renomeações (14) | `IMPL_Projeto`→`tbprojeto`, `IMPL_Tarefa`→`tbtarefa`, `IMPL_ComentarioTarefa`→`tbcomentariotarefa`, `IMPL_TarefaResponsavel`→`tbtarefareponsavel`, `IMPL_TarefaChamado`→`tbtarefachamado`, `IMPL_TarefaApontamento`→`tbtarefaapontamento`, `IMPL_TipoProjeto`→`tbtipoprojeto`, `IMPL_Agenda`→`tbagenda`, `IMPL_Auditoria`→`tbauditoriaimplantacao`, `CC_TipoEvento`→`tbtipoevento`, `CC_AgendaParticipante`→`tbagendaparticipante`, `RefreshTokens`→`tbrefreshtoken`, `AuditoriaAcessos`→`tbauditoriaacesso` e `IMPL_ColunaKanban`→`tbcolunakanban`. |
 | Normalização de caixa (6) | `tbprojetoEtapa`→`tbprojetoetapa`, `tbprojetoEtapaChecklist`→`tbprojetoetapachecklist`, `tbprojetoEtapaDocumento`→`tbprojetoetapadocumento`, `tbprojetoEtapaHistorico`→`tbprojetoetahistorico`, `tbprojetoEtapaComentario`→`tbprojetoetapacomentario`, `TBOPERADOR`→`tboperador`. |
 | Constraints | 20 PKs renomeadas por `sp_rename` (`PK_tbprojeto`, `PK_tboperador`, `PK_tbprojetoetapa*`, …), mais a `PK_tbfuncao` recriada em `ALTER TABLE` durante a fusão. **Nenhum índice foi renomeado aqui** e 5 PKs ficaram com o nome automático do EF: ambos ficaram para a `RenomeiaIndicesPkTb`. **As FKs não foram renomeadas** (cosmético; ver a seção de nomenclatura). |
 | Fusão da função | `CC_Funcao` descartada; `tbfuncao` legada enriquecida (ver seção própria abaixo). |
@@ -235,7 +235,7 @@ Complemento da anterior: alinha os **nomes** de índice, PK e unique constraint 
 
 ⚠️ **Lacuna no `Down`:** o `Down` desta migration repete as mesmas chamadas de renomeação do `Up` (não reverte para os nomes antigos). Reverter exige um ajuste manual antes de qualquer uso.
 
-Conferência após a aplicação no banco alvo: 0 tabelas, 0 índices e 0 constraints de PK/AK fora do padrão, com as 24 tabelas do snapshot presentes. Reexecutar a conferência junto com o ⚠️ da tabela de colunas do Kanban na seção de nomenclatura, cujo literal na `PadraoTabelasTb` diverge do modelo.
+Conferência após a aplicação no banco alvo: 0 tabelas, 0 índices e 0 constraints de PK/AK fora do padrão, com as 24 tabelas do snapshot presentes.
 
 ## Fusão de `CC_Funcao` na legada `tbfuncao`
 
@@ -260,7 +260,7 @@ A FK `tboperador.FUNCAO_ID` foi recriada com `ON DELETE SET NULL` e nome novo `F
 | `CC_Funcao` | Substituída pela legada `tbfuncao` enriquecida. |
 | `AgendaEvento` e `AgendaEventoParticipante` | Órfãs do rollback da Agenda, 0 linhas, com FK ativa para o que era `IMPL_Projeto`. |
 
-> ⚠️ **Correção factual:** documentos antigos afirmavam que as órfãs da Agenda eram `CC_Agenda`, `CC_Perfil` e `CC_Auditoria`. **Isso estava errado.** As tabelas órfãs reais eram `AgendaEvento` e `AgendaEventoParticipante`, e ambas foram removidas. `CC_TipoEvento` e `CC_AgendaParticipante` nunca foram órfãs — foram apenas renomeadas para `tbtipoevento` e `tbagendaparticipante` e continuam em uso pela Agenda. A afirmação antiga ainda aparece em `docs/Projeto-Agenda/AGENDA-REIMPLEMENTACAO.md`, fora do conjunto canônico.
+> ⚠️ **Correção factual:** documentos antigos afirmavam que as órfãs da Agenda eram `CC_Agenda`, `CC_Perfil` e `CC_Auditoria`. **Isso estava errado.** As tabelas órfãs reais eram `AgendaEvento` e `AgendaEventoParticipante`, e ambas foram removidas. `CC_TipoEvento` e `CC_AgendaParticipante` nunca foram órfãs — foram apenas renomeadas para `tbtipoevento` e `tbagendaparticipante` e continuam em uso pela Agenda. A afirmação antiga estava nos documentos de projeto da Agenda, removidos do repositório.
 
 ## Migrations carimbadas manualmente e armadilhas de histórico
 
@@ -275,7 +275,7 @@ Rodar `dotnet ef database update` num ambiente já tratado por scripts manuais p
 
 **Armadilha `AgendaGeral`:** o banco tem o registro `20260910183240_AgendaGeral` em `__EFMigrationsHistory`, mas **não existe** o arquivo `.cs` correspondente no repositório (roll-back da Agenda). O EF ignora linhas desconhecidas do histórico, então não há erro — mas comparar ambientes pela contagem/ordem do histórico pode confundir. O snapshot atual é a fonte autoritativa do modelo.
 
-Os scripts auxiliares usados nesse processo ficam em `scripts/db/` e em `Migrations/Sql/`; [renomear-tabelas-tb-idempotente.sql](../scripts/db/renomear-tabelas-tb-idempotente.sql) é o caminho para as **tabelas** (idempotente, equivalente à `PadraoTabelasTb`, porque `scripts/deploy/deploy.ps1` **não** aplica migrations) e [renomear-indices-pk-tb-idempotente.sql](../scripts/db/renomear-indices-pk-tb-idempotente.sql) é o caminho para **índices, PKs e unique constraint** (equivalente à `RenomeiaIndicesPkTb`; também carimba a migration em `__EFMigrationsHistory`). ⚠️ O script das tabelas ainda repete a chamada de índice com a forma defeituosa (`sp_rename N'dbo.<índice>'`, sem itemtype `INDEX` e sem qualificar a tabela), ou seja, **pula o rename silenciosamente** e usa o nome antigo `IX_tbagenda_Operador_DataInicio_DataFim`; em produção, use o script de índices para essa parte. [migracao-tarefa-projeto-etapa-id.sql](../scripts/db/migracao-tarefa-projeto-etapa-id.sql) está marcado como **obsoleto — não executar**; foi substituído pelo script das tabelas. Para auditar, [conferencia-padrao-tb.sql](../scripts/db/conferencia-padrao-tb.sql) aceita nomes antigos e novos: rode antes e depois e compare as seções 1 e 2 (contagens não podem mudar).
+Os scripts auxiliares usados nesse processo ficam em `scripts/db/` e em `Migrations/Sql/`. Hoje existe **um único** script de produção: [renomear-tabelas-tb-idempotente.sql](../scripts/db/renomear-tabelas-tb-idempotente.sql), gerado a partir das duas migrations já corrigidas. Ele é idempotente e cobre o conjunto inteiro — tabelas, PKs, índices e a unique constraint — equivalendo a `PadraoTabelasTb` + `RenomeiaIndicesPkTb` (necessário porque `scripts/deploy/deploy.ps1` **não** aplica migrations). Os 33 `sp_rename` de índice usam o formato correto (`sp_rename N'<tabela>.IX_…', N'IX_…', N'INDEX'`), sem a forma defeituosa `sp_rename N'dbo.IX_…'`, e o script carimba 11 migrations em `__EFMigrationsHistory`. [migracao-tarefa-projeto-etapa-id.sql](../scripts/db/migracao-tarefa-projeto-etapa-id.sql) está marcado como **obsoleto — não executar**; foi substituído pelo script único. Para auditar, [conferencia-padrao-tb.sql](../scripts/db/conferencia-padrao-tb.sql) aceita nomes antigos e novos: rode antes e depois e compare as seções 1 e 2 (contagens não podem mudar).
 
 ## Refresh tokens e auditoria
 
