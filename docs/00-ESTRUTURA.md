@@ -122,7 +122,7 @@ A reorganização canônica está executada. `docs/backup/2026-09-24/` é um sna
 
 O snapshot inclui os documentos anteriores de índice, visão geral, negócio, telas, histórias, auditoria de endpoints, autenticação, integrações, Implantação, frontend e deploy, incluindo seus volumes em `telas/`. Quando uma fonte arquivada for útil como contexto, o link deve apontar para `./backup/2026-09-24/...`.
 
-Fora do backup, [`ARQUITETURA-MULTI-WEBAPP.md`](./ARQUITETURA-MULTI-WEBAPP.md), [`PLANO-KANBAN-GERAL.md`](./PLANO-KANBAN-GERAL.md) e as pastas `docs/Projeto-*` são materiais complementares ou históricos. Eles não ampliam o conjunto canônico.
+Fora do backup, [`ARQUITETURA-MULTI-WEBAPP.md`](./ARQUITETURA-MULTI-WEBAPP.md) e [`PLANO-KANBAN-GERAL.md`](./PLANO-KANBAN-GERAL.md) são os únicos materiais complementares restantes. Eles não ampliam o conjunto canônico. As pastas `docs/Projeto-*` (Agenda, BD e Implantação) foram removidas do repositório por serem material de projeto superado; o que ainda é válido delas já está nos documentos canônicos.
 
 ## 5. Branches, working tree e pipeline
 
