@@ -29,7 +29,7 @@ public enum PrioridadeProjeto
     Urgente = 3
 }
 
-[Table("IMPL_Projeto")]
+[Table("tbprojeto")]
 public class Projeto
 {
     [Key]

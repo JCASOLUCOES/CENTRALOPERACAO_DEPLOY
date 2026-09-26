@@ -16,7 +16,6 @@ public class AppDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AuditoriaAcesso> AuditoriaAcessos => Set<AuditoriaAcesso>();
 
-    public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<TipoProjeto> TiposProjeto => Set<TipoProjeto>();
     public DbSet<ColunaKanban> ColunasKanban => Set<ColunaKanban>();
     public DbSet<Projeto> Projetos => Set<Projeto>();
@@ -63,7 +62,10 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Funcao>(entity =>
         {
+            // tbfuncao é a tabela legada unificada: o modelo só acrescenta
+            // CLASSIFICACAO e ATIVO, que não existiam na base herdada.
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("FUNCAO_ID");
             entity.Property(e => e.Descricao).HasMaxLength(100).IsUnicode(false);
             entity.Property(e => e.Classificacao).HasMaxLength(50).IsUnicode(false);
         });
@@ -88,11 +90,6 @@ public class AppDbContext : DbContext
             entity.Property(e => e.TipoInformacao).HasMaxLength(50).IsUnicode(false);
             entity.Property(e => e.EnderecoIP).HasMaxLength(50).IsUnicode(false);
             entity.Property(e => e.Navegador).HasMaxLength(200).IsUnicode(false);
-        });
-
-        modelBuilder.Entity<Cliente>(entity =>
-        {
-            entity.HasIndex(e => e.Nome);
         });
 
         modelBuilder.Entity<TipoProjeto>(entity =>
@@ -255,8 +252,10 @@ public class AppDbContext : DbContext
         {
             entity.HasIndex(e => e.OperadorId);
             entity.HasIndex(e => e.DataInicio);
-            entity.HasIndex(e => new { e.OperadorId, e.DataInicio, e.DataFim })
-                .HasDatabaseName("IX_IMPL_Agenda_Operador_DataInicio_DataFim");
+            // Nome por convencao (IX_<tabela>_<colunas>). O HasDatabaseName antigo
+            // fixava "IX_IMPL_Agenda_..." e travava a renomeacao do indice para
+            // o padrao tb*; sem ele o EF deriva IX_tbagenda_AGD_OperadorId_...
+            entity.HasIndex(e => new { e.OperadorId, e.DataInicio, e.DataFim });
             entity.HasIndex(e => e.ProjetoId);
             entity.HasIndex(e => e.TipoId);
             entity.HasOne(e => e.Projeto)

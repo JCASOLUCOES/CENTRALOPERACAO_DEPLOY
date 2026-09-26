@@ -221,20 +221,30 @@ public record SchemaFkInfoDto(
     string ColunaDestino);
 
 /// <summary>
+/// Primary key de schema extraido. Nula quando o lado nao informou PK
+/// (ex.: arquivo exportado em versao antiga do script) - nesse caso a
+/// comparacao de PK e pulada, como ja ocorre com indices e FKs.
+/// </summary>
+public record SchemaPkInfoDto(
+    string Nome,
+    List<string> Colunas);
+
+/// <summary>
 /// Schema completo de uma tabela (lado JCA ou lado arquivo externo).
 /// </summary>
 public record SchemaInfoDto(
     string Tabela,
     List<SchemaColumnInfoDto> Colunas,
     List<SchemaIndexInfoDto> Indices,
-    List<SchemaFkInfoDto> Fks);
+    List<SchemaFkInfoDto> Fks,
+    SchemaPkInfoDto? Pk = null);
 
 /// <summary>
 /// Uma diferenca individual na comparacao de schemas.
 /// </summary>
 public record SchemaDifferenceDto(
     string Severidade,     // "Critico" | "Aviso" | "Ok"
-    string Categoria,      // "Coluna" | "Tipo" | "Nullable" | "Indice" | "Fk" | "Tabela"
+    string Categoria,      // "Coluna" | "Tipo" | "Nullable" | "Indice" | "Fk" | "Pk" | "Tabela"
     string Campo,
     string? Esperado,      // lado JCA
     string? Encontrado,    // lado arquivo

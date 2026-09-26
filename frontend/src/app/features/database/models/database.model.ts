@@ -223,21 +223,90 @@ export interface SchemaFkInfo {
   colunaDestino: string;
 }
 
+export interface SchemaPkInfo {
+  nome: string;
+  colunas: string[];
+}
+
 export interface SchemaInfo {
   tabela: string;
   colunas: SchemaColumnInfo[];
   indices: SchemaIndexInfo[];
   fks: SchemaFkInfo[];
+  pk?: SchemaPkInfo | null;
 }
+
+export type SchemaDifferenceCategoria =
+  | 'Coluna' | 'Tipo' | 'Nullable' | 'Indice' | 'Fk' | 'Pk' | 'Tabela';
 
 export interface SchemaDifference {
   severidade: 'Critico' | 'Aviso' | 'Ok';
-  categoria: 'Coluna' | 'Tipo' | 'Nullable' | 'Indice' | 'Fk' | 'Tabela';
+  categoria: SchemaDifferenceCategoria;
   campo: string;
   esperado?: string;
   encontrado?: string;
   descricao: string;
   numeroCritico?: number;
+}
+
+// =====================================================================
+// Abas do relatório de diferenças (tabela única e banco inteiro)
+// =====================================================================
+
+export type AbaRelatorio = 'tabelas' | 'colunas' | 'tamanhos' | 'indices' | 'chaves';
+
+export interface AbaRelatorioDef {
+  key: AbaRelatorio;
+  rotulo: string;
+  curto: string;
+  categorias: SchemaDifferenceCategoria[];
+  /** Aba exibida apenas no modo banco inteiro. */
+  somenteBulk?: boolean;
+  icone: string;
+}
+
+export const ABAS_RELATORIO: AbaRelatorioDef[] = [
+  {
+    key: 'tabelas',
+    rotulo: 'Tabelas faltantes',
+    curto: 'Tabelas',
+    categorias: ['Tabela'],
+    somenteBulk: true,
+    icone: 'bi-table'
+  },
+  {
+    key: 'colunas',
+    rotulo: 'Colunas faltantes',
+    curto: 'Colunas',
+    categorias: ['Coluna'],
+    icone: 'bi-list-columns'
+  },
+  {
+    key: 'tamanhos',
+    rotulo: 'Tamanhos divergentes',
+    curto: 'Tamanhos',
+    categorias: ['Tipo', 'Nullable'],
+    icone: 'bi-rulers'
+  },
+  {
+    key: 'indices',
+    rotulo: 'Índices divergentes ou faltantes',
+    curto: 'Índices',
+    categorias: ['Indice'],
+    icone: 'bi-signpost-split'
+  },
+  {
+    key: 'chaves',
+    rotulo: 'Chaves FK e PK divergentes e faltantes',
+    curto: 'FK e PK',
+    categorias: ['Fk', 'Pk'],
+    icone: 'bi-key'
+  }
+];
+
+export function abaDeCategoria(cat: SchemaDifferenceCategoria): AbaRelatorio {
+  const aba = ABAS_RELATORIO.find(a => a.categorias.includes(cat));
+  return aba ? aba.key : 'colunas';
 }
 
 export interface SchemaComparisonResult {

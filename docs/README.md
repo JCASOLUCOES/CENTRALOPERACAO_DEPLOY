@@ -21,7 +21,7 @@ status: "canônico"
 | 3 | propósito, público, módulos, rotas ativas, stack, ambientes, segurança, roadmap | [`01-VISAO-GERAL.md`](./01-VISAO-GERAL.md) | Contexto funcional e situação atual do produto |
 | 4 | arquitetura vigente, Angular SSR, ASP.NET Core, SQL Server, Google Sheets, AnythingLLM, `/api/v1`, JWT, CORS, IIS | [`02-ARQUITETURA.md`](./02-ARQUITETURA.md) | Componentes, fluxos e limites técnicos atuais |
 | 5 | negócio, regras, perfis, permissões, payloads e limites | [`03-REGRAS-NEGOCIO.md`](./03-REGRAS-NEGOCIO.md) | Regras de negócio verificadas no código |
-| 6 | entidades, tabelas, migrations, SQL Server, Google Sheets, Database Explorer | [`04-ESTRUTURA-DADOS.md`](./04-ESTRUTURA-DADOS.md) | Estrutura de dados e integrações |
+| 6 | entidades, tabelas, padrão de nomenclatura `tb*`, colunas, PK/FK, migrations, SQL Server, Google Sheets, Database Explorer | [`04-ESTRUTURA-DADOS.md`](./04-ESTRUTURA-DADOS.md) | Estrutura de dados, padronização de nomes e integrações |
 | 7 | APIs, endpoints, métodos, corpos, autorização, respostas e limites | [`05-ENDPOINTS.md`](./05-ENDPOINTS.md) | Catálogo da API REST e do proxy RAG |
 | 8 | frontend, componentes, rotas, serviços, layout e responsividade | [`06-COMPONENTES-FRONTEND.md`](./06-COMPONENTES-FRONTEND.md) | Arquitetura e inventário do frontend |
 | 9 | backend, controllers, serviços, modelos, persistência e migrations | [`07-SERVICES-BACKEND.md`](./07-SERVICES-BACKEND.md) | Arquitetura e inventário do backend |

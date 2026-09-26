@@ -33,7 +33,7 @@ public enum TipoTarefa
     Bug = 1
 }
 
-[Table("IMPL_Tarefa")]
+[Table("tbtarefa")]
 public class Tarefa
 {
     [Key]
@@ -153,7 +153,7 @@ public class Tarefa
     public DateTime? DataAlteracao { get; set; }
 }
 
-[Table("IMPL_ComentarioTarefa")]
+[Table("tbcomentariotarefa")]
 public class ComentarioTarefa
 {
     [Key]

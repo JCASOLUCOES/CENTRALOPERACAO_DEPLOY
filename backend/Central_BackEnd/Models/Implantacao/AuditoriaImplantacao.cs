@@ -7,7 +7,7 @@ namespace Central_BackEnd.Models.Implantacao;
 /// Auditoria de alterações nas entidades do módulo IMPLANTACAO.
 /// Registra: quem, quando, o quê (entidade/id), ação, antes/depois (JSON).
 /// </summary>
-[Table("IMPL_Auditoria")]
+[Table("tbauditoriaimplantacao")]
 public class AuditoriaImplantacao
 {
     [Key]

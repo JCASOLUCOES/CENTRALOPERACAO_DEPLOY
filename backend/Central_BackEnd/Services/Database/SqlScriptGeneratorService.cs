@@ -161,8 +161,22 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         }
 
         var nome = Qualificar(tabela);
-        var pk = arquivo.Indices.FirstOrDefault(i =>
+        var pkIndice = arquivo.Indices.FirstOrDefault(i =>
             i.Nome.StartsWith("PK", StringComparison.OrdinalIgnoreCase) && i.Colunas.Count > 0);
+        string? pkNome = null;
+        List<string>? pkColunas = null;
+        if (arquivo.Pk is { Colunas.Count: > 0 } pkFile)
+        {
+            pkColunas = pkFile.Colunas;
+            pkNome = string.IsNullOrWhiteSpace(pkFile.Nome)
+                ? (pkIndice?.Nome ?? "PK")
+                : pkFile.Nome;
+        }
+        else if (pkIndice != null)
+        {
+            pkNome = pkIndice.Nome;
+            pkColunas = pkIndice.Colunas;
+        }
 
         var comentarios = new List<string>
         {
@@ -185,8 +199,8 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
             comentarios.Add("-- Tamanho/precisao nao informados no arquivo em alguma coluna: valores padrao aplicados (ajuste manualmente).");
         if (vistos.Count < arquivo.Colunas.Count)
             comentarios.Add("-- O arquivo traz colunas duplicadas; apenas a primeira ocorrencia foi usada.");
-        if (pk != null && pk.Colunas.Count > 0)
-            linhas.Add($"    CONSTRAINT {Bracket(pk.Nome)} PRIMARY KEY CLUSTERED ({string.Join(", ", pk.Colunas.Select(Bracket))})");
+        if (pkNome != null && pkColunas is { Count: > 0 })
+            linhas.Add($"    CONSTRAINT {Bracket(pkNome)} PRIMARY KEY CLUSTERED ({string.Join(", ", pkColunas.Select(Bracket))})");
 
         var stmt = $"CREATE TABLE {nome} (\n{string.Join(",\n", linhas)}\n);";
         var partes = new List<string>(comentarios) { stmt };
@@ -198,7 +212,8 @@ public class SqlScriptGeneratorService : ISqlScriptGeneratorService
         // Indices (alem da PK) e FKs da nova tabela
         foreach (var idx in arquivo.Indices)
         {
-            if (ReferenceEquals(idx, pk)) continue;
+            if (ReferenceEquals(idx, pkIndice)) continue;
+            if (pkNome != null && idx.Nome.Equals(pkNome, StringComparison.OrdinalIgnoreCase)) continue;
             GerarIndice(a, tabela, idx.Nome, idx, "Critico", novaTabela: true);
         }
         foreach (var fk in arquivo.Fks)

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Central_BackEnd.Models.Acessos;
 
-[Table("AuditoriaAcessos")]
+[Table("tbauditoriaacesso")]
 public class AuditoriaAcesso
 {
     [Key]

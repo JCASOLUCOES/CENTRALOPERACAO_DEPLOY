@@ -111,7 +111,7 @@ Consequências confirmadas:
 - A data vazia na criação assume `DateTime.Today`. Se `OperadorId` vier preenchido, o serviço usa esse valor; caso contrário, usa o operador autenticado.
 - Alteração e exclusão verificam se o apontamento pertence ao operador autenticado, salvo quando o controller informa `ehAdmin`.
 - Há uma inconsistência a validar: o controller calcula `ehAdmin` com `User.IsInRole("Admin")` ou claim `PerfilId == "A"`, enquanto [AuthService.cs](../backend/Central_BackEnd/Services/AuthService.cs) emite o papel `Administrador` e a claim `perfil`. Não se deve afirmar, com o código atual, que o caminho administrativo de apontamentos funciona como pretendido.
-- A criação aceita um `OperadorId` enviado na requisição sem validar se ele existe ou está ativo. A atualização e a exclusão não registram uma nova linha em `IMPL_Auditoria`; apenas a criação chama o auditor de implantação.
+- A criação aceita um `OperadorId` enviado na requisição sem validar se ele existe ou está ativo. A atualização e a exclusão não registram uma nova linha em `tbauditoriaimplantacao`; apenas a criação chama o auditor de implantação.
 
 ## Sincronização tarefa–agenda
 
@@ -171,7 +171,7 @@ Consequências confirmadas:
 
 **Situação: parcial; é global, mas não é uma sequência segura para concorrência.**
 
-- `ProximoCodigoAsync` lê todos os códigos `IMPL_Projeto` que começam com `PRJ-`, extrai o sufixo numérico, encontra o maior e devolve `PRJ-` com quatro dígitos.
+- `ProximoCodigoAsync` lê todos os códigos `tbprojeto` que começam com `PRJ-`, extrai o sufixo numérico, encontra o maior e devolve `PRJ-` com quatro dígitos.
 - O código é gerado no serviço de criação, sem escopo por cliente, tipo, equipe ou usuário. A rota `GET /api/v1/implantacao/projetos/proximo-codigo` apenas mostra a prévia.
 - `PRJ_Codigo` possui índice único no modelo. Ainda assim, duas criações simultâneas podem calcular o mesmo sufixo; o índice pode rejeitar uma delas em vez de garantir nova geração.
 - O campo `TipoProjeto.ClienteObrigatorio` existe, mas `ProjetoService.CriarAsync` não verifica esse sinalizador quando `ClienteId` é ausente. Não documentar “cliente obrigatório” como regra aplicada.
@@ -182,7 +182,7 @@ Consequências confirmadas:
 
 - Empresas de Acessos vêm do Google Sheets, não de `AppDbContext`. O serviço usa API quando configurada e tenta exportação CSV como alternativa; mantém cache de dez minutos e não implementa escrita.
 - `GET /api/v1/acessos` só lista nome e id. `POST /api/v1/acessos/visualizar` exige Bearer e revalidação da senha do operador (cache de cinco minutos) e então devolve campos de acesso, banco, VPN e observações. O DTO não mascara esses campos.
-- A visualização registra `AuditoriaAcessos` com operador, empresa, data/hora, IP e user-agent; falha de auditoria é registrada no log, mas não impede a resposta.
+- A visualização registra `tbauditoriaacesso` com operador, empresa, data/hora, IP e user-agent; falha de auditoria é registrada no log, mas não impede a resposta.
 - O Database Explorer usa uma conexão SQL separada, configurada por variáveis de ambiente ou seção `DatabaseExplorer`. O DTO de configuração mascara a senha, porém todos os endpoints são apenas `Authorize`, sem papel específico; endpoints de procedimentos e gatilhos podem devolver o corpo completo.
 - O `RagProxyService` usa configuração externa do AnythingLLM e pode habilitar resposta simulada. A rota é autenticada, mas o serviço não deve ser considerado uma fronteira de sigilo para conteúdo externo.
 - Há valores de desenvolvimento preenchidos em [appsettings.Development.json](../backend/Central_BackEnd/appsettings.Development.json), incluindo chaves de configuração sensíveis. Este documento não os reproduz; mova-os para ambiente/user-secrets e rotacione qualquer valor real usado.

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Central_BackEnd.Models;
 
-[Table("RefreshTokens")]
+[Table("tbrefreshtoken")]
 public class RefreshToken
 {
     [Key]

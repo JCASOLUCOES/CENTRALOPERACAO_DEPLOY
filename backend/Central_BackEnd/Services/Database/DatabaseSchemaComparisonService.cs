@@ -552,13 +552,15 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
         var cols = await _metadata.ListarColunasAsync(alvo.Schema, alvo.Nome, ct);
         var idxs = await _metadata.ListarIndicesAsync(alvo.Schema, alvo.Nome, ct);
         var fks = await _metadata.ListarForeignKeysAsync(alvo.Schema, alvo.Nome, ct);
+        var pk = await _metadata.ListarPkAsync(alvo.Schema, alvo.Nome, ct);
 
         return new SchemaInfoDto(
             $"{alvo.Schema}.{alvo.Nome}",
             cols.Select(c => new SchemaColumnInfoDto(
                 c.Coluna, c.Tipo, c.Nulo, c.Ordem, c.Tamanho, c.Precisao, c.Escala, c.ValorDefault)).ToList(),
             idxs.Select(i => new SchemaIndexInfoDto(i.Nome, i.Unique, i.Colunas)).ToList(),
-            fks.Select(f => new SchemaFkInfoDto(f.Nome, f.ColunaOrigem, f.TabelaDestino, f.ColunaDestino)).ToList());
+            fks.Select(f => new SchemaFkInfoDto(f.Nome, f.ColunaOrigem, f.TabelaDestino, f.ColunaDestino)).ToList(),
+            pk);
     }
 
     private async Task<SchemaInfoDto> LerArquivoAsync(IFormFile arquivo, CancellationToken ct)
@@ -699,10 +701,14 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
             foreach (var el in fkEl.EnumerateArray())
                 fks.Add(ParseFkJson(el));
 
+        // PK: presente no arquivo (mesmo que null = tabela sem PK) habilita a comparacao;
+        // ausente (JSON antigo) mantem null e a comparacao de PK e pulada.
+        var pk = ParsePkPropriedade(root);
+
         if (colunas.Count == 0)
             throw new ArgumentException("JSON nao contem colunas validas (propriedade 'colunas' vazia ou ausente).");
 
-        return new SchemaInfoDto(tabela, colunas, indices, fks);
+        return new SchemaInfoDto(tabela, colunas, indices, fks, pk);
     }
 
     /// <summary>
@@ -855,6 +861,58 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
         string tabDest = GetString(el, "tabelaDestino") ?? GetString(el, "targetTable") ?? "";
         string colDest = GetString(el, "colunaDestino") ?? GetString(el, "targetColumn") ?? "";
         return new SchemaFkInfoDto(nome, colOrig, tabDest, colDest);
+    }
+
+    /// <summary>
+    /// Le a propriedade de PK do arquivo. Retorna null quando a propriedade nao
+    /// existe (JSON antigo - comparacao de PK pulada) e SchemaPkInfoDto sem colunas
+    /// quando o arquivo informa explicitamente que a tabela nao possui PK.
+    /// </summary>
+    private static SchemaPkInfoDto? ParsePkPropriedade(JsonElement root)
+    {
+        JsonElement? el = null;
+        foreach (var nome in new[] { "pk", "primaryKey", "primary_key", "PK" })
+        {
+            if (root.TryGetProperty(nome, out var v))
+            {
+                el = v;
+                break;
+            }
+        }
+        if (el == null) return null;
+
+        var valor = el.Value;
+        if (valor.ValueKind == JsonValueKind.Null)
+            return new SchemaPkInfoDto("", new List<string>());
+
+        if (valor.ValueKind == JsonValueKind.Array)
+        {
+            var colunas = new List<string>();
+            foreach (var c in valor.EnumerateArray())
+                if (c.ValueKind == JsonValueKind.String)
+                    colunas.Add(c.GetString() ?? "");
+            return new SchemaPkInfoDto(colunas.Count > 0 ? "PK" : "", colunas);
+        }
+
+        if (valor.ValueKind == JsonValueKind.Object)
+        {
+            var nome = GetString(valor, "nome") ?? GetString(valor, "name") ?? "";
+            var colunas = new List<string>();
+            foreach (var chave in new[] { "colunas", "columns" })
+            {
+                if (valor.TryGetProperty(chave, out var cols) && cols.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var c in cols.EnumerateArray())
+                        if (c.ValueKind == JsonValueKind.String)
+                            colunas.Add(c.GetString() ?? "");
+                    break;
+                }
+            }
+            if (colunas.Count == 0) return new SchemaPkInfoDto("", new List<string>());
+            return new SchemaPkInfoDto(string.IsNullOrWhiteSpace(nome) ? "PK" : nome, colunas);
+        }
+
+        return new SchemaPkInfoDto("", new List<string>());
     }
 
     private static string? GetString(JsonElement el, string prop)
@@ -1051,6 +1109,50 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
             }
         }
 
+        // PK (so compara se o arquivo trouxer a propriedade pk;
+        // null = arquivo antigo, sem informacao de PK)
+        if (externo.Pk != null)
+        {
+            bool jcaTemPk = jca.Pk != null && jca.Pk.Colunas.Count > 0;
+            bool extTemPk = externo.Pk.Colunas.Count > 0;
+
+            if (jcaTemPk && extTemPk)
+            {
+                var jcaCols = NormalizarLista(jca.Pk!.Colunas);
+                var extCols = NormalizarLista(externo.Pk.Colunas);
+                if (jcaCols != extCols)
+                {
+                    difs.Add(new SchemaDifferenceDto("Critico", "Pk", "PRIMARY KEY",
+                        DescreverPk(jca.Pk!), DescreverPk(externo.Pk),
+                        "Colunas da PRIMARY KEY divergentes."));
+                }
+                else
+                {
+                    difs.Add(new SchemaDifferenceDto("Ok", "Pk", "PRIMARY KEY",
+                        DescreverPk(jca.Pk!), DescreverPk(externo.Pk),
+                        "PRIMARY KEY compativel."));
+                }
+            }
+            else if (jcaTemPk)
+            {
+                difs.Add(new SchemaDifferenceDto("Aviso", "Pk", "PRIMARY KEY",
+                    DescreverPk(jca.Pk!), null,
+                    "PRIMARY KEY existe no JCA mas nao no arquivo."));
+            }
+            else if (extTemPk)
+            {
+                difs.Add(new SchemaDifferenceDto("Critico", "Pk", "PRIMARY KEY",
+                    null, DescreverPk(externo.Pk),
+                    "PRIMARY KEY existe no arquivo mas nao no JCA."));
+            }
+            else
+            {
+                difs.Add(new SchemaDifferenceDto("Ok", "Pk", "PRIMARY KEY",
+                    null, null,
+                    "Tabela sem PRIMARY KEY nos dois lados."));
+            }
+        }
+
         int criticos = difs.Count(d => d.Severidade == "Critico");
         int avisos = difs.Count(d => d.Severidade == "Aviso");
         int oks = difs.Count(d => d.Severidade == "Ok");
@@ -1120,4 +1222,10 @@ public class DatabaseSchemaComparisonService : IDatabaseSchemaComparisonService
 
     private static string DescreverFk(SchemaFkInfoDto f)
         => $"{f.ColunaOrigem} -> {f.TabelaDestino}.{f.ColunaDestino}";
+
+    private static string DescreverPk(SchemaPkInfoDto pk)
+        => $"{(string.IsNullOrWhiteSpace(pk.Nome) ? "PRIMARY KEY" : pk.Nome)} ({string.Join(", ", pk.Colunas)})";
+
+    private static string NormalizarLista(IEnumerable<string> cols)
+        => string.Join(",", cols.Select(c => c.ToLowerInvariant()).OrderBy(c => c));
 }

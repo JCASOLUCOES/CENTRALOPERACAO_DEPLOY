@@ -46,7 +46,7 @@ public enum PrioridadeAgenda
     Critica = 2
 }
 
-[Table("IMPL_Agenda")]
+[Table("tbagenda")]
 public class AgendaItem
 {
     [Key]

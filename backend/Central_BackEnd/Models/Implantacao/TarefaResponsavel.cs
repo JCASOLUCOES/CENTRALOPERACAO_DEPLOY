@@ -7,7 +7,7 @@ namespace Central_BackEnd.Models.Implantacao;
 /// Vínculo N:N Tarefa x Operador (responsáveis adicionais além do ResponsavelId principal).
 /// Chave composta configurada via Fluent API em AppDbContext.
 /// </summary>
-[Table("IMPL_TarefaResponsavel")]
+[Table("tbtarefareponsavel")]
 public class TarefaResponsavel
 {
     [Column("TRF_Id")]

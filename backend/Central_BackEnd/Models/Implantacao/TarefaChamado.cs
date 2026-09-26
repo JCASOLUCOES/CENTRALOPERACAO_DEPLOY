@@ -7,7 +7,7 @@ namespace Central_BackEnd.Models.Implantacao;
 /// Vínculo N:N Tarefa x Chamado legado (tbchamado).
 /// Chave composta configurada via Fluent API em AppDbContext.
 /// </summary>
-[Table("IMPL_TarefaChamado")]
+[Table("tbtarefachamado")]
 public class TarefaChamado
 {
     [Column("TRF_Id")]

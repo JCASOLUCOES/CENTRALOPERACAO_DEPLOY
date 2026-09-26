@@ -115,7 +115,7 @@ frontend/src/app/
 ## Integração Projetos / Etapas — estado atual
 
 - `ProjetosService` acompanha os **16 endpoints atuais** de `ProjetosController`. Não há mais wrappers para `GET /projetos/{id}/jornada`, `POST /projetos/{id}/etapas/inicializar` ou `PATCH /projetos/{id}/status`. O contrato backend `ProjetoAtualizarRequest.Status` permanece no `PUT /projetos/{id}`; o formulário atual não expõe um controle de status.
-- A criação de projeto chama a inicialização automática dos nove cards em `tbprojetoEtapa`. Os lookups válidos são `GET /implantacao/projetos/etapas-padrao` e `GET /implantacao/projetos/{id}/etapas`.
+- A criação de projeto chama a inicialização automática dos nove cards em `tbprojetoetapa`. Os lookups válidos são `GET /implantacao/projetos/etapas-padrao` e `GET /implantacao/projetos/{id}/etapas`.
 - **Etapas Globais foram removidas do frontend:** saíram as rotas `/admin/cadastros/etapas*`, `EtapasComponent`, `EtapaFormComponent` e seus SCSS, `EtapasService`/tipos de `/implantacao/etapas`, o wrapper morto `TarefasService.listarEtapas()` e o breadcrumb específico. Antes da remoção, GET/POST no ambiente publicado retornavam 404 e a tela mascarava a falha como estado vazio.
 - A API global não deve ser recriada. A validação registrada foi 19/19 testes, typechecks e build frontend, com gate backend/frontend verde.
 

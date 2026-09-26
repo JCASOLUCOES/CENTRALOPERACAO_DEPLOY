@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Central_BackEnd.Models.Implantacao;
 
-[Table("IMPL_TipoProjeto")]
+[Table("tbtipoprojeto")]
 public class TipoProjeto
 {
     [Key]

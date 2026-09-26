@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Central_BackEnd.Models.Implantacao;
 
-[Table("tbprojetoEtapa")]
+[Table("tbprojetoetapa")]
 public class ProjetoEtapa
 {
     [Key]
@@ -68,7 +68,7 @@ public class ProjetoEtapa
     public List<ProjetoEtapaComentario> Comentarios { get; set; } = new();
 }
 
-[Table("tbprojetoEtapaChecklist")]
+[Table("tbprojetoetapachecklist")]
 public class ProjetoEtapaChecklist
 {
     [Key]
@@ -115,7 +115,7 @@ public class ProjetoEtapaChecklist
     public DateTime? DataAlteracao { get; set; }
 }
 
-[Table("tbprojetoEtapaDocumento")]
+[Table("tbprojetoetapadocumento")]
 public class ProjetoEtapaDocumento
 {
     [Key]
@@ -151,7 +151,7 @@ public class ProjetoEtapaDocumento
     public DateTime DataInclusao { get; set; } = DateTime.Now;
 }
 
-[Table("tbprojetoEtapaHistorico")]
+[Table("tbprojetoetahistorico")]
 public class ProjetoEtapaHistorico
 {
     [Key]
@@ -182,7 +182,7 @@ public class ProjetoEtapaHistorico
     public DateTime Data { get; set; } = DateTime.Now;
 }
 
-[Table("tbprojetoEtapaComentario")]
+[Table("tbprojetoetapacomentario")]
 public class ProjetoEtapaComentario
 {
     [Key]

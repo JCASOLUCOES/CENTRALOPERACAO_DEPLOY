@@ -7,7 +7,7 @@ namespace Central_BackEnd.Models.Implantacao;
 /// Apontamento de horas de um operador em uma tarefa.
 /// TRF_HorasRealizadas é derivado: SUM destes apontamentos (sincronizado pelo service).
 /// </summary>
-[Table("IMPL_TarefaApontamento")]
+[Table("tbtarefaapontamento")]
 public class TarefaApontamento
 {
     [Key]

@@ -131,7 +131,7 @@ Como `UseRateLimiter()` vem antes de `UseAuthentication()` no pipeline atual, a 
 
 O controller de autenticação define [`LoginRequest`](../backend/Central_BackEnd/Dtos/LoginRequest.cs), [`TokenResponse`](../backend/Central_BackEnd/Dtos/TokenResponse.cs) e [`UsuarioResponse`](../backend/Central_BackEnd/Dtos/UsuarioResponse.cs).
 
-O cookie `cc_refresh` é criado com `HttpOnly`, `SameSite=Strict`, `Secure=false` e `Path=/`. Com `lembrarAcesso=true`, recebe `MaxAge` de quatro horas e o controller cria o marcador `cc_lembrar=1`; sem persistência, o cookie de refresh é de sessão. A expiração da linha persistida em `RefreshTokens` vem de `Jwt:RefreshTokenHours`; `lembrarAcesso` altera a persistência do cookie, não esse campo. O campo `RefreshToken` é esvaziado no corpo antes da resposta.
+O cookie `cc_refresh` é criado com `HttpOnly`, `SameSite=Strict`, `Secure=false` e `Path=/`. Com `lembrarAcesso=true`, recebe `MaxAge` de quatro horas e o controller cria o marcador `cc_lembrar=1`; sem persistência, o cookie de refresh é de sessão. A expiração da linha persistida em `tbrefreshtoken` vem de `Jwt:RefreshTokenHours`; `lembrarAcesso` altera a persistência do cookie, não esse campo. O campo `RefreshToken` é esvaziado no corpo antes da resposta.
 
 ### 3.3 Agenda
 
@@ -183,7 +183,7 @@ Todos os endpoints usam JWT. Os três de comparação (schemas, banco inteiro e 
 | `POST /api/v1/database/generate-correction-scripts-bulk` | `GerarScriptsBulkRequest` | `SqlScriptGeneratorService.GerarScriptsBulk`; gera scripts, não executa |
 | `POST /api/v1/database/validate-script` | `ValidarScriptRequest` | `SqlScriptGeneratorService.ValidarScriptAsync`; validação estática, não executa |
 
-Os DTOs do módulo estão em [`DatabaseDtos.cs`](../backend/Central_BackEnd/Dtos/Database/DatabaseDtos.cs). A comparação de schemas devolve `SchemaArquivo` e `SchemaJca` (quando disponíveis), que a geração de scripts usa para classificar a compatibilidade dos tipos; a comparação de procedures devolve `ProceduresComparisonResultDto` (`status` `Compativel`/`Divergente`/`SomenteBanco`/`SomenteArquivo`, com os dois corpos quando existem) e não passa pela geração de scripts.
+Os DTOs do módulo estão em [`DatabaseDtos.cs`](../backend/Central_BackEnd/Dtos/Database/DatabaseDtos.cs). A comparação de schemas devolve `SchemaArquivo` e `SchemaJca` (quando disponíveis), que a geração de scripts usa para classificar a compatibilidade dos tipos; `SchemaInfoDto` carrega a chave primária em `Pk` (`SchemaPkInfoDto` com `nome` e `colunas`) e `SchemaDifferenceDto.Categoria` aceita `Coluna`, `Tipo`, `Nullable`, `Indice`, `Fk`, `Pk` (novo) e `Tabela`; a comparação de procedures devolve `ProceduresComparisonResultDto` (`status` `Compativel`/`Divergente`/`SomenteBanco`/`SomenteArquivo`, com os dois corpos quando existem) e não passa pela geração de scripts.
 
 #### SqlScriptGeneratorService
 
@@ -191,7 +191,8 @@ Os DTOs do módulo estão em [`DatabaseDtos.cs`](../backend/Central_BackEnd/Dtos
 
 - **Tipos de script:** somente criações — `CREATE_TABLE`, `ADD_COLUMN`, `CREATE_INDEX` e `ALTER_FK`. No modo banco inteiro a saída é ordenada por tabela (ordem de processamento da comparação) e, dentro da tabela, por tipo (criação → coluna → índice/FK).
 - **Direção:** o banco JCA é a fonte da verdade. Divergência, tabela/coluna só no JCA ou ausente no arquivo não geram script (seguem o padrão do banco); só o que existe no arquivo e falta no JCA vira script, montado a partir do schema do arquivo.
-- **Metadados por script:** cada `SqlScriptDto` carrega `tabela` e `severidadeOrigem` (critico para criação de tabela/coluna; severidade da diferença de origem para índice e FK), usados pelo filtro das abas no frontend. `ScriptsGenOpcoesDto` (`gerarBackup`/`modoEstrito`) continua no contrato por compatibilidade, mas não tem efeito.
+- **PK do `CREATE_TABLE`:** a constraint usa a PK declarada no arquivo (`arquivo.Pk`), com fallback para o índice cujo nome começa com `PK`; o índice de PK não é gerado de novo.
+- **Metadados por script:** cada `SqlScriptDto` carrega `tabela` e `severidadeOrigem` (critico para criação de tabela/coluna; severidade da diferença de origem para índice e FK), usados pelo filtro interno do painel de scripts no frontend (hoje inativo: a tela envia `filtroSeveridade: null`). `ScriptsGenOpcoesDto` (`gerarBackup`/`modoEstrito`) continua no contrato por compatibilidade, mas não tem efeito.
 - **`resumo`:** totais por categoria, impacto estimado (`Low` sem criar tabela, `Medium` com `CREATE_TABLE`), contagem de avisos e `revisaoManual` (apenas tabelas sem definição no arquivo, que impedem a montagem).
 - **`ValidarScriptAsync`:** validação **estática** (nunca executa no SQL Server): limpa comentários/strings, aplica allowlist de verbos e objetos, emite avisos para `DROP TABLE/COLUMN`, `TRUNCATE` e `DELETE`/`UPDATE` sem `WHERE`, e confere a existência de tabelas por consulta leve em `INFORMATION_SCHEMA.TABLES` apenas quando a conexão está disponível.
 
@@ -241,7 +242,7 @@ Todos os endpoints usam JWT e `validacao`.
 | `POST .../{id}/apontamentos` | `ApontamentoCriarRequest` | Cria apontamento e recalcula horas |
 | `PUT .../apontamentos/{id}` | `ApontamentoAtualizarRequest` | JWT; o controller calcula admin por role/claim, mas o token emitido atualmente não satisfaz esse teste; na prática, fica limitado ao próprio apontamento |
 | `DELETE .../apontamentos/{id}` | Sem corpo | JWT; o controller calcula admin por role/claim, mas o token emitido atualmente não satisfaz esse teste; na prática, fica limitado ao próprio apontamento |
-| `GET /api/v1/implantacao/tarefas/{id}/historico` | Sem corpo | Histórico derivado de `IMPL_Auditoria` |
+| `GET /api/v1/implantacao/tarefas/{id}/historico` | Sem corpo | Histórico derivado de `tbauditoriaimplantacao` |
 | `GET /api/v1/implantacao/dashboard` | `equipe?`, `projetoId?` | Agregados do dashboard |
 
 Os DTOs estão em [`TarefaDtos.cs`](../backend/Central_BackEnd/Dtos/Implantacao/TarefaDtos.cs). Para apontamentos, o controller calcula `ehAdmin` com role `Admin` ou claim `PerfilId=A`; `AuthService` emite role `Administrador` e claim `perfil=Administrador`, sem `PerfilId`. Assim, para os JWTs emitidos pelo serviço atual, o controller delega ao service sem marcar admin, e a regra efetivo é “próprio apontamento”.
@@ -302,11 +303,11 @@ As nove etapas são: KICKOFF, LEVANTAMENTO, DESENVOLVIMENTO, HOMOLOGAÇÃO, TREI
 | Serviço | Responsabilidade | Dependências | Validações/efeitos |
 |---|---|---|---|
 | `DatabaseConnectionService` | Configuração e abertura de conexão SQL independente | `IConfiguration`, logger; singleton | Variáveis `DB_EXPLORER_*` têm precedência; exige servidor, banco e usuário; `Encrypt` e `TrustServerCertificate` são lidos da configuração, com padrões `false` e `true`; a configuração não é gravada em runtime |
-| `DatabaseMetadataService` | Tabelas, colunas, índices, FKs, procedures, triggers, dependências e extração de schemas | `IDatabaseConnectionService`, logger | Consultas de metadados/SELECT; devolve corpos de procedures/triggers e a listagem de corpos usada pela comparação de procedures (`ListarCorposProceduresAsync`, só objetos do usuário); contagem sem permissão retorna `-1`; nenhuma escrita de dados |
+| `DatabaseMetadataService` | Tabelas, colunas, índices, FKs, PKs, procedures, triggers, dependências e extração de schemas | `IDatabaseConnectionService`, logger | Consultas de metadados/SELECT; devolve corpos de procedures/triggers e a listagem de corpos usada pela comparação de procedures (`ListarCorposProceduresAsync`, só objetos do usuário); `ListarPkAsync` extrai a PK (`sys.key_constraints` type `PK`) usada por `ExtrairSchemasAsync`/comparação; contagem sem permissão retorna `-1`; nenhuma escrita de dados |
 | `DatabaseSearchService` | Busca unificada de objetos | Conexão | Termo vazio retorna vazio; `take` limitado a 1–500; somente leitura |
 | `DatabaseRelationshipInferenceService` | FKs confirmadas, candidatas, uso de coluna e grafo | Conexão, logger | Candidatas usam nome, tipo, PK e índice; grafo limita profundidade a 1–5; somente leitura |
 | `DatabaseQueryBuilderService` | Monta SQL a partir de metadados e relacionamentos | Conexão, metadata, inferência, logger | Limita a cinco tabelas, valida tabelas e `HAVING`; gera texto SQL, não executa a consulta |
-| `DatabaseSchemaComparisonService` | Compara tabelas com JSON e compara corpos de procedures | `IDatabaseMetadataService`, logger | Exige arquivo não vazio, extensão `.json`, 5 MB por tabela, 20 MB no bulk ou nas procedures; ordem das colunas **não** é considerada diferença; nas procedures a chave é `schema.nome` (sem distinção de caixa), o corpo é normalizado só em quebras de linha/espaço à direita e a comparação é somente leitura (sem scripts) |
+| `DatabaseSchemaComparisonService` | Compara tabelas com JSON (colunas, tipos, nullable, índices, FKs e PK) e compara corpos de procedures | `IDatabaseMetadataService`, logger | Exige arquivo não vazio, extensão `.json`, 5 MB por tabela, 20 MB no bulk ou nas procedures; ordem das colunas **não** é considerada diferença; a PK é lida de `pk`/`primaryKey`/`primary_key`/`PK` no JSON (propriedade ausente = JSON antigo, comparação de PK pulada; `null` explícito = sem PK), com severidade Critico para divergência/PK só no JCA/PK ausente no JCA e Aviso para PK só no arquivo; nas procedures a chave é `schema.nome` (sem distinção de caixa), o corpo é normalizado só em quebras de linha/espaço à direita e a comparação é somente leitura (sem scripts) |
 | `SqlScriptGeneratorService` | Gera e valida estaticamente scripts de correção a partir do resultado da comparação | `IDatabaseConnectionService`, logger | Scoped; não executa SQL nem persiste nada; gera somente criações vindas do arquivo (o banco JCA é a fonte da verdade) |
 
 ## 5. Modelos, DbContext e relacionamentos
@@ -315,15 +316,17 @@ As nove etapas são: KICKOFF, LEVANTAMENTO, DESENVOLVIMENTO, HOMOLOGAÇÃO, TREI
 
 | Domínio | DbSets/tabelas |
 |---|---|
-| Identidade | `Operadores`/`TBOPERADOR`, `Funcoes`/`CC_Funcao`, `RefreshTokens`, `AuditoriaAcessos` |
-| Cadastros | `Clientes`/`IMPL_Cliente`, `TiposProjeto`, `ColunasKanban` |
-| Projetos | `Projetos`, `ProjetoEtapas`, `ProjetoEtapaChecklists`, `ProjetoEtapaDocumentos`, `ProjetoEtapaHistoricos`, `ProjetoEtapaComentarios` |
-| Tarefas | `Tarefas`, `ComentariosTarefa`, `TarefaResponsaveis`, `TarefaChamados`, `TarefaApontamentos` |
-| Agenda | `Agenda`, `TiposEvento`, `AgendaParticipantes` |
-| Auditoria | `AuditoriaImplantacao`/`IMPL_Auditoria` |
+| Identidade | `Operadores`/`tboperador`, `Funcoes`/`tbfuncao`, `RefreshTokens`/`tbrefreshtoken`, `AuditoriaAcessos`/`tbauditoriaacesso` |
+| Cadastros | `TiposProjeto`/`tbtipoprojeto`, `ColunasKanban`/`tbcoluskananban` |
+| Projetos | `Projetos`/`tbprojeto`, `ProjetoEtapas`/`tbprojetoetapa`, `ProjetoEtapaChecklists`/`tbprojetoetapachecklist`, `ProjetoEtapaDocumentos`/`tbprojetoetapadocumento`, `ProjetoEtapaHistoricos`/`tbprojetoetahistorico`, `ProjetoEtapaComentarios`/`tbprojetoetapacomentario` |
+| Tarefas | `Tarefas`/`tbtarefa`, `ComentariosTarefa`/`tbcomentariotarefa`, `TarefaResponsaveis`/`tbtarefareponsavel`, `TarefaChamados`/`tbtarefachamado`, `TarefaApontamentos`/`tbtarefaapontamento` |
+| Agenda | `Agenda`/`tbagenda`, `TiposEvento`/`tbtipoevento`, `AgendaParticipantes`/`tbagendaparticipante` |
+| Auditoria | `AuditoriaImplantacao`/`tbauditoriaimplantacao` |
 | Legadas | `ChamadosLegado`/`tbchamado`, `FuncionariosLegado`/`tbfuncionario`, `ClientesLegado`/`tbcliente` |
 
-`Cliente` continua registrado em `IMPL_Cliente`, mas `ProjetoService.ListarClientesAsync` usa `ClientesLegado`; a fonte efetiva do dropdown é `tbcliente`.
+São **24 `DbSet`**: 21 gerenciáveis pelas migrações e 3 legados somente leitura. Nomes de tabela seguem o padrão `tb*` (regra, colunas e regras de PK/FK em [04-ESTRUTURA-DADOS.md](04-ESTRUTURA-DADOS.md)).
+
+A entidade `Cliente` e a tabela `IMPL_Cliente` foram removidas: `ProjetoService.ListarClientesAsync` usa `ClientesLegado`, e a fonte efetiva do dropdown é `tbcliente`. A função passou a mapear a legada `tbfuncao` (antes `CC_Funcao`, hoje descartada).
 
 ### 5.2 Entidades e enums por arquivo
 
@@ -386,8 +389,8 @@ As nove etapas são: KICKOFF, LEVANTAMENTO, DESENVOLVIMENTO, HOMOLOGAÇÃO, TREI
 | `20260904194350_ImplantacaoInit` | Tabelas iniciais de autenticação, Auditoria, Implantação,Equipe e Etapa global legada |
 | `20260905195554_AddLegadoLinks` | IDs de Cliente e Chamado legado em Projeto/Tarefa |
 | `20260905203422_AddAgendaAndPerfis` | Tabela base da Agenda e índices |
-| `20260906033406_AddAuditoriaImplantacao` | Tabela `IMPL_Auditoria` e índices |
-| `20260910163216_AddFuncao` | `CC_Funcao`, FK e coluna em `TBOPERADOR` |
+| `20260906033406_AddAuditoriaImplantacao` | Tabela `IMPL_Auditoria` (hoje `tbauditoriaimplantacao`) e índices |
+| `20260910163216_AddFuncao` | `CC_Funcao`, FK e coluna em `TBOPERADOR` (a tabela foi descartada em `PadraoTabelasTb`) |
 | `20260911215943_AgendaV2_Ajuste` | Tipo de evento, participantes e `AGD_TipoId` |
 | `20260912173928_RemoveEquipes` | Remove Equipe/Membros e campos de equipe; adiciona auditoria de cadastro |
 | `20260914144751_AgendaConflitoHorarios` | Índice composto da Agenda por operador e intervalo |
@@ -396,11 +399,15 @@ As nove etapas são: KICKOFF, LEVANTAMENTO, DESENVOLVIMENTO, HOMOLOGAÇÃO, TREI
 | `20260916001540_KanbanCustomizavelEArquivamento` | Arquivamento, índice e duas colunas padrão |
 | `20260917170249_TarefaEvolucaoResponsaveisChamadosHoras` | Data de entrega, tipo, apontamentos e vínculos N:N |
 | `20260917202045_TarefaProjetoOpcional` | `TRF_ProjetoId` passa a nullable |
-| `20260918211919_AddProjetoEtapas` | Cinco tabelas `tbprojetoEtapa*` e índice único por Projeto/ordem |
+| `20260918211919_AddProjetoEtapas` | Cinco tabelas `tbprojetoetapa*` e índice único por Projeto/ordem |
 | `20260920185734_TarefaProjetoEtapaId` | Adiciona `TRF_ProjetoEtapaId` e backfill a partir da etapa global |
 | `20260922154202_RemoveEtapaAntiga` | Remove `IMPL_Etapa`, `TRF_EtapaId` e FKs legadas; mantém FK do card com `Restrict` |
+| `20260926022803_PadraoTabelasTb` | Padroniza nomes de tabela em `tb*`, funde `CC_Funcao` na legada `tbfuncao`, remove `IMPL_Cliente`/`CC_Funcao`/`AgendaEvento`/`AgendaEventoParticipante` e renomeia 20 PKs. Escrita à mão, não gerada pelo scaffold. |
+| `20260926022906_RenomeiaIndicesPkTb` | Renomeia 33 índices para `IX_<tabela>_<colunas>`, as 5 PKs com nome automático do EF e a unique constraint para `AK_tbtipoevento_Nome`. |
 
-O snapshot atual contém `tbprojetoEtapa*` e `TRF_ProjetoEtapaId`; não contém `IMPL_Etapa` nem `TRF_EtapaId`. Referências em migrações anteriores são histórico, não API ou modelo atual.
+O snapshot atual contém `tbprojeto*`, `tbtarefa*`, `tbagenda*` e `TRF_ProjetoEtapaId`; não contém `IMPL_Etapa` nem `TRF_EtapaId`. Referências em migrações anteriores são histórico, não API ou modelo atual.
+
+⚠️ **Antes de rodar `dotnet ef database update`:** `20260914144751_AgendaConflitoHorarios`, `20260917202045_TarefaProjetoOpcional` e `20260920185734_TarefaProjetoEtapaId` já estavam fisicamente aplicadas via scripts manuais e foram carimbadas à mão em `__EFMigrationsHistory`. O banco também tem o registro órfão `20260910183240_AgendaGeral`, cujo arquivo `.cs` não existe (o EF ignora). Em produção, `scripts/deploy/deploy.ps1` não aplica migrations: usar `scripts/db/renomear-tabelas-tb-idempotente.sql` (tabelas), `scripts/db/renomear-indices-pk-tb-idempotente.sql` (índices, PKs e unique constraint) e `scripts/db/conferencia-padrao-tb.sql`. Detalhes em [04-ESTRUTURA-DADOS.md](04-ESTRUTURA-DADOS.md).
 
 ### 7.2 Execução e seeds
 
@@ -418,7 +425,7 @@ O snapshot atual contém `tbprojetoEtapa*` e `TRF_ProjetoEtapaId`; não contém 
 login/refresh
   -> AuthController
   -> IAuthService
-  -> TBOPERADOR + RefreshTokens
+  -> tboperador + tbrefreshtoken
   -> access JWT em resposta
   -> refresh em cookie HttpOnly cc_refresh
 ```
@@ -435,7 +442,7 @@ GET /acessos
 POST /acessos/visualizar
   -> validação recente ou senha do operador
   -> GoogleSheetsService
-  -> AuditoriaAcessos
+  -> tbauditoriaacesso
 ```
 
 A resposta de lista contém apenas id e nome. O detalhe só é montado após a etapa de validação e contém os campos de acesso mapeados pelo modelo de planilha; valores reais não pertencem à documentação.
@@ -462,7 +469,7 @@ Não há modelo `Etapa`, `IETapaService`, controller `/api/v1/implantacao/etapas
 
 | Item | Situação |
 |---|---|
-| `IAuditoriaImplantacaoService.ObterHistoricoAsync` | Implementado, mas o histórico de Tarefas consulta `IMPL_Auditoria` diretamente |
+| `IAuditoriaImplantacaoService.ObterHistoricoAsync` | Implementado, mas o histórico de Tarefas consulta `tbauditoriaimplantacao` diretamente |
 | filtro `equipe` em Tarefas | Parâmetro permanece no DTO/controller, mas não é aplicado em `TarefaService` |
 | cliente de sessões JOTA | Métodos existem no frontend; o backend atual só expõe `POST /api/rag-proxy/chat` |
 

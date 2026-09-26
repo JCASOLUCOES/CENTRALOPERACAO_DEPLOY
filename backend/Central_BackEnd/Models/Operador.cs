@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Central_BackEnd.Models;
 
-[Table("TBOPERADOR")]
+[Table("tboperador")]
 public class Operador
 {
     [Key]

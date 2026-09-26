@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Central_BackEnd.Models.Implantacao;
 
-[Table("CC_TipoEvento")]
+[Table("tbtipoevento")]
 public class TipoEvento
 {
     [Key]

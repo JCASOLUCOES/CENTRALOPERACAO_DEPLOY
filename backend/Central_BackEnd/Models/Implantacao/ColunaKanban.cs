@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Central_BackEnd.Models.Implantacao;
 
-[Table("IMPL_ColunaKanban")]
+[Table("tbcolunakanban")]
 public class ColunaKanban
 {
     [Key]

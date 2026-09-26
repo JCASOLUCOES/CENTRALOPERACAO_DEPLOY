@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Central_BackEnd.Models;
 
-[Table("CC_Funcao")]
+[Table("tbfuncao")]
 public class Funcao
 {
     [Key]

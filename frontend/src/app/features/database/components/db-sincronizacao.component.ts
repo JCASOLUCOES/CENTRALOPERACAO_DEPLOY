@@ -6,11 +6,11 @@ import { DbScriptsCorrecaoComponent } from './db-scripts-correcao.component';
 import { DbProceduresResultadoComponent } from './db-procedures-resultado.component';
 import {
   DatabaseTable, SchemaComparisonResult, SchemaDifference,
-  BulkSchemaComparisonResult, BulkTableComparison, BulkTableStatus,
-  ProceduresComparisonResult
+  BulkSchemaComparisonResult,
+  ProceduresComparisonResult,
+  ABAS_RELATORIO, AbaRelatorio, abaDeCategoria
 } from '../models/database.model';
 
-type FiltroSeveridade = 'Critico' | 'Aviso' | null;
 type Modo = 'tabela' | 'banco' | 'procedures';
 
 @Component({
@@ -22,7 +22,8 @@ type Modo = 'tabela' | 'banco' | 'procedures';
     <h3 class="adm-card__title">Comparação de Schemas</h3>
     <p class="adm-card__desc">
       Envie um arquivo <strong>JSON</strong> com a estrutura esperada de uma tabela
-      e compare com o <strong>schema real do banco JCA</strong> (colunas, tipos, nullable, índices e FKs).
+      e compare com o <strong>schema real do banco JCA</strong> (colunas, tipos e tamanhos,
+      nullable, índices, FKs e PK).
     </p>
 
     <div class="db-sync__modo" role="group" aria-label="Modo de comparacao">
@@ -121,7 +122,7 @@ type Modo = 'tabela' | 'banco' | 'procedures';
       <pre class="db-sync__script-pre">{{ scriptVisivel() }}</pre>
       <small *ngIf="modo() === 'tabela'" class="text-muted db-sync__script-dica">
         1. Rode no SSMS do banco externo · 2. Clique na célula do resultado e copie o JSON inteiro ·
-        3. Cole em um arquivo <code>.json</code> e envie acima. O script gera colunas, índices e FKs
+        3. Cole em um arquivo <code>.json</code> e envie acima. O script gera colunas, índices, FKs e PK
         no formato aceito pelo sistema. Compatível com SQL Server 2005+
         (usa <code>FOR XML PATH</code>, sem <code>FOR JSON</code>).
         Se o SSMS/Excel embrulhar o valor em aspas, o backend desembrulha automaticamente —
@@ -131,8 +132,8 @@ type Modo = 'tabela' | 'banco' | 'procedures';
         1. Deixe o schema <strong>vazio</strong> para exportar todos os schemas (ou informe 1 schema) ·
         2. Rode no SSMS do banco externo · 3. Selecione <strong>todas as linhas</strong> (uma por tabela) e copie ·
         4. Cole em um arquivo <code>.json</code> e envie acima. O sistema compara cada tabela com o banco
-        conectado; tabelas ausentes de <strong>qualquer lado</strong> contam como crítico.
-        Uma linha por tabela evita truncamento de célula no SSMS.
+        conectado (colunas, tamanhos, índices, FKs e PK); tabelas ausentes de <strong>qualquer lado</strong>
+        contam como crítico. Uma linha por tabela evita truncamento de célula no SSMS.
       </small>
       <small *ngIf="modo() === 'procedures'" class="text-muted db-sync__script-dica">
         1. Deixe o schema <strong>vazio</strong> para exportar todas as procedures (ou informe 1 schema) ·
@@ -152,7 +153,7 @@ type Modo = 'tabela' | 'banco' | 'procedures';
       <ng-container *ngIf="modo() === 'tabela'; else emptyBulk">
         Selecione uma tabela, envie o arquivo <strong>JSON</strong> e clique em <strong>Comparar</strong>.
         <br><small class="text-muted">
-          JSON: objeto com <code>colunas[]</code>, <code>indices[]</code>, <code>fks[]</code> — ou apenas array de colunas.
+          JSON: objeto com <code>colunas[]</code>, <code>indices[]</code>, <code>fks[]</code> e <code>pk</code> — ou apenas array de colunas.
         </small>
       </ng-container>
       <ng-template #emptyBulk>
@@ -182,67 +183,50 @@ type Modo = 'tabela' | 'banco' | 'procedures';
         Match: <strong>{{ r.percentualMatch }}%</strong>
       </p>
 
-      <div class="adm-stats" role="group" aria-label="Filtrar por severidade">
-        <button type="button" class="adm-stat db-sync__stat"
-                [class.db-sync__stat--on]="filtro() === 'Critico'"
-                [class.db-sync__stat--critico]="filtro() === 'Critico'"
-                (click)="alternarFiltro('Critico')">
-          <strong class="db-sync__num text-danger">{{ r.criticos }}</strong>
-          <span>críticos</span>
-        </button>
-        <button type="button" class="adm-stat db-sync__stat"
-                [class.db-sync__stat--on]="filtro() === 'Aviso'"
-                [class.db-sync__stat--aviso]="filtro() === 'Aviso'"
-                (click)="alternarFiltro('Aviso')">
-          <strong class="db-sync__num text-warning">{{ r.avisos }}</strong>
-          <span>avisos</span>
-        </button>
-        <div class="adm-stat db-sync__stat db-sync__stat--estatico">
-          <strong class="db-sync__num text-success">{{ r.oks }}</strong>
-          <span>compatíveis · só contagem</span>
+      <div class="db-sync__relatorio">
+        <div class="db-sync__abas" role="tablist" aria-label="Abas do relatorio">
+          <button *ngFor="let a of abasVisiveis()" type="button" role="tab"
+                  class="db-sync__aba"
+                  [class.db-sync__aba--on]="abaRelatorio() === a.key"
+                  [attr.aria-selected]="abaRelatorio() === a.key"
+                  (click)="abaRelatorio.set(a.key)">
+            <i class="bi" [ngClass]="a.icone"></i> {{ a.rotulo }}
+            <span class="db-sync__aba-n"
+                  [class.db-sync__aba-n--zero]="contagemAba(a.key) === 0">{{ contagemAba(a.key) }}</span>
+          </button>
         </div>
-        <button type="button" class="adm-stat db-sync__stat"
-                [class.db-sync__stat--on]="filtro() === null"
-                (click)="alternarFiltro(null)">
-          <strong class="db-sync__num">{{ r.percentualMatch }}%</strong>
-          <span>match · tudo</span>
-        </button>
+
+        <div class="adm-stats db-sync__fixos" role="group" aria-label="Resumo da comparacao">
+          <div class="adm-stat db-sync__stat db-sync__stat--estatico">
+            <strong class="db-sync__num text-success">{{ r.oks }}</strong>
+            <span>compatíveis · só contagem</span>
+          </div>
+          <div class="adm-stat db-sync__stat db-sync__stat--estatico">
+            <strong class="db-sync__num">{{ r.percentualMatch }}%</strong>
+            <span>match</span>
+          </div>
+        </div>
       </div>
 
-      <p class="text-muted db-sync__filtro-dica" *ngIf="filtro()">
-        Filtrado por <strong>{{ rotuloFiltro() }}</strong> · clique de novo no card ou em
-        <strong>match · tudo</strong> para limpar.
-      </p>
-
-      <div *ngIf="diferencasVisiveis().length === 0" class="adm-empty">
-        <ng-container *ngIf="filtro() === 'Critico'">
-          Nenhum crítico. Clique em <strong>avisos</strong> ou <strong>match · tudo</strong>.
-        </ng-container>
-        <ng-container *ngIf="filtro() === 'Aviso'">
-          Nenhum aviso. Clique em <strong>críticos</strong> ou <strong>match · tudo</strong>.
-        </ng-container>
-        <ng-container *ngIf="filtro() === null">
-          Nenhuma diferença encontrada. Os schemas estão compatíveis.
-        </ng-container>
-      </div>
+      <div *ngIf="itensAba().length === 0" class="adm-empty">{{ vazioAba() }}</div>
 
       <div class="db-sync__lista">
-        <div *ngFor="let d of diferencasVisiveis()"
+        <div *ngFor="let it of itensAba()"
              class="db-sync__item"
-             [ngClass]="'db-sync__item--' + severidadeClass(d.severidade)">
-          <span *ngIf="d.numeroCritico" class="db-sync__badge" [attr.data-critico]="d.numeroCritico">
-            {{ d.numeroCritico }}
+             [ngClass]="'db-sync__item--' + severidadeClass(it.dif.severidade)">
+          <span *ngIf="it.dif.numeroCritico" class="db-sync__badge" [attr.data-critico]="it.dif.numeroCritico">
+            {{ it.dif.numeroCritico }}
           </span>
-          <span class="db-sync__dot" [ngClass]="'db-sync__dot--' + severidadeClass(d.severidade)"></span>
-          <span class="db-sync__cat">{{ d.categoria }}</span>
-          <strong>{{ d.campo }}</strong>
-          <span *ngIf="d.esperado" class="db-sync__val">
-            JCA: <code>{{ d.esperado }}</code>
+          <span class="db-sync__dot" [ngClass]="'db-sync__dot--' + severidadeClass(it.dif.severidade)"></span>
+          <span class="db-sync__cat">{{ it.dif.categoria }}</span>
+          <strong>{{ it.dif.campo }}</strong>
+          <span *ngIf="it.dif.esperado" class="db-sync__val">
+            JCA: <code>{{ it.dif.esperado }}</code>
           </span>
-          <span *ngIf="d.encontrado" class="db-sync__val">
-            Arquivo: <code>{{ d.encontrado }}</code>
+          <span *ngIf="it.dif.encontrado" class="db-sync__val">
+            Arquivo: <code>{{ it.dif.encontrado }}</code>
           </span>
-          <small class="db-sync__desc">{{ d.descricao }}</small>
+          <small class="db-sync__desc">{{ it.dif.descricao }}</small>
         </div>
       </div>
     </div>
@@ -255,98 +239,61 @@ type Modo = 'tabela' | 'banco' | 'procedures';
         Match: <strong>{{ rb.percentualMatch }}%</strong>
       </p>
 
-      <div class="adm-stats" role="group" aria-label="Filtrar tabelas por severidade">
-        <button type="button" class="adm-stat db-sync__stat"
-                [class.db-sync__stat--on]="filtroBulk() === 'Critico'"
-                [class.db-sync__stat--critico]="filtroBulk() === 'Critico'"
-                (click)="alternarFiltroBulk('Critico')">
-          <strong class="db-sync__num text-danger">{{ rb.criticos }}</strong>
-          <span>críticos</span>
-        </button>
-        <button type="button" class="adm-stat db-sync__stat"
-                [class.db-sync__stat--on]="filtroBulk() === 'Aviso'"
-                [class.db-sync__stat--aviso]="filtroBulk() === 'Aviso'"
-                (click)="alternarFiltroBulk('Aviso')">
-          <strong class="db-sync__num text-warning">{{ rb.avisos }}</strong>
-          <span>avisos</span>
-        </button>
-        <div class="adm-stat db-sync__stat db-sync__stat--estatico">
-          <strong class="db-sync__num text-success">{{ rb.tabelasOk }}</strong>
-          <span>tabelas ok · só contagem</span>
+      <div class="db-sync__relatorio">
+        <div class="db-sync__abas" role="tablist" aria-label="Abas do relatorio">
+          <button *ngFor="let a of abasVisiveis()" type="button" role="tab"
+                  class="db-sync__aba"
+                  [class.db-sync__aba--on]="abaRelatorio() === a.key"
+                  [attr.aria-selected]="abaRelatorio() === a.key"
+                  (click)="abaRelatorio.set(a.key)">
+            <i class="bi" [ngClass]="a.icone"></i> {{ a.rotulo }}
+            <span class="db-sync__aba-n"
+                  [class.db-sync__aba-n--zero]="contagemAba(a.key) === 0">{{ contagemAba(a.key) }}</span>
+          </button>
         </div>
-        <button type="button" class="adm-stat db-sync__stat"
-                [class.db-sync__stat--on]="filtroBulk() === null"
-                (click)="alternarFiltroBulk(null)">
-          <strong class="db-sync__num">{{ rb.percentualMatch }}%</strong>
-          <span>match · tudo</span>
-        </button>
+
+        <div class="adm-stats db-sync__fixos" role="group" aria-label="Resumo da comparacao">
+          <div class="adm-stat db-sync__stat db-sync__stat--estatico">
+            <strong class="db-sync__num text-success">{{ rb.tabelasOk }}</strong>
+            <span>tabelas compatíveis · só contagem</span>
+          </div>
+          <div class="adm-stat db-sync__stat db-sync__stat--estatico">
+            <strong class="db-sync__num">{{ rb.percentualMatch }}%</strong>
+            <span>match</span>
+          </div>
+        </div>
       </div>
 
-      <p class="text-muted db-sync__filtro-dica" *ngIf="filtroBulk()">
-        Filtrado por <strong>{{ rotuloFiltroBulk() }}</strong> · clique de novo no card ou em
-        <strong>match · tudo</strong> para limpar.
-      </p>
-
-      <p class="db-sync__bulk-resumo">
+      <p class="db-sync__bulk-resumo" *ngIf="abaRelatorio() === 'tabelas'">
         <span class="db-sync__bulk-chip db-sync__bulk-chip--ok">{{ rb.tabelasOk }} ok</span>
         <span class="db-sync__bulk-chip db-sync__bulk-chip--dif">{{ rb.tabelasComDiferenca }} com diferenças</span>
         <span class="db-sync__bulk-chip db-sync__bulk-chip--so">{{ rb.somenteArquivo }} só no arquivo</span>
         <span class="db-sync__bulk-chip db-sync__bulk-chip--sb">{{ rb.somenteBanco }} só no banco</span>
       </p>
 
-      <div *ngIf="tabelasBulkVisiveis().length === 0" class="adm-empty">
-        <ng-container *ngIf="filtroBulk() === 'Critico'">
-          Nenhuma tabela com críticos. Clique em <strong>avisos</strong> ou <strong>match · tudo</strong>.
-        </ng-container>
-        <ng-container *ngIf="filtroBulk() === 'Aviso'">
-          Nenhuma tabela com avisos. Clique em <strong>críticos</strong> ou <strong>match · tudo</strong>.
-        </ng-container>
-        <ng-container *ngIf="filtroBulk() === null">
-          Todas as tabelas estão 100% compatíveis.
-        </ng-container>
-      </div>
+      <div *ngIf="itensAba().length === 0" class="adm-empty">{{ vazioAba() }}</div>
 
-      <div class="db-sync__lista db-sync__lista--bulk">
-        <ng-container *ngFor="let t of tabelasBulkVisiveis()">
-          <button type="button" class="db-sync__bulk-linha"
-                  [attr.aria-expanded]="tabelaExpandida() === t.tabela"
-                  (click)="toggleExpand(t.tabela)">
-            <span class="db-sync__dot" [ngClass]="'db-sync__dot--' + statusDotClass(t)"></span>
-            <span class="db-sync__badge db-sync__bulk-badge" [ngClass]="'db-sync__bulk-badge--' + t.status">
-              {{ rotuloStatus(t.status) }}
-            </span>
-            <strong class="db-sync__bulk-nome">{{ t.tabela }}</strong>
-            <span class="db-sync__bulk-cols">{{ t.totalColunasArquivo }} arq × {{ t.totalColunasJca }} JCA</span>
-            <span class="db-sync__bulk-counts">
-              <span *ngIf="t.criticos" class="db-sync__bulk-c text-danger">{{ t.criticos }} crít.</span>
-              <span *ngIf="t.avisos" class="db-sync__bulk-c text-warning">{{ t.avisos }} av.</span>
-            </span>
-            <span class="db-sync__bulk-match">{{ t.percentualMatch }}%</span>
-            <i class="bi db-sync__bulk-chevron"
-               [ngClass]="tabelaExpandida() === t.tabela ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-          </button>
-          <div *ngIf="tabelaExpandida() === t.tabela" class="db-sync__bulk-diffs">
-            <div *ngIf="t.diferencas.length === 0" class="db-sync__bulk-sem">
-              Tabela 100% compatível — nenhuma diferença.
-            </div>
-            <div *ngFor="let d of diferencasTabela(t)" class="db-sync__item"
-                 [ngClass]="'db-sync__item--' + severidadeClass(d.severidade)">
-              <span *ngIf="d.numeroCritico" class="db-sync__badge" [attr.data-critico]="d.numeroCritico">
-                {{ d.numeroCritico }}
-              </span>
-              <span class="db-sync__dot" [ngClass]="'db-sync__dot--' + severidadeClass(d.severidade)"></span>
-              <span class="db-sync__cat">{{ d.categoria }}</span>
-              <strong>{{ d.campo }}</strong>
-              <span *ngIf="d.esperado" class="db-sync__val">
-                JCA: <code>{{ d.esperado }}</code>
-              </span>
-              <span *ngIf="d.encontrado" class="db-sync__val">
-                Arquivo: <code>{{ d.encontrado }}</code>
-              </span>
-              <small class="db-sync__desc">{{ d.descricao }}</small>
-            </div>
-          </div>
-        </ng-container>
+      <div class="db-sync__lista">
+        <div *ngFor="let it of itensAba()"
+             class="db-sync__item"
+             [ngClass]="'db-sync__item--' + severidadeClass(it.dif.severidade)">
+          <span *ngIf="it.dif.numeroCritico" class="db-sync__badge" [attr.data-critico]="it.dif.numeroCritico">
+            {{ it.dif.numeroCritico }}
+          </span>
+          <span class="db-sync__dot" [ngClass]="'db-sync__dot--' + severidadeClass(it.dif.severidade)"></span>
+          <span *ngIf="it.tabela" class="db-sync__tag">
+            <i class="bi bi-table"></i> {{ it.tabela }}
+          </span>
+          <span class="db-sync__cat">{{ it.dif.categoria }}</span>
+          <strong>{{ it.dif.campo }}</strong>
+          <span *ngIf="it.dif.esperado" class="db-sync__val">
+            JCA: <code>{{ it.dif.esperado }}</code>
+          </span>
+          <span *ngIf="it.dif.encontrado" class="db-sync__val">
+            Arquivo: <code>{{ it.dif.encontrado }}</code>
+          </span>
+          <small class="db-sync__desc">{{ it.dif.descricao }}</small>
+        </div>
       </div>
     </div>
 
@@ -355,7 +302,7 @@ type Modo = 'tabela' | 'banco' | 'procedures';
     <app-db-scripts-correcao
       [resultado]="resultado()"
       [resultadoBulk]="resultadoBulk()"
-      [filtroSeveridade]="resultado() ? filtro() : null" />
+      [filtroSeveridade]="null" />
   </div>
   `,
   styles: [`
@@ -391,19 +338,37 @@ type Modo = 'tabela' | 'banco' | 'procedures';
     .adm-stat span { font-size: 0.75rem; color: #64748b; }
     .db-sync__stat {
       border: 2px solid transparent; background: transparent;
-      cursor: pointer; text-align: left; padding: 0.5rem 0.65rem;
-      border-radius: 0.5rem; transition: border-color 0.15s, background 0.15s;
-      font: inherit; color: inherit;
+      text-align: left; padding: 0.5rem 0.65rem;
+      border-radius: 0.5rem; font: inherit; color: inherit;
     }
-    .db-sync__stat:hover { background: rgba(15, 23, 42, 0.04); }
     .db-sync__stat--estatico { cursor: default; }
-    .db-sync__stat--estatico:hover { background: transparent; }
-    .db-sync__stat--on { background: #f1f5f9; border-color: #334155; }
-    .db-sync__stat--on.db-sync__stat--critico { background: #fee2e2; border-color: #dc2626; }
-    .db-sync__stat--on.db-sync__stat--aviso { background: #fef3c7; border-color: #d97706; }
-    .db-sync__stat--on.db-sync__stat--ok { background: #d1fae5; border-color: #16a34a; }
-    .db-sync__stat--on span { color: #0f172a; font-weight: 700; }
-    .db-sync__filtro-dica { font-size: 0.8rem; margin: 0.35rem 0 0.75rem; }
+    .db-sync__relatorio { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-start; justify-content: space-between; }
+    .db-sync__abas {
+      display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.2rem;
+      background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 0.5rem;
+    }
+    .db-sync__aba {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      border: 1px solid transparent; background: transparent; border-radius: 0.4rem;
+      padding: 0.4rem 0.7rem; font-size: 0.8rem; font-weight: 600; color: #475569;
+      cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .db-sync__aba:hover { color: #1e3a8a; background: rgba(255,255,255,0.6); }
+    .db-sync__aba--on { background: #fff; color: #1e3a8a; border-color: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+    .db-sync__aba-n {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 1.3rem; height: 1.3rem; padding: 0 0.35rem;
+      border-radius: 999px; background: #dc2626; color: #fff;
+      font-size: 0.7rem; font-weight: 700; line-height: 1;
+    }
+    .db-sync__aba-n--zero { background: #cbd5e1; color: #475569; }
+    .db-sync__fixos { flex-shrink: 0; }
+    .db-sync__tag {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      background: #eff6ff; color: #1e3a8a; border: 1px solid #bfdbfe;
+      padding: 0.1rem 0.45rem; border-radius: 0.25rem;
+      font-size: 0.72rem; font-weight: 600; align-self: center;
+    }
     .db-sync__lista { display: flex; flex-direction: column; gap: 0.35rem; }
     .db-sync__item {
       display: flex; gap: 0.55rem; align-items: baseline; flex-wrap: wrap;
@@ -438,29 +403,6 @@ type Modo = 'tabela' | 'banco' | 'procedures';
     .db-sync__bulk-chip--dif { background: #fef3c7; color: #92400e; }
     .db-sync__bulk-chip--so { background: #fee2e2; color: #991b1b; }
     .db-sync__bulk-chip--sb { background: #fee2e2; color: #991b1b; }
-    .db-sync__lista--bulk { gap: 0.3rem; }
-    .db-sync__bulk-linha {
-      display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;
-      width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer;
-      background: #fff; border: 1px solid #e2e8f0; border-radius: 0.4rem;
-      padding: 0.5rem 0.75rem; transition: background 0.15s, border-color 0.15s;
-    }
-    .db-sync__bulk-linha:hover { background: #f8fafc; border-color: #cbd5e1; }
-    .db-sync__bulk-badge { min-width: 0; height: auto; padding: 0.15rem 0.5rem; font-size: 0.7rem; flex-shrink: 0; }
-    .db-sync__bulk-badge--Ok { background: #16a34a; }
-    .db-sync__bulk-badge--Diferencas { background: #b45309; }
-    .db-sync__bulk-badge--SomenteArquivo { background: #dc2626; }
-    .db-sync__bulk-badge--SomenteBanco { background: #dc2626; }
-    .db-sync__bulk-nome { font-size: 0.86rem; }
-    .db-sync__bulk-cols { font-size: 0.75rem; color: #64748b; }
-    .db-sync__bulk-counts { display: inline-flex; gap: 0.5rem; font-size: 0.75rem; font-weight: 600; }
-    .db-sync__bulk-match { margin-left: auto; font-size: 0.82rem; font-weight: 700; color: #334155; }
-    .db-sync__bulk-chevron { font-size: 0.8rem; color: #94a3b8; }
-    .db-sync__bulk-diffs {
-      display: flex; flex-direction: column; gap: 0.3rem;
-      padding: 0.35rem 0 0.6rem 1.4rem;
-    }
-    .db-sync__bulk-sem { font-size: 0.8rem; color: #475569; background: #f1f5f9; border-radius: 0.4rem; padding: 0.5rem 0.75rem; }
     .db-sync__script { border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.75rem; background: #f8fafc; }
     .db-sync__script-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -479,8 +421,8 @@ type Modo = 'tabela' | 'banco' | 'procedures';
       .db-sync__controles select,
       .db-sync__busca { min-width: 0; width: 100%; }
       .db-sync__desc { margin-left: 0; width: 100%; }
-      .db-sync__bulk-match { margin-left: 0; }
-      .db-sync__bulk-linha { font-size: 0.85rem; }
+      .db-sync__relatorio { flex-direction: column; }
+      .db-sync__abas { width: 100%; }
       .db-sync__script-header { flex-direction: column; align-items: stretch; }
       .db-sync__script-input { width: 100%; }
     }
@@ -499,17 +441,18 @@ export class DbSincronizacaoComponent {
   readonly erro = signal<string | null>(null);
   readonly arquivo = signal<File | null>(null);
   readonly scriptCopiado = signal(false);
-  readonly filtro = signal<FiltroSeveridade>('Critico');
   readonly tabelaSelecionada = signal('');
   readonly buscaTabela = signal('');
   readonly modo = signal<Modo>('tabela');
   readonly resultadoBulk = signal<BulkSchemaComparisonResult | null>(null);
   readonly resultadoProcedures = signal<ProceduresComparisonResult | null>(null);
-  readonly filtroBulk = signal<FiltroSeveridade>('Critico');
-  readonly tabelaExpandida = signal<string | null>(null);
+  readonly abaRelatorio = signal<AbaRelatorio>('colunas');
 
   scriptSchema = 'dbo';
   scriptTabela = '';
+
+  readonly abasVisiveis = computed(() =>
+    ABAS_RELATORIO.filter(a => !a.somenteBulk || this.modo() === 'banco'));
 
   readonly tabelasFiltradas = computed(() => {
     const q = this.buscaTabela().trim().toLowerCase();
@@ -544,9 +487,7 @@ export class DbSincronizacaoComponent {
     this.resultado.set(null);
     this.resultadoBulk.set(null);
     this.resultadoProcedures.set(null);
-    this.filtro.set('Critico');
-    this.filtroBulk.set('Critico');
-    this.tabelaExpandida.set(null);
+    this.resetAba();
     this.arquivo.set(null);
     if (this.arquivoInput) this.arquivoInput.nativeElement.value = '';
   }
@@ -557,78 +498,81 @@ export class DbSincronizacaoComponent {
     this.resultadoProcedures.set(null);
     this.arquivo.set(null);
     this.erro.set(null);
-    this.filtro.set('Critico');
-    this.filtroBulk.set('Critico');
-    this.tabelaExpandida.set(null);
+    this.resetAba();
     this.tabelaSelecionada.set('');
     this.buscaTabela.set('');
     this.scriptTabela = '';
     if (this.arquivoInput) this.arquivoInput.nativeElement.value = '';
   }
 
-  alternarFiltro(f: FiltroSeveridade): void {
-    this.filtro.set(this.filtro() === f ? null : f);
+  private resetAba(): void {
+    this.abaRelatorio.set(this.modo() === 'banco' ? 'tabelas' : 'colunas');
   }
 
-  rotuloFiltro(): string {
-    switch (this.filtro()) {
-      case 'Critico': return 'críticos';
-      case 'Aviso': return 'avisos';
-      default: return 'tudo';
+  /**
+   * Escolhe a primeira aba visível com diferenças; sem nenhuma,
+   * cai na aba padrão do modo atual.
+   */
+  private definirAbaInicial(): void {
+    const visiveis = this.abasVisiveis();
+    const alvo = visiveis.find(a => this.contagemAba(a.key) > 0);
+    this.abaRelatorio.set(alvo ? alvo.key : (visiveis[0]?.key ?? 'colunas'));
+  }
+
+  contagemAba(k: AbaRelatorio): number {
+    const def = ABAS_RELATORIO.find(a => a.key === k);
+    if (!def) return 0;
+    const conta = (d: SchemaDifference) =>
+      d.severidade !== 'Ok' && def.categorias.includes(d.categoria);
+
+    if (this.modo() === 'banco') {
+      const rb = this.resultadoBulk();
+      if (!rb) return 0;
+      let n = 0;
+      for (const t of rb.tabelas)
+        for (const d of t.diferencas)
+          if (conta(d)) n++;
+      return n;
     }
+    const r = this.resultado();
+    if (!r) return 0;
+    return r.diferencas.filter(conta).length;
   }
 
-  alternarFiltroBulk(f: FiltroSeveridade): void {
-    this.filtroBulk.set(this.filtroBulk() === f ? null : f);
-  }
+  itensAba(): { tabela?: string; dif: SchemaDifference }[] {
+    const aba = this.abaRelatorio();
+    const mesmaAba = (d: SchemaDifference) =>
+      d.severidade !== 'Ok' && abaDeCategoria(d.categoria) === aba;
 
-  rotuloFiltroBulk(): string {
-    switch (this.filtroBulk()) {
-      case 'Critico': return 'tabelas com críticos';
-      case 'Aviso': return 'tabelas com avisos';
-      default: return 'tabelas com diferenças';
+    if (this.modo() === 'banco') {
+      const rb = this.resultadoBulk();
+      if (!rb) return [];
+      const out: { tabela?: string; dif: SchemaDifference }[] = [];
+      for (const t of rb.tabelas)
+        for (const d of t.diferencas)
+          if (mesmaAba(d))
+            out.push({ tabela: aba === 'tabelas' ? undefined : t.tabela, dif: d });
+      return out;
     }
+
+    const r = this.resultado();
+    if (!r) return [];
+    return r.diferencas.filter(mesmaAba).map(d => ({ dif: d }));
   }
 
-  tabelasBulkVisiveis(): BulkTableComparison[] {
-    const rb = this.resultadoBulk();
-    if (!rb) return [];
-    const f = this.filtroBulk();
-    let lista = rb.tabelas.filter(t => t.status !== 'Ok');
-    if (f === 'Critico') {
-      lista = lista.filter(t => t.criticos > 0 || t.status === 'SomenteArquivo' || t.status === 'SomenteBanco');
-    } else if (f === 'Aviso') {
-      lista = lista.filter(t => t.avisos > 0);
+  vazioAba(): string {
+    const def = ABAS_RELATORIO.find(a => a.key === this.abaRelatorio());
+    const rotulo = def ? def.rotulo.toLowerCase() : 'esta aba';
+    const temAlguma = this.abasVisiveis().some(a => this.contagemAba(a.key) > 0);
+    if (!temAlguma) {
+      return this.modo() === 'banco'
+        ? 'Todas as tabelas estão 100% compatíveis.'
+        : 'Nenhuma diferença encontrada. Os schemas estão compatíveis.';
     }
-    const ordem: Record<string, number> = { SomenteArquivo: 0, SomenteBanco: 1, Diferencas: 2, Ok: 3 };
-    return [...lista].sort((a, b) =>
-      (ordem[a.status] ?? 9) - (ordem[b.status] ?? 9) ||
-      b.criticos - a.criticos ||
-      a.tabela.localeCompare(b.tabela));
-  }
-
-  diferencasTabela(t: BulkTableComparison): SchemaDifference[] {
-    return t.diferencas.filter(d => d.severidade !== 'Ok');
-  }
-
-  toggleExpand(nome: string): void {
-    this.tabelaExpandida.set(this.tabelaExpandida() === nome ? null : nome);
-  }
-
-  statusDotClass(t: BulkTableComparison): string {
-    if (t.status === 'Ok') return 'Ok';
-    if (t.status === 'Diferencas') return t.criticos > 0 ? 'Critico' : 'Aviso';
-    return 'Critico';
-  }
-
-  rotuloStatus(s: BulkTableStatus): string {
-    switch (s) {
-      case 'Ok': return 'OK';
-      case 'Diferencas': return 'Diferenças';
-      case 'SomenteArquivo': return 'Só no arquivo';
-      case 'SomenteBanco': return 'Só no banco';
-      default: return s;
+    if (this.modo() === 'banco' && this.abaRelatorio() === 'tabelas') {
+      return 'Nenhuma tabela faltante em nenhum dos dois lados.';
     }
+    return `Nenhuma diferença em ${rotulo} nesta comparação.`;
   }
 
   scriptSql(): string {
@@ -704,6 +648,30 @@ fks AS (
        AND cr.column_id = fkc.referenced_column_id
     WHERE fk.parent_object_id = @objId
 ),
+pk AS (
+    SELECT kc.name AS nome,
+        N'[' + ISNULL(
+            STUFF((
+                SELECT N',"' + REPLACE(REPLACE(c.name, N'\\\\', N'\\\\\\\\'), N'"', N'\\\\"') + N'"'
+                FROM sys.index_columns ic
+                JOIN sys.columns c
+                    ON c.object_id = ic.object_id
+                   AND c.column_id = ic.column_id
+                WHERE ic.object_id = i.object_id
+                  AND ic.index_id = i.index_id
+                  AND ic.is_included_column = 0
+                ORDER BY ic.key_ordinal
+                FOR XML PATH(''), TYPE
+            ).value('.', 'nvarchar(max)'), 1, 1, N''),
+            N''
+        ) + N']' AS colunasJson
+    FROM sys.key_constraints kc
+    JOIN sys.indexes i
+        ON i.object_id = kc.parent_object_id
+       AND i.index_id = kc.unique_index_id
+    WHERE kc.type = 'PK'
+      AND kc.parent_object_id = @objId
+),
 colunasJson AS (
     SELECT N'[' + ISNULL(
         STUFF((
@@ -742,7 +710,11 @@ SELECT
              + N'"}'
         FROM fks f
         FOR XML PATH(''), TYPE
-    ).value('.', 'nvarchar(max)'), 1, 1, N''), N'') + N']}';`;
+    ).value('.', 'nvarchar(max)'), 1, 1, N''), N'') + N']'
+  + N',"pk":' + ISNULL((
+        SELECT N'{"nome":"' + REPLACE(REPLACE(p.nome, N'\\\\', N'\\\\\\\\'), N'"', N'\\\\"')
+             + N'","colunas":' + p.colunasJson + N'}'
+        FROM pk p), N'null') + N'}';`;
   }
 
   scriptSqlBulk(): string {
@@ -818,6 +790,30 @@ fks AS (
         ON cr.object_id = fkc.referenced_object_id
        AND cr.column_id = fkc.referenced_column_id
 ),
+pk AS (
+    SELECT kc.parent_object_id AS object_id,
+        kc.name AS nome,
+        N'[' + ISNULL(
+            STUFF((
+                SELECT N',"' + REPLACE(REPLACE(c.name, N'\\\\', N'\\\\\\\\'), N'"', N'\\\\"') + N'"'
+                FROM sys.index_columns ic
+                JOIN sys.columns c
+                    ON c.object_id = ic.object_id
+                   AND c.column_id = ic.column_id
+                WHERE ic.object_id = i.object_id
+                  AND ic.index_id = i.index_id
+                  AND ic.is_included_column = 0
+                ORDER BY ic.key_ordinal
+                FOR XML PATH(''), TYPE
+            ).value('.', 'nvarchar(max)'), 1, 1, N''),
+            N''
+        ) + N']' AS colunasJson
+    FROM sys.key_constraints kc
+    JOIN sys.indexes i
+        ON i.object_id = kc.parent_object_id
+       AND i.index_id = kc.unique_index_id
+    WHERE kc.type = 'PK'
+),
 colunasJson AS (
     SELECT
         cj.object_id,
@@ -862,7 +858,12 @@ SELECT
         FROM fks f
         WHERE f.object_id = tb.object_id
         FOR XML PATH(''), TYPE
-    ).value('.', 'nvarchar(max)'), 1, 1, N''), N'') + N']}'
+    ).value('.', 'nvarchar(max)'), 1, 1, N''), N'') + N']'
+  + N',"pk":' + ISNULL((
+        SELECT N'{"nome":"' + REPLACE(REPLACE(p.nome, N'\\\\', N'\\\\\\\\'), N'"', N'\\\\"')
+             + N'","colunas":' + p.colunasJson + N'}'
+        FROM pk p
+        WHERE p.object_id = tb.object_id), N'null') + N'}'
 FROM tabelas tb
 ORDER BY tb.schemaNome, tb.nome;`;
   }
@@ -958,15 +959,6 @@ ORDER BY SCHEMA_NAME(p.schema_id), p.name;`;
     return ok;
   }
 
-  diferencasVisiveis(): SchemaDifference[] {
-    const r = this.resultado();
-    if (!r) return [];
-    const semOk = r.diferencas.filter(d => d.severidade !== 'Ok');
-    const f = this.filtro();
-    if (f === null) return semOk;
-    return semOk.filter(d => d.severidade === f);
-  }
-
   onArquivo(ev: Event): void {
     const input = ev.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
@@ -1006,12 +998,11 @@ ORDER BY SCHEMA_NAME(p.schema_id), p.name;`;
     this.erro.set(null);
     this.resultado.set(null);
     this.resultadoBulk.set(null);
-    this.tabelaExpandida.set(null);
-    this.filtro.set('Critico');
     this.db.compararSchemas(schema, tabela, this.arquivo()!).subscribe({
       next: r => {
         this.marcarNumeros(r);
         this.resultado.set(r);
+        this.definirAbaInicial();
         this.carregando.set(false);
       },
       error: (err: any) => {
@@ -1026,12 +1017,11 @@ ORDER BY SCHEMA_NAME(p.schema_id), p.name;`;
     this.erro.set(null);
     this.resultado.set(null);
     this.resultadoBulk.set(null);
-    this.tabelaExpandida.set(null);
-    this.filtroBulk.set('Critico');
     this.db.compararBancoInteiro(this.arquivo()!).subscribe({
       next: rb => {
         this.marcarBulkNumeros(rb);
         this.resultadoBulk.set(rb);
+        this.definirAbaInicial();
         this.carregando.set(false);
       },
       error: (err: any) => {
@@ -1088,12 +1078,12 @@ ORDER BY SCHEMA_NAME(p.schema_id), p.name;`;
   exportarCsv(): void {
     const rb = this.resultadoBulk();
     if (this.modo() === 'banco' && rb) {
-      const header = 'tabela,status,numero,severidade,categoria,campo,esperado,encontrado,descricao';
+      const header = 'tabela,status,aba,numero,severidade,categoria,campo,esperado,encontrado,descricao';
       const linhas: string[] = [];
       for (const t of rb.tabelas) {
         for (const d of t.diferencas) {
           if (d.severidade === 'Ok') continue;
-          linhas.push([t.tabela, t.status, d.numeroCritico ?? '', d.severidade, d.categoria, d.campo, d.esperado ?? '', d.encontrado ?? '', d.descricao]
+          linhas.push([t.tabela, t.status, this.rotuloAba(d.categoria), d.numeroCritico ?? '', d.severidade, d.categoria, d.campo, d.esperado ?? '', d.encontrado ?? '', d.descricao]
             .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
         }
       }
@@ -1103,12 +1093,16 @@ ORDER BY SCHEMA_NAME(p.schema_id), p.name;`;
     }
     const r = this.resultado();
     if (!r) return;
-    const header = 'numero,severidade,categoria,campo,esperado,encontrado,descricao';
+    const header = 'aba,numero,severidade,categoria,campo,esperado,encontrado,descricao';
     const linhas = r.diferencas.filter(d => d.severidade !== 'Ok').map(d =>
-      [d.numeroCritico ?? '', d.severidade, d.categoria, d.campo, d.esperado ?? '', d.encontrado ?? '', d.descricao]
+      [this.rotuloAba(d.categoria), d.numeroCritico ?? '', d.severidade, d.categoria, d.campo, d.esperado ?? '', d.encontrado ?? '', d.descricao]
         .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
     const csv = [header, ...linhas].join('\r\n');
     this.baixarCsv(csv, `schema-comparacao-${r.tabela.replace(/[^\w-]/g, '_')}`);
+  }
+
+  private rotuloAba(cat: SchemaDifference['categoria']): string {
+    return ABAS_RELATORIO.find(a => a.categorias.includes(cat))?.rotulo ?? cat;
   }
 
   private baixarCsv(csv: string, nomeBase: string): void {

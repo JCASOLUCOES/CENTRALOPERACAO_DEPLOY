@@ -1,4 +1,13 @@
 /* ============================================================================
+   !!! OBSOLETO — JA APLICADO. NAO EXECUTAR NOVAMENTE. !!!
+   Substituido por: scripts/db/renomear-tabelas-tb-idempotente.sql
+   (que ja inclui a migration 20260920185734_TarefaProjetoEtapaId).
+
+   Este arquivo permanece apenas como historico. Os nomes de tabela aqui estao
+   desatualizados: a migration PadraoTabelasTb renomeou IMPL_Tarefa -> tbtarefa
+   e tbprojetoEtapa -> tbprojetoetapa.
+
+   ---------------------------------------------------------------------------
    MIGRACAO TarefaProjetoEtapaId — Contador dinâmico de tarefas por etapa
    Equivalente manual da migration EF `20260920185734_TarefaProjetoEtapaId`.
    Use se `dotnet ef database update` não for executado no servidor.

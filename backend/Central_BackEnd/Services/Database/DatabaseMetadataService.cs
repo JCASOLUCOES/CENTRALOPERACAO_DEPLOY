@@ -11,6 +11,7 @@ public interface IDatabaseMetadataService
     Task<TableDto?> ObterTabelaAsync(string schema, string nome, CancellationToken ct = default);
     Task<List<ColumnDto>> ListarColunasAsync(string schema, string nome, CancellationToken ct = default);
     Task<List<IndexDto>> ListarIndicesAsync(string schema, string nome, CancellationToken ct = default);
+    Task<SchemaPkInfoDto?> ListarPkAsync(string schema, string nome, CancellationToken ct = default);
     Task<List<ForeignKeyDto>> ListarForeignKeysAsync(string? schema, string? nomeTabela, CancellationToken ct = default);
     Task<Dictionary<string, SchemaInfoDto>> ExtrairSchemasAsync(CancellationToken ct = default);
     Task<List<ProcedureResumoDto>> ListarProceduresAsync(string? schema, string? busca, int take, CancellationToken ct = default);
@@ -237,6 +238,39 @@ ORDER BY i.name";
         return lista;
     }
 
+    public async Task<SchemaPkInfoDto?> ListarPkAsync(string schema, string nome, CancellationToken ct = default)
+    {
+        var sql = @"
+SELECT kc.name,
+    STUFF((SELECT ', ' + c.name
+           FROM sys.index_columns ic
+           JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+           WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id
+             AND ic.is_included_column = 0
+           ORDER BY ic.key_ordinal
+           FOR XML PATH('')), 1, 2, '') AS Colunas
+FROM sys.key_constraints kc
+JOIN sys.indexes i ON i.object_id = kc.parent_object_id AND i.index_id = kc.unique_index_id
+JOIN sys.tables t ON kc.parent_object_id = t.object_id
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE kc.type = 'PK' AND s.name = @schema AND t.name = @tabela";
+
+        await using var c = await _conn.OpenAsync(ct);
+        await using var cmd = new SqlCommand(sql, c);
+        cmd.Parameters.AddWithValue("@schema", schema);
+        cmd.Parameters.AddWithValue("@tabela", nome);
+        await using var r = await cmd.ExecuteReaderAsync(ct);
+        if (await r.ReadAsync(ct))
+        {
+            var cols = r.IsDBNull(1)
+                ? new List<string>()
+                : r.GetString(1).Split(", ", StringSplitOptions.RemoveEmptyEntries).ToList();
+            if (cols.Count == 0) return null;
+            return new SchemaPkInfoDto(r.GetString(0), cols);
+        }
+        return null;
+    }
+
     public async Task<List<ForeignKeyDto>> ListarForeignKeysAsync(string? schema, string? nomeTabela, CancellationToken ct = default)
     {
         var sql = @"
@@ -335,6 +369,22 @@ JOIN sys.columns cR ON cR.object_id = fkc.referenced_object_id AND cR.column_id 
 WHERE tP.is_ms_shipped = 0
 ORDER BY sP.name, tP.name, fk.name";
 
+        const string sqlPk = @"
+SELECT s.name, t.name, kc.name,
+    STUFF((SELECT N',' + c.name
+           FROM sys.index_columns ic
+           JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+           WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id
+             AND ic.is_included_column = 0
+           ORDER BY ic.key_ordinal
+           FOR XML PATH('')), 1, 1, N'') AS Colunas
+FROM sys.key_constraints kc
+JOIN sys.indexes i ON i.object_id = kc.parent_object_id AND i.index_id = kc.unique_index_id
+JOIN sys.tables t ON kc.parent_object_id = t.object_id
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE kc.type = 'PK' AND t.is_ms_shipped = 0
+ORDER BY s.name, t.name";
+
         await using var c = await _conn.OpenAsync(ct);
 
         await using (var cmd = new SqlCommand(sqlTabelas, c))
@@ -396,6 +446,21 @@ ORDER BY sP.name, tP.name, fk.name";
                 if (!mapa.TryGetValue(full, out var info)) continue;
                 info.Fks.Add(new SchemaFkInfoDto(
                     r.GetString(2), r.GetString(3), r.GetString(4), r.GetString(5)));
+            }
+        }
+
+        await using (var cmd = new SqlCommand(sqlPk, c))
+        await using (var r = await cmd.ExecuteReaderAsync(ct))
+        {
+            while (await r.ReadAsync(ct))
+            {
+                var full = $"{r.GetString(0)}.{r.GetString(1)}";
+                if (!mapa.TryGetValue(full, out var info)) continue;
+                var cols = r.IsDBNull(3)
+                    ? new List<string>()
+                    : r.GetString(3).Split(',').ToList();
+                if (cols.Count == 0) continue;
+                mapa[full] = info with { Pk = new SchemaPkInfoDto(r.GetString(2), cols) };
             }
         }
 

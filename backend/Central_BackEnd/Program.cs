@@ -279,18 +279,21 @@ if (app.Environment.IsDevelopment())
             db.SaveChanges();
         }
 
-        // Seed CC_Funcao: Funcoes do sistema
+        // Seed tbfuncao: funcoes do sistema.
+        // A tabela e a legada unificada e ja vem populada (1/2/3). O seed e apenas
+        // uma rede de seguranca para base vazia, por isso fixa os IDs: tbfuncionario
+        // e tboperador referenciam FUNCAO_ID 1/2/3 e um IDENTITY geraria 4/5/6.
         if (!db.Funcoes.Any())
         {
             db.Funcoes.AddRange(
-                new Central_BackEnd.Models.Funcao { Descricao = "Analista de Sistemas", Classificacao = "Implantador", Ativo = true },
-                new Central_BackEnd.Models.Funcao { Descricao = "Suporte", Classificacao = "Atendimento", Ativo = true },
-                new Central_BackEnd.Models.Funcao { Descricao = "Programador", Classificacao = "Desenvolvimento", Ativo = true }
+                new Central_BackEnd.Models.Funcao { Id = 1, Descricao = "Analista de Sistemas", Classificacao = "Implantador",     Ativo = true },
+                new Central_BackEnd.Models.Funcao { Id = 2, Descricao = "Suporte",             Classificacao = "Atendimento",     Ativo = true },
+                new Central_BackEnd.Models.Funcao { Id = 3, Descricao = "Programador",          Classificacao = "Desenvolvimento", Ativo = true }
             );
             db.SaveChanges();
         }
 
-        // Seed IMPL_ColunaKanban: 7 colunas padrao (BACKLOG -> CONCLUIDO)
+        // Seed tbcolusanakanban: 7 colunas padrao (BACKLOG -> CONCLUIDO)
         if (!db.ColunasKanban.Any())
         {
             db.ColunasKanban.AddRange(
@@ -305,7 +308,7 @@ if (app.Environment.IsDevelopment())
             db.SaveChanges();
         }
 
-        // Seed IMPL_TipoProjeto: CLIENTE, CARTEIRA, INTEGRACAO + PROJETO_CIAA
+        // Seed tbtipoprojeto: CLIENTE, CARTEIRA, INTEGRACAO + PROJETO_CIAA
         if (!db.TiposProjeto.Any())
         {
             db.TiposProjeto.AddRange(
@@ -318,7 +321,7 @@ if (app.Environment.IsDevelopment())
         }
 
 #if false // Seeds de exemplo DESABILITADOS — base limpa para testes (estruturais acima continuam)
-        // Seed IMPL_Projeto: 1 IMPL + 1 CIAA
+        // Seed tbprojeto: 1 IMPL + 1 CIAA
         if (!db.Projetos.Any())
         {
             var tipoCliente = db.TiposProjeto.FirstOrDefault(t => t.Codigo == "CLIENTE");
@@ -598,7 +601,7 @@ if (app.Environment.IsDevelopment())
         }
 #endif
 
-        // Seed CC_TipoEvento: 7 tipos de evento para Agenda
+        // Seed tbtipoevento: 7 tipos de evento para Agenda
         if (!db.TiposEvento.Any())
         {
             db.TiposEvento.AddRange(
@@ -632,7 +635,7 @@ if (app.Environment.IsDevelopment())
         var tipoFerias = db.TiposEvento.FirstOrDefault(t => t.Nome == "Férias")?.Id ?? 7;
 
 #if false // Seed de exemplo DESABILITADO — base limpa para testes
-        // Seed IMPL_Agenda: 5 eventos de exemplo
+        // Seed tbagenda: 5 eventos de exemplo
         if (!db.Agenda.Any())
         {
             var p1 = db.Projetos.FirstOrDefault(p => p.Codigo == "IMP-0001");
