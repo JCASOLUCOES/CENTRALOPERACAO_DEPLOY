@@ -246,7 +246,6 @@ export interface SchemaDifference {
   esperado?: string;
   encontrado?: string;
   descricao: string;
-  numeroCritico?: number;
 }
 
 // =====================================================================

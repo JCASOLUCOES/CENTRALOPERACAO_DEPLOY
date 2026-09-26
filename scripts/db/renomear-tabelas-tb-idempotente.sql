@@ -1595,3 +1595,219 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_CC_AgendaParticipante_IMPL_Agenda', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_CC_AgendaParticipante_IMPL_Agenda', N'FK_tbagendaparticipante_tbagenda_AgendaId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_CC_AgendaParticipante_TBOPERADOR', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_CC_AgendaParticipante_TBOPERADOR', N'FK_tbagendaparticipante_tboperador_ParticipanteId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_Agenda_CC_TipoEvento', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_Agenda_CC_TipoEvento', N'FK_tbagenda_tbtipoevento_AGD_TipoId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_Agenda_IMPL_Projeto', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_Agenda_IMPL_Projeto', N'FK_tbagenda_tbprojeto_AGD_ProjetoId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_ComentarioTarefa_IMPL_Tarefa_CMT_TarefaId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_ComentarioTarefa_IMPL_Tarefa_CMT_TarefaId', N'FK_tbcomentariotarefa_tbtarefa_CMT_TarefaId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_Projeto_IMPL_ColunaKanban_PRJ_ColunaKanbanId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_Projeto_IMPL_ColunaKanban_PRJ_ColunaKanbanId', N'FK_tbprojeto_tbcolunakanban_PRJ_ColunaKanbanId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_Projeto_IMPL_TipoProjeto_PRJ_TipoProjetoId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_Projeto_IMPL_TipoProjeto_PRJ_TipoProjetoId', N'FK_tbprojeto_tbtipoprojeto_PRJ_TipoProjetoId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_Projeto_tbcliente_PRJ_ClienteId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_Projeto_tbcliente_PRJ_ClienteId', N'FK_tbprojeto_tbcliente_PRJ_ClienteId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_Tarefa_IMPL_ColunaKanban_TRF_ColunaKanbanId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_Tarefa_IMPL_ColunaKanban_TRF_ColunaKanbanId', N'FK_tbtarefa_tbcolunakanban_TRF_ColunaKanbanId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_Tarefa_IMPL_Projeto_TRF_ProjetoId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_Tarefa_IMPL_Projeto_TRF_ProjetoId', N'FK_tbtarefa_tbprojeto_TRF_ProjetoId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_Tarefa_tbprojetoEtapa_TRF_ProjetoEtapaId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_Tarefa_tbprojetoEtapa_TRF_ProjetoEtapaId', N'FK_tbtarefa_tbprojetoetapa_TRF_ProjetoEtapaId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_TarefaApontamento_IMPL_Tarefa_TRF_Id', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_TarefaApontamento_IMPL_Tarefa_TRF_Id', N'FK_tbtarefaapontamento_tbtarefa_TRF_Id';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_TarefaChamado_IMPL_Tarefa_TRF_Id', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_TarefaChamado_IMPL_Tarefa_TRF_Id', N'FK_tbtarefachamado_tbtarefa_TRF_Id';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_IMPL_TarefaResponsavel_IMPL_Tarefa_TRF_Id', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_IMPL_TarefaResponsavel_IMPL_Tarefa_TRF_Id', N'FK_tbtarefareponsavel_tbtarefa_TRF_Id';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_RefreshTokens_TBOPERADOR', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_RefreshTokens_TBOPERADOR', N'FK_tbrefreshtoken_tboperador_OperadorId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_tbprojetoEtapa_IMPL_Projeto_PEP_ProjetoId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_tbprojetoEtapa_IMPL_Projeto_PEP_ProjetoId', N'FK_tbprojetoetapa_tbprojeto_PEP_ProjetoId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_tbprojetoEtapaChecklist_tbprojetoEtapa_PEC_ProjetoEtapaId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_tbprojetoEtapaChecklist_tbprojetoEtapa_PEC_ProjetoEtapaId', N'FK_tbprojetoetapachecklist_tbprojetoetapa_PEC_ProjetoEtapaId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_tbprojetoEtapaComentario_tbprojetoEtapa_PEC_ProjetoEtapaId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_tbprojetoEtapaComentario_tbprojetoEtapa_PEC_ProjetoEtapaId', N'FK_tbprojetoetapacomentario_tbprojetoetapa_PEC_ProjetoEtapaId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_tbprojetoEtapaDocumento_tbprojetoEtapa_PED_ProjetoEtapaId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_tbprojetoEtapaDocumento_tbprojetoEtapa_PED_ProjetoEtapaId', N'FK_tbprojetoetapadocumento_tbprojetoetapa_PED_ProjetoEtapaId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    IF OBJECT_ID(N'dbo.FK_tbprojetoEtapaHistorico_tbprojetoEtapa_PEH_ProjetoEtapaId', N'F') IS NOT NULL
+                           EXEC sp_rename N'dbo.FK_tbprojetoEtapaHistorico_tbprojetoEtapa_PEH_ProjetoEtapaId', N'FK_tbprojetoetahistorico_tbprojetoetapa_PEH_ProjetoEtapaId';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260926034537_RenomeiaFksTb'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260926034537_RenomeiaFksTb', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+

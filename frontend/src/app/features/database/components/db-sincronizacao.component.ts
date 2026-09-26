@@ -211,11 +211,11 @@ type Modo = 'tabela' | 'banco' | 'procedures';
       <div *ngIf="itensAba().length === 0" class="adm-empty">{{ vazioAba() }}</div>
 
       <div class="db-sync__lista">
-        <div *ngFor="let it of itensAba()"
+        <div *ngFor="let it of itensAba(); let idx = index"
              class="db-sync__item"
              [ngClass]="'db-sync__item--' + severidadeClass(it.dif.severidade)">
-          <span *ngIf="it.dif.numeroCritico" class="db-sync__badge" [attr.data-critico]="it.dif.numeroCritico">
-            {{ it.dif.numeroCritico }}
+          <span class="db-sync__badge" [attr.data-sev]="severidadeClass(it.dif.severidade)">
+            {{ idx + 1 }}
           </span>
           <span class="db-sync__dot" [ngClass]="'db-sync__dot--' + severidadeClass(it.dif.severidade)"></span>
           <span class="db-sync__cat">{{ it.dif.categoria }}</span>
@@ -274,11 +274,11 @@ type Modo = 'tabela' | 'banco' | 'procedures';
       <div *ngIf="itensAba().length === 0" class="adm-empty">{{ vazioAba() }}</div>
 
       <div class="db-sync__lista">
-        <div *ngFor="let it of itensAba()"
+        <div *ngFor="let it of itensAba(); let idx = index"
              class="db-sync__item"
              [ngClass]="'db-sync__item--' + severidadeClass(it.dif.severidade)">
-          <span *ngIf="it.dif.numeroCritico" class="db-sync__badge" [attr.data-critico]="it.dif.numeroCritico">
-            {{ it.dif.numeroCritico }}
+          <span class="db-sync__badge" [attr.data-sev]="severidadeClass(it.dif.severidade)">
+            {{ idx + 1 }}
           </span>
           <span class="db-sync__dot" [ngClass]="'db-sync__dot--' + severidadeClass(it.dif.severidade)"></span>
           <span *ngIf="it.tabela" class="db-sync__tag">
@@ -350,16 +350,16 @@ type Modo = 'tabela' | 'banco' | 'procedures';
     .db-sync__aba {
       display: inline-flex; align-items: center; gap: 0.4rem;
       border: 1px solid transparent; background: transparent; border-radius: 0.4rem;
-      padding: 0.4rem 0.7rem; font-size: 0.8rem; font-weight: 600; color: #475569;
+      padding: 0.55rem 0.9rem; font-size: 0.95rem; font-weight: 600; color: #475569;
       cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
     .db-sync__aba:hover { color: #1e3a8a; background: rgba(255,255,255,0.6); }
     .db-sync__aba--on { background: #fff; color: #1e3a8a; border-color: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
     .db-sync__aba-n {
       display: inline-flex; align-items: center; justify-content: center;
-      min-width: 1.3rem; height: 1.3rem; padding: 0 0.35rem;
+      min-width: 1.5rem; height: 1.5rem; padding: 0 0.4rem;
       border-radius: 999px; background: #dc2626; color: #fff;
-      font-size: 0.7rem; font-weight: 700; line-height: 1;
+      font-size: 0.78rem; font-weight: 700; line-height: 1;
     }
     .db-sync__aba-n--zero { background: #cbd5e1; color: #475569; }
     .db-sync__fixos { flex-shrink: 0; }
@@ -384,6 +384,8 @@ type Modo = 'tabela' | 'banco' | 'procedures';
       font-size: 0.72rem; font-weight: 700; flex-shrink: 0; align-self: center;
       line-height: 1;
     }
+    .db-sync__badge[data-sev="Aviso"] { background: #b45309; }
+    .db-sync__badge[data-sev="Ok"] { background: #047857; }
     .db-sync__dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; flex-shrink: 0; align-self: center; }
     .db-sync__dot--Critico { background: #ef4444; }
     .db-sync__dot--Aviso { background: #eab308; }
@@ -1000,7 +1002,6 @@ ORDER BY SCHEMA_NAME(p.schema_id), p.name;`;
     this.resultadoBulk.set(null);
     this.db.compararSchemas(schema, tabela, this.arquivo()!).subscribe({
       next: r => {
-        this.marcarNumeros(r);
         this.resultado.set(r);
         this.definirAbaInicial();
         this.carregando.set(false);
@@ -1019,7 +1020,6 @@ ORDER BY SCHEMA_NAME(p.schema_id), p.name;`;
     this.resultadoBulk.set(null);
     this.db.compararBancoInteiro(this.arquivo()!).subscribe({
       next: rb => {
-        this.marcarBulkNumeros(rb);
         this.resultadoBulk.set(rb);
         this.definirAbaInicial();
         this.carregando.set(false);
@@ -1049,33 +1049,13 @@ ORDER BY SCHEMA_NAME(p.schema_id), p.name;`;
     });
   }
 
-  private marcarBulkNumeros(rb: BulkSchemaComparisonResult): void {
-    for (const t of rb.tabelas) {
-      let n = 0;
-      for (const d of t.diferencas) {
-        if (d.severidade === 'Critico') {
-          n++;
-          d.numeroCritico = n;
-        } else {
-          d.numeroCritico = undefined;
-        }
-      }
-    }
-  }
-
-  private marcarNumeros(r: SchemaComparisonResult): void {
-    let n = 0;
-    for (const d of r.diferencas) {
-      if (d.severidade === 'Critico') {
-        n++;
-        d.numeroCritico = n;
-      } else {
-        d.numeroCritico = undefined;
-      }
-    }
-  }
-
   exportarCsv(): void {
+    const numeros = new Map<string, number>();
+    const proximoNumero = (aba: string): number => {
+      const n = (numeros.get(aba) ?? 0) + 1;
+      numeros.set(aba, n);
+      return n;
+    };
     const rb = this.resultadoBulk();
     if (this.modo() === 'banco' && rb) {
       const header = 'tabela,status,aba,numero,severidade,categoria,campo,esperado,encontrado,descricao';
@@ -1083,7 +1063,8 @@ ORDER BY SCHEMA_NAME(p.schema_id), p.name;`;
       for (const t of rb.tabelas) {
         for (const d of t.diferencas) {
           if (d.severidade === 'Ok') continue;
-          linhas.push([t.tabela, t.status, this.rotuloAba(d.categoria), d.numeroCritico ?? '', d.severidade, d.categoria, d.campo, d.esperado ?? '', d.encontrado ?? '', d.descricao]
+          const aba = this.rotuloAba(d.categoria);
+          linhas.push([t.tabela, t.status, aba, proximoNumero(aba), d.severidade, d.categoria, d.campo, d.esperado ?? '', d.encontrado ?? '', d.descricao]
             .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
         }
       }
@@ -1094,9 +1075,11 @@ ORDER BY SCHEMA_NAME(p.schema_id), p.name;`;
     const r = this.resultado();
     if (!r) return;
     const header = 'aba,numero,severidade,categoria,campo,esperado,encontrado,descricao';
-    const linhas = r.diferencas.filter(d => d.severidade !== 'Ok').map(d =>
-      [this.rotuloAba(d.categoria), d.numeroCritico ?? '', d.severidade, d.categoria, d.campo, d.esperado ?? '', d.encontrado ?? '', d.descricao]
-        .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+    const linhas = r.diferencas.filter(d => d.severidade !== 'Ok').map(d => {
+      const aba = this.rotuloAba(d.categoria);
+      return [aba, proximoNumero(aba), d.severidade, d.categoria, d.campo, d.esperado ?? '', d.encontrado ?? '', d.descricao]
+        .map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+    });
     const csv = [header, ...linhas].join('\r\n');
     this.baixarCsv(csv, `schema-comparacao-${r.tabela.replace(/[^\w-]/g, '_')}`);
   }
